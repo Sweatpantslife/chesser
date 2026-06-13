@@ -97,7 +97,9 @@ export function extractFeatures(fen: string, uci: string): MoveFeatures | null {
     developsMinor: (mv.piece === 'n' || mv.piece === 'b') && fromRank === backRank,
     earlyQueenMove: mv.piece === 'q' && fullmove <= 10,
     pawnAdvance: mv.piece === 'p',
-    landsEnPrise: attackedByEnemyPawn(game, to, mover),
+    // A pawn met by an enemy pawn is a normal break/exchange, not a hanging
+    // piece — only count real pieces landing en prise.
+    landsEnPrise: mv.piece !== 'p' && attackedByEnemyPawn(game, to, mover),
     fullmove,
   };
 }
@@ -125,6 +127,7 @@ export function styleScore(style: BotStyleId, fen: string, uci: string): number 
         (f.isCastle ? 4 : 0) +
         (f.landsEnPrise ? -3 : 1.0) + // avoid loose pieces, like safe squares
         (f.givesCheck ? -0.5 : 0) +
+        f.kingProximity * -0.6 + // lean away from committal attacking sorties
         (f.earlyQueenMove ? -1.5 : 0) +
         (f.capturedValue > 0 ? 0.3 : 0.8) // mildly prefer quiet consolidation
       );

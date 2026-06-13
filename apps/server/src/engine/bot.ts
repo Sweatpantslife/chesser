@@ -78,13 +78,20 @@ export class BotService {
     const white = whiteToMove(req.fen);
     const styled = req.bot.style !== 'balanced';
 
-    if (elo >= STOCKFISH_ELO_MAX) {
+    if (styled) {
+      // Full strength gives reliable candidate evaluations; the Elo-scaled
+      // margin + style scoring provide the weakening and the flavour. (Limiting
+      // strength here would randomise the evals and make selection meaningless.)
       eng.setOption('UCI_LimitStrength', false);
+      eng.setOption('MultiPV', 4);
+    } else if (elo >= STOCKFISH_ELO_MAX) {
+      eng.setOption('UCI_LimitStrength', false);
+      eng.setOption('MultiPV', 1);
     } else {
       eng.setOption('UCI_LimitStrength', true);
       eng.setOption('UCI_Elo', elo);
+      eng.setOption('MultiPV', 1);
     }
-    eng.setOption('MultiPV', styled ? 4 : 1);
     await eng.ready();
 
     const candidates = new Map<number, Candidate>();
@@ -114,9 +121,11 @@ export class BotService {
       let bestVal = -Infinity;
       for (const c of eligible) {
         // Penalise giving up eval, so the bot only abandons the top move when a
-        // candidate is meaningfully more in-style. Keeps quiet positions sane.
-        const evalPenalty = ((c.cp - bestCp) / 100) * 0.4; // <= 0, in pawns
-        const v = styleScore(req.bot.style, req.fen, c.uci) + evalPenalty + Math.random() * 0.1;
+        // candidate is meaningfully more in-style. Deterministic: in a quiet
+        // position where nothing scores on style, the best move wins — an
+        // "aggressive" bot only deviates when a real attacking move exists.
+        const evalPenalty = ((c.cp - bestCp) / 100) * 0.5; // <= 0, in pawns
+        const v = styleScore(req.bot.style, req.fen, c.uci) + evalPenalty;
         if (v > bestVal) {
           bestVal = v;
           bestPick = c;

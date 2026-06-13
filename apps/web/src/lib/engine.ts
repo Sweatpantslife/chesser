@@ -1,0 +1,134 @@
+import type {
+  AnalysisMessage,
+  AnalyzeRequest,
+  BotConfig,
+  BotMoveMessage,
+  BotStyle,
+  ClientMessage,
+  EngineAvailability,
+  ServerMessage,
+} from '@chesser/shared';
+
+type WelcomeData = { engines: EngineAvailability; styles: BotStyle[] };
+type AnalysisHandler = (msg: AnalysisMessage) => void;
+
+let counter = 0;
+const nextId = () => `r${Date.now().toString(36)}_${(counter++).toString(36)}`;
+
+/**
+ * Singleton WebSocket client to the engine server. Handles reconnection,
+ * correlates bot-move replies by request id, and routes streaming analysis to
+ * the current handler (stale analysis ids are ignored).
+ */
+class EngineClient {
+  private ws: WebSocket | null = null;
+  private buffer: string[] = [];
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private analysisReqId: string | null = null;
+  private analysisHandler: AnalysisHandler | null = null;
+  private botWaiters = new Map<string, { resolve: (m: BotMoveMessage) => void; reject: (e: Error) => void }>();
+
+  availability: EngineAvailability | null = null;
+  styles: BotStyle[] = [];
+  connected = false;
+
+  readonly onWelcome = new Set<(w: WelcomeData) => void>();
+  readonly onStatus = new Set<(connected: boolean) => void>();
+
+  connect(): void {
+    if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) return;
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    const ws = new WebSocket(`${proto}://${location.host}/ws`);
+    this.ws = ws;
+    ws.onopen = () => {
+      this.connected = true;
+      this.onStatus.forEach((fn) => fn(true));
+      for (const m of this.buffer.splice(0)) ws.send(m);
+    };
+    ws.onclose = () => {
+      this.connected = false;
+      this.onStatus.forEach((fn) => fn(false));
+      this.scheduleReconnect();
+    };
+    ws.onerror = () => ws.close();
+    ws.onmessage = (ev) => this.dispatch(JSON.parse(ev.data) as ServerMessage);
+  }
+
+  private scheduleReconnect(): void {
+    if (this.reconnectTimer) return;
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      this.connect();
+    }, 1500);
+  }
+
+  private send(msg: ClientMessage): void {
+    const data = JSON.stringify(msg);
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) this.ws.send(data);
+    else this.buffer.push(data);
+  }
+
+  private dispatch(msg: ServerMessage): void {
+    switch (msg.t) {
+      case 'welcome':
+        this.availability = msg.engines;
+        this.styles = msg.styles;
+        this.onWelcome.forEach((fn) => fn({ engines: msg.engines, styles: msg.styles }));
+        break;
+      case 'analysis':
+        if (msg.reqId === this.analysisReqId) this.analysisHandler?.(msg);
+        break;
+      case 'botMove': {
+        const w = this.botWaiters.get(msg.reqId);
+        if (w) {
+          this.botWaiters.delete(msg.reqId);
+          w.resolve(msg);
+        }
+        break;
+      }
+      case 'error': {
+        if (msg.reqId && this.botWaiters.has(msg.reqId)) {
+          const w = this.botWaiters.get(msg.reqId)!;
+          this.botWaiters.delete(msg.reqId);
+          w.reject(new Error(msg.message));
+        } else {
+          console.error('[engine]', msg.message);
+        }
+        break;
+      }
+    }
+  }
+
+  /** Start (or replace) a streaming analysis of a position. */
+  analyze(fen: string, opts: { multipv?: number; depth?: number; movetimeMs?: number }, handler: AnalysisHandler): void {
+    const reqId = nextId();
+    this.analysisReqId = reqId;
+    this.analysisHandler = handler;
+    const req: AnalyzeRequest = { t: 'analyze', reqId, fen, ...opts };
+    this.send(req);
+  }
+
+  stopAnalysis(): void {
+    if (this.analysisReqId) this.send({ t: 'stop', reqId: this.analysisReqId });
+    this.analysisReqId = null;
+    this.analysisHandler = null;
+  }
+
+  /** Request a single bot move. Resolves with the move or rejects on error. */
+  botMove(fen: string, bot: BotConfig): Promise<BotMoveMessage> {
+    const reqId = nextId();
+    return new Promise((resolve, reject) => {
+      this.botWaiters.set(reqId, { resolve, reject });
+      this.send({ t: 'botMove', reqId, fen, bot });
+      setTimeout(() => {
+        if (this.botWaiters.has(reqId)) {
+          this.botWaiters.delete(reqId);
+          reject(new Error('Bot move timed out'));
+        }
+      }, 30000);
+    });
+  }
+}
+
+export const engine = new EngineClient();
