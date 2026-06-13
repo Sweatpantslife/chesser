@@ -6,9 +6,9 @@ Play against bots across a wide range of strengths and playing **styles**, get
 live engine analysis, and (coming next) train your openings, middlegame and
 endgames.
 
-> **Status:** Phase 1 — the playable core. The engine backend (Stockfish
-> analysis + Stockfish/Maia bots) is complete and tested; the web UI and the
-> three trainers are landing on top of it. See the [roadmap](#roadmap).
+> **Status:** Playable. Engine backend (Stockfish analysis + Stockfish/Maia
+> bots), the play-vs-bot client, and all three trainers — openings, middlegame
+> tactics, and endgames — are in. See the [roadmap](#roadmap).
 
 ---
 
@@ -20,7 +20,21 @@ endgames.
 | **Levels** | Stockfish bots from ~1320 to 3190 Elo; Maia bots at 1100 / 1500 / 1900 |
 | **Styles** | Human-like (Maia), Balanced, Aggressive, Defensive, Positional |
 | **Analysis** | Live multi-PV evaluation, eval bar, principal variations in SAN |
+| **Trainers** | Opening repertoire drills · engine-verified tactics puzzles · theoretical endgames played out vs Stockfish |
 | **Stack** | pnpm monorepo · Node + Fastify + `ws` backend · React + Vite + TypeScript frontend · `chess.js` for rules |
+
+## Trainers
+
+- **Openings** — drill a curated repertoire for White and Black (Italian, Ruy
+  Lopez, Najdorf, King's Indian, …). The app plays the book replies; you recall
+  your moves, with reveal and accuracy tracking.
+- **Middlegame (tactics)** — find the one winning move. Puzzles are
+  *generated and verified by Stockfish* (`scripts/gen-tactics.mjs` plays
+  imperfect engine games, then keeps only positions with a single decisive
+  move), so every solution is sound.
+- **Endgames** — play out essential theoretical wins (Q vs K, R vs K, the
+  lawnmower, K+P, connected passers, Q vs R) against a full-strength Stockfish
+  defender, with a live eval bar tracking your technique.
 
 ## Architecture
 
@@ -85,10 +99,16 @@ SKIP_LC0=1 pnpm setup:engines
 
 - [x] **Phase 0** — Monorepo, engine setup scripts, UCI backend architecture
 - [x] **Phase 1a** — Engine server: Stockfish analysis, leveled + styled bots, Maia
-- [ ] **Phase 1b** — Web client: board, play-vs-bot, live analysis + eval bar, PGN
-- [ ] **Phase 2** — Opening trainer (repertoire + book lines + spaced repetition)
-- [ ] **Phase 3** — Middlegame trainer (tactics puzzles + themes)
-- [ ] **Phase 4** — Endgame trainer (theoretical positions + tablebase)
+- [x] **Phase 1b** — Web client: board, play-vs-bot, live analysis + eval bar, PGN
+- [x] **Phase 2** — Opening trainer (repertoire drills, reveal, accuracy)
+- [x] **Phase 3** — Middlegame trainer (engine-verified tactics puzzles)
+- [x] **Phase 4** — Endgame trainer (theoretical positions vs Stockfish)
+
+### Next up
+
+- Persist progress (spaced repetition for openings, puzzle history) in storage
+- Expand datasets (more repertoire lines, larger puzzle sets, more endgames)
+- Syzygy tablebase for perfect endgame feedback; clocks & time controls
 
 ## Credits
 
