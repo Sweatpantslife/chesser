@@ -1,0 +1,23 @@
+{
+  "name": "chesser",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A complete chess game and trainer powered by Stockfish and Lc0/Maia — play vs bots at many levels and styles, plus opening, middlegame and endgame trainers.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "setup:engines": "bash scripts/setup-engines.sh",
+    "dev": "pnpm --filter @chesser/shared build && pnpm -r --parallel --stream dev",
+    "dev:server": "pnpm --filter @chesser/server dev",
+    "dev:web": "pnpm --filter @chesser/web dev",
+    "build": "pnpm --filter @chesser/shared build && pnpm --filter @chesser/server build && pnpm --filter @chesser/web build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  }
+}

@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Engine binaries, networks & generated manifest (via scripts/setup-engines.sh)
+engines/bin/
+engines/networks/
+engines/src/
+engines/manifest.json
+engines/*.tar
+engines/*.zip
+engines/*.gz
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# Test / coverage
+coverage/
+.cache/
