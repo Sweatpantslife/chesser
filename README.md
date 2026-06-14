@@ -25,8 +25,8 @@ endgames.
 | **Custom repertoires** | Build your own opening libraries — save any line from the board, then drill them |
 | **Puzzle rush** | Solve against a 5-minute clock; 3 strikes and you’re out, with a synced high score |
 | **Accounts & sync** | Optional username/password accounts sync progress *and repertoires* across devices |
-| **Opening explorer** | Master / Lichess game stats for the current position (via a configurable proxy) |
-| **PGN review** | Import any PGN and step through it on the analysis board with the engine |
+| **Opening explorer** | Master / Lichess game stats for the current position; **＋** saves a move's line straight into a repertoire |
+| **Game review** | Import or play a game, then auto-annotate every move (blunder / mistake / inaccuracy) by win-probability swing |
 | **Tablebase** | Syzygy endgame tablebases — loaded into Stockfish (`SyzygyPath`) for perfect ≤7-man play, and queried via a configurable proxy for move feedback (online or local files) |
 | **Clocks** | Real chess clocks with time-control presets (1+0 … 10+5) and increments |
 | **Stack** | pnpm monorepo · Node + Fastify + `ws` backend · React + Vite + TypeScript frontend · `chess.js` for rules |
@@ -182,10 +182,13 @@ SKIP_LC0=1 pnpm setup:engines
 - [x] **Phase 7** — Personal opening repertoires (save lines from the board),
   Puzzle Rush mode, and repertoire sync
 
+- [x] **Phase 8** — One-click explorer→repertoire saving and automatic
+  game-review annotations (blunder / mistake / inaccuracy)
+
 ### Next up
 
-- Save an explorer move directly into a repertoire line
-- Richer game-review annotations (blunder/inaccuracy tags); opening-name lookup
+- Opening-name lookup; accuracy % and an ACPL summary in game review
+- Drill straight from a flagged blunder ("learn from your mistakes")
 
 ## Credits
 
