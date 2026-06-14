@@ -1,0 +1,64 @@
+# Chesser — Docker Compose deployment.
+#
+# Built for Coolify (which provides Traefik + TLS automatically). On Coolify the
+# `SERVICE_FQDN_*` variable below makes the proxy route your chosen domain to the
+# app on port 8787; nothing else (no Traefik labels, no published ports) needed.
+#
+# Plain Docker Compose (local/VPS): uncomment the `ports` mapping and browse to
+# http://localhost:8787  —  `docker compose up --build -d`.
+
+services:
+  chesser:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Stockfish-only by default (small, fast build). For human-like Maia bots:
+        #   ENGINE_SETUP: ""        # full setup (Stockfish + Maia nets + Lc0)
+        #   ENGINE_TOOLCHAIN: "1"   # install the Lc0 build toolchain
+        ENGINE_SETUP: "ONLY=stockfish"
+        ENGINE_TOOLCHAIN: "0"
+        # Pin the Stockfish build for portability (avx2 suits most modern x86-64;
+        # use x86-64-sse41-popcnt for older CPUs if you hit "illegal instruction").
+        SF_VARIANT: "x86-64-avx2"
+    image: chesser:latest
+    restart: unless-stopped
+    # PID 1 init so spawned Stockfish/Lc0 processes are reaped cleanly.
+    init: true
+    environment:
+      # Coolify: generates a domain and wires Traefik to this service's port 8787.
+      # Remove this line for plain Docker Compose.
+      - SERVICE_FQDN_CHESSER_8787
+      - NODE_ENV=production
+      - HOST=0.0.0.0
+      - PORT=8787
+      # Engine resource budget per Stockfish process — tune to your host.
+      - CHESSER_THREADS=2
+      - CHESSER_HASH_MB=128
+      # External data upstreams (must be reachable from the server). Defaults shown.
+      # - CHESSER_TABLEBASE_URL=https://tablebase.lichess.ovh/standard
+      # - CHESSER_EXPLORER_MASTERS_URL=https://explorer.lichess.ovh/masters
+      # - CHESSER_EXPLORER_LICHESS_URL=https://explorer.lichess.ovh/lichess
+      # Local Syzygy tablebases (see the volume mount below).
+      # - CHESSER_SYZYGY_PATH=/syzygy
+    expose:
+      - "8787"
+    # ports:
+    #   - "8787:8787"   # local testing only — Coolify/Traefik does not need this
+    volumes:
+      - chesser-data:/data
+      # Optional: serve your own Syzygy tablebases without rebuilding the image.
+      # - /srv/syzygy:/syzygy:ro
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:'+(process.env.PORT||8787)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  chesser-data:

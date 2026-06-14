@@ -12,6 +12,24 @@ export const ENGINES_DIR = process.env.CHESSER_ENGINES_DIR ?? path.join(REPO_ROO
 export const PORT = Number(process.env.PORT ?? 8787);
 export const HOST = process.env.HOST ?? '0.0.0.0';
 
+/**
+ * Directory of the built web client (the Vite `dist/`). When present the server
+ * serves the SPA itself, so the whole app runs from a single origin/port — one
+ * container behind one reverse proxy (e.g. Coolify's Traefik). In local dev the
+ * web client is served by Vite instead, so this is null until you `pnpm build`.
+ */
+function defaultWebDir(): string | null {
+  // src and dist both sit at apps/server/<x>, so the sibling app is ../../web/dist.
+  const candidate = path.resolve(here, '../../web/dist');
+  return fs.existsSync(path.join(candidate, 'index.html')) ? candidate : null;
+}
+export const WEB_DIR: string | null = process.env.CHESSER_WEB_DIR ?? defaultWebDir();
+
+/** Structured request logging (pino). On by default in production. */
+export const LOG_ENABLED = process.env.CHESSER_LOG
+  ? /^(1|true|yes|on)$/i.test(process.env.CHESSER_LOG)
+  : process.env.NODE_ENV === 'production';
+
 /** Resource budget for engines. Kept modest so several can coexist. */
 export const ENGINE_THREADS = Number(process.env.CHESSER_THREADS ?? Math.min(2, Math.max(1, os.cpus().length - 1)));
 export const ENGINE_HASH_MB = Number(process.env.CHESSER_HASH_MB ?? 128);

@@ -180,6 +180,84 @@ SKIP_LC0=1 pnpm setup:engines
 | `pnpm gen:openings` | Re-generate the bundled ECO opening database (from lichess-org/chess-openings, CC0) |
 | `pnpm gen:pieces` | Re-generate the alternate piece-set CSS (art from lichess-org/lila) |
 
+## Deploying
+
+Chesser ships as a **single container**: one Node process serves the built web
+client, the HTTP API *and* the WebSocket engine protocol from the same
+origin/port. That makes it trivial to put behind a single reverse proxy —
+including [Coolify](https://coolify.io/)'s built-in Traefik — with automatic TLS
+and WebSocket upgrades (the client talks `wss://` over the same host).
+
+> Target platform is **linux/amd64** — the bundled Stockfish/Lc0 binaries are
+> x86-64. Build/run on an amd64 host (Coolify defaults to this).
+
+### Quick start (Docker Compose)
+
+```bash
+docker compose up --build -d         # build the image and run it
+# then add a `ports:` mapping (see docker-compose.yml) to reach it locally
+```
+
+The image bakes in **Stockfish** by default (analysis, eval bar, leveled +
+styled bots, and every trainer). Accounts and synced progress persist to the
+`chesser-data` volume mounted at `/data`. A `/api/health` endpoint backs the
+container health check.
+
+### Deploy on Coolify (Traefik)
+
+1. **New Resource → Docker Compose** and point it at this repo (it reads
+   `docker-compose.yml`).
+2. Set the service's **domain** in the Coolify UI (or keep the
+   `SERVICE_FQDN_CHESSER_8787` variable in the compose file — Coolify generates a
+   domain and wires Traefik to port `8787` for you). No Traefik labels or
+   published ports needed; Coolify proxies the domain to the container on its
+   internal network and terminates TLS.
+3. Deploy. Coolify builds the image, attaches the `chesser-data` volume, and
+   runs the health check.
+
+That's it — open the domain and the whole app (board, API, live engine over
+`wss://`) runs from that one origin.
+
+### Engine options
+
+The default build is Stockfish-only (small, fast, reliable). To add the
+**human-like Maia** bots you need Lc0 too, which is compiled in the engine build
+stage — enable it with build args:
+
+```yaml
+# docker-compose.yml → services.chesser.build.args
+ENGINE_SETUP: ""        # full setup: Stockfish + Maia nets + Lc0 (slower build)
+ENGINE_TOOLCHAIN: "1"   # install the Lc0 build toolchain (meson/ninja/Eigen)
+```
+
+`SF_VARIANT` pins the Stockfish binary (default `x86-64-avx2`). If you hit an
+"illegal instruction" on an older CPU, rebuild with
+`--build-arg SF_VARIANT=x86-64-sse41-popcnt`.
+
+**Syzygy tablebases** are not baked in (the 3-4-5 set is ~1 GB). Mount your own
+into the container and point the server at them — see the commented volume and
+`CHESSER_SYZYGY_PATH` in `docker-compose.yml`.
+
+### Configuration
+
+All settings are environment variables with sensible defaults — see
+[`.env.example`](./.env.example). The most useful:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `PORT` / `HOST` | `8787` / `0.0.0.0` | Listen address |
+| `CHESSER_DATA_DIR` | `/data` | Accounts + synced progress (mount a volume) |
+| `CHESSER_THREADS` / `CHESSER_HASH_MB` | `2` / `128` | Per-engine resource budget |
+| `CHESSER_WEB_DIR` | `/app/web` | Built web client to serve (set by the image) |
+| `CHESSER_SYZYGY_PATH` | — | Local Syzygy tablebases for Stockfish |
+| `CHESSER_TABLEBASE_URL` | Lichess | Tablebase proxy upstream |
+| `CHESSER_EXPLORER_MASTERS_URL` / `CHESSER_EXPLORER_LICHESS_URL` | Lichess | Opening-explorer upstreams |
+| `CHESSER_LOG` | on in prod | Structured (pino) request logs |
+
+The opening explorer, game import and online tablebase proxy reach out to the
+public Lichess/Chess.com APIs; they degrade gracefully if those hosts are
+blocked from the server.
+
 ## Roadmap
 
 - [x] **Phase 0** — Monorepo, engine setup scripts, UCI backend architecture
