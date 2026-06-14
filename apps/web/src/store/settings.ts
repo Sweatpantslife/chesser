@@ -23,10 +23,12 @@ export type PieceSet = (typeof PIECE_SETS)[number]['id'];
 interface SettingsState {
   sound: boolean;
   premove: boolean;
+  arrows: boolean; // draw the engine's best-move arrows on the analysis board
   boardTheme: BoardTheme;
   pieceSet: PieceSet;
   setSound(b: boolean): void;
   setPremove(b: boolean): void;
+  setArrows(b: boolean): void;
   setBoardTheme(t: BoardTheme): void;
   setPieceSet(p: PieceSet): void;
 }
@@ -36,10 +38,12 @@ export const useSettings = create<SettingsState>()(
     (set) => ({
       sound: true,
       premove: true,
+      arrows: true,
       boardTheme: 'brown',
       pieceSet: 'cburnett',
       setSound: (sound) => set({ sound }),
       setPremove: (premove) => set({ premove }),
+      setArrows: (arrows) => set({ arrows }),
       setBoardTheme: (boardTheme) => set({ boardTheme }),
       setPieceSet: (pieceSet) => {
         loadPieceSet(pieceSet);

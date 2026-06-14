@@ -50,6 +50,28 @@ export function Heatmap({ days }: { days: { date: string; value: number }[] }) {
   );
 }
 
+/** A compact rating-over-time line with min/max labels. */
+export function RatingSparkline({ data }: { data: number[] }) {
+  const n = data.length;
+  if (n < 2) return null;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const span = Math.max(1, max - min);
+  const H = 40;
+  const pts = data.map((v, i) => `${(i / (n - 1)) * 100},${H - ((v - min) / span) * (H - 4) - 2}`).join(' ');
+  return (
+    <div className="flex items-center gap-3">
+      <svg viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" className="h-12 flex-1">
+        <polyline points={pts} fill="none" stroke="#34d399" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+      </svg>
+      <div className="text-right text-[11px] text-neutral-500">
+        <div className="text-emerald-300">{max}</div>
+        <div>{min}</div>
+      </div>
+    </div>
+  );
+}
+
 export interface DayPoint {
   date: string;
   reviews: number;

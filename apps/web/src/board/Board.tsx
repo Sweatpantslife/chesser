@@ -2,6 +2,7 @@ import { memo, useEffect, useRef } from 'react';
 import { Chessground } from 'chessground';
 import type { Api } from 'chessground/api';
 import type { Config } from 'chessground/config';
+import type { DrawShape } from 'chessground/draw';
 import type { Key } from 'chessground/types';
 import { useSettings } from '../store/settings';
 import type { Color } from '../store/game';
@@ -17,7 +18,11 @@ export interface BoardProps {
   onMove: (from: string, to: string) => void;
   /** Allow premoves (play-vs-bot). Gated by the user's setting. */
   premove?: boolean;
+  /** Auto-drawn shapes (e.g. engine best-move arrows). */
+  shapes?: DrawShape[];
 }
+
+const NO_SHAPES: DrawShape[] = [];
 
 export const Board = memo(function Board(props: BoardProps) {
   const elRef = useRef<HTMLDivElement>(null);
@@ -26,6 +31,7 @@ export const Board = memo(function Board(props: BoardProps) {
   const pieceSet = useSettings((s) => s.pieceSet);
   const premoveSetting = useSettings((s) => s.premove);
   const premoveOn = !!props.premove && premoveSetting;
+  const shapes = props.shapes ?? NO_SHAPES;
 
   const buildConfig = (): Config => ({
     fen: props.fen,
@@ -38,6 +44,8 @@ export const Board = memo(function Board(props: BoardProps) {
     animation: { enabled: true, duration: 180 },
     draggable: { showGhost: true },
     premovable: { enabled: premoveOn, showDests: true, castle: true },
+    // Right-click-drag draws user arrows/circles; engine arrows come in as autoShapes.
+    drawable: { enabled: true, visible: true, defaultSnapToValidMove: true, eraseOnClick: false, autoShapes: shapes },
     movable: {
       free: false,
       color: props.movableColor,
@@ -67,6 +75,11 @@ export const Board = memo(function Board(props: BoardProps) {
     if (premoveOn) apiRef.current?.playPremove();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.fen, props.orientation, props.turnColor, props.movableColor, props.lastMove, props.inCheck, props.dests, premoveOn]);
+
+  // engine/auto arrows update independently of position changes
+  useEffect(() => {
+    apiRef.current?.setAutoShapes(shapes);
+  }, [shapes]);
 
   return (
     <div className={`board-wrap board-${boardTheme} pieces-${pieceSet}`}>

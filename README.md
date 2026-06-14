@@ -10,9 +10,11 @@ endgames.
 > bots), the play-vs-bot client, and a deep trainer suite — openings, middlegame
 > tactics, endgames, a board-vision coordinate trainer (find/name square, square
 > colour, knight's tour), a checkmate-pattern library, an anti-blunder
-> "are you sure?" trainer and a blindfold/calculation trainer — plus a stats
-> dashboard with unified spaced-repetition, opening-name lookup and selectable
-> piece sets are in. See the [roadmap](#roadmap).
+> "are you sure?" trainer and a blindfold/calculation trainer — plus a full
+> variation tree with board arrows, a rated tactics trainer (themes + puzzles
+> from your own games), a stats dashboard with unified spaced-repetition,
+> opening-name lookup, selectable piece sets, and an installable PWA are in.
+> See the [roadmap](#roadmap).
 
 ---
 
@@ -26,7 +28,7 @@ endgames.
 | **Bot ladder** | A roster of named opponents (avatars, ratings, bios) from absolute beginner to full-strength — beat each to unlock the next rung; progress syncs with your account |
 | **Game controls** | Rematch, switch colours, resign, offer a draw (the bot judges it on the eval), and claim a draw by threefold/50-move — all vs the bot |
 | **Custom starts** | Play a bot from any pasted FEN (or the current board) or from a chosen opening line |
-| **Analysis** | Live multi-PV evaluation, eval bar, principal variations in SAN |
+| **Analysis** | Live multi-PV evaluation, eval bar, principal variations in SAN; a full **variation tree** (branch any line, promote/delete variations) and **board arrows** — right-click-drag your own, plus the engine's colour-coded best-move arrows |
 | **Trainers** | Opening repertoire drills · engine-verified tactics puzzles · theoretical endgames played out vs Stockfish · a checkmate-pattern library with drills · an anti-blunder “are you sure?” trainer · a blindfold/calculation trainer |
 | **Spaced repetition** | Openings, tactics, checkmate patterns and anti-blunder drills are SM-2 scheduled on one **unified** system — a single “due across all decks” queue, streaks, per-deck progress |
 | **Custom repertoires** | Build your own opening libraries — save any line from the board, then drill them |
@@ -37,7 +39,10 @@ endgames.
 | **Learn from mistakes** | Save review-flagged blunders into a drill deck and find the better move (engine-validated); synced across devices |
 | **Game library & import** | Save analyzed games to your account; import your real games by Lichess / Chess.com username |
 | **Analyze anything** | Paste a FEN or PGN to study any position or game |
-| **Stats dashboard** | Accuracy & volume over time — a GitHub-style activity heatmap, a 30-day reviews/accuracy chart, day streaks, per-deck learning progress, and personal bests |
+| **Tactics trainer** | Engine-verified puzzles with a **Glicko-style puzzle rating** that tracks your level, a **theme filter** (mate-in-N, fork, sacrifice, back-rank, promotion, …), difficulty filters, and an option to serve puzzles near your rating |
+| **Puzzles from your games** | One click in the review panel mines engine-verified tactics out of any analysed game (client-side, reusing the live engine); they're rated, themed, drillable and synced |
+| **Stats dashboard** | Accuracy & volume over time — a GitHub-style activity heatmap, a 30-day reviews/accuracy chart, day streaks, per-deck learning progress, your puzzle rating + trend, and personal bests |
+| **Installable PWA** | Add to home screen / install as a desktop app; a service worker caches the app shell so the board and client-side trainers work offline |
 | **Opening names** | Offline opening-name lookup over 3,700+ ECO positions — names the position *live* as you play (transposition-aware), plus search-and-load any opening onto the board |
 | **Coordinate trainer** | A 30-second board-vision sprint — *find the square*, *name the square*, *square colour* (light or dark?) or *knight's tour* (click every knight move), from either side, with optional pieces/labels and synced per-mode best scores |
 | **Checkmate library** | A library of named mating patterns (back-rank, smothered, Anastasia's, Arabian, Greco's, Boden's, Damiano's, epaulette, lawnmower, Scholar's) with solve-the-mate drills, each spaced-repetition scheduled |
@@ -61,7 +66,12 @@ endgames.
 - **Middlegame (tactics)** — find the one winning move. Puzzles are
   *generated and verified by Stockfish* (`scripts/gen-tactics.mjs` plays
   imperfect engine games, then keeps only positions with a single decisive
-  move), so every solution is sound.
+  move), so every solution is sound. Filter by **theme** (mate-in-N, fork,
+  sacrifice, back-rank, promotion, endgame, …) or **difficulty**, and track a
+  **puzzle rating** that rises and falls as you solve — optionally serving
+  puzzles tuned to your level. You can also **mine puzzles from your own
+  games**: open a game and hit *“Make puzzles from this game”* in the review
+  panel to pull engine-verified tactics out of it, in-browser.
 - **Endgames** — play out essential theoretical positions (Q/R vs K, two
   bishops, bishop+knight, K+P, connected passers, Lucena, Q vs R, plus drawn
   studies) against a tablebase-perfect or full-strength Stockfish defender, with
@@ -349,13 +359,18 @@ blocked from the server.
   unified spaced-repetition system (one “due across all decks” queue), with the
   curated chess data CI-validated by chess.js
 
+- [x] **Phase 13** — Full analysis variation tree (branch/promote/delete lines)
+  with user + engine board arrows, a rated tactics trainer (theme filter +
+  Glicko-style puzzle rating + puzzles mined from your own games), and an
+  installable PWA with an offline app shell
+
 ### Next up
 
-- Opening trainer: full variation trees (not just main lines) and
-  spaced-repetition over an entire repertoire
-- Themed tactics (pins, forks, mate-in-2) and a faster "puzzle storm" variant
+- Spaced-repetition over an entire repertoire (whole variation trees, not just
+  drilled lines)
+- A faster "puzzle storm" variant and rating-based puzzle ladders
 - Strategy lessons (pawn structures, plans) and annotated master games
-- Installable PWA / offline mode; mobile-first board gestures
+- Mobile-first board gestures and richer offline play
 
 ## Credits
 
