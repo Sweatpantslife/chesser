@@ -4,6 +4,7 @@ import { Board } from '../board/Board';
 import { ReviewStats } from '../components/ReviewStats';
 import { MATE_PATTERNS, MATE_DRILLS, MATE_DRILL_IDS, type MatePattern } from '../trainers/mates';
 import { useProgress } from '../store/progress';
+import { recordReview } from '../lib/gamify';
 import { dueLabel } from '../lib/srs';
 import { playMoveSound } from '../lib/sound';
 import type { Color } from '../store/game';
@@ -99,6 +100,7 @@ export function MatesPage() {
       setSolvedCount((n) => n + 1);
       setFeedback({ kind: 'ok', text: `✓ ${mv.san} — ${pattern.name}!` });
       grade('mates', drill.id, attempt.current.failed ? 'hard' : 'good');
+      recordReview(true);
       demoRest(1);
     } else {
       attempt.current.failed = true;
@@ -124,6 +126,7 @@ export function MatesPage() {
     setPhase('solved');
     setFeedback({ kind: 'info', text: `The key move is ${mv.san}.` });
     grade('mates', drill.id, 'again');
+    recordReview(false);
     sync();
     demoRest(1);
   };

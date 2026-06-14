@@ -33,7 +33,7 @@ function PieceSwatch({ set }: { set: PieceSet }) {
 }
 
 export function SettingsDialog({ onClose }: { onClose: () => void }) {
-  const { sound, premove, arrows, boardTheme, pieceSet, setSound, setPremove, setArrows, setBoardTheme, setPieceSet } =
+  const { sound, premove, arrows, boardTheme, pieceSet, ratingMeter, setSound, setPremove, setArrows, setBoardTheme, setPieceSet, setRatingMeter } =
     useSettings();
 
   // Load every set's CSS so the previews below render.
@@ -49,6 +49,27 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
         <Toggle on={sound} onChange={setSound} label="Move sounds" />
         <Toggle on={premove} onChange={setPremove} label="Premoves (vs bot)" />
         <Toggle on={arrows} onChange={setArrows} label="Engine arrows (analysis)" />
+
+        <div className="mt-3">
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Headline rating</div>
+          <div className="flex gap-1">
+            {([
+              { id: 'elo', label: 'Elo' },
+              { id: 'glicko', label: 'Glicko-2' },
+            ] as const).map((m) => (
+              <button
+                key={m.id}
+                onClick={() => setRatingMeter(m.id)}
+                className={`flex-1 rounded px-2 py-1 text-xs ${
+                  ratingMeter === m.id ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                }`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+          <p className="mt-1 text-[11px] text-neutral-500">Glicko-2 always drives difficulty &amp; pairings behind the scenes.</p>
+        </div>
 
         <div className="mt-3">
           <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Board theme</div>

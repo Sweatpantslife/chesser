@@ -4,6 +4,7 @@ import { Board } from '../board/Board';
 import { ReviewStats } from '../components/ReviewStats';
 import { BLUNDER_POSITIONS, BLUNDER_IDS } from '../trainers/blunders';
 import { useProgress } from '../store/progress';
+import { recordReview } from '../lib/gamify';
 import { playMoveSound } from '../lib/sound';
 import type { Color } from '../store/game';
 
@@ -88,6 +89,7 @@ export function AntiBlunderPage() {
     setPhase('solved');
     setSolvedCount((n) => n + 1);
     grade('blunders', pos.id, foundBest && !attempt.current.tempted ? 'good' : 'hard');
+    recordReview(true);
     setFeedback({
       kind: 'ok',
       text: foundBest ? `✓ ${bestSan} — the right call. ${pos.explanation}` : `That dodges the trap. The model move was ${bestSan}. ${pos.explanation}`,
@@ -128,6 +130,7 @@ export function AntiBlunderPage() {
   const playAnyway = () => {
     setPhase('busted');
     grade('blunders', pos.id, 'again');
+    recordReview(false);
     setFeedback({ kind: 'bad', text: `${temptingSan}?? ${pos.explanation}` });
     // Replay the full refutation from the original position.
     game.current = new Chess(pos.fen);
@@ -147,6 +150,7 @@ export function AntiBlunderPage() {
     game.current.move({ from: pos.best[0]!.slice(0, 2), to: pos.best[0]!.slice(2, 4), promotion: pos.best[0]![4] });
     setPhase('solved');
     grade('blunders', pos.id, 'again');
+    recordReview(false);
     setFeedback({ kind: 'info', text: `The safe move is ${bestSan}. ${pos.explanation}` });
     sync();
   };

@@ -13,9 +13,11 @@ import { OpeningName } from '../components/OpeningName';
 import { ReviewPanel } from '../components/ReviewPanel';
 import { PromotionDialog } from '../components/PromotionDialog';
 import { engine } from '../lib/engine';
-import { useGame, type Color } from '../store/game';
+import { useGame, mainlineOf, type Color } from '../store/game';
 import { useSettings } from '../store/settings';
 import { useLadder } from '../store/ladder';
+import { recordGameResult } from '../lib/gamify';
+import type { GameOutcome } from '../store/ratings';
 
 // Brushes for the top engine lines, best → worst.
 const ARROW_BRUSHES = ['green', 'blue', 'yellow', 'red'];
@@ -111,15 +113,22 @@ export function PlayPage() {
     return () => engine.stopAnalysis();
   }, []);
 
-  // Advance the ladder when you win a game against a roster opponent.
+  // Score finished vs-bot games (ratings + XP + achievements) and advance the
+  // ladder on a win against a roster opponent. Exactly once per game.
   useEffect(() => {
     let handled = -1;
     return useGame.subscribe((s) => {
       if (!s.isGameOver || handled === s.gameNo) return;
+      if (s.mode !== 'play' || !s.playerColor || !s.botColor || s.winner === null) return;
+      if (mainlineOf(s.tree, s.rootId).length < 1) return; // ignore empty games
       handled = s.gameNo;
-      if (s.opponent?.id && s.winner !== null && s.winner !== 'draw' && s.winner === s.playerColor) {
-        useLadder.getState().markDefeated(s.opponent.id);
-      }
+
+      const outcome: GameOutcome = s.winner === 'draw' ? 'draw' : s.winner === s.playerColor ? 'win' : 'loss';
+      const opponentRating =
+        s.opponent?.rating ?? (s.botConfig.style === 'human' ? s.botConfig.maiaRating : s.botConfig.elo) ?? 1500;
+      recordGameResult({ opponentRating, outcome, timed: s.clock !== null });
+
+      if (s.opponent?.id && outcome === 'win') useLadder.getState().markDefeated(s.opponent.id);
     });
   }, []);
 

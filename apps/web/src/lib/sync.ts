@@ -4,7 +4,9 @@ import { useRepertoire } from '../store/repertoire';
 import { useMistakes } from '../store/mistakes';
 import { useCoordinate } from '../store/coordinate';
 import { useCustomPuzzles } from '../store/customPuzzles';
-import { usePuzzleRating } from '../store/puzzleRating';
+import { useRatings } from '../store/ratings';
+import { useGamify } from '../store/gamify';
+import { useAchievements } from '../store/achievements';
 import { useLadder } from '../store/ladder';
 
 export type SyncState = 'off' | 'syncing' | 'synced' | 'error';
@@ -12,7 +14,7 @@ export type SyncState = 'off' | 'syncing' | 'synced' | 'error';
 let pushTimer: ReturnType<typeof setTimeout> | null = null;
 const unsubs: Array<() => void> = [];
 
-/** The full synced snapshot: SRS progress + repertoires + puzzles + rating. */
+/** The full synced snapshot: SRS progress + repertoires + puzzles + ratings + gamification. */
 function gather() {
   return {
     progress: useProgress.getState().exportState(),
@@ -20,8 +22,13 @@ function gather() {
     mistakes: useMistakes.getState().exportMistakes(),
     coordinate: useCoordinate.getState().exportState(),
     customPuzzles: useCustomPuzzles.getState().exportPuzzles(),
-    puzzleRating: usePuzzleRating.getState().exportState(),
+    ratings: useRatings.getState().exportState(),
+    gamify: useGamify.getState().exportState(),
+    achievements: useAchievements.getState().exportState(),
     ladder: useLadder.getState().exportState(),
+    // Back-compat: keep emitting the old single puzzle rating so an older client
+    // syncing the same account still gets a usable value.
+    puzzleRating: useRatings.getState().legacyPuzzleExport(),
   };
 }
 
@@ -34,6 +41,7 @@ function apply(remote: unknown): void {
     'mistakes' in r ||
     'coordinate' in r ||
     'customPuzzles' in r ||
+    'ratings' in r ||
     'puzzleRating' in r ||
     'ladder' in r
   ) {
@@ -42,7 +50,10 @@ function apply(remote: unknown): void {
     useMistakes.getState().importMerge(r.mistakes);
     useCoordinate.getState().importMerge(r.coordinate);
     useCustomPuzzles.getState().importMerge(r.customPuzzles);
-    usePuzzleRating.getState().importMerge(r.puzzleRating);
+    useRatings.getState().importMerge(r.ratings);
+    if (!('ratings' in r) && 'puzzleRating' in r) useRatings.getState().importLegacyPuzzle(r.puzzleRating);
+    useGamify.getState().importMerge(r.gamify);
+    useAchievements.getState().importMerge(r.achievements);
     useLadder.getState().importMerge(r.ladder);
   } else {
     useProgress.getState().importMerge(r); // legacy: bare progress blob
@@ -76,7 +87,9 @@ export function startSync(token: string, onState: (s: SyncState) => void): void 
   unsubs.push(useMistakes.subscribe(schedule));
   unsubs.push(useCoordinate.subscribe(schedule));
   unsubs.push(useCustomPuzzles.subscribe(schedule));
-  unsubs.push(usePuzzleRating.subscribe(schedule));
+  unsubs.push(useRatings.subscribe(schedule));
+  unsubs.push(useGamify.subscribe(schedule));
+  unsubs.push(useAchievements.subscribe(schedule));
   unsubs.push(useLadder.subscribe(schedule));
 }
 

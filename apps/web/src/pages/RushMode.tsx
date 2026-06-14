@@ -4,6 +4,7 @@ import { Board } from '../board/Board';
 import { PUZZLES, type Puzzle } from '../trainers/tactics';
 import { useRepertoire } from '../store/repertoire';
 import { playMoveSound } from '../lib/sound';
+import { recordRush } from '../lib/gamify';
 import type { Color } from '../store/game';
 
 const RUSH_SECONDS = 300;
@@ -65,6 +66,7 @@ export function RushMode() {
   const finish = (finalScore: number) => {
     setPhase('over');
     setHighScore(finalScore);
+    recordRush(finalScore);
   };
 
   // countdown

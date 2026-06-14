@@ -10,10 +10,14 @@ import { TacticsPage } from './pages/TacticsPage';
 import { EndgamePage } from './pages/EndgamePage';
 import { CoordinatePage } from './pages/CoordinatePage';
 import { StatsPage } from './pages/StatsPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { TrainPage, type TrainTab } from './pages/TrainPage';
+import { LevelBadge } from './components/LevelBadge';
+import { GamifyToasts } from './components/GamifyToasts';
+import { initGamify } from './lib/gamify';
 import type { DeckTarget } from './lib/decks';
 
-type View = 'play' | 'openings' | 'tactics' | 'endgame' | 'train' | 'coordinates' | 'stats';
+type View = 'play' | 'openings' | 'tactics' | 'endgame' | 'train' | 'coordinates' | 'stats' | 'profile';
 
 const TABS: { id: View; label: string; hint: string }[] = [
   { id: 'play', label: 'Play', hint: 'vs bots & analysis' },
@@ -23,6 +27,7 @@ const TABS: { id: View; label: string; hint: string }[] = [
   { id: 'train', label: 'Train', hint: 'vision · mates · anti-blunder' },
   { id: 'coordinates', label: 'Coords', hint: 'board-vision trainer' },
   { id: 'stats', label: 'Stats', hint: 'progress dashboard' },
+  { id: 'profile', label: 'Profile', hint: 'level · ratings · badges' },
 ];
 
 function Badge({ ok, children }: { ok: boolean; children: ReactNode }) {
@@ -72,6 +77,7 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
             <span className={`h-2 w-2 rounded-full ${connected ? 'bg-emerald-400' : 'bg-rose-400'}`} />
             {connected ? 'online' : 'connecting…'}
           </span>
+          <LevelBadge onClick={() => setView('profile')} />
           <InstallButton />
           <button
             onClick={() => setSettingsOpen(true)}
@@ -103,6 +109,7 @@ export default function App() {
   useEffect(() => {
     init();
     authInit();
+    initGamify();
   }, [init, authInit]);
 
   return (
@@ -116,7 +123,9 @@ export default function App() {
         {view === 'train' && <TrainPage tab={trainTab} setTab={setTrainTab} />}
         {view === 'coordinates' && <CoordinatePage />}
         {view === 'stats' && <StatsPage goto={goto} />}
+        {view === 'profile' && <ProfilePage goPlay={() => setView('play')} />}
       </main>
+      <GamifyToasts />
     </div>
   );
 }

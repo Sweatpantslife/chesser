@@ -5,7 +5,10 @@ import { ReviewStats } from '../components/ReviewStats';
 import { PUZZLES, type Difficulty, type Puzzle } from '../trainers/tactics';
 import { useProgress } from '../store/progress';
 import { useCustomPuzzles } from '../store/customPuzzles';
-import { usePuzzleRating, puzzleRatingOf } from '../store/puzzleRating';
+import { useRatings, ratingValue } from '../store/ratings';
+import { useSettings } from '../store/settings';
+import { puzzleRatingOf } from '../lib/puzzleRating';
+import { recordPuzzle } from '../lib/gamify';
 import { classifyMotifs, MOTIF_LABELS, MOTIF_ORDER, type Motif } from '../lib/motifs';
 import { playMoveSound } from '../lib/sound';
 import { RushMode } from './RushMode';
@@ -85,8 +88,12 @@ function PracticeTactics() {
   const cards = useProgress((s) => s.cards);
   const mine = useCustomPuzzles((s) => s.puzzles);
   const removePuzzle = useCustomPuzzles((s) => s.remove);
-  const rating = usePuzzleRating((s) => s.rating);
-  const record = usePuzzleRating((s) => s.record);
+  const meter = useSettings((s) => s.ratingMeter);
+  const puzzlesCat = useRatings((s) => s.categories.puzzles);
+  // What the player sees follows their chosen meter; difficulty selection always
+  // uses the confidence-aware Glicko-2 rating.
+  const rating = ratingValue(puzzlesCat, meter);
+  const decisionRating = Math.round(puzzlesCat.glicko.rating);
 
   // Source + difficulty + theme filters drive the queue (natural order).
   const sourced: AnyPuzzle[] = useMemo(
@@ -154,8 +161,8 @@ function PracticeTactics() {
     if (!puzzle || attempt.current.rated) return;
     attempt.current.rated = true;
     sessionSeen.current.add(puzzle.id);
-    const res = record(puzzleRatingOf(puzzle), success);
-    setDelta(res.delta);
+    const res = recordPuzzle(puzzleRatingOf(puzzle), success);
+    setDelta(meter === 'elo' ? res.eloDelta : res.glickoDelta);
   };
 
   const demoRest = (fromStep: number) => {
@@ -226,7 +233,7 @@ function PracticeTactics() {
         let bestDist = Infinity;
         for (let i = 0; i < queue.length; i++) {
           if (skipSeen && sessionSeen.current.has(queue[i]!.id)) continue;
-          const d = Math.abs(puzzleRatingOf(queue[i]!) - rating);
+          const d = Math.abs(puzzleRatingOf(queue[i]!) - decisionRating);
           if (d < bestDist) {
             bestDist = d;
             best = i;
@@ -269,6 +276,7 @@ function PracticeTactics() {
           setSource={setSource}
           sources={SOURCES}
           rating={rating}
+          meter={meter}
           diffFilter={diffFilter}
           setDiffFilter={setDiffFilter}
           themeFilter={themeFilter}
@@ -306,6 +314,7 @@ function PracticeTactics() {
         setSource={setSource}
         sources={SOURCES}
         rating={rating}
+        meter={meter}
         diffFilter={diffFilter}
         setDiffFilter={setDiffFilter}
         themeFilter={themeFilter}
@@ -413,6 +422,7 @@ function Sidebar(props: {
   setSource: (s: Source) => void;
   sources: { id: Source; label: string }[];
   rating: number;
+  meter: 'elo' | 'glicko';
   diffFilter: DiffFilter;
   setDiffFilter: (d: DiffFilter) => void;
   themeFilter: 'all' | Motif;
@@ -430,7 +440,9 @@ function Sidebar(props: {
         <p className="mb-2 text-xs text-neutral-400">Find the one winning move — every puzzle is engine-verified.</p>
 
         <div className="mb-3 flex items-center justify-between rounded bg-panelmute px-2.5 py-1.5">
-          <span className="text-xs uppercase tracking-wide text-neutral-500">Your rating</span>
+          <span className="text-xs uppercase tracking-wide text-neutral-500">
+            Your rating <span className="text-neutral-600">· {props.meter === 'glicko' ? 'Glicko' : 'Elo'}</span>
+          </span>
           <span className="font-mono text-lg font-bold text-emerald-300">{props.rating}</span>
         </div>
 
