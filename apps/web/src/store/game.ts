@@ -121,6 +121,7 @@ export interface GameStore {
   setTimeControl(tc: TimeControl | null): void;
   exploreMove(uci: string): void;
   loadPgn(pgn: string): boolean;
+  loadFen(fen: string): boolean;
   reviewGame(): Promise<void>;
 
   // internals
@@ -376,6 +377,39 @@ export const useGame = create<GameStore>((set, get) => ({
       history: verbose.map((m) => ({ san: m.san, uci: m.from + m.to + (m.promotion ?? ''), fen: m.after })),
       viewPly: 0,
       startFen: verbose[0]!.before,
+      thinking: false,
+      pendingPromotion: null,
+      flagged: null,
+      clock: null,
+      analysisLines: [],
+      analysisDepth: 0,
+      evalScore: null,
+      annotations: {},
+      evalGraph: [],
+      reviewStats: null,
+    });
+    get()._sync();
+    get()._refreshAnalysis();
+    return true;
+  },
+
+  loadFen(fen) {
+    let c: Chess;
+    try {
+      c = new Chess(fen);
+    } catch {
+      return false;
+    }
+    game = c;
+    gameId++;
+    set({
+      mode: 'analysis',
+      playerColor: null,
+      botColor: null,
+      orientation: c.turn() === 'b' ? 'black' : 'white',
+      history: [],
+      viewPly: 0,
+      startFen: c.fen(),
       thinking: false,
       pendingPromotion: null,
       flagged: null,

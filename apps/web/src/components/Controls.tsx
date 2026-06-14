@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useGame } from '../store/game';
+import { useAuth } from '../store/auth';
 import { toPgn } from '../lib/pgn';
-import { PgnDialog } from './PgnDialog';
+import { apiSaveGame } from '../lib/api';
+import { LibraryDialog } from './LibraryDialog';
 import { SaveLineDialog } from './SaveLineDialog';
 
 function botLabel(style: string, elo?: number, maia?: number): string {
@@ -12,24 +14,44 @@ function botLabel(style: string, elo?: number, maia?: number): string {
 
 export function Controls() {
   const { history, viewPly, mode, playerColor, botConfig, stepView, goToPly, flip, takeback, newGame } = useGame();
+  const token = useAuth((s) => s.token);
   const [copied, setCopied] = useState(false);
-  const [pgnOpen, setPgnOpen] = useState(false);
+  const [libOpen, setLibOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
+  const [savedGame, setSavedGame] = useState(false);
 
-  const copyPgn = async () => {
+  const names = () => {
     const opp = botLabel(botConfig.style, botConfig.elo, botConfig.maiaRating);
     const white = mode === 'play' ? (playerColor === 'white' ? 'You' : opp) : 'White';
     const black = mode === 'play' ? (playerColor === 'black' ? 'You' : opp) : 'Black';
-    const pgn = toPgn(
-      history.map((h) => h.san),
-      { white, black, result: '*' },
-    );
+    return { white, black };
+  };
+
+  const copyPgn = async () => {
+    const { white, black } = names();
+    const pgn = toPgn(history.map((h) => h.san), { white, black, result: '*' });
     try {
       await navigator.clipboard.writeText(pgn);
       setCopied(true);
       setTimeout(() => setCopied(false), 1200);
     } catch {
       /* clipboard blocked */
+    }
+  };
+
+  const saveGame = async () => {
+    if (!token) {
+      setLibOpen(true);
+      return;
+    }
+    const { white, black } = names();
+    const pgn = toPgn(history.map((h) => h.san), { white, black, result: '*' });
+    try {
+      await apiSaveGame(token, { pgn, white, black, result: '*', source: mode });
+      setSavedGame(true);
+      setTimeout(() => setSavedGame(false), 1400);
+    } catch {
+      /* ignore */
     }
   };
 
@@ -52,7 +74,7 @@ export function Controls() {
         ⏭
       </button>
       <div className="mx-1 h-5 w-px bg-neutral-700" />
-      <button className={btn} onClick={flip} title="Flip board">
+      <button className={btn} onClick={flip} title="Flip board (f)">
         ⇅ Flip
       </button>
       <button className={btn} onClick={takeback} disabled={history.length === 0} title="Take back">
@@ -62,15 +84,18 @@ export function Controls() {
         Analyse
       </button>
       <button className={btn} onClick={copyPgn} disabled={history.length === 0} title="Copy PGN">
-        {copied ? '✓ Copied' : 'PGN'}
+        {copied ? '✓' : 'PGN'}
       </button>
-      <button className={btn} onClick={() => setPgnOpen(true)} title="Import a PGN to review">
-        Import
+      <button className={btn} onClick={() => setLibOpen(true)} title="Open / import / FEN">
+        Library
+      </button>
+      <button className={btn} onClick={saveGame} disabled={history.length === 0} title="Save game to your library">
+        {savedGame ? '✓ Saved' : 'Save'}
       </button>
       <button className={btn} onClick={() => setSaveOpen(true)} disabled={mode !== 'analysis' || viewPly === 0} title="Save this line to a repertoire">
-        ★ Save line
+        ★ Line
       </button>
-      {pgnOpen && <PgnDialog onClose={() => setPgnOpen(false)} />}
+      {libOpen && <LibraryDialog onClose={() => setLibOpen(false)} />}
       {saveOpen && <SaveLineDialog onClose={() => setSaveOpen(false)} />}
     </div>
   );

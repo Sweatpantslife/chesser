@@ -7,6 +7,7 @@ import { HOST, PORT } from './config.js';
 import { probeTablebase } from './tablebase.js';
 import { shutdownLocalTablebase } from './tablebase-local.js';
 import { probeExplorer } from './explorer.js';
+import { importGames } from './import.js';
 import { registerAccountRoutes } from './accounts/routes.js';
 import type { ExplorerDb } from '@chesser/shared';
 
@@ -24,6 +25,12 @@ app.get('/api/explorer', async (req) => {
   const { fen, db } = req.query as { fen?: string; db?: string };
   if (!fen) return { available: false, reason: 'no-fen' };
   return probeExplorer(fen, (db === 'lichess' ? 'lichess' : 'masters') as ExplorerDb);
+});
+app.get('/api/import', async (req) => {
+  const { site, user, max } = req.query as { site?: string; user?: string; max?: string };
+  if (!user) return { available: false, reason: 'no-user' };
+  const n = Math.min(Math.max(Number(max) || 15, 1), 30);
+  return importGames(site === 'chesscom' ? 'chesscom' : 'lichess', user, n);
 });
 registerAccountRoutes(app);
 
