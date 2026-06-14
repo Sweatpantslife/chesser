@@ -2,32 +2,53 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
 import { Board } from '../board/Board';
 import { ReviewStats } from '../components/ReviewStats';
-import { OPENING_LINES, type OpeningLine } from '../trainers/openings';
 import { useProgress } from '../store/progress';
+import { useRepertoire, BUILTIN_REPERTOIRE, type RepLine } from '../store/repertoire';
 import { dueLabel } from '../lib/srs';
 import type { Color } from '../store/game';
 
 type Phase = 'idle' | 'playing' | 'done';
 
-const ALL_IDS = OPENING_LINES.map((l) => l.id);
-
 export function OpeningsPage() {
   const game = useRef(new Chess());
   const run = useRef({ errors: 0, reveals: 0, graded: false });
-  const [line, setLine] = useState<OpeningLine>(OPENING_LINES[0]!);
+
+  const user = useRepertoire((s) => s.user);
+  const createRepertoire = useRepertoire((s) => s.createRepertoire);
+  const renameRepertoire = useRepertoire((s) => s.renameRepertoire);
+  const deleteRepertoire = useRepertoire((s) => s.deleteRepertoire);
+  const deleteLine = useRepertoire((s) => s.deleteLine);
+  const reps = useMemo(() => [BUILTIN_REPERTOIRE, ...user], [user]);
+
+  const [repId, setRepId] = useState('builtin');
+  const rep = reps.find((r) => r.id === repId) ?? BUILTIN_REPERTOIRE;
+  const lines = rep.lines;
+  const lineIds = useMemo(() => lines.map((l) => l.id), [lines]);
+
+  const [line, setLine] = useState<RepLine | null>(lines[0] ?? null);
   const [phase, setPhase] = useState<Phase>('idle');
   const [ply, setPly] = useState(0);
   const [fen, setFen] = useState(game.current.fen());
   const [lastMove, setLastMove] = useState<[string, string] | undefined>();
   const [feedback, setFeedback] = useState<{ kind: 'ok' | 'bad' | 'info'; text: string } | null>(null);
   const [stats, setStats] = useState({ correct: 0, wrong: 0 });
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState('');
 
   const grade = useProgress((s) => s.grade);
   const cards = useProgress((s) => s.cards);
   const dueIds = useProgress((s) => s.dueIds);
 
-  const side = line.side;
-  const traineeToMove = phase === 'playing' && game.current.turn() === (side === 'white' ? 'w' : 'b');
+  const side = line?.side ?? 'white';
+  const traineeToMove = phase === 'playing' && !!line && game.current.turn() === (side === 'white' ? 'w' : 'b');
+
+  // Reset when switching repertoire.
+  useEffect(() => {
+    setLine(lines[0] ?? null);
+    setPhase('idle');
+    setFeedback(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [repId]);
 
   const sync = () => {
     const hist = game.current.history({ verbose: true });
@@ -36,7 +57,7 @@ export function OpeningsPage() {
     setLastMove(last ? [last.from, last.to] : undefined);
   };
 
-  const start = (l: OpeningLine) => {
+  const start = (l: RepLine) => {
     game.current = new Chess();
     run.current = { errors: 0, reveals: 0, graded: false };
     setLine(l);
@@ -47,16 +68,15 @@ export function OpeningsPage() {
   };
 
   const reviewNext = () => {
-    const due = dueIds('openings', ALL_IDS);
-    const pool = due.length > 0 ? due : ALL_IDS.filter((id) => !cards[`openings:${id}`]?.last);
-    const pick = pool[Math.floor(Math.random() * pool.length)] ?? ALL_IDS[0]!;
-    const l = OPENING_LINES.find((x) => x.id === pick)!;
-    start(l);
+    const due = dueIds('openings', lineIds);
+    const pool = due.length > 0 ? due : lineIds.filter((id) => !cards[`openings:${id}`]?.last);
+    const pick = pool[Math.floor(Math.random() * pool.length)] ?? lineIds[0];
+    const l = lines.find((x) => x.id === pick);
+    if (l) start(l);
   };
 
-  // Auto-play the opponent's book moves; grade + finish at the end of the line.
   useEffect(() => {
-    if (phase !== 'playing') return;
+    if (phase !== 'playing' || !line) return;
     if (ply >= line.moves.length) {
       if (!run.current.graded) {
         run.current.graded = true;
@@ -90,7 +110,7 @@ export function OpeningsPage() {
   }, [fen, traineeToMove]);
 
   const onMove = (from: string, to: string) => {
-    if (!traineeToMove) return;
+    if (!traineeToMove || !line) return;
     const expected = new Chess(game.current.fen()).move(line.moves[ply]!);
     if (expected.from === from && expected.to === to) {
       game.current.move(line.moves[ply]!);
@@ -101,13 +121,13 @@ export function OpeningsPage() {
     } else {
       run.current.errors += 1;
       setStats((s) => ({ ...s, wrong: s.wrong + 1 }));
-      setFeedback({ kind: 'bad', text: 'Not the main line — try again, or reveal.' });
+      setFeedback({ kind: 'bad', text: 'Not the line — try again, or reveal.' });
       sync();
     }
   };
 
   const reveal = () => {
-    if (phase !== 'playing' || ply >= line.moves.length) return;
+    if (phase !== 'playing' || !line || ply >= line.moves.length) return;
     run.current.reveals += 1;
     const mv = game.current.move(line.moves[ply]!);
     setStats((s) => ({ ...s, wrong: s.wrong + 1 }));
@@ -119,58 +139,157 @@ export function OpeningsPage() {
   const moveNo = Math.floor(ply / 2) + 1;
   const orientation: Color = side;
   const playedSan = game.current.history();
+  const editable = !rep.builtin;
 
   return (
     <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)_300px]">
-      {/* line picker */}
+      {/* repertoire + lines */}
       <div className="order-2 space-y-3 lg:order-1">
         <div className="rounded-lg bg-panel p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-ink">Repertoire</h3>
+          <h3 className="mb-2 text-sm font-semibold text-ink">Repertoire</h3>
+          <select
+            value={repId}
+            onChange={(e) => setRepId(e.target.value)}
+            className="w-full rounded bg-neutral-800 px-2 py-1.5 text-sm text-ink outline-none"
+          >
+            {reps.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name} {r.builtin ? '' : `(${r.lines.length})`}
+              </option>
+            ))}
+          </select>
+
+          <div className="mt-2 flex items-center gap-2">
+            {creating ? (
+              <>
+                <input
+                  autoFocus
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="new repertoire"
+                  className="min-w-0 flex-1 rounded bg-neutral-800 px-2 py-1 text-xs text-ink outline-none"
+                />
+                <button
+                  onClick={() => {
+                    const id = createRepertoire(newName);
+                    setNewName('');
+                    setCreating(false);
+                    setRepId(id);
+                  }}
+                  className="rounded bg-emerald-600 px-2 py-1 text-xs text-white"
+                >
+                  Create
+                </button>
+              </>
+            ) : (
+              <>
+                <button onClick={() => setCreating(true)} className="rounded bg-neutral-700 px-2 py-1 text-xs text-neutral-200 hover:bg-neutral-600">
+                  + New
+                </button>
+                {editable && (
+                  <>
+                    <button
+                      onClick={() => {
+                        const n = window.prompt('Rename repertoire', rep.name);
+                        if (n) renameRepertoire(rep.id, n);
+                      }}
+                      className="rounded bg-neutral-700 px-2 py-1 text-xs text-neutral-200 hover:bg-neutral-600"
+                    >
+                      Rename
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`Delete "${rep.name}"?`)) {
+                          deleteRepertoire(rep.id);
+                          setRepId('builtin');
+                        }
+                      }}
+                      className="rounded bg-neutral-700 px-2 py-1 text-xs text-rose-300 hover:bg-neutral-600"
+                    >
+                      Delete
+                    </button>
+                  </>
+                )}
+              </>
+            )}
           </div>
-          <ReviewStats deck="openings" ids={ALL_IDS} />
+
+          <div className="mt-3">
+            <ReviewStats deck="openings" ids={lineIds} />
+          </div>
           <button
             onClick={reviewNext}
-            className="mt-2 w-full rounded bg-emerald-600 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500"
+            disabled={lineIds.length === 0}
+            className="mt-2 w-full rounded bg-emerald-600 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-40"
           >
             Review due lines
           </button>
         </div>
 
-        <div className="scroll-thin max-h-[60vh] overflow-y-auto rounded-lg bg-panel p-3">
-          {(['white', 'black'] as const).map((c) => (
-            <div key={c} className="mb-2">
-              <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">As {c}</div>
-              <div className="space-y-1">
-                {OPENING_LINES.filter((l) => l.side === c).map((l) => {
-                  const cardDue = dueLabel(cards[`openings:${l.id}`] ?? { last: 0, due: 0 } as any);
-                  return (
-                    <button
-                      key={l.id}
-                      onClick={() => start(l)}
-                      className={`flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-left text-xs ${
-                        line.id === l.id ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
-                      }`}
-                    >
-                      <span className="truncate">{l.name}</span>
-                      <span className={`shrink-0 text-[10px] ${cardDue === 'due' ? 'text-amber-300' : 'opacity-60'}`}>{cardDue}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+        <div className="scroll-thin max-h-[55vh] overflow-y-auto rounded-lg bg-panel p-3">
+          {lines.length === 0 ? (
+            <p className="text-xs text-neutral-500">
+              No lines yet. Build one on the <b className="text-neutral-300">Play</b> board, then “★ Save line”.
+            </p>
+          ) : (
+            (['white', 'black'] as const).map((c) => {
+              const group = lines.filter((l) => l.side === c);
+              if (group.length === 0) return null;
+              return (
+                <div key={c} className="mb-2">
+                  <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">As {c}</div>
+                  <div className="space-y-1">
+                    {group.map((l) => {
+                      const cd = dueLabel((cards[`openings:${l.id}`] ?? { last: 0, due: 0 }) as any);
+                      return (
+                        <div key={l.id} className="flex items-center gap-1">
+                          <button
+                            onClick={() => start(l)}
+                            className={`flex min-w-0 flex-1 items-center justify-between gap-2 rounded px-2 py-1.5 text-left text-xs ${
+                              line?.id === l.id ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
+                            }`}
+                          >
+                            <span className="truncate">{l.name}</span>
+                            <span className={`shrink-0 text-[10px] ${cd === 'due' ? 'text-amber-300' : 'opacity-60'}`}>{cd}</span>
+                          </button>
+                          {editable && (
+                            <button
+                              onClick={() => {
+                                deleteLine(rep.id, l.id);
+                                if (line?.id === l.id) {
+                                  setLine(null);
+                                  setPhase('idle');
+                                }
+                              }}
+                              title="Delete line"
+                              className="shrink-0 rounded px-1.5 py-1 text-xs text-neutral-500 hover:bg-neutral-700 hover:text-rose-300"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 
       {/* board */}
       <div className="order-1 space-y-3 lg:order-2">
         <div className="flex h-7 items-center gap-3 text-sm">
-          <span className="text-neutral-300">{line.name}</span>
-          <span className="text-neutral-600">·</span>
-          <span className="text-neutral-400">
-            you play <b className="text-neutral-200">{side}</b>
-          </span>
+          <span className="text-neutral-300">{line?.name ?? 'Pick a line'}</span>
+          {line && (
+            <>
+              <span className="text-neutral-600">·</span>
+              <span className="text-neutral-400">
+                you play <b className="text-neutral-200">{side}</b>
+              </span>
+            </>
+          )}
           {traineeToMove && <span className="animate-pulse text-emerald-400">· your move</span>}
         </div>
         <div className="mx-auto w-full max-w-[540px]">
@@ -186,9 +305,9 @@ export function OpeningsPage() {
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {phase === 'idle' && (
+          {phase !== 'playing' && line && (
             <button onClick={() => start(line)} className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500">
-              Start drill
+              {phase === 'done' ? 'Repeat line' : 'Start drill'}
             </button>
           )}
           {phase === 'playing' && (
@@ -196,14 +315,6 @@ export function OpeningsPage() {
               Reveal move
             </button>
           )}
-          {phase === 'done' && (
-            <button onClick={reviewNext} className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500">
-              Next due line
-            </button>
-          )}
-          <button onClick={() => start(line)} className="rounded bg-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600">
-            Restart
-          </button>
         </div>
       </div>
 
@@ -213,8 +324,7 @@ export function OpeningsPage() {
           <div className="mb-2 flex items-center justify-between text-sm">
             <span className="font-semibold text-ink">Move {moveNo}</span>
             <span className="text-xs text-neutral-400">
-              <span className="text-emerald-400">{stats.correct}✓</span> ·{' '}
-              <span className="text-rose-400">{stats.wrong}✗</span>
+              <span className="text-emerald-400">{stats.correct}✓</span> · <span className="text-rose-400">{stats.wrong}✗</span>
             </span>
           </div>
           {feedback && (
@@ -226,7 +336,7 @@ export function OpeningsPage() {
               {feedback.text}
             </p>
           )}
-          <p className="text-xs leading-snug text-neutral-400">{line.idea}</p>
+          {line?.idea && <p className="text-xs leading-snug text-neutral-400">{line.idea}</p>}
         </div>
         <div className="rounded-lg bg-panelmute p-2">
           <div className="mb-1 px-1 text-xs uppercase tracking-wide text-neutral-500">Moves</div>

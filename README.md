@@ -22,7 +22,9 @@ endgames.
 | **Analysis** | Live multi-PV evaluation, eval bar, principal variations in SAN |
 | **Trainers** | Opening repertoire drills · engine-verified tactics puzzles · theoretical endgames played out vs Stockfish |
 | **Spaced repetition** | Openings and tactics are SM-2 scheduled — “due” counts, streaks, review sessions |
-| **Accounts & sync** | Optional username/password accounts sync your progress across devices |
+| **Custom repertoires** | Build your own opening libraries — save any line from the board, then drill them |
+| **Puzzle rush** | Solve against a 5-minute clock; 3 strikes and you’re out, with a synced high score |
+| **Accounts & sync** | Optional username/password accounts sync progress *and repertoires* across devices |
 | **Opening explorer** | Master / Lichess game stats for the current position (via a configurable proxy) |
 | **PGN review** | Import any PGN and step through it on the analysis board with the engine |
 | **Tablebase** | Optional Syzygy lookups (via a configurable proxy) for perfect endgame defence and move feedback |
@@ -32,8 +34,12 @@ endgames.
 ## Trainers
 
 - **Openings** — drill a curated repertoire for White and Black (Italian, Ruy
-  Lopez, Najdorf, King's Indian, …). The app plays the book replies; you recall
-  your moves, with reveal and accuracy tracking.
+  Lopez, Najdorf, King's Indian, …) *or build your own*: play a line out on the
+  board and **★ Save line** into a personal repertoire, then drill it with the
+  same spaced-repetition scheduling. Custom repertoires sync with your account.
+- **Middlegame** — practice mode (engine-verified puzzles with SRS) plus a
+  **Puzzle Rush**: a 5-minute, 3-strike sprint with ramping difficulty and a
+  saved best score.
 - **Middlegame (tactics)** — find the one winning move. Puzzles are
   *generated and verified by Stockfish* (`scripts/gen-tactics.mjs` plays
   imperfect engine games, then keeps only positions with a single decisive
@@ -154,11 +160,13 @@ SKIP_LC0=1 pnpm setup:engines
   tablebase, and chess clocks
 - [x] **Phase 6** — Accounts + cross-device sync, opening explorer, PGN import &
   review, and a Lichess puzzle-DB importer
+- [x] **Phase 7** — Personal opening repertoires (save lines from the board),
+  Puzzle Rush mode, and repertoire sync
 
 ### Next up
 
-- Opening explorer → save lines straight into your repertoire deck
-- Tournament/puzzle-rush modes; richer game-review annotations
+- Save an explorer move directly into a repertoire line
+- Richer game-review annotations (blunder/inaccuracy tags); opening-name lookup
 
 ## Credits
 

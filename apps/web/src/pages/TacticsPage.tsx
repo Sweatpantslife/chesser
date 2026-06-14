@@ -4,6 +4,7 @@ import { Board } from '../board/Board';
 import { ReviewStats } from '../components/ReviewStats';
 import { PUZZLES, type Difficulty } from '../trainers/tactics';
 import { useProgress } from '../store/progress';
+import { RushMode } from './RushMode';
 import type { Color } from '../store/game';
 
 type Phase = 'solving' | 'solved' | 'failed';
@@ -18,6 +19,28 @@ const DIFF_COLOR: Record<Difficulty, string> = {
 };
 
 export function TacticsPage() {
+  const [mode, setMode] = useState<'practice' | 'rush'>('practice');
+  return (
+    <div className="space-y-4">
+      <div className="mx-auto flex w-full max-w-[1200px] gap-1">
+        {(['practice', 'rush'] as const).map((m) => (
+          <button
+            key={m}
+            onClick={() => setMode(m)}
+            className={`rounded px-3 py-1.5 text-sm capitalize ${
+              mode === m ? 'bg-emerald-600 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+            }`}
+          >
+            {m === 'rush' ? 'Puzzle rush' : 'Practice'}
+          </button>
+        ))}
+      </div>
+      {mode === 'practice' ? <PracticeTactics /> : <RushMode />}
+    </div>
+  );
+}
+
+function PracticeTactics() {
   const game = useRef(new Chess());
   const attempt = useRef({ failed: false, revealed: false });
   const [filter, setFilter] = useState<Filter>('all');

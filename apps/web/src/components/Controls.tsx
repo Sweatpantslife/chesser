@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useGame } from '../store/game';
 import { toPgn } from '../lib/pgn';
 import { PgnDialog } from './PgnDialog';
+import { SaveLineDialog } from './SaveLineDialog';
 
 function botLabel(style: string, elo?: number, maia?: number): string {
   if (style === 'human') return `Maia ${maia ?? ''}`.trim();
@@ -13,6 +14,7 @@ export function Controls() {
   const { history, viewPly, mode, playerColor, botConfig, stepView, goToPly, flip, takeback, newGame } = useGame();
   const [copied, setCopied] = useState(false);
   const [pgnOpen, setPgnOpen] = useState(false);
+  const [saveOpen, setSaveOpen] = useState(false);
 
   const copyPgn = async () => {
     const opp = botLabel(botConfig.style, botConfig.elo, botConfig.maiaRating);
@@ -65,7 +67,11 @@ export function Controls() {
       <button className={btn} onClick={() => setPgnOpen(true)} title="Import a PGN to review">
         Import
       </button>
+      <button className={btn} onClick={() => setSaveOpen(true)} disabled={mode !== 'analysis' || viewPly === 0} title="Save this line to a repertoire">
+        ★ Save line
+      </button>
       {pgnOpen && <PgnDialog onClose={() => setPgnOpen(false)} />}
+      {saveOpen && <SaveLineDialog onClose={() => setSaveOpen(false)} />}
     </div>
   );
 }
