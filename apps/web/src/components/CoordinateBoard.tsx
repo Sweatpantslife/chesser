@@ -28,19 +28,24 @@ function initialPieces(): PieceMap {
   return map;
 }
 
-/** Turn a FEN's piece-placement field into a square→glyph map for display. */
+/** Turn a FEN's piece-placement field into a square→glyph map for display.
+ *  Tolerates malformed/empty input — unknown pieces and out-of-range files are
+ *  skipped rather than throwing. */
 export function piecesFromFen(fen: string): PieceMap {
   const map: PieceMap = {};
-  const rows = fen.split(' ')[0]!.split('/');
-  for (let r = 0; r < 8; r++) {
+  const placement = fen.split(' ')[0];
+  if (!placement) return map;
+  const rows = placement.split('/');
+  for (let r = 0; r < 8 && r < rows.length; r++) {
+    const row = rows[r]!;
     let file = 0;
-    for (const ch of rows[r]!) {
+    for (const ch of row) {
+      if (file >= 8) break;
       if (/\d/.test(ch)) {
         file += Number(ch);
       } else {
-        const square = `${FILES[file]}${8 - r}`;
-        const white = ch === ch.toUpperCase();
-        map[square] = { glyph: GLYPH[ch.toLowerCase()]!, white };
+        const glyph = GLYPH[ch.toLowerCase()];
+        if (glyph) map[`${FILES[file]}${8 - r}`] = { glyph, white: ch === ch.toUpperCase() };
         file += 1;
       }
     }

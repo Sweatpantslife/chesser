@@ -24,6 +24,7 @@ export function AntiBlunderPage() {
   const game = useRef(new Chess());
   const attempt = useRef({ tempted: false });
   const pending = useRef<{ from: string; to: string } | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [idx, setIdx] = useState(0);
   const [phase, setPhase] = useState<Phase>('solving');
@@ -43,6 +44,7 @@ export function AntiBlunderPage() {
   const load = (i: number) => {
     const p = BLUNDER_POSITIONS[i];
     if (!p) return;
+    if (timer.current) clearTimeout(timer.current); // stop any in-flight refutation animation
     game.current = new Chess(p.fen);
     attempt.current = { tempted: false };
     pending.current = null;
@@ -55,6 +57,9 @@ export function AntiBlunderPage() {
 
   useEffect(() => {
     load(0);
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -107,6 +112,7 @@ export function AntiBlunderPage() {
   };
 
   const playLine = (uciLine: string[], fromStep: number) => {
+    if (timer.current) clearTimeout(timer.current);
     let step = fromStep;
     const tick = () => {
       const u = uciLine[step];
@@ -114,9 +120,9 @@ export function AntiBlunderPage() {
       game.current.move({ from: u.slice(0, 2), to: u.slice(2, 4), promotion: u[4] });
       sync();
       step++;
-      if (step < uciLine.length) setTimeout(tick, 650);
+      timer.current = step < uciLine.length ? setTimeout(tick, 650) : null;
     };
-    setTimeout(tick, 350);
+    timer.current = setTimeout(tick, 350);
   };
 
   const playAnyway = () => {

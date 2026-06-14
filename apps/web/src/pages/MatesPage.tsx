@@ -13,6 +13,7 @@ type Phase = 'solving' | 'solved' | 'failed';
 export function MatesPage() {
   const game = useRef(new Chess());
   const attempt = useRef({ failed: false, revealed: false });
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [idx, setIdx] = useState(0); // index into MATE_DRILLS
   const [phase, setPhase] = useState<Phase>('solving');
@@ -31,6 +32,7 @@ export function MatesPage() {
   const load = (i: number) => {
     const d = MATE_DRILLS[i];
     if (!d) return;
+    if (timer.current) clearTimeout(timer.current); // stop any in-flight solution animation
     game.current = new Chess(d.fen);
     attempt.current = { failed: false, revealed: false };
     setIdx(i);
@@ -45,6 +47,9 @@ export function MatesPage() {
 
   useEffect(() => {
     load(0);
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -70,6 +75,7 @@ export function MatesPage() {
   }, [fen, solverToMove]);
 
   const demoRest = (fromStep: number) => {
+    if (timer.current) clearTimeout(timer.current);
     let step = fromStep;
     const tick = () => {
       const u = drill.solution[step];
@@ -77,9 +83,9 @@ export function MatesPage() {
       game.current.move({ from: u.slice(0, 2), to: u.slice(2, 4), promotion: u[4] });
       sync();
       step++;
-      if (step < drill.solution.length) setTimeout(tick, 650);
+      timer.current = step < drill.solution.length ? setTimeout(tick, 650) : null;
     };
-    setTimeout(tick, 500);
+    timer.current = setTimeout(tick, 500);
   };
 
   const onMove = (from: string, to: string) => {
