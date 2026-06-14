@@ -27,7 +27,10 @@ endgames.
 | **Accounts & sync** | Optional username/password accounts sync progress *and repertoires* across devices |
 | **Opening explorer** | Master / Lichess game stats for the current position; **＋** saves a move's line straight into a repertoire |
 | **Game review** | Auto-annotate every move (blunder / mistake / inaccuracy), with per-side **accuracy %**, ACPL, and a clickable win-probability graph |
-| **Quality-of-life** | Keyboard move navigation (← → Home End, `f` to flip); Syzygy-loaded badge when local tablebases are installed |
+| **Learn from mistakes** | Save review-flagged blunders into a drill deck and find the better move (engine-validated); synced across devices |
+| **Game library & import** | Save analyzed games to your account; import your real games by Lichess / Chess.com username |
+| **Analyze anything** | Paste a FEN or PGN to study any position or game |
+| **Quality-of-life** | Move sounds, board themes, premoves, keyboard nav (← → Home End, `f`); Syzygy badge when local tablebases are installed |
 | **Tablebase** | Syzygy endgame tablebases — loaded into Stockfish (`SyzygyPath`) for perfect ≤7-man play, and queried via a configurable proxy for move feedback (online or local files) |
 | **Clocks** | Real chess clocks with time-control presets (1+0 … 10+5) and increments |
 | **Stack** | pnpm monorepo · Node + Fastify + `ws` backend · React + Vite + TypeScript frontend · `chess.js` for rules |
@@ -183,13 +186,15 @@ SKIP_LC0=1 pnpm setup:engines
 - [x] **Phase 7** — Personal opening repertoires (save lines from the board),
   Puzzle Rush mode, and repertoire sync
 
-- [x] **Phase 8** — One-click explorer→repertoire saving and automatic
-  game-review annotations (blunder / mistake / inaccuracy)
+- [x] **Phase 8** — One-click explorer→repertoire saving and game-review
+  annotations with accuracy %, ACPL, and an eval graph
+- [x] **Phase 9** — Learn-from-mistakes drills, game library + Lichess/Chess.com
+  import, FEN/PGN analysis, and a UX pack (sounds, themes, premoves, settings)
 
 ### Next up
 
-- Opening-name lookup; accuracy % and an ACPL summary in game review
-- Drill straight from a flagged blunder ("learn from your mistakes")
+- Opening-name lookup; a stats dashboard (accuracy & puzzles over time)
+- Coordinate/board-vision trainer; alternate piece sets
 
 ## Credits
 
