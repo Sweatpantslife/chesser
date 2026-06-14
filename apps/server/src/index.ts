@@ -5,6 +5,7 @@ import { engines } from './engine/manager.js';
 import { Session } from './ws.js';
 import { HOST, PORT } from './config.js';
 import { probeTablebase } from './tablebase.js';
+import { shutdownLocalTablebase } from './tablebase-local.js';
 import { probeExplorer } from './explorer.js';
 import { registerAccountRoutes } from './accounts/routes.js';
 import type { ExplorerDb } from '@chesser/shared';
@@ -12,7 +13,7 @@ import type { ExplorerDb } from '@chesser/shared';
 const app = Fastify({ logger: false });
 await app.register(cors, { origin: true });
 
-app.get('/api/health', async () => ({ ok: true }));
+app.get('/api/health', async () => ({ ok: true, syzygy: !!engines.availability().syzygy }));
 app.get('/api/engines', async () => ({ engines: engines.availability(), styles: engines.styles() }));
 app.get('/api/tablebase', async (req) => {
   const fen = (req.query as { fen?: string }).fen;
@@ -33,6 +34,7 @@ wss.on('connection', (ws) => {
 
 async function shutdown(): Promise<void> {
   try {
+    await shutdownLocalTablebase();
     await engines.shutdown();
     await app.close();
   } finally {
@@ -45,8 +47,11 @@ process.on('SIGTERM', () => void shutdown());
 await app.listen({ host: HOST, port: PORT });
 
 const av = engines.availability();
+const syzygyStatus = av.syzygy ? `${av.syzygyMaxPieces}-man` : 'off';
 console.log(`[server] listening on http://${HOST}:${PORT}  (ws: /ws)`);
 console.log(
-  `[server] engines — stockfish:${av.stockfish}  lc0/maia:${av.lc0}  maia:[${av.maiaNetworks.map((n) => n.rating).join(', ')}]`,
+  `[server] engines — stockfish:${av.stockfish}  lc0/maia:${av.lc0}  maia:[${av.maiaNetworks
+    .map((n) => n.rating)
+    .join(', ')}]  syzygy:${syzygyStatus}`,
 );
 if (!av.stockfish) console.warn('[server] Stockfish missing — run "pnpm setup:engines".');

@@ -25,7 +25,7 @@ endgames.
 | **Accounts & sync** | Optional username/password accounts sync your progress across devices |
 | **Opening explorer** | Master / Lichess game stats for the current position (via a configurable proxy) |
 | **PGN review** | Import any PGN and step through it on the analysis board with the engine |
-| **Tablebase** | Optional Syzygy lookups (via a configurable proxy) for perfect endgame defence and move feedback |
+| **Tablebase** | Syzygy endgame tablebases — loaded into Stockfish (`SyzygyPath`) for perfect ≤7-man play, and queried via a configurable proxy for move feedback (online or local files) |
 | **Clocks** | Real chess clocks with time-control presets (1+0 … 10+5) and increments |
 | **Stack** | pnpm monorepo · Node + Fastify + `ws` backend · React + Vite + TypeScript frontend · `chess.js` for rules |
 
@@ -74,13 +74,32 @@ allowlist them in sandboxed networks, or they degrade gracefully:
 
 ### Syzygy tablebase
 
-The endgame trainer queries the server’s `/api/tablebase` endpoint, which
-proxies a configurable upstream (default: the public Lichess tablebase API) for
-positions with ≤ 7 pieces. When a result is available it drives perfect defence
-and grades your moves by distance-to-zeroing; otherwise it falls back to
-Stockfish automatically. Set `CHESSER_TABLEBASE_URL` to use a self-hosted
-instance. (The upstream host must be reachable from the server — some sandboxed
-networks block it, in which case the trainer transparently uses Stockfish.)
+Chesser uses Syzygy endgame tablebases two complementary ways:
+
+1. **In the engine.** If local tablebase files are present, the server points
+   Stockfish at them (`SyzygyPath`), so analysis and *every* Stockfish opponent
+   — including the endgame trainer’s defender — play and evaluate ≤ N-piece
+   endings perfectly, entirely offline.
+2. **For move feedback.** The endgame trainer queries `/api/tablebase` for the
+   position category and best move. It prefers the online proxy (default: the
+   public Lichess tablebase API) because that carries distance-to-zeroing; when
+   the upstream is unreachable it falls back to the local files, and otherwise
+   to Stockfish.
+
+Local tablebases are auto-detected from `engines/syzygy/`, or from
+`CHESSER_SYZYGY_PATH` (one or more directories, joined the way Stockfish’s
+`SyzygyPath` expects). Fetch the 3-4-5 set (~1 GB) with:
+
+```bash
+pnpm setup:syzygy            # download into engines/syzygy
+WITH_SYZYGY=1 pnpm setup:engines   # or fold it into a full engine setup
+```
+
+The download is best-effort and resumable; you can also drop `*.rtbw` / `*.rtbz`
+files into `engines/syzygy/` by hand. Without any tablebases the app behaves as
+before: the online proxy plus full-strength Stockfish. Set
+`CHESSER_TABLEBASE_URL` to use a self-hosted proxy, and `SYZYGY_BASE_URL` /
+`SYZYGY_SET` to change the download mirror or piece set.
 
 ## Architecture
 

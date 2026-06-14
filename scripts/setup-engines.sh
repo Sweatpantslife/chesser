@@ -24,10 +24,16 @@ ENGINES_DIR="$ROOT_DIR/engines"
 BIN_DIR="$ENGINES_DIR/bin"
 NET_DIR="$ENGINES_DIR/networks"
 SRC_DIR="$ENGINES_DIR/src"
+SYZYGY_DIR="$ENGINES_DIR/syzygy"
 mkdir -p "$BIN_DIR" "$NET_DIR" "$SRC_DIR"
 
 SF_VERSION="${SF_VERSION:-sf_17.1}"
 MAIA_RATINGS=("1100" "1500" "1900")
+
+# Syzygy tablebases (opt-in; the 3-4-5 set is ~1GB). Override the mirror/set if
+# you have a faster or self-hosted source.
+SYZYGY_BASE_URL="${SYZYGY_BASE_URL:-https://tablebase.lichess.ovh/tables/standard}"
+SYZYGY_SET="${SYZYGY_SET:-3-4-5}"
 
 log()  { printf '\033[1;36m[engines]\033[0m %s\n' "$*"; }
 ok()   { printf '\033[1;32m[ ok ]\033[0m %s\n' "$*"; }
@@ -40,6 +46,7 @@ want() { # respect ONLY=foo filter
 
 STOCKFISH_OK=0
 LC0_OK=0
+SYZYGY_OK=0
 MAIA_NETS=()
 
 # ---------------------------------------------------------------------------
@@ -155,6 +162,49 @@ setup_lc0() {
 }
 
 # ---------------------------------------------------------------------------
+# Syzygy tablebases — opt-in (WITH_SYZYGY=1 or ONLY=syzygy). Stockfish is pointed
+# at these so ≤N-piece endgames are played and evaluated perfectly, offline.
+# The backend auto-detects engines/syzygy at boot (no manifest entry needed).
+# ---------------------------------------------------------------------------
+setup_syzygy() {
+  if [[ "${WITH_SYZYGY:-0}" != "1" && "${ONLY:-}" != "syzygy" ]]; then return 0; fi
+  mkdir -p "$SYZYGY_DIR"
+  if compgen -G "$SYZYGY_DIR/*.rtbw" >/dev/null 2>&1; then
+    ok "Syzygy tablebases already present in engines/syzygy"; SYZYGY_OK=1; return 0
+  fi
+
+  local url="$SYZYGY_BASE_URL/$SYZYGY_SET/"
+  log "Listing Syzygy files from $url"
+  local index
+  index="$(curl -fsSL "$url" 2>/dev/null)" || {
+    warn "could not list $url — download the $SYZYGY_SET .rtbw/.rtbz files into engines/syzygy manually"
+    return 1
+  }
+  local files
+  files="$(printf '%s' "$index" | grep -oE '[A-Za-z]+v[A-Za-z]+\.rtb[wz]' | sort -u)"
+  [[ -n "$files" ]] || { warn "no .rtbw/.rtbz links found at $url"; return 1; }
+
+  local total n=0
+  total="$(printf '%s\n' "$files" | wc -l | tr -d ' ')"
+  log "Downloading $total Syzygy files for the $SYZYGY_SET set (this is large)"
+  while IFS= read -r f; do
+    [[ -z "$f" ]] && continue
+    if [[ -s "$SYZYGY_DIR/$f" ]]; then n=$((n + 1)); continue; fi
+    if curl -fsSL --retry 4 --retry-delay 2 -o "$SYZYGY_DIR/$f.part" "$SYZYGY_BASE_URL/$SYZYGY_SET/$f"; then
+      mv "$SYZYGY_DIR/$f.part" "$SYZYGY_DIR/$f"; n=$((n + 1))
+    else
+      warn "failed: $f"; rm -f "$SYZYGY_DIR/$f.part"
+    fi
+  done <<< "$files"
+
+  if compgen -G "$SYZYGY_DIR/*.rtbw" >/dev/null 2>&1; then
+    ok "Syzygy ready -> engines/syzygy ($n/$total files)"; SYZYGY_OK=1
+  else
+    err "Syzygy download produced no usable tablebases"; return 1
+  fi
+}
+
+# ---------------------------------------------------------------------------
 # Manifest — the backend's source of truth for what's installed.
 # ---------------------------------------------------------------------------
 write_manifest() {
@@ -184,12 +234,17 @@ log "Setting up engines in $ENGINES_DIR"
 setup_stockfish || warn "Stockfish setup incomplete"
 setup_maia      || warn "Maia setup incomplete"
 setup_lc0       || warn "Lc0 setup incomplete"
+setup_syzygy    || warn "Syzygy setup incomplete"
 write_manifest
+
+# A previously-downloaded set still counts even on a filtered run.
+compgen -G "$SYZYGY_DIR/*.rtbw" >/dev/null 2>&1 && SYZYGY_OK=1
 
 echo
 log "Summary:"
 printf '  Stockfish : %s\n' "$([[ $STOCKFISH_OK -eq 1 ]] && echo available || echo MISSING)"
 printf '  Lc0       : %s\n' "$([[ $LC0_OK -eq 1 ]] && echo available || echo 'missing (run without SKIP_LC0 to build)')"
 printf '  Maia nets : %s\n' "$([[ ${#MAIA_NETS[@]} -gt 0 ]] && echo "${MAIA_NETS[*]}" || echo none)"
+printf '  Syzygy    : %s\n' "$([[ $SYZYGY_OK -eq 1 ]] && echo "present ($SYZYGY_SET)" || echo 'none (WITH_SYZYGY=1 to fetch)')"
 echo
 [[ $STOCKFISH_OK -eq 1 ]] && exit 0 || exit 1

@@ -1,6 +1,14 @@
 import type { BotStyle, EngineAvailability } from '@chesser/shared';
 import { BOT_STYLES } from '@chesser/shared';
-import { availabilityFrom, ENGINE_HASH_MB, ENGINE_THREADS, loadManifest, type EngineManifest } from '../config.js';
+import {
+  availabilityFrom,
+  ENGINE_HASH_MB,
+  ENGINE_THREADS,
+  loadManifest,
+  resetSyzygyCache,
+  syzygyInfo,
+  type EngineManifest,
+} from '../config.js';
 import { UciEngine } from './uci.js';
 
 /**
@@ -21,6 +29,7 @@ export class EngineManager {
 
   reload(): void {
     this.manifest = loadManifest();
+    resetSyzygyCache();
     // Existing cached Maia engines keep running; new ones use the new manifest.
   }
 
@@ -55,6 +64,14 @@ export class EngineManager {
     await eng.start();
     eng.setOption('Threads', ENGINE_THREADS);
     eng.setOption('Hash', ENGINE_HASH_MB);
+    // Local Syzygy tablebases: Stockfish then plays/evaluates ≤maxPieces endings
+    // perfectly, offline. Cap probing to what we actually have so it never hunts
+    // for absent larger tables.
+    const syzygy = syzygyInfo();
+    if (syzygy) {
+      eng.setOption('SyzygyPath', syzygy.path);
+      eng.setOption('SyzygyProbeLimit', syzygy.maxPieces);
+    }
     await eng.ready();
     return eng;
   }

@@ -16,6 +16,82 @@ export const HOST = process.env.HOST ?? '0.0.0.0';
 export const ENGINE_THREADS = Number(process.env.CHESSER_THREADS ?? Math.min(2, Math.max(1, os.cpus().length - 1)));
 export const ENGINE_HASH_MB = Number(process.env.CHESSER_HASH_MB ?? 128);
 
+// ---------------------------------------------------------------------------
+// Syzygy endgame tablebases (local files)
+// ---------------------------------------------------------------------------
+
+/**
+ * A directory of Syzygy tablebase files (`*.rtbw` / `*.rtbz`). When present it
+ * is handed to Stockfish via the `SyzygyPath` UCI option, so analysis and every
+ * Stockfish opponent — including the endgame trainer's defender — play ≤N-piece
+ * endings perfectly and offline. It also backs the `/api/tablebase` endpoint as
+ * a fallback when the online proxy is unreachable.
+ *
+ * Discovery order:
+ *   1. CHESSER_SYZYGY_PATH — one or more directories joined the way Stockfish
+ *      expects (OS path-list separator), passed through verbatim.
+ *   2. engines/syzygy/ — the default location `pnpm setup:engines` populates.
+ * Returns null when no tablebase files exist, so the app behaves exactly as it
+ * did before (online proxy + full-strength Stockfish).
+ */
+export interface SyzygyInfo {
+  /** Path string in the form Stockfish's `SyzygyPath` option expects. */
+  path: string;
+  /** Largest piece count covered by the files present (e.g. 5 or 7). */
+  maxPieces: number;
+}
+
+const SYZYGY_PATH_SEP = process.platform === 'win32' ? ';' : ':';
+
+/** Largest piece count among the Syzygy files in `dir` (0 if none / unreadable). */
+function syzygyMaxPiecesIn(dir: string): number {
+  let entries: string[];
+  try {
+    entries = fs.readdirSync(dir);
+  } catch {
+    return 0;
+  }
+  let max = 0;
+  for (const name of entries) {
+    // e.g. KQvK.rtbz (3), KRPvKR.rtbw (5), KQQvKQQ.rtbw (7)
+    const m = /^([KQRBNP]+)v([KQRBNP]+)\.rtb[wz]$/.exec(name);
+    if (!m) continue;
+    const pieces = m[1]!.length + m[2]!.length;
+    if (pieces > max) max = pieces;
+  }
+  return max;
+}
+
+let syzygyResolved: { value: SyzygyInfo | null } | null = null;
+
+function resolveSyzygy(): SyzygyInfo | null {
+  const fromEnv = process.env.CHESSER_SYZYGY_PATH?.trim();
+  if (fromEnv) {
+    const dirs = fromEnv
+      .split(SYZYGY_PATH_SEP)
+      .map((d) => d.trim())
+      .filter(Boolean);
+    const maxPieces = dirs.reduce((m, d) => Math.max(m, syzygyMaxPiecesIn(d)), 0);
+    if (maxPieces > 0) return { path: dirs.join(SYZYGY_PATH_SEP), maxPieces };
+    console.warn(`[config] CHESSER_SYZYGY_PATH is set but no .rtbw/.rtbz files were found in "${fromEnv}".`);
+    return null;
+  }
+  const def = path.join(ENGINES_DIR, 'syzygy');
+  const maxPieces = syzygyMaxPiecesIn(def);
+  return maxPieces > 0 ? { path: def, maxPieces } : null;
+}
+
+/** Resolved local Syzygy tablebases, or null. Memoised (cheap & effectively static). */
+export function syzygyInfo(): SyzygyInfo | null {
+  if (!syzygyResolved) syzygyResolved = { value: resolveSyzygy() };
+  return syzygyResolved.value;
+}
+
+/** Forget the cached Syzygy lookup (e.g. after files are added at runtime). */
+export function resetSyzygyCache(): void {
+  syzygyResolved = null;
+}
+
 interface RawManifest {
   generatedAt?: string;
   stockfish: { path: string } | null;
@@ -59,10 +135,14 @@ export function loadManifest(): EngineManifest {
 }
 
 export function availabilityFrom(manifest: EngineManifest): EngineAvailability {
+  const syzygy = syzygyInfo();
   return {
     stockfish: !!manifest.stockfishBin,
     // Maia needs both the lc0 binary and at least one network.
     lc0: !!manifest.lc0Bin && manifest.maiaNetworks.length > 0,
     maiaNetworks: manifest.maiaNetworks.map((n) => ({ id: n.id, rating: n.rating })),
+    // Syzygy only helps Stockfish, so report it as available only when both exist.
+    syzygy: !!syzygy && !!manifest.stockfishBin,
+    syzygyMaxPieces: syzygy?.maxPieces,
   };
 }

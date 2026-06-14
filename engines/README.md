@@ -18,6 +18,7 @@ engines/
 │   ├── maia-1100.pb.gz  # human-like nets, one per rating band
 │   ├── maia-1500.pb.gz
 │   └── maia-1900.pb.gz
+├── syzygy/              # (optional) Syzygy tablebase files (*.rtbw / *.rtbz)
 └── manifest.json        # what got installed; the server reads this at boot
 ```
 
@@ -35,6 +36,11 @@ offers fewer opponents.
 - **Maia** weights come from the [CSSLab/maia-chess](https://github.com/CSSLab/maia-chess)
   project. Maia is meant to be run at one node (`go nodes 1`) — it then plays the
   move a human of that rating would most likely choose.
+- **Syzygy** tablebases are optional and not downloaded by default (the 3-4-5 set
+  is ~1 GB). Fetch them with `pnpm setup:syzygy` (or `WITH_SYZYGY=1 pnpm
+  setup:engines`) into `engines/syzygy/`, or place the `*.rtbw` / `*.rtbz` files
+  there yourself. The server detects them at boot and hands them to Stockfish via
+  `SyzygyPath`; point it elsewhere with `CHESSER_SYZYGY_PATH`.
 
 Override behaviour with env vars, e.g. `SKIP_LC0=1 pnpm setup:engines` for a
 Stockfish-only install, or `ONLY=stockfish pnpm setup:engines`.

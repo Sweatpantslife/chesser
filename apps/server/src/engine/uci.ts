@@ -9,6 +9,8 @@ export interface UciInfo {
   scoreCp?: number;
   scoreMate?: number;
   bound?: 'lower' | 'upper';
+  /** Win/draw/loss permille (side-to-move POV); only set when UCI_ShowWDL is on. */
+  wdl?: [number, number, number];
   nodes?: number;
   nps?: number;
   timeMs?: number;
@@ -227,6 +229,13 @@ export function parseInfo(line: string): UciInfo | null {
         }
         break;
       }
+      case 'wdl': {
+        const w = Number(tokens[i++]);
+        const d = Number(tokens[i++]);
+        const l = Number(tokens[i++]);
+        if (Number.isFinite(w) && Number.isFinite(d) && Number.isFinite(l)) info.wdl = [w, d, l];
+        break;
+      }
       case 'pv': {
         info.pv = tokens.slice(i);
         i = tokens.length;
@@ -247,6 +256,7 @@ export function parseInfo(line: string): UciInfo | null {
     scoreCp: info.scoreCp,
     scoreMate: info.scoreMate,
     bound: info.bound,
+    wdl: info.wdl,
     nodes: info.nodes,
     nps: info.nps,
     timeMs: info.timeMs,

@@ -11,6 +11,7 @@ build/
 engines/bin/
 engines/networks/
 engines/src/
+engines/syzygy/
 engines/manifest.json
 engines/*.tar
 engines/*.zip
