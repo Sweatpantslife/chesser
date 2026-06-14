@@ -1,9 +1,12 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import fastifyStatic from '@fastify/static';
 import { WebSocketServer } from 'ws';
 import { engines } from './engine/manager.js';
 import { Session } from './ws.js';
-import { HOST, PORT } from './config.js';
+import { HOST, LOG_ENABLED, PORT, WEB_DIR } from './config.js';
 import { probeTablebase } from './tablebase.js';
 import { shutdownLocalTablebase } from './tablebase-local.js';
 import { probeExplorer } from './explorer.js';
@@ -11,7 +14,7 @@ import { importGames } from './import.js';
 import { registerAccountRoutes } from './accounts/routes.js';
 import type { ExplorerDb } from '@chesser/shared';
 
-const app = Fastify({ logger: false });
+const app = Fastify({ logger: LOG_ENABLED });
 await app.register(cors, { origin: true });
 
 app.get('/api/health', async () => ({ ok: true, syzygy: !!engines.availability().syzygy }));
@@ -33,6 +36,22 @@ app.get('/api/import', async (req) => {
   return importGames(site === 'chesscom' ? 'chesscom' : 'lichess', user, n);
 });
 registerAccountRoutes(app);
+
+// Serve the built web client (single-origin deployment). Real asset paths are
+// served as files; anything else falls through to the SPA's index.html. The
+// /ws upgrade is handled on the raw HTTP server below, so it bypasses routing.
+if (WEB_DIR && fs.existsSync(path.join(WEB_DIR, 'index.html'))) {
+  await app.register(fastifyStatic, { root: WEB_DIR, wildcard: false });
+  app.setNotFoundHandler((req, reply) => {
+    if (req.method !== 'GET' || req.url.startsWith('/api') || req.url.startsWith('/ws')) {
+      return reply.code(404).send({ error: 'Not found' });
+    }
+    return reply.sendFile('index.html');
+  });
+  console.log(`[server] serving web client from ${WEB_DIR}`);
+} else if (process.env.CHESSER_WEB_DIR) {
+  console.warn(`[server] CHESSER_WEB_DIR is set but no index.html found at ${process.env.CHESSER_WEB_DIR}`);
+}
 
 const wss = new WebSocketServer({ server: app.server, path: '/ws' });
 wss.on('connection', (ws) => {

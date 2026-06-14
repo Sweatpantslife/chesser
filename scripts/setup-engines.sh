@@ -58,12 +58,19 @@ setup_stockfish() {
     ok "Stockfish already present"; STOCKFISH_OK=1; return 0
   fi
   local flags variant
-  flags="$(grep -m1 flags /proc/cpuinfo || true)"
-  if   [[ "$flags" == *avx512* ]]; then variant="x86-64-avx512"
-  elif [[ "$flags" == *bmi2*   ]]; then variant="x86-64-bmi2"
-  elif [[ "$flags" == *avx2*   ]]; then variant="x86-64-avx2"
-  elif [[ "$flags" == *sse41*  || "$flags" == *sse4_1* ]]; then variant="x86-64-sse41-popcnt"
-  else variant="x86-64"; fi
+  # SF_VARIANT pins the binary explicitly — important for container images, where
+  # the build host's CPU may differ from the deploy host's. Otherwise auto-detect
+  # the fastest variant the *current* CPU supports.
+  if [[ -n "${SF_VARIANT:-}" ]]; then
+    variant="$SF_VARIANT"
+  else
+    flags="$(grep -m1 flags /proc/cpuinfo || true)"
+    if   [[ "$flags" == *avx512* ]]; then variant="x86-64-avx512"
+    elif [[ "$flags" == *bmi2*   ]]; then variant="x86-64-bmi2"
+    elif [[ "$flags" == *avx2*   ]]; then variant="x86-64-avx2"
+    elif [[ "$flags" == *sse41*  || "$flags" == *sse4_1* ]]; then variant="x86-64-sse41-popcnt"
+    else variant="x86-64"; fi
+  fi
 
   local url="https://github.com/official-stockfish/Stockfish/releases/download/${SF_VERSION}/stockfish-ubuntu-${variant}.tar"
   log "Downloading Stockfish ${SF_VERSION} (${variant})"
