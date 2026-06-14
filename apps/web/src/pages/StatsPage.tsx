@@ -2,8 +2,10 @@ import { useMemo, type ReactNode } from 'react';
 import { useProgress } from '../store/progress';
 import { useRepertoire, BUILTIN_REPERTOIRE } from '../store/repertoire';
 import { useCoordinate } from '../store/coordinate';
+import { useCustomPuzzles } from '../store/customPuzzles';
+import { usePuzzleRating } from '../store/puzzleRating';
 import { PUZZLES } from '../trainers/tactics';
-import { ActivityChart, Heatmap, ProgressBar, StatCard, type DayPoint } from '../components/Charts';
+import { ActivityChart, Heatmap, ProgressBar, RatingSparkline, StatCard, type DayPoint } from '../components/Charts';
 
 const HEATMAP_WEEKS = 18;
 
@@ -54,6 +56,11 @@ export function StatsPage() {
   const rushBest = useRepertoire((s) => s.rushHighScore);
   const userReps = useRepertoire((s) => s.user);
   const coordBest = useCoordinate((s) => s.bestBySide);
+  const customPuzzles = useCustomPuzzles((s) => s.puzzles.length);
+  const puzzleRating = usePuzzleRating((s) => s.rating);
+  const puzzlePeak = usePuzzleRating((s) => s.peak);
+  const puzzlesSolved = usePuzzleRating((s) => s.solved);
+  const ratingHistory = usePuzzleRating((s) => s.history);
 
   const today = utcDay(new Date());
 
@@ -105,6 +112,22 @@ export function StatsPage() {
     [history],
   );
 
+  // Rating over the last 30 days, carried forward across inactive days.
+  const ratingSeries = useMemo(() => {
+    const days = lastNDays(30);
+    const out: number[] = [];
+    let last = 0;
+    let started = false;
+    for (const d of days) {
+      if (ratingHistory[d] != null) {
+        last = ratingHistory[d]!;
+        started = true;
+      }
+      if (started) out.push(last);
+    }
+    return out;
+  }, [ratingHistory]);
+
   const empty = totals.reviews === 0;
 
   return (
@@ -116,7 +139,8 @@ export function StatsPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <StatCard label="Puzzle rating" value={puzzleRating} hint={`peak ${puzzlePeak}`} />
         <StatCard label="Day streak" value={<span>🔥 {streak}</span>} hint={`best ${bestStreak}`} />
         <StatCard label="Reviews" value={totals.reviews} hint={`${totals.activeDays} active days`} />
         <StatCard label="Accuracy" value={`${totals.acc}%`} hint={`${totals.correct} correct`} />
@@ -140,6 +164,23 @@ export function StatsPage() {
         aside={<span className="text-xs text-neutral-500">reviews ▮ · accuracy ▬</span>}
       >
         <ActivityChart data={series} />
+      </Section>
+
+      <Section
+        title="Puzzle rating"
+        aside={
+          <span className="text-xs text-neutral-500">
+            {puzzlesSolved} solved · {customPuzzles} from your games
+          </span>
+        }
+      >
+        {ratingSeries.length >= 2 ? (
+          <RatingSparkline data={ratingSeries} />
+        ) : (
+          <p className="text-xs text-neutral-500">
+            Solve rated puzzles in the Middlegame trainer to build a rating — currently {puzzleRating}.
+          </p>
+        )}
       </Section>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

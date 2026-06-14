@@ -2,8 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
 import { Board } from '../board/Board';
 import { ReviewStats } from '../components/ReviewStats';
-import { PUZZLES, type Difficulty } from '../trainers/tactics';
+import { PUZZLES, type Difficulty, type Puzzle } from '../trainers/tactics';
 import { useProgress } from '../store/progress';
+import { useCustomPuzzles } from '../store/customPuzzles';
+import { usePuzzleRating, puzzleRatingOf } from '../store/puzzleRating';
+import { classifyMotifs, MOTIF_LABELS, MOTIF_ORDER, type Motif } from '../lib/motifs';
 import { playMoveSound } from '../lib/sound';
 import { RushMode } from './RushMode';
 import { MistakesMode } from './MistakesMode';
@@ -11,7 +14,11 @@ import { useMistakes } from '../store/mistakes';
 import type { Color } from '../store/game';
 
 type Phase = 'solving' | 'solved' | 'failed';
-type Filter = 'all' | Difficulty;
+type DiffFilter = 'all' | Difficulty;
+type Source = 'builtin' | 'mine' | 'all';
+
+/** A puzzle from either the bundled set or your own games. */
+type AnyPuzzle = Puzzle & { rating?: number; source?: string };
 
 const ALL_IDS = PUZZLES.map((p) => p.id);
 
@@ -20,6 +27,17 @@ const DIFF_COLOR: Record<Difficulty, string> = {
   medium: 'text-amber-300',
   hard: 'text-rose-300',
 };
+
+// Motif classification is pure + stable per puzzle id — cache it.
+const motifCache = new Map<string, Motif[]>();
+function themesOf(p: AnyPuzzle): Motif[] {
+  let m = motifCache.get(p.id);
+  if (!m) {
+    m = classifyMotifs(p.fen, p.solution, p.theme);
+    motifCache.set(p.id, m);
+  }
+  return m;
+}
 
 export function TacticsPage() {
   const [mode, setMode] = useState<'practice' | 'rush' | 'mistakes'>('practice');
@@ -47,38 +65,68 @@ export function TacticsPage() {
 
 function PracticeTactics() {
   const game = useRef(new Chess());
-  const attempt = useRef({ failed: false, revealed: false });
-  const [filter, setFilter] = useState<Filter>('all');
+  const attempt = useRef({ failed: false, revealed: false, rated: false });
+  const sessionSeen = useRef(new Set<string>());
+
+  const [source, setSource] = useState<Source>('builtin');
+  const [diffFilter, setDiffFilter] = useState<DiffFilter>('all');
+  const [themeFilter, setThemeFilter] = useState<'all' | Motif>('all');
+  const [ratedOrder, setRatedOrder] = useState(false);
   const [pos, setPos] = useState(0);
   const [phase, setPhase] = useState<Phase>('solving');
   const [fen, setFen] = useState(game.current.fen());
   const [lastMove, setLastMove] = useState<[string, string] | undefined>();
   const [feedback, setFeedback] = useState<{ kind: 'ok' | 'bad' | 'info'; text: string } | null>(null);
   const [sessionSolved, setSessionSolved] = useState(0);
+  const [delta, setDelta] = useState<number | null>(null);
 
   const grade = useProgress((s) => s.grade);
   const dueIds = useProgress((s) => s.dueIds);
   const cards = useProgress((s) => s.cards);
+  const mine = useCustomPuzzles((s) => s.puzzles);
+  const removePuzzle = useCustomPuzzles((s) => s.remove);
+  const rating = usePuzzleRating((s) => s.rating);
+  const record = usePuzzleRating((s) => s.record);
 
-  const queue = useMemo(() => PUZZLES.filter((p) => filter === 'all' || p.difficulty === filter), [filter]);
+  // Source + difficulty + theme filters drive the queue (natural order).
+  const sourced: AnyPuzzle[] = useMemo(
+    () => (source === 'mine' ? mine : source === 'all' ? [...mine, ...PUZZLES] : PUZZLES),
+    [source, mine],
+  );
+  const byDifficulty = useMemo(
+    () => sourced.filter((p) => diffFilter === 'all' || p.difficulty === diffFilter),
+    [sourced, diffFilter],
+  );
+  const themeCounts = useMemo(() => {
+    const c = new Map<Motif, number>();
+    for (const p of byDifficulty) for (const m of themesOf(p)) c.set(m, (c.get(m) ?? 0) + 1);
+    return c;
+  }, [byDifficulty]);
+  const queue = useMemo(
+    () => byDifficulty.filter((p) => themeFilter === 'all' || themesOf(p).includes(themeFilter)),
+    [byDifficulty, themeFilter],
+  );
   const puzzle = queue[pos] ?? queue[0];
 
   const load = (i: number, q = queue) => {
     const p = q[i];
     if (!p) return;
     game.current = new Chess(p.fen);
-    attempt.current = { failed: false, revealed: false };
+    attempt.current = { failed: false, revealed: false, rated: false };
     setPos(i);
     setPhase('solving');
+    setDelta(null);
     setFeedback({ kind: 'info', text: `${p.turn === 'white' ? 'White' : 'Black'} to play and win.` });
     setFen(game.current.fen());
     setLastMove(undefined);
   };
 
+  // Reset to the first puzzle whenever the filters change the queue identity.
   useEffect(() => {
+    sessionSeen.current = new Set();
     if (queue.length) load(0, queue);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
+  }, [source, diffFilter, themeFilter]);
 
   const sync = () => {
     const hist = game.current.history({ verbose: true });
@@ -100,6 +148,15 @@ function PracticeTactics() {
     }
     return map;
   }, [fen, solverToMove]);
+
+  // Record a rated result at most once per puzzle attempt.
+  const rateOnce = (success: boolean) => {
+    if (!puzzle || attempt.current.rated) return;
+    attempt.current.rated = true;
+    sessionSeen.current.add(puzzle.id);
+    const res = record(puzzleRatingOf(puzzle), success);
+    setDelta(res.delta);
+  };
 
   const demoRest = (fromStep: number) => {
     let step = fromStep;
@@ -125,9 +182,11 @@ function PracticeTactics() {
       setSessionSolved((n) => n + 1);
       setFeedback({ kind: 'ok', text: `✓ ${mv.san} — ${puzzle.theme}!` });
       grade('tactics', puzzle.id, attempt.current.failed ? 'hard' : 'good');
+      rateOnce(!attempt.current.failed && !attempt.current.revealed);
       demoRest(1);
     } else {
       attempt.current.failed = true;
+      rateOnce(false);
       setPhase('failed');
       setFeedback({ kind: 'bad', text: 'Not the winning move. Try again, or reveal.' });
       sync();
@@ -146,6 +205,7 @@ function PracticeTactics() {
   const reveal = () => {
     if (!puzzle) return;
     attempt.current.revealed = true;
+    rateOnce(false);
     const key = puzzle.solution[0]!;
     game.current = new Chess(puzzle.fen);
     const mv = game.current.move({ from: key.slice(0, 2), to: key.slice(2, 4), promotion: key[4] });
@@ -156,7 +216,29 @@ function PracticeTactics() {
     demoRest(1);
   };
 
-  const next = () => load((pos + 1) % queue.length);
+  const next = () => {
+    if (queue.length === 0) return;
+    if (ratedOrder) {
+      // Pick the unseen puzzle closest to your rating.
+      let best = -1;
+      let bestDist = Infinity;
+      for (let i = 0; i < queue.length; i++) {
+        if (sessionSeen.current.has(queue[i]!.id)) continue;
+        const d = Math.abs(puzzleRatingOf(queue[i]!) - rating);
+        if (d < bestDist) {
+          bestDist = d;
+          best = i;
+        }
+      }
+      if (best < 0) {
+        sessionSeen.current = new Set();
+        best = (pos + 1) % queue.length;
+      }
+      load(best);
+    } else {
+      load((pos + 1) % queue.length);
+    }
+  };
 
   const reviewDue = () => {
     const due = dueIds('tactics', queue.map((p) => p.id));
@@ -164,58 +246,76 @@ function PracticeTactics() {
       setFeedback({ kind: 'info', text: 'No reviews due right now — try new puzzles!' });
       return;
     }
-    const id = due[0]!;
-    const i = queue.findIndex((p) => p.id === id);
+    const i = queue.findIndex((p) => p.id === due[0]);
     if (i >= 0) load(i);
   };
 
+  const SOURCES: { id: Source; label: string }[] = [
+    { id: 'builtin', label: 'Curated' },
+    { id: 'mine', label: `My games${mine.length ? ` (${mine.length})` : ''}` },
+    { id: 'all', label: 'All' },
+  ];
+
   if (!puzzle) {
     return (
-      <div className="mx-auto max-w-md rounded-lg bg-panel p-4 text-sm text-neutral-400">
-        No puzzles for this filter. Generate more with <code className="text-neutral-200">pnpm gen:tactics</code>.
+      <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
+        <Sidebar
+          source={source}
+          setSource={setSource}
+          sources={SOURCES}
+          rating={rating}
+          diffFilter={diffFilter}
+          setDiffFilter={setDiffFilter}
+          themeFilter={themeFilter}
+          setThemeFilter={setThemeFilter}
+          themeCounts={themeCounts}
+          ratedOrder={ratedOrder}
+          setRatedOrder={setRatedOrder}
+          reviewDue={reviewDue}
+        />
+        <div className="order-1 rounded-lg bg-panel p-4 text-sm text-neutral-400 lg:order-2">
+          {source === 'mine' ? (
+            <>
+              No puzzles from your games yet. Open a game on the <b>Play</b> tab, then use{' '}
+              <b>“Make puzzles from this game”</b> in the Game-review panel.
+            </>
+          ) : (
+            <>
+              No puzzles for this filter. Generate more with <code className="text-neutral-200">pnpm gen:tactics</code>.
+            </>
+          )}
+        </div>
+        <div className="order-3" />
       </div>
     );
   }
 
   const orientation: Color = puzzle.turn;
   const solvedCard = cards[`tactics:${puzzle.id}`];
+  const pr = puzzleRatingOf(puzzle);
 
   return (
     <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
-      <div className="order-2 space-y-3 lg:order-1">
-        <div className="rounded-lg bg-panel p-3">
-          <h3 className="mb-1 text-sm font-semibold text-ink">Tactics</h3>
-          <p className="mb-2 text-xs text-neutral-400">Find the one winning move — every puzzle is engine-verified.</p>
-          <ReviewStats deck="tactics" ids={ALL_IDS} />
-          <div className="mt-3">
-            <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Difficulty</div>
-            <div className="flex gap-1">
-              {(['all', 'easy', 'medium', 'hard'] as const).map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`flex-1 rounded px-1.5 py-1 text-xs capitalize ${
-                    filter === f ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
-                  }`}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
-          </div>
-          <button
-            onClick={reviewDue}
-            className="mt-3 w-full rounded bg-emerald-600 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500"
-          >
-            Review due
-          </button>
-        </div>
-      </div>
+      <Sidebar
+        source={source}
+        setSource={setSource}
+        sources={SOURCES}
+        rating={rating}
+        diffFilter={diffFilter}
+        setDiffFilter={setDiffFilter}
+        themeFilter={themeFilter}
+        setThemeFilter={setThemeFilter}
+        themeCounts={themeCounts}
+        ratedOrder={ratedOrder}
+        setRatedOrder={setRatedOrder}
+        reviewDue={reviewDue}
+      />
 
       <div className="order-1 space-y-3 lg:order-2">
-        <div className="flex h-7 items-center gap-2 text-sm">
+        <div className="flex h-7 flex-wrap items-center gap-2 text-sm">
           <span className="rounded bg-neutral-700 px-2 py-0.5 text-xs text-neutral-200">{puzzle.theme}</span>
           <span className={`text-xs capitalize ${DIFF_COLOR[puzzle.difficulty]}`}>{puzzle.difficulty}</span>
+          <span className="text-xs text-neutral-500">rated {pr}</span>
           <span className="capitalize text-neutral-400">{puzzle.turn} to move</span>
           {solverToMove && <span className="animate-pulse text-emerald-400">· your move</span>}
         </div>
@@ -265,6 +365,16 @@ function PracticeTactics() {
               {feedback.text}
             </p>
           )}
+          {delta !== null && (
+            <p className="mt-1 text-xs">
+              <span className={delta >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
+                {delta >= 0 ? '+' : ''}
+                {delta} rating
+              </span>{' '}
+              <span className="text-neutral-500">→ {rating}</span>
+            </p>
+          )}
+          {puzzle.source && <p className="mt-2 text-xs text-neutral-500">from {puzzle.source}</p>}
           {solvedCard?.last && phase === 'solving' && (
             <p className="mt-2 text-xs text-neutral-500">You’ve seen this one before — recall the idea.</p>
           )}
@@ -276,7 +386,123 @@ function PracticeTactics() {
               Next puzzle
             </button>
           )}
+          {source !== 'builtin' && mine.some((m) => m.id === puzzle.id) && (
+            <button
+              onClick={() => {
+                removePuzzle(puzzle.id);
+                setFeedback({ kind: 'info', text: 'Removed from your puzzles.' });
+              }}
+              className="mt-2 w-full rounded bg-neutral-800 py-1.5 text-xs text-neutral-400 hover:bg-rose-900/50 hover:text-rose-200"
+            >
+              Delete this puzzle
+            </button>
+          )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function Sidebar(props: {
+  source: Source;
+  setSource: (s: Source) => void;
+  sources: { id: Source; label: string }[];
+  rating: number;
+  diffFilter: DiffFilter;
+  setDiffFilter: (d: DiffFilter) => void;
+  themeFilter: 'all' | Motif;
+  setThemeFilter: (m: 'all' | Motif) => void;
+  themeCounts: Map<Motif, number>;
+  ratedOrder: boolean;
+  setRatedOrder: (b: boolean) => void;
+  reviewDue: () => void;
+}) {
+  const themes = MOTIF_ORDER.filter((m) => (props.themeCounts.get(m) ?? 0) > 0);
+  return (
+    <div className="order-2 space-y-3 lg:order-1">
+      <div className="rounded-lg bg-panel p-3">
+        <h3 className="mb-1 text-sm font-semibold text-ink">Tactics</h3>
+        <p className="mb-2 text-xs text-neutral-400">Find the one winning move — every puzzle is engine-verified.</p>
+
+        <div className="mb-3 flex items-center justify-between rounded bg-panelmute px-2.5 py-1.5">
+          <span className="text-xs uppercase tracking-wide text-neutral-500">Your rating</span>
+          <span className="font-mono text-lg font-bold text-emerald-300">{props.rating}</span>
+        </div>
+
+        <ReviewStats deck="tactics" ids={ALL_IDS} />
+
+        <div className="mt-3">
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Source</div>
+          <div className="flex gap-1">
+            {props.sources.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => props.setSource(s.id)}
+                className={`flex-1 rounded px-1.5 py-1 text-xs ${
+                  props.source === s.id ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-3">
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Difficulty</div>
+          <div className="flex gap-1">
+            {(['all', 'easy', 'medium', 'hard'] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => props.setDiffFilter(f)}
+                className={`flex-1 rounded px-1.5 py-1 text-xs capitalize ${
+                  props.diffFilter === f ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-3">
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Theme</div>
+          <div className="flex flex-wrap gap-1">
+            <button
+              onClick={() => props.setThemeFilter('all')}
+              className={`rounded px-2 py-1 text-xs ${
+                props.themeFilter === 'all' ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+              }`}
+            >
+              All
+            </button>
+            {themes.map((m) => (
+              <button
+                key={m}
+                onClick={() => props.setThemeFilter(m)}
+                title={`${props.themeCounts.get(m)} puzzles`}
+                className={`rounded px-2 py-1 text-xs ${
+                  props.themeFilter === m ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                }`}
+              >
+                {MOTIF_LABELS[m]}
+              </button>
+            ))}
+            {themes.length === 0 && <span className="px-1 py-1 text-xs text-neutral-600">no themes here</span>}
+          </div>
+        </div>
+
+        <label className="mt-3 flex cursor-pointer items-center gap-2 text-xs text-neutral-300">
+          <input type="checkbox" checked={props.ratedOrder} onChange={(e) => props.setRatedOrder(e.target.checked)} />
+          Serve puzzles near my rating
+        </label>
+
+        <button
+          onClick={props.reviewDue}
+          className="mt-3 w-full rounded bg-emerald-600 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500"
+        >
+          Review due
+        </button>
       </div>
     </div>
   );

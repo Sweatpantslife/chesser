@@ -1,4 +1,5 @@
 import type {
+  AnalysisLine,
   AnalysisMessage,
   AnalyzeRequest,
   BotConfig,
@@ -136,6 +137,34 @@ class EngineClient {
       };
       this.send({ t: 'analyze', reqId, fen, multipv: 1, ...opts } as AnalyzeRequest);
       setTimeout(() => finish(null), 8000); // safety
+    });
+  }
+
+  /**
+   * One-shot multi-PV analysis: resolves with the final lines once the search
+   * hits its movetime/depth cap. Used to generate tactics from a game.
+   */
+  analyzeManyOnce(fen: string, opts: { multipv?: number; depth?: number; movetimeMs?: number } = {}): Promise<AnalysisLine[]> {
+    return new Promise((resolve) => {
+      const reqId = nextId();
+      this.analysisReqId = reqId;
+      let last: AnalysisLine[] = [];
+      let done = false;
+      const finish = (lines: AnalysisLine[]) => {
+        if (done) return;
+        done = true;
+        if (this.analysisReqId === reqId) {
+          this.analysisReqId = null;
+          this.analysisHandler = null;
+        }
+        resolve(lines);
+      };
+      this.analysisHandler = (msg) => {
+        last = msg.lines;
+        if (msg.final) finish(msg.lines);
+      };
+      this.send({ t: 'analyze', reqId, fen, multipv: opts.multipv ?? 2, ...opts } as AnalyzeRequest);
+      setTimeout(() => finish(last), 12000); // safety
     });
   }
 

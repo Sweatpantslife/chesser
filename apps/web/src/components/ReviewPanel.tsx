@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { mainlineOf, useGame } from '../store/game';
 import { useMistakes, type NewMistake } from '../store/mistakes';
+import { useCustomPuzzles } from '../store/customPuzzles';
+import { generatePuzzles } from '../lib/puzzleGen';
 import { EvalGraph } from './EvalGraph';
 
 export function ReviewPanel() {
@@ -15,9 +17,41 @@ export function ReviewPanel() {
   const stats = useGame((s) => s.reviewStats);
   const reviewGame = useGame((s) => s.reviewGame);
   const addMistakes = useMistakes((s) => s.addMany);
+  const addPuzzles = useCustomPuzzles((s) => s.addMany);
   const [saved, setSaved] = useState<number | null>(null);
+  const [gen, setGen] = useState<{ done: number; total: number; found: number } | null>(null);
+  const [genResult, setGenResult] = useState<number | null>(null);
+  const stopGen = useRef(false);
 
   const mainline = useMemo(() => mainlineOf(tree, rootId), [tree, rootId]);
+
+  const makePuzzles = async () => {
+    if (gen) {
+      stopGen.current = true; // a second click cancels
+      return;
+    }
+    stopGen.current = false;
+    setGenResult(null);
+    setGen({ done: 0, total: mainline.length + 1, found: 0 });
+    // Free the engine: pause live analysis while we scan the game.
+    const wasOn = useGame.getState().analysisOn;
+    useGame.getState().setAnalysisOn(false);
+    try {
+      const fens = [startFen, ...mainline.map((n) => n.fen)];
+      const found = await generatePuzzles({
+        fens,
+        source: 'your game',
+        movetimeMs: 600,
+        maxFound: 12,
+        onProgress: (done, total, foundN) => setGen({ done, total, found: foundN }),
+        shouldStop: () => stopGen.current,
+      });
+      setGenResult(addPuzzles(found));
+    } finally {
+      setGen(null);
+      if (wasOn) useGame.getState().setAnalysisOn(true);
+    }
+  };
 
   const saveMistakes = () => {
     const cards: NewMistake[] = [];
@@ -110,6 +144,31 @@ export function ReviewPanel() {
         <p className="text-xs text-neutral-500">
           {mode === 'analysis' ? 'Analyse a game, then review it for blunders and inaccuracies.' : 'Switch to the analysis board to review a game.'}
         </p>
+      )}
+
+      {mode === 'analysis' && mainline.length > 0 && (
+        <div className="mt-3 border-t border-neutral-800 pt-3">
+          <button
+            onClick={makePuzzles}
+            className="w-full rounded bg-neutral-700 py-1.5 text-xs font-semibold text-neutral-100 hover:bg-neutral-600"
+          >
+            {gen
+              ? `Mining… ${gen.done}/${gen.total} · ${gen.found} found (click to stop)`
+              : '⚡ Make puzzles from this game'}
+          </button>
+          {gen && (
+            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded bg-neutral-800">
+              <div className="h-full bg-emerald-500 transition-[width]" style={{ width: `${Math.round((gen.done / gen.total) * 100)}%` }} />
+            </div>
+          )}
+          {genResult !== null && !gen && (
+            <p className="mt-1.5 text-xs text-emerald-300">
+              {genResult > 0
+                ? `✓ Added ${genResult} puzzle${genResult === 1 ? '' : 's'} — find them under Middlegame → My games.`
+                : 'No new tactics found in this game.'}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );
