@@ -12,6 +12,8 @@
     "setup:engines": "bash scripts/setup-engines.sh",
     "setup:syzygy": "ONLY=syzygy bash scripts/setup-engines.sh",
     "gen:tactics": "node scripts/gen-tactics.mjs",
+    "gen:openings": "node scripts/gen-openings.mjs",
+    "gen:pieces": "node scripts/gen-piece-sets.mjs",
     "dev": "pnpm --filter @chesser/shared build && pnpm -r --parallel --stream dev",
     "dev:server": "pnpm --filter @chesser/server dev",
     "dev:web": "pnpm --filter @chesser/web dev",

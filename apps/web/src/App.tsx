@@ -7,14 +7,18 @@ import { PlayPage } from './pages/PlayPage';
 import { OpeningsPage } from './pages/OpeningsPage';
 import { TacticsPage } from './pages/TacticsPage';
 import { EndgamePage } from './pages/EndgamePage';
+import { CoordinatePage } from './pages/CoordinatePage';
+import { StatsPage } from './pages/StatsPage';
 
-type View = 'play' | 'openings' | 'tactics' | 'endgame';
+type View = 'play' | 'openings' | 'tactics' | 'endgame' | 'coordinates' | 'stats';
 
 const TABS: { id: View; label: string; hint: string }[] = [
   { id: 'play', label: 'Play', hint: 'vs bots & analysis' },
   { id: 'openings', label: 'Openings', hint: 'repertoire drills' },
   { id: 'tactics', label: 'Middlegame', hint: 'tactics puzzles' },
   { id: 'endgame', label: 'Endgame', hint: 'theory & technique' },
+  { id: 'coordinates', label: 'Coords', hint: 'board-vision trainer' },
+  { id: 'stats', label: 'Stats', hint: 'progress dashboard' },
 ];
 
 function Badge({ ok, children }: { ok: boolean; children: ReactNode }) {
@@ -36,13 +40,13 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
           <h1 className="text-lg font-bold text-ink">♟ Chesser</h1>
           <span className="hidden text-xs text-neutral-500 sm:inline">Stockfish + Lc0/Maia</span>
         </div>
-        <nav className="order-3 flex w-full gap-1 sm:order-2 sm:w-auto">
+        <nav className="order-3 flex w-full flex-wrap gap-1 sm:order-2 sm:w-auto">
           {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setView(t.id)}
               title={t.hint}
-              className={`flex-1 rounded px-3 py-1.5 text-sm sm:flex-none ${
+              className={`min-w-[4.5rem] flex-1 rounded px-3 py-1.5 text-sm sm:flex-none ${
                 view === t.id ? 'bg-emerald-600 text-white' : 'text-neutral-300 hover:bg-neutral-800'
               }`}
             >
@@ -97,6 +101,8 @@ export default function App() {
         {view === 'openings' && <OpeningsPage />}
         {view === 'tactics' && <TacticsPage />}
         {view === 'endgame' && <EndgamePage />}
+        {view === 'coordinates' && <CoordinatePage />}
+        {view === 'stats' && <StatsPage />}
       </main>
     </div>
   );

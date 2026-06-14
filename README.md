@@ -7,8 +7,9 @@ live engine analysis, and (coming next) train your openings, middlegame and
 endgames.
 
 > **Status:** Playable. Engine backend (Stockfish analysis + Stockfish/Maia
-> bots), the play-vs-bot client, and all three trainers — openings, middlegame
-> tactics, and endgames — are in. See the [roadmap](#roadmap).
+> bots), the play-vs-bot client, four trainers — openings, middlegame tactics,
+> endgames, and board-vision coordinates — plus a stats dashboard, opening-name
+> lookup and selectable piece sets are in. See the [roadmap](#roadmap).
 
 ---
 
@@ -30,6 +31,10 @@ endgames.
 | **Learn from mistakes** | Save review-flagged blunders into a drill deck and find the better move (engine-validated); synced across devices |
 | **Game library & import** | Save analyzed games to your account; import your real games by Lichess / Chess.com username |
 | **Analyze anything** | Paste a FEN or PGN to study any position or game |
+| **Stats dashboard** | Accuracy & volume over time — a GitHub-style activity heatmap, a 30-day reviews/accuracy chart, day streaks, per-deck learning progress, and personal bests |
+| **Opening names** | Offline opening-name lookup over 3,700+ ECO positions — names the position *live* as you play (transposition-aware), plus search-and-load any opening onto the board |
+| **Coordinate trainer** | A 30-second board-vision sprint — *find the square* or *name the square*, from either side, with optional pieces/labels and synced best scores |
+| **Piece sets** | Nine selectable piece sets (cburnett, Merida, Alpha, Maestro, California, Cardinal, Governor, Horsey, Staunty); the default is bundled, the rest load on demand |
 | **Quality-of-life** | Move sounds, board themes, premoves, keyboard nav (← → Home End, `f`); Syzygy badge when local tablebases are installed |
 | **Tablebase** | Syzygy endgame tablebases — loaded into Stockfish (`SyzygyPath`) for perfect ≤7-man play, and queried via a configurable proxy for move feedback (online or local files) |
 | **Clocks** | Real chess clocks with time-control presets (1+0 … 10+5) and increments |
@@ -52,6 +57,9 @@ endgames.
   bishops, bishop+knight, K+P, connected passers, Lucena, Q vs R, plus drawn
   studies) against a tablebase-perfect or full-strength Stockfish defender, with
   a live eval bar and per-move feedback tracking your technique.
+- **Board vision** — a coordinate trainer: in 30 seconds, click the named
+  square (or name the highlighted one) from either side. Hide the labels and
+  show the pieces to ramp up the challenge; best scores sync with your account.
 
 Progress in the openings and tactics trainers is scheduled with a lightweight
 SM-2 spaced-repetition system and persisted in the browser, so “Review due”
@@ -169,6 +177,8 @@ SKIP_LC0=1 pnpm setup:engines
 | `pnpm build` | Type-check and build all packages |
 | `pnpm typecheck` | Type-check everything |
 | `pnpm setup:engines` | Install/refresh engines (see `engines/README.md`) |
+| `pnpm gen:openings` | Re-generate the bundled ECO opening database (from lichess-org/chess-openings, CC0) |
+| `pnpm gen:pieces` | Re-generate the alternate piece-set CSS (art from lichess-org/lila) |
 
 ## Roadmap
 
@@ -191,10 +201,17 @@ SKIP_LC0=1 pnpm setup:engines
 - [x] **Phase 9** — Learn-from-mistakes drills, game library + Lichess/Chess.com
   import, FEN/PGN analysis, and a UX pack (sounds, themes, premoves, settings)
 
+- [x] **Phase 10** — Stats dashboard (accuracy & puzzles over time), offline
+  opening-name lookup, a coordinate/board-vision trainer, and alternate piece
+  sets
+
 ### Next up
 
-- Opening-name lookup; a stats dashboard (accuracy & puzzles over time)
-- Coordinate/board-vision trainer; alternate piece sets
+- Opening trainer: full variation trees (not just main lines) and
+  spaced-repetition over an entire repertoire
+- Themed tactics (pins, forks, mate-in-2) and a faster "puzzle storm" variant
+- Strategy lessons (pawn structures, plans) and annotated master games
+- Installable PWA / offline mode; mobile-first board gestures
 
 ## Credits
 

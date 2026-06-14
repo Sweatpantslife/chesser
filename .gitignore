@@ -17,8 +17,9 @@ engines/*.tar
 engines/*.zip
 engines/*.gz
 
-# Local account / progress database
-data/
+# Local account / progress database (server CHESSER_DATA_DIR, repo root only —
+# must not match bundled source dirs like apps/web/src/data/)
+/data/
 
 # Logs
 *.log

@@ -23,6 +23,7 @@ export const Board = memo(function Board(props: BoardProps) {
   const elRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<Api | null>(null);
   const boardTheme = useSettings((s) => s.boardTheme);
+  const pieceSet = useSettings((s) => s.pieceSet);
   const premoveSetting = useSettings((s) => s.premove);
   const premoveOn = !!props.premove && premoveSetting;
 
@@ -68,7 +69,7 @@ export const Board = memo(function Board(props: BoardProps) {
   }, [props.fen, props.orientation, props.turnColor, props.movableColor, props.lastMove, props.inCheck, props.dests, premoveOn]);
 
   return (
-    <div className={`board-wrap board-${boardTheme}`}>
+    <div className={`board-wrap board-${boardTheme} pieces-${pieceSet}`}>
       <div ref={elRef} className="cg-wrap" />
     </div>
   );

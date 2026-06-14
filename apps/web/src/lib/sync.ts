@@ -2,6 +2,7 @@ import { apiGetProgress, apiPutProgress } from './api';
 import { useProgress } from '../store/progress';
 import { useRepertoire } from '../store/repertoire';
 import { useMistakes } from '../store/mistakes';
+import { useCoordinate } from '../store/coordinate';
 
 export type SyncState = 'off' | 'syncing' | 'synced' | 'error';
 
@@ -14,16 +15,18 @@ function gather() {
     progress: useProgress.getState().exportState(),
     repertoires: useRepertoire.getState().exportRepertoires(),
     mistakes: useMistakes.getState().exportMistakes(),
+    coordinate: useCoordinate.getState().exportState(),
   };
 }
 
 function apply(remote: unknown): void {
   if (!remote || typeof remote !== 'object') return;
   const r = remote as Record<string, unknown>;
-  if ('progress' in r || 'repertoires' in r || 'mistakes' in r) {
+  if ('progress' in r || 'repertoires' in r || 'mistakes' in r || 'coordinate' in r) {
     useProgress.getState().importMerge(r.progress);
     useRepertoire.getState().importMerge(r.repertoires);
     useMistakes.getState().importMerge(r.mistakes);
+    useCoordinate.getState().importMerge(r.coordinate);
   } else {
     useProgress.getState().importMerge(r); // legacy: bare progress blob
   }
@@ -54,6 +57,7 @@ export function startSync(token: string, onState: (s: SyncState) => void): void 
   unsubs.push(useProgress.subscribe(schedule));
   unsubs.push(useRepertoire.subscribe(schedule));
   unsubs.push(useMistakes.subscribe(schedule));
+  unsubs.push(useCoordinate.subscribe(schedule));
 }
 
 export function stopSync(): void {
