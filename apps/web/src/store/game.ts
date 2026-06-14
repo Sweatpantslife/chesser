@@ -8,6 +8,16 @@ export type Color = 'white' | 'black';
 export type Mode = 'play' | 'analysis';
 export type Annotation = 'inaccuracy' | 'mistake' | 'blunder';
 
+export interface SideReview {
+  accuracy: number; // 0–100
+  acpl: number; // average centipawn loss
+  moves: number;
+}
+export interface ReviewStats {
+  white: SideReview;
+  black: SideReview;
+}
+
 export interface HistoryMove {
   san: string;
   uci: string;
@@ -92,6 +102,8 @@ export interface GameStore {
   annotations: Record<number, Annotation>;
   reviewing: boolean;
   reviewProgress: number; // 0–100
+  evalGraph: number[]; // White win% per position (start + after each ply)
+  reviewStats: ReviewStats | null;
 
   // actions
   init(): void;
@@ -164,6 +176,8 @@ export const useGame = create<GameStore>((set, get) => ({
   annotations: {},
   reviewing: false,
   reviewProgress: 0,
+  evalGraph: [],
+  reviewStats: null,
 
   init() {
     engine.onStatus.add((connected) => set({ connected }));
@@ -196,6 +210,8 @@ export const useGame = create<GameStore>((set, get) => ({
       clock,
       flagged: null,
       annotations: {},
+      evalGraph: [],
+      reviewStats: null,
     });
     get()._sync();
     get()._refreshAnalysis();
@@ -241,7 +257,7 @@ export const useGame = create<GameStore>((set, get) => ({
             ? { ...clock, whiteMs: clock.whiteMs + tc.incrementMs }
             : { ...clock, blackMs: clock.blackMs + tc.incrementMs }
           : clock;
-      set({ history, viewPly: history.length, clock: nextClock, annotations: {} });
+      set({ history, viewPly: history.length, clock: nextClock, annotations: {}, evalGraph: [], reviewStats: null });
       get()._sync();
       get()._refreshAnalysis();
       get()._maybeTriggerBot();
@@ -297,7 +313,7 @@ export const useGame = create<GameStore>((set, get) => ({
     }
     for (let i = 0; i < undo; i++) game.undo();
     const history = s.history.slice(0, s.history.length - undo);
-    set({ history, viewPly: history.length, thinking: false, pendingPromotion: null, annotations: {} });
+    set({ history, viewPly: history.length, thinking: false, pendingPromotion: null, annotations: {}, evalGraph: [], reviewStats: null });
     gameId++; // invalidate any in-flight bot move
     get()._sync();
     get()._refreshAnalysis();
@@ -368,6 +384,8 @@ export const useGame = create<GameStore>((set, get) => ({
       analysisDepth: 0,
       evalScore: null,
       annotations: {},
+      evalGraph: [],
+      reviewStats: null,
     });
     get()._sync();
     get()._refreshAnalysis();
@@ -379,10 +397,15 @@ export const useGame = create<GameStore>((set, get) => ({
     if (s0.reviewing || s0.history.length === 0) return;
     const myGame = gameId;
     engine.stopAnalysis();
-    set({ reviewing: true, reviewProgress: 0, annotations: {} });
+    set({ reviewing: true, reviewProgress: 0, annotations: {}, evalGraph: [], reviewStats: null });
+
+    const cap = (cp: number) => Math.max(-1500, Math.min(1500, cp));
+    const cpOf = (sc: Score | null): number =>
+      !sc ? 0 : sc.kind === 'mate' ? (sc.value > 0 ? 1500 : sc.value < 0 ? -1500 : 0) : cap(sc.value);
 
     const fens = [s0.startFen, ...s0.history.map((h) => h.fen)];
     const winWhite: number[] = [];
+    const cpWhite: number[] = [];
     for (let i = 0; i < fens.length; i++) {
       const score = await engine.evalOnce(fens[i]!, { movetimeMs: 300 });
       if (gameId !== myGame) {
@@ -390,22 +413,49 @@ export const useGame = create<GameStore>((set, get) => ({
         return; // game changed under us
       }
       winWhite.push(whiteWinPercent(score));
+      cpWhite.push(cpOf(score));
       set({ reviewProgress: Math.round(((i + 1) / fens.length) * 100) });
     }
 
+    // Per-move accuracy (Lichess curve) + centipawn loss, classified by win% swing.
     const ann: Record<number, Annotation> = {};
+    const agg = {
+      white: { accSum: 0, cpl: 0, moves: 0 },
+      black: { accSum: 0, cpl: 0, moves: 0 },
+    };
     for (let i = 0; i < s0.history.length; i++) {
-      const before = winWhite[i];
-      const after = winWhite[i + 1];
-      if (before === undefined || after === undefined) continue;
+      const wb = winWhite[i]!;
+      const wa = winWhite[i + 1]!;
+      const cb = cpWhite[i]!;
+      const ca = cpWhite[i + 1]!;
       const whiteMoved = i % 2 === 0;
-      const loss = whiteMoved ? before - after : after - before; // mover's win% drop
+      const winDrop = whiteMoved ? wb - wa : wa - wb; // mover's win% lost (>=0 = worse)
+      const cpLoss = Math.max(0, whiteMoved ? cb - ca : ca - cb);
+      const acc = Math.max(0, Math.min(100, 103.1668 * Math.exp(-0.04354 * Math.max(0, winDrop)) - 3.1669));
+      const side = whiteMoved ? agg.white : agg.black;
+      side.accSum += acc;
+      side.cpl += cpLoss;
+      side.moves += 1;
+
       const ply = i + 1;
-      if (loss >= 30) ann[ply] = 'blunder';
-      else if (loss >= 18) ann[ply] = 'mistake';
-      else if (loss >= 9) ann[ply] = 'inaccuracy';
+      if (winDrop >= 30) ann[ply] = 'blunder';
+      else if (winDrop >= 18) ann[ply] = 'mistake';
+      else if (winDrop >= 9) ann[ply] = 'inaccuracy';
     }
-    set({ annotations: ann, reviewing: false, reviewProgress: 100 });
+
+    const side = (a: { accSum: number; cpl: number; moves: number }): SideReview => ({
+      accuracy: a.moves ? Math.round(a.accSum / a.moves) : 100,
+      acpl: a.moves ? Math.round(a.cpl / a.moves) : 0,
+      moves: a.moves,
+    });
+
+    set({
+      annotations: ann,
+      evalGraph: winWhite,
+      reviewStats: { white: side(agg.white), black: side(agg.black) },
+      reviewing: false,
+      reviewProgress: 100,
+    });
     get()._refreshAnalysis();
   },
 

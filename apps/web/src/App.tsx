@@ -53,6 +53,9 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
             <span className="hidden gap-2 text-neutral-500 md:flex">
               <Badge ok={availability.stockfish}>Stockfish</Badge>
               <Badge ok={availability.lc0}>Maia</Badge>
+              {availability.syzygy && (
+                <Badge ok>Syzygy{availability.syzygyMaxPieces ? ` ≤${availability.syzygyMaxPieces}` : ''}</Badge>
+              )}
             </span>
           )}
           <span className={`flex items-center gap-1.5 ${connected ? 'text-emerald-400' : 'text-rose-400'}`}>

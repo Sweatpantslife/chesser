@@ -97,6 +97,24 @@ export function PlayPage() {
     return () => window.clearInterval(iv);
   }, []);
 
+  // Keyboard navigation through the move list.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+      const s = useGame.getState();
+      if (e.key === 'ArrowLeft') s.stepView(-1);
+      else if (e.key === 'ArrowRight') s.stepView(1);
+      else if (e.key === 'Home') s.goToPly(0);
+      else if (e.key === 'End') s.goToPly(s.history.length);
+      else if (e.key === 'f' || e.key === 'F') s.flip();
+      else return;
+      e.preventDefault();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   return (
     <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
       <div className="order-2 space-y-3 lg:order-1">
