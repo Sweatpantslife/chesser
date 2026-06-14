@@ -20,8 +20,11 @@ endgames.
 | | |
 |---|---|
 | **Engines** | Stockfish 17 (analysis + leveled/styled bots) and Lc0 running Maia human-like networks |
-| **Levels** | Stockfish bots from ~1320 to 3190 Elo; Maia bots at 1100 / 1500 / 1900 |
+| **Levels** | Stockfish bots from ~1320 to 3190 Elo (plus weakened sub-1320 *beginner* bots); Maia bots at 1100 / 1500 / 1900 |
 | **Styles** | Human-like (Maia), Balanced, Aggressive, Defensive, Positional |
+| **Bot ladder** | A roster of named opponents (avatars, ratings, bios) from absolute beginner to full-strength — beat each to unlock the next rung; progress syncs with your account |
+| **Game controls** | Rematch, switch colours, resign, offer a draw (the bot judges it on the eval), and claim a draw by threefold/50-move — all vs the bot |
+| **Custom starts** | Play a bot from any pasted FEN (or the current board) or from a chosen opening line |
 | **Analysis** | Live multi-PV evaluation, eval bar, principal variations in SAN; a full **variation tree** (branch any line, promote/delete variations) and **board arrows** — right-click-drag your own, plus the engine's colour-coded best-move arrows |
 | **Trainers** | Opening repertoire drills · engine-verified tactics puzzles · theoretical endgames played out vs Stockfish |
 | **Spaced repetition** | Openings and tactics are SM-2 scheduled — “due” counts, streaks, review sessions |
@@ -321,7 +324,12 @@ blocked from the server.
   opening-name lookup, a coordinate/board-vision trainer, and alternate piece
   sets
 
-- [x] **Phase 11** — Full analysis variation tree (branch/promote/delete lines)
+- [x] **Phase 11** — A climbable bot ladder (named opponents with avatars,
+  ratings and bios, including weakened sub-1320 beginners), full vs-bot game
+  controls (rematch, switch colours, resign, offer/claim draw), and play-from-
+  position or play-from-opening games
+
+- [x] **Phase 12** — Full analysis variation tree (branch/promote/delete lines)
   with user + engine board arrows, a rated tactics trainer (theme filter +
   Glicko-style puzzle rating + puzzles mined from your own games), and an
   installable PWA with an offline app shell

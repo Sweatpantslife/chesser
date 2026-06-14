@@ -4,7 +4,8 @@ import { Board } from '../board/Board';
 import { EvalBar } from '../components/EvalBar';
 import { AnalysisPanel } from '../components/AnalysisPanel';
 import { MoveList } from '../components/MoveList';
-import { BotPanel } from '../components/BotPanel';
+import { PlayPanel } from '../components/PlayPanel';
+import { GameActions } from '../components/GameActions';
 import { Controls } from '../components/Controls';
 import { Clock } from '../components/Clock';
 import { ExplorerPanel } from '../components/ExplorerPanel';
@@ -14,6 +15,7 @@ import { PromotionDialog } from '../components/PromotionDialog';
 import { engine } from '../lib/engine';
 import { useGame, type Color } from '../store/game';
 import { useSettings } from '../store/settings';
+import { useLadder } from '../store/ladder';
 
 // Brushes for the top engine lines, best → worst.
 const ARROW_BRUSHES = ['green', 'blue', 'yellow', 'red'];
@@ -109,6 +111,18 @@ export function PlayPage() {
     return () => engine.stopAnalysis();
   }, []);
 
+  // Advance the ladder when you win a game against a roster opponent.
+  useEffect(() => {
+    let handled = -1;
+    return useGame.subscribe((s) => {
+      if (!s.isGameOver || handled === s.gameNo) return;
+      handled = s.gameNo;
+      if (s.opponent?.id && s.winner !== null && s.winner !== 'draw' && s.winner === s.playerColor) {
+        useLadder.getState().markDefeated(s.opponent.id);
+      }
+    });
+  }, []);
+
   // Drive the chess clocks in real time (no-op unless a timed game is live).
   useEffect(() => {
     let last = performance.now();
@@ -142,11 +156,12 @@ export function PlayPage() {
   return (
     <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
       <div className="order-2 space-y-3 lg:order-1">
-        <BotPanel />
+        <PlayPanel />
       </div>
       <div className="order-1 space-y-3 lg:order-2">
         <StatusLine />
         <BoardArea />
+        <GameActions />
         <Controls />
       </div>
       <div className="order-3 space-y-3">

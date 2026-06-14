@@ -13,7 +13,7 @@ function botLabel(style: string, elo?: number, maia?: number): string {
 }
 
 export function Controls() {
-  const { history, viewPly, mode, playerColor, botConfig, stepView, goToPly, flip, takeback, newGame } = useGame();
+  const { history, viewPly, mode, playerColor, botConfig, opponent, stepView, goToPly, flip, takeback, newGame } = useGame();
   const token = useAuth((s) => s.token);
   const [copied, setCopied] = useState(false);
   const [libOpen, setLibOpen] = useState(false);
@@ -21,7 +21,7 @@ export function Controls() {
   const [savedGame, setSavedGame] = useState(false);
 
   const names = () => {
-    const opp = botLabel(botConfig.style, botConfig.elo, botConfig.maiaRating);
+    const opp = opponent?.name ?? botLabel(botConfig.style, botConfig.elo, botConfig.maiaRating);
     const white = mode === 'play' ? (playerColor === 'white' ? 'You' : opp) : 'White';
     const black = mode === 'play' ? (playerColor === 'black' ? 'You' : opp) : 'Black';
     return { white, black };

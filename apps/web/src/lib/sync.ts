@@ -5,6 +5,7 @@ import { useMistakes } from '../store/mistakes';
 import { useCoordinate } from '../store/coordinate';
 import { useCustomPuzzles } from '../store/customPuzzles';
 import { usePuzzleRating } from '../store/puzzleRating';
+import { useLadder } from '../store/ladder';
 
 export type SyncState = 'off' | 'syncing' | 'synced' | 'error';
 
@@ -20,6 +21,7 @@ function gather() {
     coordinate: useCoordinate.getState().exportState(),
     customPuzzles: useCustomPuzzles.getState().exportPuzzles(),
     puzzleRating: usePuzzleRating.getState().exportState(),
+    ladder: useLadder.getState().exportState(),
   };
 }
 
@@ -32,7 +34,8 @@ function apply(remote: unknown): void {
     'mistakes' in r ||
     'coordinate' in r ||
     'customPuzzles' in r ||
-    'puzzleRating' in r
+    'puzzleRating' in r ||
+    'ladder' in r
   ) {
     useProgress.getState().importMerge(r.progress);
     useRepertoire.getState().importMerge(r.repertoires);
@@ -40,6 +43,7 @@ function apply(remote: unknown): void {
     useCoordinate.getState().importMerge(r.coordinate);
     useCustomPuzzles.getState().importMerge(r.customPuzzles);
     usePuzzleRating.getState().importMerge(r.puzzleRating);
+    useLadder.getState().importMerge(r.ladder);
   } else {
     useProgress.getState().importMerge(r); // legacy: bare progress blob
   }
@@ -73,6 +77,7 @@ export function startSync(token: string, onState: (s: SyncState) => void): void 
   unsubs.push(useCoordinate.subscribe(schedule));
   unsubs.push(useCustomPuzzles.subscribe(schedule));
   unsubs.push(usePuzzleRating.subscribe(schedule));
+  unsubs.push(useLadder.subscribe(schedule));
 }
 
 export function stopSync(): void {
