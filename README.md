@@ -180,6 +180,27 @@ SKIP_LC0=1 pnpm setup:engines
 | `pnpm gen:openings` | Re-generate the bundled ECO opening database (from lichess-org/chess-openings, CC0) |
 | `pnpm gen:pieces` | Re-generate the alternate piece-set CSS (art from lichess-org/lila) |
 
+## CI / CD
+
+GitHub Actions wire up the full pipeline (workflows live in `.github/workflows/`):
+
+| Workflow | Trigger | What it does |
+|---|---|---|
+| `ci.yml` | PRs + pushes to `Main` | `pnpm install` → `build` → `typecheck` → `lint` |
+| `docker.yml` | PRs (build only), pushes to `Main` and `v*` tags (build + push) | Builds the production image and publishes it to **GHCR** (`ghcr.io/<owner>/chesser`) |
+| `claude-code-review.yml` | Every PR | Automatic AI review (Claude Opus 4.8) that posts findings as inline comments on the diff |
+| `claude.yml` | `@claude` mention in an issue/PR/review/comment | On-demand assistant — answers questions, implements fixes, opens PRs |
+
+**One secret is required** for the two Claude workflows. Under **Settings →
+Secrets and variables → Actions**, add `CLAUDE_CODE_OAUTH_TOKEN`. Generate the
+value from a Claude Pro/Max subscription by running `claude setup-token` locally
+(or swap both workflows to `anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}`
+to use a pay-as-you-go API key instead). Tune review behaviour by adding a
+`CLAUDE.md` or `REVIEW.md` to the repo root.
+
+Pushing to `Main` publishes `ghcr.io/<owner>/chesser:latest` — point Coolify (or
+any host) at that image instead of building from source if you prefer.
+
 ## Deploying
 
 Chesser ships as a **single container**: one Node process serves the built web
