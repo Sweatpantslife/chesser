@@ -1,5 +1,6 @@
+import { Chess } from 'chess.js';
 import type { BotMoveMessage, BotMoveRequest, Score } from '@chesser/shared';
-import { STOCKFISH_ELO_MAX, STOCKFISH_ELO_MIN } from '@chesser/shared';
+import { BOT_RATING_MIN, STOCKFISH_ELO_MAX, STOCKFISH_ELO_MIN } from '@chesser/shared';
 import type { EngineManager } from './manager.js';
 import type { UciEngine, UciInfo } from './uci.js';
 import { styleScore } from './style-score.js';
@@ -69,7 +70,92 @@ export class BotService {
   private async stockfishMove(req: BotMoveRequest): Promise<BotMoveMessage> {
     const eng = await this.getStockfish();
     // The session's bot engine handles one search at a time.
-    return withLock(eng, () => this.runStockfish(eng, req));
+    return withLock(eng, () => {
+      const elo = req.bot.elo ?? 1500;
+      // Sub-floor ratings can't use Stockfish's UCI_Elo limiter, so weaken by hand.
+      if (elo < STOCKFISH_ELO_MIN) return this.runBeginner(eng, req);
+      return this.runStockfish(eng, req);
+    });
+  }
+
+  // --- Beginner bots (below Stockfish's UCI_Elo floor) ----------------------
+  //
+  // Stockfish's strength limiter bottoms out at 1320 Elo. To host believable
+  // beginner opponents below that we run a *shallow* full-strength search for a
+  // handful of candidate moves, then (a) sometimes play an outright random legal
+  // move — the classic beginner blunder that hangs a piece — and otherwise
+  // (b) pick among the candidates with softmax noise whose temperature rises as
+  // the rating falls. Lower rating ⇒ shallower look, wider net, more noise.
+
+  private async runBeginner(eng: UciEngine, req: BotMoveRequest): Promise<BotMoveMessage> {
+    const rating = clamp(Math.round(req.bot.elo ?? 800), BOT_RATING_MIN, STOCKFISH_ELO_MIN - 1);
+    const t = (rating - BOT_RATING_MIN) / (STOCKFISH_ELO_MIN - 1 - BOT_RATING_MIN); // 0 (weakest) … 1
+    const depth = Math.round(1 + t * 5); // 1 … 6 plies
+    const topN = Math.round(6 - t * 4); // 6 … 2 candidate moves
+    const blunderChance = 0.3 * (1 - t); // up to 30% fully-random moves at the floor
+    const temperature = 40 + (1 - t) * 320; // cp; flatter (more random) when low
+    const white = whiteToMove(req.fen);
+
+    // An outright random legal move — a real beginner hanging something.
+    if (Math.random() < blunderChance) {
+      const board = new Chess(req.fen);
+      const legal = board.moves({ verbose: true });
+      if (legal.length > 0) {
+        const pick = legal[Math.floor(Math.random() * legal.length)]!;
+        const uci = pick.from + pick.to + (pick.promotion ?? '');
+        return {
+          t: 'botMove',
+          reqId: req.reqId,
+          fen: req.fen,
+          uci,
+          san: pick.san,
+          meta: { engine: 'stockfish', style: req.bot.style, depth: 0 },
+        };
+      }
+    }
+
+    eng.setOption('UCI_LimitStrength', false);
+    eng.setOption('MultiPV', Math.max(1, topN));
+    await eng.ready();
+
+    const candidates = new Map<number, Candidate>();
+    let maxDepth = 0;
+    await eng.search({
+      fen: req.fen,
+      go: `go depth ${depth}`,
+      onInfo: (info) => {
+        const first = info.pv[0];
+        if (!first) return;
+        if (info.depth > maxDepth) maxDepth = info.depth;
+        candidates.set(info.multipv, { uci: first, cp: comparableCp(info), score: toWhiteScore(info, white) });
+      },
+    });
+
+    const list = [...candidates.values()];
+    if (list.length === 0) throw new Error('Beginner bot found no move');
+    const bestCp = Math.max(...list.map((c) => c.cp));
+    // Softmax over the candidates' (already STM-POV) evals; higher temperature
+    // gives weaker moves a real chance of being chosen.
+    const weights = list.map((c) => Math.exp((c.cp - bestCp) / temperature));
+    const total = weights.reduce((a, b) => a + b, 0);
+    let roll = Math.random() * total;
+    let chosen = list[0]!;
+    for (let i = 0; i < list.length; i++) {
+      roll -= weights[i]!;
+      if (roll <= 0) {
+        chosen = list[i]!;
+        break;
+      }
+    }
+
+    return {
+      t: 'botMove',
+      reqId: req.reqId,
+      fen: req.fen,
+      uci: chosen.uci,
+      san: uciToSan(req.fen, chosen.uci) ?? chosen.uci,
+      meta: { engine: 'stockfish', style: req.bot.style, score: chosen.score, depth: maxDepth, candidates: list.length },
+    };
   }
 
   private async runStockfish(eng: UciEngine, req: BotMoveRequest): Promise<BotMoveMessage> {

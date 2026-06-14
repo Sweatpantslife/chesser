@@ -1,6 +1,7 @@
 import { Chess } from 'chess.js';
 import { create } from 'zustand';
 import type { AnalysisLine, BotConfig, BotStyle, EngineAvailability, Score } from '@chesser/shared';
+import { STARTING_FEN } from '@chesser/shared';
 import { engine } from '../lib/engine';
 import { whiteWinPercent } from '../lib/format';
 import { playMoveSound } from '../lib/sound';
@@ -43,6 +44,33 @@ export interface ClockState {
   blackMs: number;
 }
 
+/** Who you're playing in a vs-bot game (carries avatar data for the UI). */
+export interface Opponent {
+  /** Roster id, when the opponent is a ladder bot (drives ladder progress). */
+  id?: string;
+  name: string;
+  rating?: number;
+  accent?: string;
+  motif?: string;
+}
+
+/** A non-board game ending: resignation, agreed draw, or a claimed draw. */
+export interface ManualResult {
+  winner: Color | 'draw';
+  reason: string;
+}
+
+export type DrawOffer = 'idle' | 'pending' | 'declined' | 'accepted';
+
+/** Everything needed to re-create the current vs-bot game (rematch / switch). */
+interface PlaySetup {
+  bot: BotConfig;
+  playerColor: Color;
+  startFen?: string;
+  setupSan?: string[];
+  opponent: Opponent | null;
+}
+
 const ANALYSIS_DEPTH_CAP = 30;
 
 // The single source of truth for the live game. Navigation only changes the
@@ -80,12 +108,28 @@ export interface GameStore {
   // game outcome
   status: string;
   isGameOver: boolean;
+  /** Winner of a finished game, or 'draw'; null while it's still going. */
+  winner: Color | 'draw' | null;
+  /** Short reason for the result (e.g. "checkmate", "You resigned"). */
+  endReason: string;
+  /** A claimable draw (threefold / fifty-move) is available at the live position. */
+  drawClaimable: boolean;
 
   // play-vs-bot
   playerColor: Color | null;
   botColor: Color | null;
   botConfig: BotConfig;
   thinking: boolean;
+  /** The current opponent (vs-bot games), with avatar metadata for the UI. */
+  opponent: Opponent | null;
+  /** Increments on every new game — a stable token for per-game effects. */
+  gameNo: number;
+  /** Set when a game ends by resignation / agreed draw / claimed draw. */
+  manualResult: ManualResult | null;
+  /** Transient state of a pending draw offer to the bot. */
+  drawOffer: DrawOffer;
+  /** Captured setup of the live vs-bot game, for rematch / switch colours. */
+  playSetup: PlaySetup | null;
 
   // clocks
   timeControl: TimeControl | null;
@@ -108,7 +152,17 @@ export interface GameStore {
 
   // actions
   init(): void;
-  newGame(cfg: { mode: Mode; playerColor?: Color; bot?: BotConfig }): void;
+  newGame(cfg: {
+    mode: Mode;
+    playerColor?: Color;
+    bot?: BotConfig;
+    /** Start from this position instead of the initial one. */
+    startFen?: string;
+    /** Pre-play these SAN moves (e.g. an opening) before handing over. */
+    setupSan?: string[];
+    /** Opponent metadata for vs-bot games. */
+    opponent?: Opponent | null;
+  }): void;
   userMove(from: string, to: string): void;
   finalizePromotion(piece: 'q' | 'r' | 'b' | 'n'): void;
   cancelPromotion(): void;
@@ -120,6 +174,11 @@ export interface GameStore {
   setMultipv(n: number): void;
   setBotConfig(bot: Partial<BotConfig>): void;
   setTimeControl(tc: TimeControl | null): void;
+  resign(): void;
+  offerDraw(): Promise<void>;
+  claimDraw(): void;
+  rematch(): void;
+  switchColors(): void;
   exploreMove(uci: string): void;
   loadPgn(pgn: string): boolean;
   loadFen(fen: string): boolean;
@@ -159,11 +218,19 @@ export const useGame = create<GameStore>((set, get) => ({
 
   status: 'White to move',
   isGameOver: false,
+  winner: null,
+  endReason: '',
+  drawClaimable: false,
 
   playerColor: null,
   botColor: null,
   botConfig: DEFAULT_BOT,
   thinking: false,
+  opponent: null,
+  gameNo: 0,
+  manualResult: null,
+  drawOffer: 'idle',
+  playSetup: null,
 
   timeControl: null,
   clock: null,
@@ -190,20 +257,56 @@ export const useGame = create<GameStore>((set, get) => ({
   },
 
   newGame(cfg) {
-    game = new Chess();
+    const base = cfg.startFen ?? STARTING_FEN;
+    let g: Chess;
+    try {
+      g = new Chess(base);
+    } catch {
+      g = new Chess();
+    }
+    // Pre-play any setup moves (e.g. an opening) into the visible history.
+    const history: HistoryMove[] = [];
+    if (cfg.setupSan) {
+      for (const san of cfg.setupSan) {
+        try {
+          const mv = g.move(san);
+          history.push({ san: mv.san, uci: mv.from + mv.to + (mv.promotion ?? ''), fen: g.fen() });
+        } catch {
+          break; // stop at the first move that doesn't apply
+        }
+      }
+    }
+    const startFen = base; // the root the visible line branches from
+    game = g;
     gameId++;
+
     const playerColor = cfg.mode === 'play' ? (cfg.playerColor ?? 'white') : null;
+    const opponent = cfg.mode === 'play' ? (cfg.opponent ?? null) : null;
+    const botConfig = cfg.bot ?? get().botConfig;
     const tc = get().timeControl;
     const clock = cfg.mode === 'play' && tc ? { whiteMs: tc.initialMs, blackMs: tc.initialMs } : null;
+    const playSetup: PlaySetup | null =
+      cfg.mode === 'play'
+        ? { bot: botConfig, playerColor: playerColor ?? 'white', startFen: cfg.startFen, setupSan: cfg.setupSan, opponent }
+        : null;
+
     set({
       mode: cfg.mode,
       orientation: playerColor ?? get().orientation,
       playerColor,
       botColor: playerColor ? opposite(playerColor) : null,
-      botConfig: cfg.bot ?? get().botConfig,
-      history: [],
-      viewPly: 0,
-      startFen: game.fen(),
+      botConfig,
+      opponent,
+      gameNo: get().gameNo + 1,
+      playSetup,
+      manualResult: null,
+      drawOffer: 'idle',
+      winner: null,
+      endReason: '',
+      drawClaimable: false,
+      history,
+      viewPly: history.length,
+      startFen,
       thinking: false,
       pendingPromotion: null,
       analysisLines: [],
@@ -316,7 +419,17 @@ export const useGame = create<GameStore>((set, get) => ({
     }
     for (let i = 0; i < undo; i++) game.undo();
     const history = s.history.slice(0, s.history.length - undo);
-    set({ history, viewPly: history.length, thinking: false, pendingPromotion: null, annotations: {}, evalGraph: [], reviewStats: null });
+    set({
+      history,
+      viewPly: history.length,
+      thinking: false,
+      pendingPromotion: null,
+      annotations: {},
+      evalGraph: [],
+      reviewStats: null,
+      manualResult: null, // taking back un-ends a resigned / drawn game
+      drawOffer: 'idle',
+    });
     gameId++; // invalidate any in-flight bot move
     get()._sync();
     get()._refreshAnalysis();
@@ -349,6 +462,84 @@ export const useGame = create<GameStore>((set, get) => ({
     set({ timeControl: tc });
   },
 
+  // --- vs-bot game actions --------------------------------------------------
+
+  resign() {
+    const s = get();
+    if (s.mode !== 'play' || s.isGameOver || !s.playerColor) return;
+    set({ manualResult: { winner: opposite(s.playerColor), reason: 'You resigned' }, thinking: false, drawOffer: 'idle' });
+    gameId++; // drop any in-flight bot reply
+    get()._sync();
+    get()._refreshAnalysis();
+  },
+
+  async offerDraw() {
+    const s = get();
+    if (s.mode !== 'play' || s.isGameOver || s.thinking || s.drawOffer === 'pending') return;
+    if (s.viewPly !== s.history.length || s.history.length < 2 || !s.botColor) return;
+    const myGame = gameId;
+    set({ drawOffer: 'pending' });
+    const fen = game.fen();
+    const botColor = s.botColor;
+    try {
+      const score = await engine.evalOnce(fen, { movetimeMs: 600 });
+      if (gameId !== myGame) return; // game changed under us
+      // Bot accepts only if it isn't better than ~+0.6 pawns from its own POV.
+      const whiteCp = !score ? 0 : score.kind === 'mate' ? (score.value > 0 ? 10_000 : score.value < 0 ? -10_000 : 0) : score.value;
+      const botCp = botColor === 'white' ? whiteCp : -whiteCp;
+      if (botCp <= 60) {
+        set({ drawOffer: 'accepted', manualResult: { winner: 'draw', reason: 'Draw agreed' }, thinking: false });
+        gameId++;
+        get()._sync();
+      } else {
+        set({ drawOffer: 'declined' });
+        window.setTimeout(() => {
+          if (get().drawOffer === 'declined') set({ drawOffer: 'idle' });
+        }, 2600);
+      }
+      get()._refreshAnalysis(); // evalOnce hijacked the analysis stream; resume it
+    } catch {
+      set({ drawOffer: 'idle' });
+      get()._refreshAnalysis();
+    }
+  },
+
+  claimDraw() {
+    const s = get();
+    if (s.mode !== 'play' || s.isGameOver || !s.drawClaimable) return;
+    const reason = game.isThreefoldRepetition() ? 'Threefold repetition' : 'Fifty-move rule';
+    set({ manualResult: { winner: 'draw', reason }, thinking: false, drawOffer: 'idle' });
+    gameId++;
+    get()._sync();
+    get()._refreshAnalysis();
+  },
+
+  rematch() {
+    const ps = get().playSetup;
+    if (!ps) return;
+    get().newGame({
+      mode: 'play',
+      playerColor: ps.playerColor,
+      bot: ps.bot,
+      startFen: ps.startFen,
+      setupSan: ps.setupSan,
+      opponent: ps.opponent,
+    });
+  },
+
+  switchColors() {
+    const ps = get().playSetup;
+    if (!ps) return;
+    get().newGame({
+      mode: 'play',
+      playerColor: opposite(ps.playerColor),
+      bot: ps.bot,
+      startFen: ps.startFen,
+      setupSan: ps.setupSan,
+      opponent: ps.opponent,
+    });
+  },
+
   // Play a move from the currently-viewed position (branches the line).
   exploreMove(uci) {
     const s = get();
@@ -376,6 +567,11 @@ export const useGame = create<GameStore>((set, get) => ({
       mode: 'analysis',
       playerColor: null,
       botColor: null,
+      opponent: null,
+      playSetup: null,
+      manualResult: null,
+      drawOffer: 'idle',
+      gameNo: get().gameNo + 1,
       history: verbose.map((m) => ({ san: m.san, uci: m.from + m.to + (m.promotion ?? ''), fen: m.after })),
       viewPly: 0,
       startFen: verbose[0]!.before,
@@ -408,6 +604,11 @@ export const useGame = create<GameStore>((set, get) => ({
       mode: 'analysis',
       playerColor: null,
       botColor: null,
+      opponent: null,
+      playSetup: null,
+      manualResult: null,
+      drawOffer: 'idle',
+      gameNo: get().gameNo + 1,
       orientation: c.turn() === 'b' ? 'black' : 'white',
       history: [],
       viewPly: 0,
@@ -531,32 +732,60 @@ export const useGame = create<GameStore>((set, get) => ({
     const inCheck = checkProbe.inCheck();
 
     // outcome (live position)
-    let status = `${colorOfFen(game.fen()) === 'white' ? 'White' : 'Black'} to move`;
+    const liveColor = colorOfFen(game.fen()); // side to move in the actual game
+    const cap = (c: Color) => (c === 'white' ? 'White' : 'Black');
+    let status: string;
     let isGameOver = false;
-    if (game.isCheckmate()) {
-      status = `Checkmate — ${colorOfFen(game.fen()) === 'white' ? 'Black' : 'White'} wins`;
-      isGameOver = true;
-    } else if (game.isStalemate()) {
-      status = 'Draw — stalemate';
-      isGameOver = true;
-    } else if (game.isInsufficientMaterial()) {
-      status = 'Draw — insufficient material';
-      isGameOver = true;
-    } else if (game.isThreefoldRepetition()) {
-      status = 'Draw — threefold repetition';
-      isGameOver = true;
-    } else if (game.isDraw()) {
-      status = 'Draw — 50-move rule';
-      isGameOver = true;
-    } else if (game.inCheck()) {
-      status = `${colorOfFen(game.fen()) === 'white' ? 'White' : 'Black'} to move — check`;
-    }
+    let winner: Color | 'draw' | null = null;
+    let endReason = '';
+    let drawClaimable = false;
+    const manual = s.manualResult;
+    const flagged = s.flagged;
 
-    // a flag fall ends the game regardless of board state
-    const flagged = get().flagged;
-    if (flagged) {
-      status = `${flagged === 'white' ? 'White' : 'Black'} flagged — ${flagged === 'white' ? 'Black' : 'White'} wins on time`;
+    if (manual) {
+      // Resignation / agreed draw / claimed draw — ends regardless of the board.
       isGameOver = true;
+      winner = manual.winner;
+      endReason = manual.reason;
+      status =
+        manual.winner === 'draw'
+          ? `Draw — ${manual.reason.toLowerCase()}`
+          : `${cap(manual.winner)} wins — ${manual.reason.toLowerCase()}`;
+    } else if (flagged) {
+      isGameOver = true;
+      winner = opposite(flagged);
+      endReason = 'on time';
+      status = `${cap(flagged)} flagged — ${cap(opposite(flagged))} wins on time`;
+    } else if (game.isCheckmate()) {
+      isGameOver = true;
+      winner = opposite(liveColor);
+      endReason = 'checkmate';
+      status = `Checkmate — ${cap(winner)} wins`;
+    } else if (game.isStalemate()) {
+      isGameOver = true;
+      winner = 'draw';
+      endReason = 'stalemate';
+      status = 'Draw — stalemate';
+    } else if (game.isInsufficientMaterial()) {
+      isGameOver = true;
+      winner = 'draw';
+      endReason = 'insufficient material';
+      status = 'Draw — insufficient material';
+    } else {
+      // Threefold repetition and the 50-move rule are *claimable*, not automatic.
+      const threefold = game.isThreefoldRepetition();
+      const fiftyMove = Number(game.fen().split(' ')[4] ?? '0') >= 100;
+      if ((threefold || fiftyMove) && s.mode === 'play') {
+        drawClaimable = true;
+        status = threefold ? 'Threefold repetition — you can claim a draw' : 'Fifty-move rule — you can claim a draw';
+      } else if (threefold || fiftyMove) {
+        isGameOver = true;
+        winner = 'draw';
+        endReason = threefold ? 'threefold repetition' : 'fifty-move rule';
+        status = `Draw — ${endReason}`;
+      } else {
+        status = `${cap(liveColor)} to move${game.inCheck() ? ' — check' : ''}`;
+      }
     }
 
     // interaction (only at the live position)
@@ -584,6 +813,9 @@ export const useGame = create<GameStore>((set, get) => ({
       inCheck,
       status,
       isGameOver,
+      winner,
+      endReason,
+      drawClaimable,
       movableColor,
       dests,
     });

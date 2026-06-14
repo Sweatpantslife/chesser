@@ -84,7 +84,14 @@ export const BOT_STYLES: BotStyle[] = [
 
 export interface BotConfig {
   style: BotStyleId;
-  /** Target strength for Stockfish styles (UCI_Elo range). Ignored for 'human'. */
+  /**
+   * Target strength for Stockfish styles. Ignored for 'human'.
+   *
+   * Above {@link STOCKFISH_ELO_MIN} this maps to Stockfish's native UCI_Elo
+   * limiter. *Below* it (down to {@link BOT_RATING_MIN}) the server switches to a
+   * "beginner" weakening path — shallow search plus occasional random/blunder
+   * picks — so the ladder can host genuinely sub-1320 opponents.
+   */
   elo?: number;
   /** Maia network rating for 'human' style. */
   maiaRating?: number;
@@ -95,6 +102,12 @@ export interface BotConfig {
 /** UCI_Elo bounds supported by Stockfish's strength limiter. */
 export const STOCKFISH_ELO_MIN = 1320;
 export const STOCKFISH_ELO_MAX = 3190;
+
+/**
+ * Lowest displayed rating a (non-human) bot may carry. Ratings in
+ * [BOT_RATING_MIN, STOCKFISH_ELO_MIN) trigger the server's beginner weakening.
+ */
+export const BOT_RATING_MIN = 500;
 
 // ---------------------------------------------------------------------------
 // Evaluation scores (always normalised to White's point of view)

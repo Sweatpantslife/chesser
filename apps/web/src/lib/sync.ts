@@ -3,6 +3,7 @@ import { useProgress } from '../store/progress';
 import { useRepertoire } from '../store/repertoire';
 import { useMistakes } from '../store/mistakes';
 import { useCoordinate } from '../store/coordinate';
+import { useLadder } from '../store/ladder';
 
 export type SyncState = 'off' | 'syncing' | 'synced' | 'error';
 
@@ -16,17 +17,19 @@ function gather() {
     repertoires: useRepertoire.getState().exportRepertoires(),
     mistakes: useMistakes.getState().exportMistakes(),
     coordinate: useCoordinate.getState().exportState(),
+    ladder: useLadder.getState().exportState(),
   };
 }
 
 function apply(remote: unknown): void {
   if (!remote || typeof remote !== 'object') return;
   const r = remote as Record<string, unknown>;
-  if ('progress' in r || 'repertoires' in r || 'mistakes' in r || 'coordinate' in r) {
+  if ('progress' in r || 'repertoires' in r || 'mistakes' in r || 'coordinate' in r || 'ladder' in r) {
     useProgress.getState().importMerge(r.progress);
     useRepertoire.getState().importMerge(r.repertoires);
     useMistakes.getState().importMerge(r.mistakes);
     useCoordinate.getState().importMerge(r.coordinate);
+    useLadder.getState().importMerge(r.ladder);
   } else {
     useProgress.getState().importMerge(r); // legacy: bare progress blob
   }
@@ -58,6 +61,7 @@ export function startSync(token: string, onState: (s: SyncState) => void): void 
   unsubs.push(useRepertoire.subscribe(schedule));
   unsubs.push(useMistakes.subscribe(schedule));
   unsubs.push(useCoordinate.subscribe(schedule));
+  unsubs.push(useLadder.subscribe(schedule));
 }
 
 export function stopSync(): void {
