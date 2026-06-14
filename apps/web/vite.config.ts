@@ -7,6 +7,9 @@ const ENGINE_TARGET = process.env.CHESSER_SERVER ?? 'http://localhost:8787';
 // client can always use same-origin /api and /ws URLs.
 export default defineConfig({
   plugins: [react()],
+  // The bundled ECO opening database is a large, intentionally lazy-loaded
+  // chunk (only fetched when opening-name lookup is used).
+  build: { chunkSizeWarningLimit: 700 },
   server: {
     port: 5173,
     host: true,
