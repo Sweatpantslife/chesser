@@ -5,6 +5,7 @@ import { ReviewStats } from '../components/ReviewStats';
 import { useProgress } from '../store/progress';
 import { useRepertoire, BUILTIN_REPERTOIRE, type RepLine } from '../store/repertoire';
 import { dueLabel } from '../lib/srs';
+import { playMoveSound } from '../lib/sound';
 import type { Color } from '../store/game';
 
 type Phase = 'idle' | 'playing' | 'done';
@@ -114,6 +115,7 @@ export function OpeningsPage() {
     const expected = new Chess(game.current.fen()).move(line.moves[ply]!);
     if (expected.from === from && expected.to === to) {
       game.current.move(line.moves[ply]!);
+      playMoveSound(expected.san);
       setStats((s) => ({ ...s, correct: s.correct + 1 }));
       setFeedback({ kind: 'ok', text: `✓ ${expected.san}` });
       sync();

@@ -47,6 +47,7 @@ function BoardArea() {
   const evalScore = useGame((s) => s.evalScore);
   const analysisOn = useGame((s) => s.analysisOn);
   const userMove = useGame((s) => s.userMove);
+  const mode = useGame((s) => s.mode);
 
   const topSide: Color = orientation === 'white' ? 'black' : 'white';
 
@@ -67,6 +68,7 @@ function BoardArea() {
             lastMove={lastMove}
             inCheck={inCheck}
             onMove={userMove}
+            premove={mode === 'play'}
           />
           <PromotionDialog />
         </div>
