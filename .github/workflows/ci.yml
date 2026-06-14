@@ -1,0 +1,48 @@
+name: CI
+
+# Quality gates: install, build (which compiles + typechecks every package),
+# an explicit typecheck pass, and lint. Runs on PRs and on pushes to Main.
+on:
+  push:
+    branches: [Main]
+  pull_request:
+
+# Cancel superseded runs on the same branch/PR to save minutes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Typecheck, build & lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # pnpm must be set up before setup-node so its cache backend exists.
+      # Version is read from the "packageManager" field in package.json.
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Ordered build: shared -> server -> web. Compiles @chesser/shared first so
+      # the downstream typecheck/build steps can resolve its emitted declarations.
+      - name: Build
+        run: pnpm build
+
+      - name: Typecheck
+        run: pnpm -r typecheck
+
+      # No package defines "lint" yet; pnpm exits 0 in that case, so this is a
+      # future-proof no-op that activates automatically once ESLint is added.
+      - name: Lint
+        run: pnpm -r lint
