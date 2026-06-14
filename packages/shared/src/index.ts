@@ -18,6 +18,10 @@ export interface EngineAvailability {
   lc0: boolean;
   /** Maia (human-like Lc0) networks present, ascending by rating. */
   maiaNetworks: MaiaNetworkInfo[];
+  /** Local Syzygy endgame tablebases are loaded into Stockfish (perfect ≤N-man play). */
+  syzygy?: boolean;
+  /** Largest piece count the local tablebases cover (e.g. 5 for the 3-4-5 set). */
+  syzygyMaxPieces?: number;
 }
 
 export interface MaiaNetworkInfo {
@@ -201,6 +205,8 @@ export interface TablebaseMove {
 export interface TablebaseResult {
   available: boolean;
   reason?: string; // why unavailable (too-many-pieces / unreachable / ...)
+  /** Where the data came from: the online proxy, or local Syzygy files. */
+  source?: 'online' | 'syzygy';
   /** Result for the side to move. */
   category?: TablebaseCategory;
   dtz?: number | null;

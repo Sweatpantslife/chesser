@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
-import type { TablebaseResult } from '@chesser/shared';
+import type { EngineAvailability, TablebaseResult } from '@chesser/shared';
 import { Board } from '../board/Board';
 import { EvalBar } from '../components/EvalBar';
 import { engine } from '../lib/engine';
@@ -24,6 +24,10 @@ export function EndgamePage() {
   const [thinking, setThinking] = useState(false);
   const [tb, setTb] = useState<TablebaseResult | null>(null);
   const [moveNote, setMoveNote] = useState<{ kind: 'ok' | 'good' | 'bad'; text: string } | null>(null);
+  const [syzygy, setSyzygy] = useState<{ on: boolean; max?: number }>(() => ({
+    on: engine.availability?.syzygy ?? false,
+    max: engine.availability?.syzygyMaxPieces,
+  }));
 
   const youPlay = study.youPlay;
   const youChar = youPlay === 'white' ? 'w' : 'b';
@@ -108,6 +112,17 @@ export function EndgamePage() {
     load(ENDGAMES[0]!);
     return () => engine.stopAnalysis();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Track whether the server has local Syzygy tablebases loaded into Stockfish.
+  useEffect(() => {
+    const apply = (a: EngineAvailability) => setSyzygy({ on: a.syzygy ?? false, max: a.syzygyMaxPieces });
+    const fn = (w: { engines: EngineAvailability }) => apply(w.engines);
+    engine.onWelcome.add(fn);
+    if (engine.availability) apply(engine.availability);
+    return () => {
+      engine.onWelcome.delete(fn);
+    };
   }, []);
 
   const dests = useMemo(() => {
@@ -233,10 +248,15 @@ export function EndgamePage() {
           {phase === 'playing' && (
             <p className="mt-2 font-mono text-xs text-neutral-500">
               {tb?.available
-                ? `tablebase · ${tb.category}${tb.dtz != null ? ` · dtz ${tb.dtz}` : ''}`
+                ? `${tb.source === 'syzygy' ? 'syzygy' : 'tablebase'} · ${tb.category}${tb.dtz != null ? ` · dtz ${tb.dtz}` : ''}`
                 : analysis.score
                   ? `eval ${formatScore(analysis.score)} · depth ${analysis.depth}`
                   : ''}
+            </p>
+          )}
+          {syzygy.on && (
+            <p className="mt-2 text-[11px] leading-snug text-emerald-400/80">
+              ♟ Syzygy {syzygy.max ?? 7}-man tablebases loaded — the defender is perfect.
             </p>
           )}
         </div>

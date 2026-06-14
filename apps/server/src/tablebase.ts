@@ -1,18 +1,26 @@
 import type { TablebaseCategory, TablebaseResult } from '@chesser/shared';
+import { syzygyInfo } from './config.js';
+import { probeLocalSyzygy } from './tablebase-local.js';
 
 /**
- * Syzygy tablebase access, proxied to a configurable upstream (default: the
- * public Lichess tablebase API). Positions with ≤7 pieces are looked up; on any
- * failure (host blocked, timeout, too many pieces) we report `available: false`
- * and the caller falls back to the engine. Results are cached in-memory.
+ * Syzygy tablebase access. The online proxy (default: the public Lichess
+ * tablebase API) is preferred because it carries DTZ/DTM; when it is unreachable
+ * we fall back to local Syzygy files, if installed, so the endgame trainer keeps
+ * working offline. On any failure we report `available: false` and the caller
+ * falls back to the engine. Results are cached in-memory.
  *
- * Point CHESSER_TABLEBASE_URL at a self-hosted instance if you run one.
+ * Point CHESSER_TABLEBASE_URL at a self-hosted instance, and/or drop tablebase
+ * files in engines/syzygy (or set CHESSER_SYZYGY_PATH) for the local fallback.
  */
 const UPSTREAM = process.env.CHESSER_TABLEBASE_URL ?? 'https://tablebase.lichess.ovh/standard';
 const MAX_PIECES = 7;
 const TIMEOUT_MS = 4000;
+// After the upstream times out, serve from local tablebases (if any) for this
+// long before paying the timeout again — keeps offline play snappy.
+const ONLINE_COOLDOWN_MS = 60_000;
 
 const cache = new Map<string, TablebaseResult>();
+let onlineDownUntil = 0;
 
 function pieceCount(fen: string): number {
   return (fen.split(' ')[0] ?? '').replace(/[^a-zA-Z]/g, '').length;
@@ -48,6 +56,7 @@ function normalize(data: any): TablebaseResult {
     : [];
   return {
     available: true,
+    source: 'online',
     category: (data.category ?? 'unknown') as TablebaseCategory,
     dtz: data.dtz ?? null,
     dtm: data.dtm ?? null,
@@ -57,11 +66,8 @@ function normalize(data: any): TablebaseResult {
   };
 }
 
-export async function probeTablebase(fen: string): Promise<TablebaseResult> {
-  if (pieceCount(fen) > MAX_PIECES) return { available: false, reason: 'too-many-pieces' };
-  const cached = cache.get(fen);
-  if (cached) return cached;
-
+/** Query the online proxy. `unreachable` distinguishes timeouts/network errors. */
+async function probeOnline(fen: string): Promise<{ result: TablebaseResult; unreachable: boolean }> {
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -70,11 +76,45 @@ export async function probeTablebase(fen: string): Promise<TablebaseResult> {
       headers: { 'User-Agent': 'chesser-trainer' },
     });
     clearTimeout(timer);
-    if (!res.ok) return { available: false, reason: `http-${res.status}` };
-    const result = normalize(await res.json());
+    if (!res.ok) return { result: { available: false, reason: `http-${res.status}` }, unreachable: false };
+    return { result: normalize(await res.json()), unreachable: false };
+  } catch {
+    return { result: { available: false, reason: 'unreachable' }, unreachable: true };
+  }
+}
+
+export async function probeTablebase(fen: string): Promise<TablebaseResult> {
+  if (pieceCount(fen) > MAX_PIECES) return { available: false, reason: 'too-many-pieces' };
+  const cached = cache.get(fen);
+  if (cached) return cached;
+
+  const sz = syzygyInfo();
+  const localOk = !!sz && pieceCount(fen) <= sz.maxPieces;
+
+  // While the upstream is known-down, skip the timeout and serve locally.
+  if (localOk && Date.now() < onlineDownUntil) {
+    const local = await probeLocalSyzygy(fen);
+    if (local?.available) {
+      cache.set(fen, local);
+      return local;
+    }
+  }
+
+  const { result, unreachable } = await probeOnline(fen);
+  if (result.available) {
+    onlineDownUntil = 0;
     cache.set(fen, result);
     return result;
-  } catch {
-    return { available: false, reason: 'unreachable' };
   }
+  if (unreachable) onlineDownUntil = Date.now() + ONLINE_COOLDOWN_MS;
+
+  // Online failed — fall back to local Syzygy files if we have them.
+  if (localOk) {
+    const local = await probeLocalSyzygy(fen);
+    if (local?.available) {
+      cache.set(fen, local);
+      return local;
+    }
+  }
+  return result;
 }
