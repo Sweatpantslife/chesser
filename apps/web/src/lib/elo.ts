@@ -18,8 +18,10 @@ export function eloExpected(rating: number, oppRating: number): number {
   return 1 / (1 + 10 ** ((oppRating - rating) / 400));
 }
 
-/** New rating after a result. `score`: 1 win · 0.5 draw · 0 loss. */
+/** New rating after a result. `score`: 1 win · 0.5 draw · 0 loss. The returned
+ *  `delta` is the *effective* change, so it matches the rating even at the floor. */
 export function updateElo(rating: number, oppRating: number, score: number, played: number): { rating: number; delta: number } {
-  const delta = Math.round(eloK(played) * (score - eloExpected(rating, oppRating)));
-  return { rating: Math.max(ELO_MIN, rating + delta), delta };
+  const rawDelta = Math.round(eloK(played) * (score - eloExpected(rating, oppRating)));
+  const newRating = Math.max(ELO_MIN, rating + rawDelta);
+  return { rating: newRating, delta: newRating - rating };
 }

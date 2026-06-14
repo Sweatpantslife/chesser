@@ -38,15 +38,22 @@ function toastFor(e: GamifyEvent): Toast {
 export function GamifyToasts() {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  useEffect(
-    () =>
-      onGamifyEvent((e) => {
-        const t = toastFor(e);
-        setToasts((cur) => [...cur, t].slice(-4));
-        window.setTimeout(() => setToasts((cur) => cur.filter((x) => x.id !== t.id)), 4500);
-      }),
-    [],
-  );
+  useEffect(() => {
+    const timeouts = new Set<number>();
+    const unsub = onGamifyEvent((e) => {
+      const t = toastFor(e);
+      setToasts((cur) => [...cur, t].slice(-4));
+      const id = window.setTimeout(() => {
+        setToasts((cur) => cur.filter((x) => x.id !== t.id));
+        timeouts.delete(id);
+      }, 4500);
+      timeouts.add(id);
+    });
+    return () => {
+      unsub();
+      for (const id of timeouts) window.clearTimeout(id);
+    };
+  }, []);
 
   if (toasts.length === 0) return null;
   return (

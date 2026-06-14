@@ -72,6 +72,7 @@ interface GamifyState {
   streak: number;
   bestStreak: number;
   lastGoalDay: string;
+  goalsMet: number; // distinct days the daily goal was met (counted at crossing time)
 
   award(amount: number, countsAsActivity?: boolean): AwardResult;
   setGoalXp(n: number): void;
@@ -81,7 +82,7 @@ interface GamifyState {
   /** Streak as displayed: 0 once a day has been missed. */
   activeStreak(): number;
 
-  exportState(): Pick<GamifyState, 'xp' | 'days' | 'goalXp' | 'streak' | 'bestStreak' | 'lastGoalDay'>;
+  exportState(): Pick<GamifyState, 'xp' | 'days' | 'goalXp' | 'streak' | 'bestStreak' | 'lastGoalDay' | 'goalsMet'>;
   importMerge(remote: unknown): void;
   reset(): void;
 }
@@ -95,6 +96,7 @@ export const useGamify = create<GamifyState>()(
       streak: 0,
       bestStreak: 0,
       lastGoalDay: '',
+      goalsMet: 0,
 
       award(amount, countsAsActivity = true) {
         const s = get();
@@ -104,19 +106,25 @@ export const useGamify = create<GamifyState>()(
         const wasMet = day.xp >= s.goalXp;
         const newDay: DayLog = { xp: day.xp + amount, activities: day.activities + (countsAsActivity ? 1 : 0) };
 
-        let { streak, bestStreak, lastGoalDay } = s;
+        let { streak, bestStreak, lastGoalDay, goalsMet } = s;
         let goalJustMet = false;
         if (!wasMet && newDay.xp >= s.goalXp) {
-          goalJustMet = true;
-          // Continue the streak if yesterday's goal was met, else start fresh.
-          streak = lastGoalDay && dayDiff(lastGoalDay, d) === 1 ? streak + 1 : 1;
-          bestStreak = Math.max(bestStreak, streak);
-          lastGoalDay = d;
+          if (lastGoalDay === d) {
+            // Today was already met earlier (e.g. the goal was raised mid-day and
+            // re-crossed) — the streak/count already reflect it, so leave them be.
+          } else {
+            goalJustMet = true;
+            // Continue the streak if yesterday's goal was met, else start fresh.
+            streak = lastGoalDay && dayDiff(lastGoalDay, d) === 1 ? streak + 1 : 1;
+            bestStreak = Math.max(bestStreak, streak);
+            lastGoalDay = d;
+            goalsMet += 1; // counted once per day, at crossing time (no retroactive shift)
+          }
         }
 
         const totalXp = s.xp + amount;
         const level = levelFromXp(totalXp);
-        set({ xp: totalXp, days: { ...s.days, [d]: newDay }, streak, bestStreak, lastGoalDay });
+        set({ xp: totalXp, days: { ...s.days, [d]: newDay }, streak, bestStreak, lastGoalDay, goalsMet });
         return { xpGained: amount, totalXp, prevLevel, level, leveledUp: level > prevLevel, goalJustMet, streak };
       },
 
@@ -141,8 +149,8 @@ export const useGamify = create<GamifyState>()(
       },
 
       exportState() {
-        const { xp, days, goalXp, streak, bestStreak, lastGoalDay } = get();
-        return { xp, days, goalXp, streak, bestStreak, lastGoalDay };
+        const { xp, days, goalXp, streak, bestStreak, lastGoalDay, goalsMet } = get();
+        return { xp, days, goalXp, streak, bestStreak, lastGoalDay, goalsMet };
       },
 
       importMerge(remote) {
@@ -163,11 +171,12 @@ export const useGamify = create<GamifyState>()(
           streak: Math.max(local.streak, r.streak ?? 0),
           bestStreak: Math.max(local.bestStreak, r.bestStreak ?? 0),
           lastGoalDay,
+          goalsMet: Math.max(local.goalsMet, r.goalsMet ?? 0),
         });
       },
 
       reset() {
-        set({ xp: 0, days: {}, goalXp: DEFAULT_GOAL, streak: 0, bestStreak: 0, lastGoalDay: '' });
+        set({ xp: 0, days: {}, goalXp: DEFAULT_GOAL, streak: 0, bestStreak: 0, lastGoalDay: '', goalsMet: 0 });
       },
     }),
     { name: 'chesser-gamify' },

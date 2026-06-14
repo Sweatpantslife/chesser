@@ -66,11 +66,11 @@ export function buildAchievementCtx(): AchievementCtx {
     reviews += v.reviews;
     if (v.reviews > 0) activeDays.add(day);
   }
-  let goalsMet = 0;
   for (const [day, log] of Object.entries(gamify.days)) {
     if (log.activities > 0) activeDays.add(day);
-    if (log.xp >= gamify.goalXp) goalsMet++;
   }
+  // Counted at crossing time, so changing the goal doesn't retroactively shift it.
+  const goalsMet = gamify.goalsMet;
 
   let topBotBeatenRating = 0;
   for (const id of Object.keys(ladder.defeated)) {
