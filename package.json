@@ -18,6 +18,7 @@
     "dev:server": "pnpm --filter @chesser/server dev",
     "dev:web": "pnpm --filter @chesser/web dev",
     "build": "pnpm --filter @chesser/shared build && pnpm --filter @chesser/server build && pnpm --filter @chesser/web build",
+    "test": "pnpm --filter @chesser/shared build && pnpm --filter @chesser/server test",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint"
   },
