@@ -65,8 +65,7 @@ export async function probeExplorer(fen: string, db: ExplorerDb): Promise<Explor
     const res = await fetch(`${base}?${params.toString()}`, {
       signal: controller.signal,
       headers: explorerHeaders(),
-    });
-    clearTimeout(timer);
+    }).finally(() => clearTimeout(timer));
     if (!res.ok) return { available: false, reason: `http-${res.status}` };
     const result = normalize(await res.json());
     cache.set(key, result);
