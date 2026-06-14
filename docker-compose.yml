@@ -27,8 +27,11 @@ services:
     init: true
     environment:
       # Coolify: generates a domain and wires Traefik to this service's port 8787.
-      # Remove this line for plain Docker Compose.
-      - SERVICE_FQDN_CHESSER_8787
+      # The `=/` value (root path) is required: Coolify's compose parser turns a
+      # value-less entry into an invalid numeric key ("non-string key in
+      # services.chesser.environment: 0") and fails the build. `=/` is equivalent
+      # to the bare form (root path). Remove this line for plain Docker Compose.
+      - SERVICE_FQDN_CHESSER_8787=/
       - NODE_ENV=production
       - HOST=0.0.0.0
       - PORT=8787
