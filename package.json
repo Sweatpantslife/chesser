@@ -14,11 +14,12 @@
     "gen:tactics": "node scripts/gen-tactics.mjs",
     "gen:openings": "node scripts/gen-openings.mjs",
     "gen:pieces": "node scripts/gen-piece-sets.mjs",
+    "validate:trainers": "pnpm --filter @chesser/server exec tsx ../../scripts/validate-trainers.mts",
     "dev": "pnpm --filter @chesser/shared build && pnpm -r --parallel --stream dev",
     "dev:server": "pnpm --filter @chesser/server dev",
     "dev:web": "pnpm --filter @chesser/web dev",
     "build": "pnpm --filter @chesser/shared build && pnpm --filter @chesser/server build && pnpm --filter @chesser/web build",
-    "test": "pnpm --filter @chesser/shared build && pnpm --filter @chesser/server test",
+    "test": "pnpm --filter @chesser/shared build && pnpm --filter @chesser/server test && pnpm validate:trainers",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint"
   },

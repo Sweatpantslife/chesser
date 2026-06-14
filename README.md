@@ -7,11 +7,14 @@ live engine analysis, and (coming next) train your openings, middlegame and
 endgames.
 
 > **Status:** Playable. Engine backend (Stockfish analysis + Stockfish/Maia
-> bots), the play-vs-bot client, four trainers — openings, middlegame tactics,
-> endgames, and board-vision coordinates — plus a full variation tree with
-> board arrows, a rated tactics trainer (themes + puzzles from your own games),
-> a stats dashboard, opening-name lookup, selectable piece sets, and an
-> installable PWA are in. See the [roadmap](#roadmap).
+> bots), the play-vs-bot client, and a deep trainer suite — openings, middlegame
+> tactics, endgames, a board-vision coordinate trainer (find/name square, square
+> colour, knight's tour), a checkmate-pattern library, an anti-blunder
+> "are you sure?" trainer and a blindfold/calculation trainer — plus a full
+> variation tree with board arrows, a rated tactics trainer (themes + puzzles
+> from your own games), a stats dashboard with unified spaced-repetition,
+> opening-name lookup, selectable piece sets, and an installable PWA are in.
+> See the [roadmap](#roadmap).
 
 ---
 
@@ -26,8 +29,8 @@ endgames.
 | **Game controls** | Rematch, switch colours, resign, offer a draw (the bot judges it on the eval), and claim a draw by threefold/50-move — all vs the bot |
 | **Custom starts** | Play a bot from any pasted FEN (or the current board) or from a chosen opening line |
 | **Analysis** | Live multi-PV evaluation, eval bar, principal variations in SAN; a full **variation tree** (branch any line, promote/delete variations) and **board arrows** — right-click-drag your own, plus the engine's colour-coded best-move arrows |
-| **Trainers** | Opening repertoire drills · engine-verified tactics puzzles · theoretical endgames played out vs Stockfish |
-| **Spaced repetition** | Openings and tactics are SM-2 scheduled — “due” counts, streaks, review sessions |
+| **Trainers** | Opening repertoire drills · engine-verified tactics puzzles · theoretical endgames played out vs Stockfish · a checkmate-pattern library with drills · an anti-blunder “are you sure?” trainer · a blindfold/calculation trainer |
+| **Spaced repetition** | Openings, tactics, checkmate patterns and anti-blunder drills are SM-2 scheduled on one **unified** system — a single “due across all decks” queue, streaks, per-deck progress |
 | **Custom repertoires** | Build your own opening libraries — save any line from the board, then drill them |
 | **Puzzle rush** | Solve against a 5-minute clock; 3 strikes and you’re out, with a synced high score |
 | **Accounts & sync** | Optional username/password accounts sync progress *and repertoires* across devices |
@@ -41,7 +44,10 @@ endgames.
 | **Stats dashboard** | Accuracy & volume over time — a GitHub-style activity heatmap, a 30-day reviews/accuracy chart, day streaks, per-deck learning progress, your puzzle rating + trend, and personal bests |
 | **Installable PWA** | Add to home screen / install as a desktop app; a service worker caches the app shell so the board and client-side trainers work offline |
 | **Opening names** | Offline opening-name lookup over 3,700+ ECO positions — names the position *live* as you play (transposition-aware), plus search-and-load any opening onto the board |
-| **Coordinate trainer** | A 30-second board-vision sprint — *find the square* or *name the square*, from either side, with optional pieces/labels and synced best scores |
+| **Coordinate trainer** | A 30-second board-vision sprint — *find the square*, *name the square*, *square colour* (light or dark?) or *knight's tour* (click every knight move), from either side, with optional pieces/labels and synced per-mode best scores |
+| **Checkmate library** | A library of named mating patterns (back-rank, smothered, Anastasia's, Arabian, Greco's, Boden's, Damiano's, epaulette, lawnmower, Scholar's) with solve-the-mate drills, each spaced-repetition scheduled |
+| **Anti-blunder** | An “are you sure?” trainer: find the strong move, but the tempting blunder is intercepted with a confirmation prompt and a forced refutation — building the habit of a blunder-check |
+| **Blindfold / calculation** | Visualize a line with the pieces hidden then answer a question, or solve a tactic *blindfold* on an empty board from a spoken-style piece list |
 | **Piece sets** | Nine selectable piece sets (cburnett, Merida, Alpha, Maestro, California, Cardinal, Governor, Horsey, Staunty); the default is bundled, the rest load on demand |
 | **Quality-of-life** | Move sounds, board themes, premoves, keyboard nav (← → Home End, `f`); Syzygy badge when local tablebases are installed |
 | **Tablebase** | Syzygy endgame tablebases — loaded into Stockfish (`SyzygyPath`) for perfect ≤7-man play, and queried via a configurable proxy for move feedback (online or local files) |
@@ -71,15 +77,32 @@ endgames.
   studies) against a tablebase-perfect or full-strength Stockfish defender, with
   a live eval bar and per-move feedback tracking your technique.
 - **Board vision** — a coordinate trainer: in 30 seconds, click the named
-  square (or name the highlighted one) from either side. Hide the labels and
-  show the pieces to ramp up the challenge; best scores sync with your account.
+  square, name the highlighted one, judge a square's **colour** (light/dark), or
+  trace a **knight's tour** (click every square the knight can jump to), from
+  either side. Hide the labels and show the pieces to ramp up the challenge;
+  per-mode best scores sync with your account.
+- **Checkmates** — a library of the classic mating patterns (back-rank,
+  smothered, Anastasia's, Arabian, Greco's, Boden's, Damiano's, epaulette,
+  lawnmower, Scholar's). Read the motif, then solve a drill by finding the key
+  move; every position is validated by chess.js to actually mate, and the drills
+  are spaced-repetition scheduled.
+- **Anti-blunder** — find the strong move, but the *tempting* one (a back-rank
+  collapse, an overworked defender, a smothered mate) is intercepted with an
+  **“are you sure?”** prompt. Play it anyway and the forced refutation is played
+  out; take it back and you've just trained the blunder-check that wins games.
+- **Blindfold & calculation** — *visualize* a line with the board hidden then
+  answer a question about the final position, or solve an easy tactic
+  **blindfold** on an empty board, finding the move from a piece list.
 
-Progress in the openings and tactics trainers is scheduled with a lightweight
-SM-2 spaced-repetition system and persisted in the browser, so “Review due”
-brings back exactly what you’re about to forget. Create an account (username +
-password, hashed with scrypt) to sync that progress across devices — the client
-pulls + merges on sign-in and pushes on every change. Accounts live in a JSON
-store at `CHESSER_DATA_DIR` (default `data/`).
+Progress in the openings, tactics, checkmate and anti-blunder trainers is
+scheduled with a lightweight SM-2 spaced-repetition system on one **unified**
+deck registry, so the Stats page shows a single “due across all decks” queue and
+per-deck progress, and “Review due” in each trainer brings back exactly what
+you’re about to forget. The system is deck-agnostic — adding a trainer is a
+one-line change. Create an account (username + password, hashed with scrypt) to
+sync that progress across devices — the client pulls + merges on sign-in and
+pushes on every change. Accounts live in a JSON store at `CHESSER_DATA_DIR`
+(default `data/`).
 
 ### Bigger puzzle sets
 
@@ -199,6 +222,7 @@ SKIP_LC0=1 pnpm setup:engines
 | `pnpm setup:engines` | Install/refresh engines (see `engines/README.md`) |
 | `pnpm gen:openings` | Re-generate the bundled ECO opening database (from lichess-org/chess-openings, CC0) |
 | `pnpm gen:pieces` | Re-generate the alternate piece-set CSS (art from lichess-org/lila) |
+| `pnpm validate:trainers` | Verify the curated trainer datasets (mate patterns, anti-blunder, calculation) are legal and sound with chess.js |
 
 ## CI / CD
 
@@ -329,7 +353,13 @@ blocked from the server.
   controls (rematch, switch colours, resign, offer/claim draw), and play-from-
   position or play-from-opening games
 
-- [x] **Phase 12** — Full analysis variation tree (branch/promote/delete lines)
+- [x] **Phase 12** — A board-vision pack: square-colour and knight's-tour
+  coordinate modes, a checkmate-pattern library with drills, an anti-blunder
+  “are you sure?” trainer, and a blindfold/calculation trainer — all on a
+  unified spaced-repetition system (one “due across all decks” queue), with the
+  curated chess data CI-validated by chess.js
+
+- [x] **Phase 13** — Full analysis variation tree (branch/promote/delete lines)
   with user + engine board arrows, a rated tactics trainer (theme filter +
   Glicko-style puzzle rating + puzzles mined from your own games), and an
   installable PWA with an offline app shell

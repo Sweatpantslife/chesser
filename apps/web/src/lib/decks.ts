@@ -1,0 +1,75 @@
+// Central registry that ties every spaced-repetition deck to its item ids and
+// display metadata. This is what makes the SRS "unified": one place knows about
+// all decks, so the Stats page and the review summary can show progress across
+// openings, tactics, checkmates and anti-blunder drills together.
+import { useMemo } from 'react';
+import { useProgress, DECKS, type Deck } from '../store/progress';
+import { useRepertoire, BUILTIN_REPERTOIRE } from '../store/repertoire';
+import { PUZZLES } from '../trainers/tactics';
+import { MATE_DRILL_IDS } from '../trainers/mates';
+import { BLUNDER_IDS } from '../trainers/blunders';
+
+/** Where a deck's "Review now" jumps to (a top-level view, optionally a Train sub-tab). */
+export type DeckTarget = { view: 'openings' | 'tactics' | 'train'; trainTab?: 'mates' | 'blunders' };
+
+export const DECK_META: Record<Deck, { label: string; accent: string; target: DeckTarget }> = {
+  openings: { label: 'Openings', accent: 'text-sky-300', target: { view: 'openings' } },
+  tactics: { label: 'Tactics', accent: 'text-emerald-300', target: { view: 'tactics' } },
+  mates: { label: 'Checkmates', accent: 'text-rose-300', target: { view: 'train', trainTab: 'mates' } },
+  blunders: { label: 'Anti-blunder', accent: 'text-amber-300', target: { view: 'train', trainTab: 'blunders' } },
+};
+
+export interface DeckReview {
+  deck: Deck;
+  total: number;
+  seen: number;
+  due: number;
+}
+
+/** All item ids per deck (openings include the builtin + every custom repertoire). */
+export function useDeckIds(): Record<Deck, string[]> {
+  const userReps = useRepertoire((s) => s.user);
+  return useMemo(
+    () => ({
+      openings: [...BUILTIN_REPERTOIRE.lines.map((l) => l.id), ...userReps.flatMap((r) => r.lines.map((l) => l.id))],
+      tactics: PUZZLES.map((p) => p.id),
+      mates: MATE_DRILL_IDS,
+      blunders: BLUNDER_IDS,
+    }),
+    [userReps],
+  );
+}
+
+export interface ReviewSummary {
+  decks: DeckReview[];
+  totalDue: number;
+  totalSeen: number;
+  totalCards: number;
+}
+
+/** Per-deck and aggregate spaced-repetition status, recomputed reactively. */
+export function useReviewSummary(): ReviewSummary {
+  const cards = useProgress((s) => s.cards);
+  const ids = useDeckIds();
+  return useMemo(() => {
+    const now = Date.now();
+    const decks: DeckReview[] = DECKS.map((deck) => {
+      let seen = 0;
+      let due = 0;
+      for (const id of ids[deck]) {
+        const c = cards[`${deck}:${id}`];
+        if (c?.last) {
+          seen++;
+          if (c.due <= now) due++;
+        }
+      }
+      return { deck, total: ids[deck].length, seen, due };
+    });
+    return {
+      decks,
+      totalDue: decks.reduce((n, d) => n + d.due, 0),
+      totalSeen: decks.reduce((n, d) => n + d.seen, 0),
+      totalCards: decks.reduce((n, d) => n + d.total, 0),
+    };
+  }, [cards, ids]);
+}

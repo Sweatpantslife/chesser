@@ -2,7 +2,15 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { isDue, newCard, review, type Grade, type SrsCard } from '../lib/srs';
 
-export type Deck = 'openings' | 'tactics';
+/**
+ * Reviewable decks. Every drill-based trainer schedules its items through this
+ * one SM-2 system, so "due" / streaks / accuracy are unified across the app.
+ * Adding a deck here is the only change needed — storage, sync and merge are
+ * all deck-agnostic.
+ */
+export type Deck = 'openings' | 'tactics' | 'mates' | 'blunders';
+
+export const DECKS: Deck[] = ['openings', 'tactics', 'mates', 'blunders'];
 
 interface Tally {
   reviews: number;
@@ -123,7 +131,8 @@ export const useProgress = create<ProgressState>()(
             continue;
           }
           const decks: Partial<Record<Deck, Tally>> = {};
-          for (const dk of ['openings', 'tactics'] as Deck[]) {
+          const deckKeys = new Set<string>([...Object.keys(local.decks ?? {}), ...Object.keys(rstat.decks ?? {})]);
+          for (const dk of deckKeys as Set<Deck>) {
             const merged = mergeTally(local.decks?.[dk], rstat.decks?.[dk]);
             if (merged.reviews || merged.correct) decks[dk] = merged;
           }

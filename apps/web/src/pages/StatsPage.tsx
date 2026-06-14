@@ -1,10 +1,11 @@
 import { useMemo, type ReactNode } from 'react';
 import { useProgress } from '../store/progress';
-import { useRepertoire, BUILTIN_REPERTOIRE } from '../store/repertoire';
+import { useRepertoire } from '../store/repertoire';
 import { useCoordinate } from '../store/coordinate';
 import { useCustomPuzzles } from '../store/customPuzzles';
 import { usePuzzleRating } from '../store/puzzleRating';
-import { PUZZLES } from '../trainers/tactics';
+import { ReviewSummary } from '../components/ReviewSummary';
+import { DECK_META, useReviewSummary, type DeckTarget } from '../lib/decks';
 import { ActivityChart, Heatmap, ProgressBar, RatingSparkline, StatCard, type DayPoint } from '../components/Charts';
 
 const HEATMAP_WEEKS = 18;
@@ -47,21 +48,21 @@ function Section({ title, children, aside }: { title: string; children: ReactNod
   );
 }
 
-export function StatsPage() {
+export function StatsPage({ goto }: { goto: (target: DeckTarget) => void }) {
   const history = useProgress((s) => s.history);
   const streak = useProgress((s) => s.streak);
   const bestStreak = useProgress((s) => s.bestStreak);
-  const cards = useProgress((s) => s.cards);
 
   const rushBest = useRepertoire((s) => s.rushHighScore);
-  const userReps = useRepertoire((s) => s.user);
   const coordBest = useCoordinate((s) => s.bestBySide);
+  const coordByMode = useCoordinate((s) => s.bestByMode);
   const customPuzzles = useCustomPuzzles((s) => s.puzzles.length);
   const puzzleRating = usePuzzleRating((s) => s.rating);
   const puzzlePeak = usePuzzleRating((s) => s.peak);
   const puzzlesSolved = usePuzzleRating((s) => s.solved);
   const ratingHistory = usePuzzleRating((s) => s.history);
 
+  const review = useReviewSummary();
   const today = utcDay(new Date());
 
   const totals = useMemo(() => {
@@ -77,25 +78,6 @@ export function StatsPage() {
   }, [history]);
 
   const todayReviews = history[today]?.reviews ?? 0;
-
-  const deckCounts = useMemo(() => {
-    const openingIds = [...BUILTIN_REPERTOIRE.lines.map((l) => l.id), ...userReps.flatMap((r) => r.lines.map((l) => l.id))];
-    const tacticIds = PUZZLES.map((p) => p.id);
-    const now = Date.now();
-    const count = (deck: string, ids: string[]) => {
-      let seen = 0;
-      let due = 0;
-      for (const id of ids) {
-        const c = cards[`${deck}:${id}`];
-        if (c?.last) {
-          seen++;
-          if (c.due <= now) due++;
-        }
-      }
-      return { seen, due, total: ids.length };
-    };
-    return { openings: count('openings', openingIds), tactics: count('tactics', tacticIds) };
-  }, [cards, userReps]);
 
   const heat = useMemo(
     () => heatmapDays(HEATMAP_WEEKS).map((date) => ({ date, value: history[date]?.reviews ?? 0 })),
@@ -134,10 +116,12 @@ export function StatsPage() {
     <div className="mx-auto w-full max-w-[1000px] space-y-4">
       {empty && (
         <div className="rounded-lg border border-dashed border-neutral-700 bg-panel/60 p-4 text-sm text-neutral-400">
-          No training history yet. Solve tactics, drill openings or run the coordinate trainer — your accuracy and volume will
-          show up here.
+          No training history yet. Solve tactics, drill openings, learn checkmate patterns or run the coordinate trainer — your
+          accuracy and volume will show up here.
         </div>
       )}
+
+      <ReviewSummary goto={goto} />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <StatCard label="Puzzle rating" value={puzzleRating} hint={`peak ${puzzlePeak}`} />
@@ -145,7 +129,7 @@ export function StatsPage() {
         <StatCard label="Reviews" value={totals.reviews} hint={`${totals.activeDays} active days`} />
         <StatCard label="Accuracy" value={`${totals.acc}%`} hint={`${totals.correct} correct`} />
         <StatCard label="Today" value={todayReviews} hint="reviews" />
-        <StatCard label="Coord. best" value={Math.max(coordBest.white, coordBest.black)} hint="board vision" />
+        <StatCard label="Due now" value={review.totalDue} hint="all decks" />
       </div>
 
       <Section title="Activity" aside={<span className="text-xs text-neutral-500">last {HEATMAP_WEEKS} weeks</span>}>
@@ -159,10 +143,7 @@ export function StatsPage() {
         </div>
       </Section>
 
-      <Section
-        title="Last 30 days"
-        aside={<span className="text-xs text-neutral-500">reviews ▮ · accuracy ▬</span>}
-      >
+      <Section title="Last 30 days" aside={<span className="text-xs text-neutral-500">reviews ▮ · accuracy ▬</span>}>
         <ActivityChart data={series} />
       </Section>
 
@@ -186,25 +167,26 @@ export function StatsPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Section title="Learning progress">
           <div className="space-y-3">
-            <ProgressBar label="Openings" {...deckCounts.openings} />
-            <ProgressBar label="Tactics" {...deckCounts.tactics} />
+            {review.decks.map((d) => (
+              <ProgressBar key={d.deck} label={DECK_META[d.deck].label} total={d.total} seen={d.seen} due={d.due} />
+            ))}
           </div>
         </Section>
 
         <Section title="Personal bests">
-          <div className="grid grid-cols-3 gap-3 text-center">
-            <div>
-              <div className="text-2xl font-bold text-emerald-400">{rushBest}</div>
-              <div className="text-[11px] uppercase tracking-wide text-neutral-500">Puzzle rush</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-emerald-400">{coordBest.white}</div>
-              <div className="text-[11px] uppercase tracking-wide text-neutral-500">Coord. white</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-emerald-400">{coordBest.black}</div>
-              <div className="text-[11px] uppercase tracking-wide text-neutral-500">Coord. black</div>
-            </div>
+          <div className="grid grid-cols-3 gap-3 text-center sm:grid-cols-5">
+            {[
+              { label: 'Puzzle rush', value: rushBest },
+              { label: 'Coord. white', value: coordBest.white },
+              { label: 'Coord. black', value: coordBest.black },
+              { label: 'Sq. colour', value: coordByMode.color },
+              { label: "Knight's tour", value: coordByMode.knight },
+            ].map((b) => (
+              <div key={b.label}>
+                <div className="text-2xl font-bold text-emerald-400">{b.value}</div>
+                <div className="text-[11px] uppercase tracking-wide text-neutral-500">{b.label}</div>
+              </div>
+            ))}
           </div>
         </Section>
       </div>
