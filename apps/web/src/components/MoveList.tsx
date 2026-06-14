@@ -59,7 +59,8 @@ export function MoveList() {
     let parent = from;
     let afterBranch = false; // a black move needs its number after a variation block
     while (parent.children[0]) {
-      const main = tree[parent.children[0]]!;
+      const main = tree[parent.children[0]];
+      if (!main) break;
       out.push(<Move key={main.id} node={main} withNumber={afterBranch} />);
       afterBranch = false;
       const sibs = parent.children.slice(1);
@@ -73,7 +74,8 @@ export function MoveList() {
   };
 
   const Variation = ({ startId }: { startId: string }): ReactNode => {
-    const v = tree[startId]!;
+    const v = tree[startId];
+    if (!v) return null;
     return (
       <span className="my-0.5 block rounded border-l-2 border-neutral-700 pl-2 text-neutral-400">
         <span className="text-neutral-600">(</span>

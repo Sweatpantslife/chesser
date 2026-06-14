@@ -30,7 +30,11 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((res) => {
-          caches.open(CACHE).then((c) => c.put('/index.html', res.clone()));
+          // Only refresh the cached shell from a good response — never an error page.
+          if (res && res.status === 200) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put('/index.html', copy));
+          }
           return res;
         })
         .catch(() => caches.match('/index.html').then((r) => r || caches.match('/'))),

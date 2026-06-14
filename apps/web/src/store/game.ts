@@ -341,7 +341,7 @@ export const useGame = create<GameStore>((set, get) => ({
     const uci = mv.from + mv.to + (mv.promotion ?? '');
 
     // If this move already exists as a child, just descend into it.
-    const existingId = base.children.find((id) => s.tree[id]!.uci === uci);
+    const existingId = base.children.find((id) => s.tree[id]?.uci === uci);
     let tree = s.tree;
     let currentId: string;
     let structural = false;
@@ -785,7 +785,10 @@ export const useGame = create<GameStore>((set, get) => ({
 
   _refreshAnalysis() {
     const s = get();
-    if (!s.analysisOn) return;
+    // The server runs one analysis engine per session; don't start a live
+    // search while a one-shot batch (game review) owns the stream, or its
+    // reqId gets clobbered and the review hangs on the safety timeout.
+    if (!s.analysisOn || s.reviewing) return;
     const fen = s.fen;
     engine.analyze(fen, { multipv: s.multipv, depth: ANALYSIS_DEPTH_CAP }, (msg) => {
       if (get().fen !== msg.fen) return; // viewed position moved on

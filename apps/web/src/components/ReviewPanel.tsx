@@ -30,6 +30,9 @@ export function ReviewPanel() {
       stopGen.current = true; // a second click cancels
       return;
     }
+    // Bail out cleanly if the user loads a different game while we're mining.
+    const startRoot = useGame.getState().rootId;
+    const sameGame = () => useGame.getState().rootId === startRoot;
     stopGen.current = false;
     setGenResult(null);
     setGen({ done: 0, total: mainline.length + 1, found: 0 });
@@ -43,13 +46,16 @@ export function ReviewPanel() {
         source: 'your game',
         movetimeMs: 600,
         maxFound: 12,
-        onProgress: (done, total, foundN) => setGen({ done, total, found: foundN }),
-        shouldStop: () => stopGen.current,
+        onProgress: (done, total, foundN) => {
+          if (sameGame()) setGen({ done, total, found: foundN });
+        },
+        shouldStop: () => stopGen.current || !sameGame(),
       });
-      setGenResult(addPuzzles(found));
+      const added = addPuzzles(found); // mined from a real game — keep them either way
+      if (sameGame()) setGenResult(added);
     } finally {
       setGen(null);
-      if (wasOn) useGame.getState().setAnalysisOn(true);
+      if (wasOn) useGame.getState().setAnalysisOn(true); // a global toggle — always restore
     }
   };
 
@@ -150,7 +156,8 @@ export function ReviewPanel() {
         <div className="mt-3 border-t border-neutral-800 pt-3">
           <button
             onClick={makePuzzles}
-            className="w-full rounded bg-neutral-700 py-1.5 text-xs font-semibold text-neutral-100 hover:bg-neutral-600"
+            disabled={reviewing}
+            className="w-full rounded bg-neutral-700 py-1.5 text-xs font-semibold text-neutral-100 hover:bg-neutral-600 disabled:opacity-40"
           >
             {gen
               ? `Mining… ${gen.done}/${gen.total} · ${gen.found} found (click to stop)`

@@ -219,22 +219,27 @@ function PracticeTactics() {
   const next = () => {
     if (queue.length === 0) return;
     if (ratedOrder) {
-      // Pick the unseen puzzle closest to your rating.
-      let best = -1;
-      let bestDist = Infinity;
-      for (let i = 0; i < queue.length; i++) {
-        if (sessionSeen.current.has(queue[i]!.id)) continue;
-        const d = Math.abs(puzzleRatingOf(queue[i]!) - rating);
-        if (d < bestDist) {
-          bestDist = d;
-          best = i;
+      // Pick the unseen puzzle closest to your rating; once all are seen, reset
+      // and pick the closest overall (still rating-ordered, not sequential).
+      const closest = (skipSeen: boolean) => {
+        let best = -1;
+        let bestDist = Infinity;
+        for (let i = 0; i < queue.length; i++) {
+          if (skipSeen && sessionSeen.current.has(queue[i]!.id)) continue;
+          const d = Math.abs(puzzleRatingOf(queue[i]!) - rating);
+          if (d < bestDist) {
+            bestDist = d;
+            best = i;
+          }
         }
-      }
+        return best;
+      };
+      let best = closest(true);
       if (best < 0) {
         sessionSeen.current = new Set();
-        best = (pos + 1) % queue.length;
+        best = closest(false);
       }
-      load(best);
+      load(best >= 0 ? best : 0);
     } else {
       load((pos + 1) % queue.length);
     }

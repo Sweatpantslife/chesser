@@ -53,6 +53,7 @@ export function Heatmap({ days }: { days: { date: string; value: number }[] }) {
 /** A compact rating-over-time line with min/max labels. */
 export function RatingSparkline({ data }: { data: number[] }) {
   const n = data.length;
+  if (n < 2) return null;
   const min = Math.min(...data);
   const max = Math.max(...data);
   const span = Math.max(1, max - min);
