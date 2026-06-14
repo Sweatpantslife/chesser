@@ -10,12 +10,15 @@ const THEME_COLORS: Record<BoardTheme, { light: string; dark: string }> = {
 };
 
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-// Unicode glyphs for the optional "show pieces" context (initial position).
+// Unicode glyphs for piece context. Used for the "show pieces" demo and for the
+// blindfold trainer's reveal (via piecesFromFen).
 const GLYPH: Record<string, string> = { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' };
 const BACK = ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'];
 
-function initialPieces(): Record<string, { glyph: string; white: boolean }> {
-  const map: Record<string, { glyph: string; white: boolean }> = {};
+export type PieceMap = Record<string, { glyph: string; white: boolean }>;
+
+function initialPieces(): PieceMap {
+  const map: PieceMap = {};
   FILES.forEach((f, i) => {
     map[`${f}8`] = { glyph: GLYPH[BACK[i]!]!, white: false };
     map[`${f}7`] = { glyph: GLYPH.p!, white: false };
@@ -25,30 +28,74 @@ function initialPieces(): Record<string, { glyph: string; white: boolean }> {
   return map;
 }
 
+/** Turn a FEN's piece-placement field into a square→glyph map for display.
+ *  Tolerates malformed/empty input — unknown pieces and out-of-range files are
+ *  skipped rather than throwing. */
+export function piecesFromFen(fen: string): PieceMap {
+  const map: PieceMap = {};
+  const placement = fen.split(' ')[0];
+  if (!placement) return map;
+  const rows = placement.split('/');
+  for (let r = 0; r < 8 && r < rows.length; r++) {
+    const row = rows[r]!;
+    let file = 0;
+    for (const ch of row) {
+      if (file >= 8) break;
+      if (/\d/.test(ch)) {
+        file += Number(ch);
+      } else {
+        const glyph = GLYPH[ch.toLowerCase()];
+        if (glyph) map[`${FILES[file]}${8 - r}`] = { glyph, white: ch === ch.toUpperCase() };
+        file += 1;
+      }
+    }
+  }
+  return map;
+}
+
+/** Is a square light? (a1 is dark.) */
+export function isLightSquare(square: string): boolean {
+  const fileIdx = FILES.indexOf(square[0]!);
+  const rankIdx = Number(square[1]) - 1;
+  return (fileIdx + rankIdx) % 2 === 1;
+}
+
 export interface CoordinateBoardProps {
   orientation: CoordSide;
   showCoords: boolean;
   showPieces: boolean;
-  /** Square to highlight (used by "name the square" mode). */
+  /** Explicit pieces to draw (overrides the showPieces initial-position demo). */
+  pieces?: PieceMap;
+  /** Square to highlight (used by "name the square" mode and the knight drill). */
   highlight?: string | null;
+  /** Persistent per-square overlays (e.g. solved knight targets). */
+  marks?: Record<string, 'ok' | 'bad' | 'hint'>;
   /** Per-square feedback flash. */
   flash?: { square: string; kind: 'ok' | 'bad' } | null;
   onPick?: (square: string) => void;
   disabled?: boolean;
 }
 
+const MARK_BG: Record<'ok' | 'bad' | 'hint', string> = {
+  ok: 'bg-emerald-500/45',
+  bad: 'bg-rose-500/45',
+  hint: 'bg-amber-400/35',
+};
+
 export function CoordinateBoard({
   orientation,
   showCoords,
   showPieces,
+  pieces,
   highlight,
+  marks,
   flash,
   onPick,
   disabled,
 }: CoordinateBoardProps) {
   const boardTheme = useSettings((s) => s.boardTheme);
   const colors = THEME_COLORS[boardTheme];
-  const pieces = useMemo(() => (showPieces ? initialPieces() : {}), [showPieces]);
+  const drawn = useMemo(() => pieces ?? (showPieces ? initialPieces() : {}), [pieces, showPieces]);
   const white = orientation === 'white';
 
   const cells = [];
@@ -60,7 +107,8 @@ export function CoordinateBoard({
       const isLight = (fileIdx + rankIdx) % 2 === 1;
       const isFlash = flash?.square === square;
       const isTarget = highlight === square;
-      const piece = pieces[square];
+      const mark = marks?.[square];
+      const piece = drawn[square];
       cells.push(
         <button
           key={square}
@@ -70,10 +118,9 @@ export function CoordinateBoard({
           style={{ background: isLight ? colors.light : colors.dark, cursor: disabled ? 'default' : 'pointer' }}
         >
           {isTarget && <span className="absolute inset-0 ring-4 ring-inset ring-emerald-500/80" />}
+          {mark && !isFlash && <span className={`absolute inset-0 ${MARK_BG[mark]}`} />}
           {isFlash && (
-            <span
-              className={`absolute inset-0 ${flash!.kind === 'ok' ? 'bg-emerald-500/60' : 'bg-rose-500/60'}`}
-            />
+            <span className={`absolute inset-0 ${flash!.kind === 'ok' ? 'bg-emerald-500/60' : 'bg-rose-500/60'}`} />
           )}
           {piece && (
             <span
@@ -88,12 +135,18 @@ export function CoordinateBoard({
             </span>
           )}
           {showCoords && c === 0 && (
-            <span className="pointer-events-none absolute left-0.5 top-0 text-[9px] font-semibold opacity-70" style={{ color: isLight ? colors.dark : colors.light }}>
+            <span
+              className="pointer-events-none absolute left-0.5 top-0 text-[9px] font-semibold opacity-70"
+              style={{ color: isLight ? colors.dark : colors.light }}
+            >
               {rankIdx + 1}
             </span>
           )}
           {showCoords && r === 7 && (
-            <span className="pointer-events-none absolute bottom-0 right-0.5 text-[9px] font-semibold opacity-70" style={{ color: isLight ? colors.dark : colors.light }}>
+            <span
+              className="pointer-events-none absolute bottom-0 right-0.5 text-[9px] font-semibold opacity-70"
+              style={{ color: isLight ? colors.dark : colors.light }}
+            >
               {FILES[fileIdx]}
             </span>
           )}

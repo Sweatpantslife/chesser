@@ -9,14 +9,17 @@ import { TacticsPage } from './pages/TacticsPage';
 import { EndgamePage } from './pages/EndgamePage';
 import { CoordinatePage } from './pages/CoordinatePage';
 import { StatsPage } from './pages/StatsPage';
+import { TrainPage, type TrainTab } from './pages/TrainPage';
+import type { DeckTarget } from './lib/decks';
 
-type View = 'play' | 'openings' | 'tactics' | 'endgame' | 'coordinates' | 'stats';
+type View = 'play' | 'openings' | 'tactics' | 'endgame' | 'train' | 'coordinates' | 'stats';
 
 const TABS: { id: View; label: string; hint: string }[] = [
   { id: 'play', label: 'Play', hint: 'vs bots & analysis' },
   { id: 'openings', label: 'Openings', hint: 'repertoire drills' },
   { id: 'tactics', label: 'Middlegame', hint: 'tactics puzzles' },
   { id: 'endgame', label: 'Endgame', hint: 'theory & technique' },
+  { id: 'train', label: 'Train', hint: 'vision · mates · anti-blunder' },
   { id: 'coordinates', label: 'Coords', hint: 'board-vision trainer' },
   { id: 'stats', label: 'Stats', hint: 'progress dashboard' },
 ];
@@ -87,6 +90,13 @@ export default function App() {
   const init = useGame((s) => s.init);
   const authInit = useAuth((s) => s.init);
   const [view, setView] = useState<View>('play');
+  const [trainTab, setTrainTab] = useState<TrainTab>('mates');
+
+  // Jump to a deck's trainer (used by the unified review summary on Stats).
+  const goto = (target: DeckTarget) => {
+    if (target.trainTab) setTrainTab(target.trainTab);
+    setView(target.view);
+  };
 
   useEffect(() => {
     init();
@@ -101,8 +111,9 @@ export default function App() {
         {view === 'openings' && <OpeningsPage />}
         {view === 'tactics' && <TacticsPage />}
         {view === 'endgame' && <EndgamePage />}
+        {view === 'train' && <TrainPage tab={trainTab} setTab={setTrainTab} />}
         {view === 'coordinates' && <CoordinatePage />}
-        {view === 'stats' && <StatsPage />}
+        {view === 'stats' && <StatsPage goto={goto} />}
       </main>
     </div>
   );
