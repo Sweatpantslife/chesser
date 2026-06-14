@@ -3,6 +3,7 @@ import { Chess } from 'chess.js';
 import { Board } from '../board/Board';
 import { PUZZLES, type Puzzle } from '../trainers/tactics';
 import { useRepertoire } from '../store/repertoire';
+import { playMoveSound } from '../lib/sound';
 import type { Color } from '../store/game';
 
 const RUSH_SECONDS = 300;
@@ -96,7 +97,8 @@ export function RushMode() {
     busy.current = true;
     const key = puzzle.solution[0]!;
     if (key.slice(0, 2) === from && key.slice(2, 4) === to) {
-      game.current.move({ from, to, promotion: key[4] });
+      const mv = game.current.move({ from, to, promotion: key[4] });
+      playMoveSound(mv.san);
       const hist = game.current.history({ verbose: true });
       const last = hist[hist.length - 1];
       setFen(game.current.fen());

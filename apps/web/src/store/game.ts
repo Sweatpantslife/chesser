@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import type { AnalysisLine, BotConfig, BotStyle, EngineAvailability, Score } from '@chesser/shared';
 import { engine } from '../lib/engine';
 import { whiteWinPercent } from '../lib/format';
+import { playMoveSound } from '../lib/sound';
 
 export type Color = 'white' | 'black';
 export type Mode = 'play' | 'analysis';
@@ -248,6 +249,7 @@ export const useGame = create<GameStore>((set, get) => ({
     try {
       const moverColor = colorOfFen(game.fen()); // side about to move
       const mv = game.move({ from: move.from, to: move.to, promotion: move.promotion });
+      playMoveSound(mv.san);
       const history = [...get().history, { san: mv.san, uci: mv.from + mv.to + (mv.promotion ?? ''), fen: game.fen() }];
       // add the increment to the player who just moved
       const tc = get().timeControl;

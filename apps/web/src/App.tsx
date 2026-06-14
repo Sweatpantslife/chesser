@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useGame } from './store/game';
 import { useAuth } from './store/auth';
 import { AccountButton } from './components/AccountPanel';
+import { SettingsDialog } from './components/SettingsDialog';
 import { PlayPage } from './pages/PlayPage';
 import { OpeningsPage } from './pages/OpeningsPage';
 import { TacticsPage } from './pages/TacticsPage';
@@ -27,6 +28,7 @@ function Badge({ ok, children }: { ok: boolean; children: ReactNode }) {
 function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
   const connected = useGame((s) => s.connected);
   const availability = useGame((s) => s.availability);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   return (
     <header className="border-b border-neutral-800">
       <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-3 px-4 py-3">
@@ -62,9 +64,17 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
             <span className={`h-2 w-2 rounded-full ${connected ? 'bg-emerald-400' : 'bg-rose-400'}`} />
             {connected ? 'online' : 'connecting…'}
           </span>
+          <button
+            onClick={() => setSettingsOpen(true)}
+            title="Settings"
+            className="rounded bg-neutral-800 px-2 py-1 text-sm text-neutral-300 hover:bg-neutral-700"
+          >
+            ⚙
+          </button>
           <AccountButton />
         </div>
       </div>
+      {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
     </header>
   );
 }

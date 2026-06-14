@@ -36,10 +36,19 @@ body {
   inset: 0;
 }
 
-/* Use our themed board colours over chessground's default brown. */
-.cg-wrap cg-board {
-  background-color: theme('colors.board.light');
-  background-image: linear-gradient(theme('colors.board.dark') 0 0);
+/* Board themes — only the light base colour changes; chessground's embedded SVG
+   overlays the dark squares (a 20% black tint), so the checkerboard is kept. */
+.board-brown cg-board {
+  background-color: #f0d9b5;
+}
+.board-blue cg-board {
+  background-color: #e3e7ee;
+}
+.board-green cg-board {
+  background-color: #ebecd0;
+}
+.board-gray cg-board {
+  background-color: #d9d9d9;
 }
 
 /* Custom scrollbar for panels */

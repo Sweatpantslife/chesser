@@ -4,6 +4,7 @@ import { Board } from '../board/Board';
 import { ReviewStats } from '../components/ReviewStats';
 import { PUZZLES, type Difficulty } from '../trainers/tactics';
 import { useProgress } from '../store/progress';
+import { playMoveSound } from '../lib/sound';
 import { RushMode } from './RushMode';
 import type { Color } from '../store/game';
 
@@ -114,6 +115,7 @@ function PracticeTactics() {
     const key = puzzle.solution[0]!;
     if (key.slice(0, 2) === from && key.slice(2, 4) === to) {
       const mv = game.current.move({ from, to, promotion: key[4] });
+      playMoveSound(mv.san);
       sync();
       setPhase('solved');
       setSessionSolved((n) => n + 1);

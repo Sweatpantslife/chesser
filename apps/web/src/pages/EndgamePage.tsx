@@ -6,6 +6,7 @@ import { EvalBar } from '../components/EvalBar';
 import { engine } from '../lib/engine';
 import { useAnalysis } from '../lib/useAnalysis';
 import { fetchTablebase, categoryLabel, judgeMove } from '../lib/tablebase';
+import { playMoveSound } from '../lib/sound';
 import { ENDGAMES, type EndgameStudy } from '../trainers/endgames';
 import { formatScore } from '../lib/format';
 import type { Color } from '../store/game';
@@ -86,7 +87,8 @@ export function EndgamePage() {
       setThinking(false);
       return;
     }
-    game.current.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] });
+    const dmv = game.current.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] });
+    if (dmv) playMoveSound(dmv.san);
     setThinking(false);
     sync();
     const o = outcomeAfterMove();
@@ -141,11 +143,13 @@ export function EndgamePage() {
     if (!yourTurn) return;
     const uci = from + to + (game.current.get(from as any)?.type === 'p' && (to[1] === '8' || to[1] === '1') ? 'q' : '');
     const before = tb; // tablebase snapshot of the position we're moving from
+    let mv;
     try {
-      game.current.move({ from, to, promotion: 'q' });
+      mv = game.current.move({ from, to, promotion: 'q' });
     } catch {
       return;
     }
+    if (mv) playMoveSound(mv.san);
     setMoveNote(before ? judgeMove(before, uci, study.goal) : null);
     sync();
     const o = outcomeAfterMove();
