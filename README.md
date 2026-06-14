@@ -26,7 +26,8 @@ endgames.
 | **Puzzle rush** | Solve against a 5-minute clock; 3 strikes and you’re out, with a synced high score |
 | **Accounts & sync** | Optional username/password accounts sync progress *and repertoires* across devices |
 | **Opening explorer** | Master / Lichess game stats for the current position; **＋** saves a move's line straight into a repertoire |
-| **Game review** | Import or play a game, then auto-annotate every move (blunder / mistake / inaccuracy) by win-probability swing |
+| **Game review** | Auto-annotate every move (blunder / mistake / inaccuracy), with per-side **accuracy %**, ACPL, and a clickable win-probability graph |
+| **Quality-of-life** | Keyboard move navigation (← → Home End, `f` to flip); Syzygy-loaded badge when local tablebases are installed |
 | **Tablebase** | Syzygy endgame tablebases — loaded into Stockfish (`SyzygyPath`) for perfect ≤7-man play, and queried via a configurable proxy for move feedback (online or local files) |
 | **Clocks** | Real chess clocks with time-control presets (1+0 … 10+5) and increments |
 | **Stack** | pnpm monorepo · Node + Fastify + `ws` backend · React + Vite + TypeScript frontend · `chess.js` for rules |
