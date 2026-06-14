@@ -21,6 +21,9 @@ endgames.
 | **Styles** | Human-like (Maia), Balanced, Aggressive, Defensive, Positional |
 | **Analysis** | Live multi-PV evaluation, eval bar, principal variations in SAN |
 | **Trainers** | Opening repertoire drills · engine-verified tactics puzzles · theoretical endgames played out vs Stockfish |
+| **Spaced repetition** | Openings and tactics are SM-2 scheduled and saved locally — “due” counts, streaks, review sessions |
+| **Tablebase** | Optional Syzygy lookups (via a configurable proxy) for perfect endgame defence and move feedback |
+| **Clocks** | Real chess clocks with time-control presets (1+0 … 10+5) and increments |
 | **Stack** | pnpm monorepo · Node + Fastify + `ws` backend · React + Vite + TypeScript frontend · `chess.js` for rules |
 
 ## Trainers
@@ -32,9 +35,24 @@ endgames.
   *generated and verified by Stockfish* (`scripts/gen-tactics.mjs` plays
   imperfect engine games, then keeps only positions with a single decisive
   move), so every solution is sound.
-- **Endgames** — play out essential theoretical wins (Q vs K, R vs K, the
-  lawnmower, K+P, connected passers, Q vs R) against a full-strength Stockfish
-  defender, with a live eval bar tracking your technique.
+- **Endgames** — play out essential theoretical positions (Q/R vs K, two
+  bishops, bishop+knight, K+P, connected passers, Lucena, Q vs R, plus drawn
+  studies) against a tablebase-perfect or full-strength Stockfish defender, with
+  a live eval bar and per-move feedback tracking your technique.
+
+Progress in the openings and tactics trainers is scheduled with a lightweight
+SM-2 spaced-repetition system and persisted in the browser, so “Review due”
+brings back exactly what you’re about to forget.
+
+### Syzygy tablebase
+
+The endgame trainer queries the server’s `/api/tablebase` endpoint, which
+proxies a configurable upstream (default: the public Lichess tablebase API) for
+positions with ≤ 7 pieces. When a result is available it drives perfect defence
+and grades your moves by distance-to-zeroing; otherwise it falls back to
+Stockfish automatically. Set `CHESSER_TABLEBASE_URL` to use a self-hosted
+instance. (The upstream host must be reachable from the server — some sandboxed
+networks block it, in which case the trainer transparently uses Stockfish.)
 
 ## Architecture
 
@@ -104,11 +122,14 @@ SKIP_LC0=1 pnpm setup:engines
 - [x] **Phase 3** — Middlegame trainer (engine-verified tactics puzzles)
 - [x] **Phase 4** — Endgame trainer (theoretical positions vs Stockfish)
 
+- [x] **Phase 5** — Spaced-repetition progress, larger datasets, Syzygy
+  tablebase, and chess clocks
+
 ### Next up
 
-- Persist progress (spaced repetition for openings, puzzle history) in storage
-- Expand datasets (more repertoire lines, larger puzzle sets, more endgames)
-- Syzygy tablebase for perfect endgame feedback; clocks & time controls
+- Accounts + server-side sync of progress across devices
+- Even larger puzzle sets (import from the Lichess puzzle database)
+- Opening explorer with master/engine statistics; PGN import & game review
 
 ## Credits
 

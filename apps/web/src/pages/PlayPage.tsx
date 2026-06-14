@@ -5,9 +5,20 @@ import { AnalysisPanel } from '../components/AnalysisPanel';
 import { MoveList } from '../components/MoveList';
 import { BotPanel } from '../components/BotPanel';
 import { Controls } from '../components/Controls';
+import { Clock } from '../components/Clock';
 import { PromotionDialog } from '../components/PromotionDialog';
 import { engine } from '../lib/engine';
-import { useGame } from '../store/game';
+import { useGame, type Color } from '../store/game';
+
+function ClockRow({ side }: { side: Color }) {
+  const clock = useGame((s) => s.clock);
+  const liveTurn = useGame((s) => s.liveTurn);
+  const flagged = useGame((s) => s.flagged);
+  const isGameOver = useGame((s) => s.isGameOver);
+  if (!clock) return null;
+  const ms = side === 'white' ? clock.whiteMs : clock.blackMs;
+  return <Clock ms={ms} active={liveTurn === side && !isGameOver} flagged={flagged === side} />;
+}
 
 function StatusLine() {
   const status = useGame((s) => s.status);
@@ -35,8 +46,13 @@ function BoardArea() {
   const analysisOn = useGame((s) => s.analysisOn);
   const userMove = useGame((s) => s.userMove);
 
+  const topSide: Color = orientation === 'white' ? 'black' : 'white';
+
   return (
     <div className="mx-auto w-full max-w-[560px]">
+      <div className="mb-2 flex justify-end">
+        <ClockRow side={topSide} />
+      </div>
       <div className="flex gap-2">
         {analysisOn && <EvalBar score={evalScore} orientation={orientation} />}
         <div className="relative flex-1">
@@ -53,6 +69,9 @@ function BoardArea() {
           <PromotionDialog />
         </div>
       </div>
+      <div className="mt-2 flex justify-end">
+        <ClockRow side={orientation} />
+      </div>
     </div>
   );
 }
@@ -62,6 +81,18 @@ export function PlayPage() {
   useEffect(() => {
     useGame.getState()._refreshAnalysis();
     return () => engine.stopAnalysis();
+  }, []);
+
+  // Drive the chess clocks in real time (no-op unless a timed game is live).
+  useEffect(() => {
+    let last = performance.now();
+    const iv = window.setInterval(() => {
+      const now = performance.now();
+      const dt = now - last;
+      last = now;
+      useGame.getState()._tick(dt);
+    }, 100);
+    return () => window.clearInterval(iv);
   }, []);
 
   return (

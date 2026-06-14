@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react';
 import type { BotStyleId } from '@chesser/shared';
-import { useGame, type Color } from '../store/game';
+import { useGame, type Color, type TimeControl } from '../store/game';
+
+const TIME_CONTROLS: (TimeControl | null)[] = [
+  null,
+  { label: '1+0', initialMs: 60_000, incrementMs: 0 },
+  { label: '3+2', initialMs: 180_000, incrementMs: 2_000 },
+  { label: '5+3', initialMs: 300_000, incrementMs: 3_000 },
+  { label: '10+5', initialMs: 600_000, incrementMs: 5_000 },
+];
 
 const THINK_OPTIONS = [
   { label: 'Fast', ms: 300 },
@@ -11,7 +19,7 @@ const THINK_OPTIONS = [
 const ELO_PRESETS = [1320, 1600, 1900, 2200, 2500, 3190];
 
 export function BotPanel() {
-  const { styles, availability, botConfig, newGame } = useGame();
+  const { styles, availability, botConfig, newGame, timeControl, setTimeControl } = useGame();
 
   const [style, setStyle] = useState<BotStyleId>(botConfig.style);
   const [elo, setElo] = useState(botConfig.elo ?? 1600);
@@ -120,6 +128,27 @@ export function BotPanel() {
           </div>
         </div>
       )}
+
+      {/* time control */}
+      <div className="mb-3">
+        <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Time control</div>
+        <div className="flex gap-1">
+          {TIME_CONTROLS.map((tc) => {
+            const selected = (timeControl?.label ?? 'unlimited') === (tc?.label ?? 'unlimited');
+            return (
+              <button
+                key={tc?.label ?? 'unlimited'}
+                onClick={() => setTimeControl(tc)}
+                className={`flex-1 rounded px-1.5 py-1 text-xs ${
+                  selected ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
+                }`}
+              >
+                {tc?.label ?? '∞'}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* color */}
       <div className="mb-3">

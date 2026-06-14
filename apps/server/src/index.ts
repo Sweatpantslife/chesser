@@ -4,12 +4,18 @@ import { WebSocketServer } from 'ws';
 import { engines } from './engine/manager.js';
 import { Session } from './ws.js';
 import { HOST, PORT } from './config.js';
+import { probeTablebase } from './tablebase.js';
 
 const app = Fastify({ logger: false });
 await app.register(cors, { origin: true });
 
 app.get('/api/health', async () => ({ ok: true }));
 app.get('/api/engines', async () => ({ engines: engines.availability(), styles: engines.styles() }));
+app.get('/api/tablebase', async (req) => {
+  const fen = (req.query as { fen?: string }).fen;
+  if (!fen) return { available: false, reason: 'no-fen' };
+  return probeTablebase(fen);
+});
 
 const wss = new WebSocketServer({ server: app.server, path: '/ws' });
 wss.on('connection', (ws) => {

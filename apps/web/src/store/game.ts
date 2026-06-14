@@ -20,6 +20,16 @@ interface PendingPromotion {
 const opposite = (c: Color): Color => (c === 'white' ? 'black' : 'white');
 const colorOfFen = (fen: string): Color => (fen.split(' ')[1] === 'b' ? 'black' : 'white');
 
+export interface TimeControl {
+  initialMs: number;
+  incrementMs: number;
+  label: string;
+}
+export interface ClockState {
+  whiteMs: number;
+  blackMs: number;
+}
+
 const ANALYSIS_DEPTH_CAP = 30;
 
 // The single source of truth for the live game. Navigation only changes the
@@ -41,6 +51,7 @@ export interface GameStore {
   fen: string;
   lastMove: [string, string] | undefined;
   turnColor: Color;
+  liveTurn: Color; // side to move in the actual game (for clocks)
   inCheck: boolean;
 
   // move list / navigation
@@ -63,6 +74,11 @@ export interface GameStore {
   botConfig: BotConfig;
   thinking: boolean;
 
+  // clocks
+  timeControl: TimeControl | null;
+  clock: ClockState | null;
+  flagged: Color | null;
+
   // analysis
   analysisOn: boolean;
   multipv: number;
@@ -83,12 +99,14 @@ export interface GameStore {
   setAnalysisOn(on: boolean): void;
   setMultipv(n: number): void;
   setBotConfig(bot: Partial<BotConfig>): void;
+  setTimeControl(tc: TimeControl | null): void;
 
   // internals
   _sync(): void;
   _refreshAnalysis(): void;
   _maybeTriggerBot(): void;
   _applyMove(move: { from: string; to: string; promotion?: string }): void;
+  _tick(dtMs: number): void;
 }
 
 const DEFAULT_BOT: BotConfig = { style: 'human', maiaRating: 1500, elo: 1500, moveTimeMs: 700 };
@@ -104,6 +122,7 @@ export const useGame = create<GameStore>((set, get) => ({
   fen: game.fen(),
   lastMove: undefined,
   turnColor: 'white',
+  liveTurn: 'white',
   inCheck: false,
 
   history: [],
@@ -121,6 +140,10 @@ export const useGame = create<GameStore>((set, get) => ({
   botColor: null,
   botConfig: DEFAULT_BOT,
   thinking: false,
+
+  timeControl: null,
+  clock: null,
+  flagged: null,
 
   analysisOn: true,
   multipv: 3,
@@ -140,6 +163,8 @@ export const useGame = create<GameStore>((set, get) => ({
     game = new Chess();
     gameId++;
     const playerColor = cfg.mode === 'play' ? (cfg.playerColor ?? 'white') : null;
+    const tc = get().timeControl;
+    const clock = cfg.mode === 'play' && tc ? { whiteMs: tc.initialMs, blackMs: tc.initialMs } : null;
     set({
       mode: cfg.mode,
       orientation: playerColor ?? get().orientation,
@@ -154,6 +179,8 @@ export const useGame = create<GameStore>((set, get) => ({
       analysisLines: [],
       analysisDepth: 0,
       evalScore: null,
+      clock,
+      flagged: null,
     });
     get()._sync();
     get()._refreshAnalysis();
@@ -187,9 +214,19 @@ export const useGame = create<GameStore>((set, get) => ({
 
   _applyMove(move) {
     try {
+      const moverColor = colorOfFen(game.fen()); // side about to move
       const mv = game.move({ from: move.from, to: move.to, promotion: move.promotion });
       const history = [...get().history, { san: mv.san, uci: mv.from + mv.to + (mv.promotion ?? ''), fen: game.fen() }];
-      set({ history, viewPly: history.length });
+      // add the increment to the player who just moved
+      const tc = get().timeControl;
+      const clock = get().clock;
+      const nextClock =
+        clock && tc && !get().flagged
+          ? moverColor === 'white'
+            ? { ...clock, whiteMs: clock.whiteMs + tc.incrementMs }
+            : { ...clock, blackMs: clock.blackMs + tc.incrementMs }
+          : clock;
+      set({ history, viewPly: history.length, clock: nextClock });
       get()._sync();
       get()._refreshAnalysis();
       get()._maybeTriggerBot();
@@ -274,6 +311,29 @@ export const useGame = create<GameStore>((set, get) => ({
     set({ botConfig: { ...get().botConfig, ...bot } });
   },
 
+  setTimeControl(tc) {
+    set({ timeControl: tc });
+  },
+
+  _tick(dtMs) {
+    const s = get();
+    if (s.mode !== 'play' || !s.clock || s.isGameOver || s.flagged) return;
+    if (s.viewPly !== s.history.length) return; // not at the live position
+    if (s.history.length === 0 && s.thinking) {
+      // allow the very first bot move (bot is White) to start the clock
+    }
+    const turn = colorOfFen(game.fen());
+    const ms = turn === 'white' ? s.clock.whiteMs : s.clock.blackMs;
+    const left = Math.max(0, ms - dtMs);
+    const clock = turn === 'white' ? { ...s.clock, whiteMs: left } : { ...s.clock, blackMs: left };
+    if (left <= 0) {
+      set({ clock, flagged: turn });
+      get()._sync();
+    } else {
+      set({ clock });
+    }
+  },
+
   _sync() {
     const s = get();
     const atLive = s.viewPly === s.history.length;
@@ -312,6 +372,13 @@ export const useGame = create<GameStore>((set, get) => ({
       status = `${colorOfFen(game.fen()) === 'white' ? 'White' : 'Black'} to move — check`;
     }
 
+    // a flag fall ends the game regardless of board state
+    const flagged = get().flagged;
+    if (flagged) {
+      status = `${flagged === 'white' ? 'White' : 'Black'} flagged — ${flagged === 'white' ? 'Black' : 'White'} wins on time`;
+      isGameOver = true;
+    }
+
     // interaction (only at the live position)
     const canMove = atLive && !isGameOver;
     let movableColor: Color | 'both' | undefined;
@@ -333,6 +400,7 @@ export const useGame = create<GameStore>((set, get) => ({
       fen: viewedFen,
       lastMove: viewedLast,
       turnColor,
+      liveTurn: colorOfFen(game.fen()),
       inCheck,
       status,
       isGameOver,

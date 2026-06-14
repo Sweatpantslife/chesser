@@ -1,14 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
+import type { TablebaseResult } from '@chesser/shared';
 import { Board } from '../board/Board';
 import { EvalBar } from '../components/EvalBar';
 import { engine } from '../lib/engine';
 import { useAnalysis } from '../lib/useAnalysis';
+import { fetchTablebase, categoryLabel, judgeMove } from '../lib/tablebase';
 import { ENDGAMES, type EndgameStudy } from '../trainers/endgames';
 import { formatScore } from '../lib/format';
 import type { Color } from '../store/game';
 
 type Phase = 'playing' | 'won' | 'drawn' | 'lost';
+
+const HOLD_PLIES = 20; // plies to survive before a draw study counts as held
 
 export function EndgamePage() {
   const game = useRef(new Chess());
@@ -18,10 +22,13 @@ export function EndgamePage() {
   const [fen, setFen] = useState(game.current.fen());
   const [lastMove, setLastMove] = useState<[string, string] | undefined>();
   const [thinking, setThinking] = useState(false);
+  const [tb, setTb] = useState<TablebaseResult | null>(null);
+  const [moveNote, setMoveNote] = useState<{ kind: 'ok' | 'good' | 'bad'; text: string } | null>(null);
 
   const youPlay = study.youPlay;
-  const yourTurn = phase === 'playing' && !thinking && game.current.turn() === (youPlay === 'white' ? 'w' : 'b');
-  const analysis = useAnalysis(fen, phase === 'playing', 1);
+  const youChar = youPlay === 'white' ? 'w' : 'b';
+  const yourTurn = phase === 'playing' && !thinking && game.current.turn() === youChar;
+  const analysis = useAnalysis(fen, phase === 'playing' && (!tb || !tb.available), 1);
 
   const sync = () => {
     const hist = game.current.history({ verbose: true });
@@ -31,33 +38,55 @@ export function EndgamePage() {
   };
 
   const outcomeAfterMove = (): Phase => {
-    if (game.current.isCheckmate()) {
-      // side to move is mated; if that's the defender, you won
-      return game.current.turn() === (youPlay === 'white' ? 'w' : 'b') ? 'lost' : 'won';
-    }
-    if (game.current.isStalemate() || game.current.isInsufficientMaterial() || game.current.isDraw()) {
-      return study.goal === 'draw' ? 'drawn' : 'drawn';
-    }
+    if (game.current.isCheckmate()) return game.current.turn() === youChar ? 'lost' : 'won';
+    if (game.current.isStalemate() || game.current.isInsufficientMaterial() || game.current.isDraw()) return 'drawn';
+    if (study.goal === 'draw' && game.current.history().length >= HOLD_PLIES) return 'drawn';
     return 'playing';
   };
 
-  const askEngine = () => {
-    if (game.current.isGameOver()) return;
-    if (game.current.turn() === (youPlay === 'white' ? 'w' : 'b')) return;
+  // Keep tablebase data in sync with the position (best-effort; may be unavailable).
+  useEffect(() => {
+    let cancelled = false;
+    const pieces = fen.split(' ')[0]!.replace(/[^a-zA-Z]/g, '').length;
+    if (pieces > 7) {
+      setTb(null);
+      return;
+    }
+    fetchTablebase(fen).then((r) => !cancelled && setTb(r.available ? r : null));
+    return () => {
+      cancelled = true;
+    };
+  }, [fen]);
+
+  const askDefender = async () => {
+    if (game.current.isGameOver() || game.current.turn() === youChar) return;
     const id = gameId.current;
     setThinking(true);
     const fenNow = game.current.fen();
-    engine
-      .botMove(fenNow, { style: 'balanced', elo: 3190, moveTimeMs: 500 })
-      .then((res) => {
-        if (gameId.current !== id) return;
-        game.current.move({ from: res.uci.slice(0, 2), to: res.uci.slice(2, 4), promotion: res.uci[4] });
-        setThinking(false);
-        sync();
-        const o = outcomeAfterMove();
-        if (o !== 'playing') setPhase(o);
-      })
-      .catch(() => gameId.current === id && setThinking(false));
+    let uci: string | null = null;
+
+    // Prefer tablebase-perfect defence; fall back to a full-strength engine.
+    const t = await fetchTablebase(fenNow);
+    const tbBest = t.available ? t.moves?.[0] : undefined;
+    if (tbBest) uci = tbBest.uci;
+    if (!uci) {
+      try {
+        const res = await engine.botMove(fenNow, { style: 'balanced', elo: 3190, moveTimeMs: 500 });
+        uci = res.uci;
+      } catch {
+        /* leave null */
+      }
+    }
+    if (gameId.current !== id) return;
+    if (!uci) {
+      setThinking(false);
+      return;
+    }
+    game.current.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] });
+    setThinking(false);
+    sync();
+    const o = outcomeAfterMove();
+    if (o !== 'playing') setPhase(o);
   };
 
   const load = (s: EndgameStudy) => {
@@ -66,11 +95,12 @@ export function EndgamePage() {
     setStudy(s);
     setPhase('playing');
     setThinking(false);
+    setMoveNote(null);
+    setTb(null);
     setFen(game.current.fen());
     setLastMove(undefined);
-    // if the defender is on move first, let the engine reply
     setTimeout(() => {
-      if (game.current.turn() !== (s.youPlay === 'white' ? 'w' : 'b')) askEngine();
+      if (game.current.turn() !== (s.youPlay === 'white' ? 'w' : 'b')) askDefender();
     }, 300);
   };
 
@@ -94,33 +124,40 @@ export function EndgamePage() {
 
   const onMove = (from: string, to: string) => {
     if (!yourTurn) return;
+    const uci = from + to + (game.current.get(from as any)?.type === 'p' && (to[1] === '8' || to[1] === '1') ? 'q' : '');
+    const before = tb; // tablebase snapshot of the position we're moving from
     try {
-      game.current.move({ from, to, promotion: 'q' }); // auto-queen
+      game.current.move({ from, to, promotion: 'q' });
     } catch {
       return;
     }
+    setMoveNote(before ? judgeMove(before, uci, study.goal) : null);
     sync();
     const o = outcomeAfterMove();
     if (o !== 'playing') {
       setPhase(o);
       return;
     }
-    askEngine();
+    askDefender();
   };
 
-  // derive a coaching status from the live evaluation (your POV)
   const status = useMemo(() => {
     if (phase === 'won') return { text: '✓ Checkmate — solved!', cls: 'text-emerald-300 font-semibold' };
-    if (phase === 'drawn') return { text: study.goal === 'draw' ? '✓ Held the draw!' : '½ Drawn — the win slipped away.', cls: 'text-amber-300 font-semibold' };
+    if (phase === 'drawn')
+      return {
+        text: study.goal === 'draw' ? '✓ Held the draw!' : '½ Drawn — the win slipped away.',
+        cls: 'text-amber-300 font-semibold',
+      };
     if (phase === 'lost') return { text: 'You got mated! Restart and try again.', cls: 'text-rose-300 font-semibold' };
+    if (tb?.available) return { text: categoryLabel(tb.category, tb.dtm), cls: 'text-sky-300' };
     const sc = analysis.score;
     if (!sc) return { text: thinking ? 'Engine defending…' : 'Your move.', cls: 'text-neutral-300' };
     const yourPov = youPlay === 'white' ? sc : { ...sc, value: -sc.value };
-    if (yourPov.kind === 'mate' && yourPov.value > 0) return { text: `Winning — mate in ${yourPov.value}. Convert it!`, cls: 'text-emerald-300' };
+    if (yourPov.kind === 'mate' && yourPov.value > 0) return { text: `Winning — mate in ${yourPov.value}.`, cls: 'text-emerald-300' };
     if (study.goal === 'win' && (yourPov.kind === 'cp' ? yourPov.value < 200 : yourPov.value < 0))
       return { text: 'Careful — your advantage is slipping.', cls: 'text-amber-300' };
     return { text: thinking ? 'Engine defending…' : 'Your move — keep converting.', cls: 'text-neutral-300' };
-  }, [phase, analysis.score, thinking, youPlay, study.goal]);
+  }, [phase, analysis.score, thinking, youPlay, study.goal, tb]);
 
   const orientation: Color = youPlay;
 
@@ -129,17 +166,17 @@ export function EndgamePage() {
       <div className="order-2 space-y-3 lg:order-1">
         <div className="rounded-lg bg-panel p-3">
           <h3 className="mb-2 text-sm font-semibold text-ink">Endgame studies</h3>
-          <div className="space-y-1">
+          <div className="scroll-thin max-h-[60vh] space-y-1 overflow-y-auto">
             {ENDGAMES.map((s) => (
               <button
                 key={s.id}
                 onClick={() => load(s)}
-                className={`w-full rounded px-2 py-1.5 text-left text-xs ${
+                className={`flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-left text-xs ${
                   study.id === s.id ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                 }`}
               >
-                <span className="font-medium">{s.name}</span>
-                <span className="ml-1 text-[10px] uppercase opacity-60">{s.goal}</span>
+                <span className="truncate">{s.name}</span>
+                <span className="shrink-0 text-[10px] uppercase opacity-60">{s.goal}</span>
               </button>
             ))}
           </div>
@@ -147,8 +184,13 @@ export function EndgamePage() {
       </div>
 
       <div className="order-1 space-y-3 lg:order-2">
-        <div className="flex h-7 items-center gap-2 text-sm">
+        <div className="flex h-7 items-center gap-3 text-sm">
           <span className={status.cls}>{status.text}</span>
+          {moveNote && phase === 'playing' && (
+            <span className={moveNote.kind === 'bad' ? 'text-rose-300' : moveNote.kind === 'good' ? 'text-emerald-300' : 'text-amber-300'}>
+              · {moveNote.text}
+            </span>
+          )}
         </div>
         <div className="mx-auto w-full max-w-[540px]">
           <div className="flex gap-2">
@@ -188,8 +230,14 @@ export function EndgamePage() {
             <b className="text-neutral-200">{study.goal === 'win' ? 'checkmate' : 'hold the draw'}</b>.
           </p>
           <p className="text-xs leading-snug text-neutral-400">{study.technique}</p>
-          {analysis.score && phase === 'playing' && (
-            <p className="mt-2 font-mono text-xs text-neutral-500">eval {formatScore(analysis.score)} · depth {analysis.depth}</p>
+          {phase === 'playing' && (
+            <p className="mt-2 font-mono text-xs text-neutral-500">
+              {tb?.available
+                ? `tablebase · ${tb.category}${tb.dtz != null ? ` · dtz ${tb.dtz}` : ''}`
+                : analysis.score
+                  ? `eval ${formatScore(analysis.score)} · depth ${analysis.depth}`
+                  : ''}
+            </p>
           )}
         </div>
       </div>

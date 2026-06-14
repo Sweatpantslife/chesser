@@ -184,6 +184,34 @@ export interface ErrorMessage {
 export type ServerMessage = WelcomeMessage | AnalysisMessage | BotMoveMessage | ErrorMessage;
 
 // ---------------------------------------------------------------------------
+// Syzygy tablebase (proxied through the server; optional)
+// ---------------------------------------------------------------------------
+
+export type TablebaseCategory = 'win' | 'draw' | 'loss' | 'cursed-win' | 'blessed-loss' | 'unknown';
+
+export interface TablebaseMove {
+  uci: string;
+  san?: string;
+  /** Result for the side that PLAYS this move (already inverted to the mover's POV). */
+  category: TablebaseCategory;
+  dtz: number | null; // distance-to-zeroing
+  dtm: number | null; // distance-to-mate
+}
+
+export interface TablebaseResult {
+  available: boolean;
+  reason?: string; // why unavailable (too-many-pieces / unreachable / ...)
+  /** Result for the side to move. */
+  category?: TablebaseCategory;
+  dtz?: number | null;
+  dtm?: number | null;
+  checkmate?: boolean;
+  stalemate?: boolean;
+  /** Legal moves, best-first for the side to move (each category is mover-POV). */
+  moves?: TablebaseMove[];
+}
+
+// ---------------------------------------------------------------------------
 // Misc helpers
 // ---------------------------------------------------------------------------
 

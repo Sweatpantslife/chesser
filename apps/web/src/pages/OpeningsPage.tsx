@@ -1,13 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
 import { Board } from '../board/Board';
+import { ReviewStats } from '../components/ReviewStats';
 import { OPENING_LINES, type OpeningLine } from '../trainers/openings';
+import { useProgress } from '../store/progress';
+import { dueLabel } from '../lib/srs';
 import type { Color } from '../store/game';
 
 type Phase = 'idle' | 'playing' | 'done';
 
+const ALL_IDS = OPENING_LINES.map((l) => l.id);
+
 export function OpeningsPage() {
   const game = useRef(new Chess());
+  const run = useRef({ errors: 0, reveals: 0, graded: false });
   const [line, setLine] = useState<OpeningLine>(OPENING_LINES[0]!);
   const [phase, setPhase] = useState<Phase>('idle');
   const [ply, setPly] = useState(0);
@@ -15,6 +21,10 @@ export function OpeningsPage() {
   const [lastMove, setLastMove] = useState<[string, string] | undefined>();
   const [feedback, setFeedback] = useState<{ kind: 'ok' | 'bad' | 'info'; text: string } | null>(null);
   const [stats, setStats] = useState({ correct: 0, wrong: 0 });
+
+  const grade = useProgress((s) => s.grade);
+  const cards = useProgress((s) => s.cards);
+  const dueIds = useProgress((s) => s.dueIds);
 
   const side = line.side;
   const traineeToMove = phase === 'playing' && game.current.turn() === (side === 'white' ? 'w' : 'b');
@@ -28,6 +38,7 @@ export function OpeningsPage() {
 
   const start = (l: OpeningLine) => {
     game.current = new Chess();
+    run.current = { errors: 0, reveals: 0, graded: false };
     setLine(l);
     setPhase('playing');
     setPly(0);
@@ -35,12 +46,25 @@ export function OpeningsPage() {
     sync();
   };
 
-  // Auto-play the opponent's book moves; detect completion.
+  const reviewNext = () => {
+    const due = dueIds('openings', ALL_IDS);
+    const pool = due.length > 0 ? due : ALL_IDS.filter((id) => !cards[`openings:${id}`]?.last);
+    const pick = pool[Math.floor(Math.random() * pool.length)] ?? ALL_IDS[0]!;
+    const l = OPENING_LINES.find((x) => x.id === pick)!;
+    start(l);
+  };
+
+  // Auto-play the opponent's book moves; grade + finish at the end of the line.
   useEffect(() => {
     if (phase !== 'playing') return;
     if (ply >= line.moves.length) {
+      if (!run.current.graded) {
+        run.current.graded = true;
+        const g = run.current.reveals > 0 || run.current.errors >= 3 ? 'again' : run.current.errors >= 1 ? 'hard' : 'good';
+        grade('openings', line.id, g);
+      }
       setPhase('done');
-      setFeedback({ kind: 'ok', text: 'Line complete — well done!' });
+      setFeedback({ kind: 'ok', text: 'Line complete — saved to your review schedule!' });
       return;
     }
     const opponentToMove = game.current.turn() !== (side === 'white' ? 'w' : 'b');
@@ -51,7 +75,7 @@ export function OpeningsPage() {
       setPly((p) => p + 1);
     }, 450);
     return () => clearTimeout(t);
-  }, [phase, ply, line, side]);
+  }, [phase, ply, line, side, grade]);
 
   const dests = useMemo(() => {
     const map = new Map<string, string[]>();
@@ -75,14 +99,16 @@ export function OpeningsPage() {
       sync();
       setPly((p) => p + 1);
     } else {
+      run.current.errors += 1;
       setStats((s) => ({ ...s, wrong: s.wrong + 1 }));
       setFeedback({ kind: 'bad', text: 'Not the main line — try again, or reveal.' });
-      sync(); // snap the attempted piece back
+      sync();
     }
   };
 
   const reveal = () => {
     if (phase !== 'playing' || ply >= line.moves.length) return;
+    run.current.reveals += 1;
     const mv = game.current.move(line.moves[ply]!);
     setStats((s) => ({ ...s, wrong: s.wrong + 1 }));
     setFeedback({ kind: 'info', text: `Answer: ${mv.san}` });
@@ -99,23 +125,38 @@ export function OpeningsPage() {
       {/* line picker */}
       <div className="order-2 space-y-3 lg:order-1">
         <div className="rounded-lg bg-panel p-3">
-          <h3 className="mb-2 text-sm font-semibold text-ink">Repertoire</h3>
+          <div className="mb-2 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-ink">Repertoire</h3>
+          </div>
+          <ReviewStats deck="openings" ids={ALL_IDS} />
+          <button
+            onClick={reviewNext}
+            className="mt-2 w-full rounded bg-emerald-600 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500"
+          >
+            Review due lines
+          </button>
+        </div>
+
+        <div className="scroll-thin max-h-[60vh] overflow-y-auto rounded-lg bg-panel p-3">
           {(['white', 'black'] as const).map((c) => (
             <div key={c} className="mb-2">
               <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">As {c}</div>
               <div className="space-y-1">
-                {OPENING_LINES.filter((l) => l.side === c).map((l) => (
-                  <button
-                    key={l.id}
-                    onClick={() => start(l)}
-                    className={`w-full rounded px-2 py-1.5 text-left text-xs ${
-                      line.id === l.id ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
-                    }`}
-                  >
-                    <span className="font-medium">{l.name}</span>
-                    <span className="ml-1 text-[10px] opacity-60">{l.eco}</span>
-                  </button>
-                ))}
+                {OPENING_LINES.filter((l) => l.side === c).map((l) => {
+                  const cardDue = dueLabel(cards[`openings:${l.id}`] ?? { last: 0, due: 0 } as any);
+                  return (
+                    <button
+                      key={l.id}
+                      onClick={() => start(l)}
+                      className={`flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-left text-xs ${
+                        line.id === l.id ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
+                      }`}
+                    >
+                      <span className="truncate">{l.name}</span>
+                      <span className={`shrink-0 text-[10px] ${cardDue === 'due' ? 'text-amber-300' : 'opacity-60'}`}>{cardDue}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -156,8 +197,8 @@ export function OpeningsPage() {
             </button>
           )}
           {phase === 'done' && (
-            <button onClick={() => start(line)} className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500">
-              Repeat line
+            <button onClick={reviewNext} className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500">
+              Next due line
             </button>
           )}
           <button onClick={() => start(line)} className="rounded bg-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600">

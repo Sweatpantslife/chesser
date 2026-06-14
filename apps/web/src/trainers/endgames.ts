@@ -3,7 +3,7 @@ export interface EndgameStudy {
   name: string;
   /** You play this side; Stockfish defends with the other. */
   youPlay: 'white' | 'black';
-  /** 'win' = deliver checkmate; 'draw' = hold the balance. */
+  /** 'win' = deliver checkmate / queen; 'draw' = hold the balance. */
   goal: 'win' | 'draw';
   fen: string;
   technique: string;
@@ -36,6 +36,22 @@ export const ENDGAMES: EndgameStudy[] = [
     technique: 'The “lawnmower”: cut the king off rank by rank, lifting each rook away when attacked.',
   },
   {
+    id: 'two-bishops',
+    name: 'Two Bishops Mate',
+    youPlay: 'white',
+    goal: 'win',
+    fen: '4k3/8/8/8/8/8/3BB3/4K3 w - - 0 1',
+    technique: 'Drive the king to a corner with the bishops working on adjacent diagonals, king in support.',
+  },
+  {
+    id: 'bishop-knight',
+    name: 'Bishop & Knight Mate',
+    youPlay: 'white',
+    goal: 'win',
+    fen: '4k3/8/8/8/8/5N2/4B3/4K3 w - - 0 1',
+    technique: 'The hardest basic mate: force the king to a corner the bishop controls using the “W” knight manoeuvre.',
+  },
+  {
     id: 'kp-sixth',
     name: 'King & Pawn — King on the 6th',
     youPlay: 'white',
@@ -52,11 +68,53 @@ export const ENDGAMES: EndgameStudy[] = [
     technique: 'Advance the pawns side by side, supported by the king, until one queens.',
   },
   {
+    id: 'lucena',
+    name: 'Rook Endgame — Lucena (“building a bridge”)',
+    youPlay: 'white',
+    goal: 'win',
+    fen: '3K4/3P1k2/8/8/8/8/7r/4R3 w - - 0 1',
+    technique:
+      'The most important rook ending. Free your king with a check, then build a bridge on the 4th rank to shelter from checks and promote.',
+  },
+  {
     id: 'q-vs-r',
     name: 'Queen vs Rook',
     youPlay: 'white',
     goal: 'win',
     fen: '4k3/8/8/8/8/8/4r3/3QK3 w - - 0 1',
     technique: 'Win the rook or mate by forcing the defender into checks and forks (the Philidor technique).',
+  },
+  {
+    id: 'q-vs-pawn',
+    name: 'Queen vs Pawn on the 7th',
+    youPlay: 'white',
+    goal: 'win',
+    fen: '8/8/8/8/8/3k4/3p4/3KQ3 w - - 0 1',
+    technique: 'For a centre pawn, repeatedly check and approach: each time the defender must block, you gain a tempo to bring your king.',
+  },
+  {
+    id: 'rook-draw',
+    name: 'Rook Endgame — Defensive Draw',
+    youPlay: 'black',
+    goal: 'draw',
+    fen: '8/8/8/3PK3/8/8/r7/4Rk2 b - - 0 1',
+    technique:
+      'A rook down a pawn can still draw: keep the rook active and check from a distance so the enemy king never shelters. Hold it.',
+  },
+  {
+    id: 'two-knights',
+    name: 'Two Knights Cannot Mate (Draw)',
+    youPlay: 'black',
+    goal: 'draw',
+    fen: '4k3/8/4K3/8/8/5N2/4N3/8 b - - 0 1',
+    technique: 'Two knights cannot force mate against a lone king. Keep your king central and out of the corners to hold the draw.',
+  },
+  {
+    id: 'wrong-bishop',
+    name: 'Wrong Bishop & Rook Pawn (Draw)',
+    youPlay: 'black',
+    goal: 'draw',
+    fen: '7k/8/6KP/8/8/8/8/5B2 b - - 0 1',
+    technique: 'The bishop is the wrong colour to control the queening square. Sit in the corner — the stronger side cannot make progress.',
   },
 ];
