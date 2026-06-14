@@ -20,17 +20,22 @@ export const PIECE_SETS = [
 
 export type PieceSet = (typeof PIECE_SETS)[number]['id'];
 
+/** Which rating meter is shown as the headline number across the app. */
+export type RatingMeter = 'elo' | 'glicko';
+
 interface SettingsState {
   sound: boolean;
   premove: boolean;
   arrows: boolean; // draw the engine's best-move arrows on the analysis board
   boardTheme: BoardTheme;
   pieceSet: PieceSet;
+  ratingMeter: RatingMeter;
   setSound(b: boolean): void;
   setPremove(b: boolean): void;
   setArrows(b: boolean): void;
   setBoardTheme(t: BoardTheme): void;
   setPieceSet(p: PieceSet): void;
+  setRatingMeter(m: RatingMeter): void;
 }
 
 export const useSettings = create<SettingsState>()(
@@ -41,6 +46,7 @@ export const useSettings = create<SettingsState>()(
       arrows: true,
       boardTheme: 'brown',
       pieceSet: 'cburnett',
+      ratingMeter: 'elo',
       setSound: (sound) => set({ sound }),
       setPremove: (premove) => set({ premove }),
       setArrows: (arrows) => set({ arrows }),
@@ -49,6 +55,7 @@ export const useSettings = create<SettingsState>()(
         loadPieceSet(pieceSet);
         set({ pieceSet });
       },
+      setRatingMeter: (ratingMeter) => set({ ratingMeter }),
     }),
     {
       name: 'chesser-settings',

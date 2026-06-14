@@ -4,6 +4,7 @@ import { Board } from '../board/Board';
 import { ReviewStats } from '../components/ReviewStats';
 import { useProgress } from '../store/progress';
 import { useRepertoire, BUILTIN_REPERTOIRE, type RepLine } from '../store/repertoire';
+import { recordReview } from '../lib/gamify';
 import { dueLabel } from '../lib/srs';
 import { playMoveSound } from '../lib/sound';
 import type { Color } from '../store/game';
@@ -83,6 +84,7 @@ export function OpeningsPage() {
         run.current.graded = true;
         const g = run.current.reveals > 0 || run.current.errors >= 3 ? 'again' : run.current.errors >= 1 ? 'hard' : 'good';
         grade('openings', line.id, g);
+        recordReview(g !== 'again');
       }
       setPhase('done');
       setFeedback({ kind: 'ok', text: 'Line complete — saved to your review schedule!' });

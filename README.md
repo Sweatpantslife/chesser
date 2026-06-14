@@ -39,9 +39,11 @@ endgames.
 | **Learn from mistakes** | Save review-flagged blunders into a drill deck and find the better move (engine-validated); synced across devices |
 | **Game library & import** | Save analyzed games to your account; import your real games by Lichess / Chess.com username |
 | **Analyze anything** | Paste a FEN or PGN to study any position or game |
-| **Tactics trainer** | Engine-verified puzzles with a **Glicko-style puzzle rating** that tracks your level, a **theme filter** (mate-in-N, fork, sacrifice, back-rank, promotion, …), difficulty filters, and an option to serve puzzles near your rating |
+| **Tactics trainer** | Engine-verified puzzles with **dual Elo + Glicko-2 puzzle ratings** that track your level (Glicko-2 picks which puzzle to serve), a **theme filter** (mate-in-N, fork, sacrifice, back-rank, promotion, …), difficulty filters, and an option to serve puzzles near your rating |
 | **Puzzles from your games** | One click in the review panel mines engine-verified tactics out of any analysed game (client-side, reusing the live engine); they're rated, themed, drillable and synced |
-| **Stats dashboard** | Accuracy & volume over time — a GitHub-style activity heatmap, a 30-day reviews/accuracy chart, day streaks, per-deck learning progress, your puzzle rating + trend, and personal bests |
+| **Gamification** | XP & levels, a configurable **daily goal** with a keep-your-streak mechanic, and a wall of **achievements/badges** (tactics, playing, ladder, ratings, streaks…) — celebrated with toasts and shown on a **Profile** tab |
+| **Separate ratings** | Three independent rating books — **Bots** (casual games), **Blitz** (timed games) and **Puzzles** — each tracked with both Elo and Glicko-2; pick which meter shows as the headline in Settings |
+| **Stats dashboard** | Accuracy & volume over time — a GitHub-style activity heatmap, a 30-day reviews/accuracy chart, day & goal streaks, level/XP, per-deck learning progress, your three ratings + trends, and personal bests |
 | **Installable PWA** | Add to home screen / install as a desktop app; a service worker caches the app shell so the board and client-side trainers work offline |
 | **Opening names** | Offline opening-name lookup over 3,700+ ECO positions — names the position *live* as you play (transposition-aware), plus search-and-load any opening onto the board |
 | **Coordinate trainer** | A 30-second board-vision sprint — *find the square*, *name the square*, *square colour* (light or dark?) or *knight's tour* (click every knight move), from either side, with optional pieces/labels and synced per-mode best scores |
@@ -103,6 +105,27 @@ one-line change. Create an account (username + password, hashed with scrypt) to
 sync that progress across devices — the client pulls + merges on sign-in and
 pushes on every change. Accounts live in a JSON store at `CHESSER_DATA_DIR`
 (default `data/`).
+
+### Profile, ratings & progression
+
+A **Profile** tab pulls the gamification layer together:
+
+- **Separate rating books** for **Bots** (casual vs-bot games), **Blitz** (timed
+  vs-bot games) and **Puzzles** (tactics). Each keeps two meters side by side:
+  plain **Elo** — the headline number you feel — and **Glicko-2** (rating +
+  deviation + volatility), the confidence-aware meter that quietly drives the
+  *decisions* (which puzzle to serve, which opponent to suggest). Flip which one
+  is the headline in **Settings → Headline rating**, or right on the Profile.
+- **XP & levels** earned from every activity — solving puzzles, finishing games,
+  drilling decks, puzzle-rush runs — with a rising level curve.
+- A configurable **daily goal** and a Duolingo-style **streak**: hit the goal to
+  keep it alive. A ring on the Profile (and a chip in the header) tracks it.
+- **Achievements/badges** across tactics, playing, the ladder, ratings, streaks
+  and dedication — locked badges show live progress; unlocks pop a toast and pay
+  out bonus XP.
+
+All of it syncs with your account alongside the rest of your progress, and the
+old single Elo puzzle rating is migrated into the new Puzzles book on first run.
 
 ### Bigger puzzle sets
 
