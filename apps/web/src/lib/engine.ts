@@ -6,6 +6,7 @@ import type {
   BotStyle,
   ClientMessage,
   EngineAvailability,
+  Score,
   ServerMessage,
 } from '@chesser/shared';
 
@@ -113,6 +114,29 @@ class EngineClient {
     if (this.analysisReqId) this.send({ t: 'stop', reqId: this.analysisReqId });
     this.analysisReqId = null;
     this.analysisHandler = null;
+  }
+
+  /** One-shot evaluation of a position (White-POV score), used by game review. */
+  evalOnce(fen: string, opts: { depth?: number; movetimeMs?: number } = {}): Promise<Score | null> {
+    return new Promise((resolve) => {
+      const reqId = nextId();
+      this.analysisReqId = reqId;
+      let done = false;
+      const finish = (s: Score | null) => {
+        if (done) return;
+        done = true;
+        if (this.analysisReqId === reqId) {
+          this.analysisReqId = null;
+          this.analysisHandler = null;
+        }
+        resolve(s);
+      };
+      this.analysisHandler = (msg) => {
+        if (msg.final) finish(msg.lines[0]?.score ?? null);
+      };
+      this.send({ t: 'analyze', reqId, fen, multipv: 1, ...opts } as AnalyzeRequest);
+      setTimeout(() => finish(null), 8000); // safety
+    });
   }
 
   /** Request a single bot move. Resolves with the move or rejects on error. */

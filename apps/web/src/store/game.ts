@@ -2,9 +2,11 @@ import { Chess } from 'chess.js';
 import { create } from 'zustand';
 import type { AnalysisLine, BotConfig, BotStyle, EngineAvailability, Score } from '@chesser/shared';
 import { engine } from '../lib/engine';
+import { whiteWinPercent } from '../lib/format';
 
 export type Color = 'white' | 'black';
 export type Mode = 'play' | 'analysis';
+export type Annotation = 'inaccuracy' | 'mistake' | 'blunder';
 
 export interface HistoryMove {
   san: string;
@@ -86,6 +88,11 @@ export interface GameStore {
   analysisDepth: number;
   evalScore: Score | null;
 
+  // game review (annotations keyed by ply, 1-based)
+  annotations: Record<number, Annotation>;
+  reviewing: boolean;
+  reviewProgress: number; // 0–100
+
   // actions
   init(): void;
   newGame(cfg: { mode: Mode; playerColor?: Color; bot?: BotConfig }): void;
@@ -102,6 +109,7 @@ export interface GameStore {
   setTimeControl(tc: TimeControl | null): void;
   exploreMove(uci: string): void;
   loadPgn(pgn: string): boolean;
+  reviewGame(): Promise<void>;
 
   // internals
   _sync(): void;
@@ -153,6 +161,10 @@ export const useGame = create<GameStore>((set, get) => ({
   analysisDepth: 0,
   evalScore: null,
 
+  annotations: {},
+  reviewing: false,
+  reviewProgress: 0,
+
   init() {
     engine.onStatus.add((connected) => set({ connected }));
     engine.onWelcome.add(({ engines, styles }) => set({ availability: engines, styles }));
@@ -183,6 +195,7 @@ export const useGame = create<GameStore>((set, get) => ({
       evalScore: null,
       clock,
       flagged: null,
+      annotations: {},
     });
     get()._sync();
     get()._refreshAnalysis();
@@ -228,7 +241,7 @@ export const useGame = create<GameStore>((set, get) => ({
             ? { ...clock, whiteMs: clock.whiteMs + tc.incrementMs }
             : { ...clock, blackMs: clock.blackMs + tc.incrementMs }
           : clock;
-      set({ history, viewPly: history.length, clock: nextClock });
+      set({ history, viewPly: history.length, clock: nextClock, annotations: {} });
       get()._sync();
       get()._refreshAnalysis();
       get()._maybeTriggerBot();
@@ -284,7 +297,7 @@ export const useGame = create<GameStore>((set, get) => ({
     }
     for (let i = 0; i < undo; i++) game.undo();
     const history = s.history.slice(0, s.history.length - undo);
-    set({ history, viewPly: history.length, thinking: false, pendingPromotion: null });
+    set({ history, viewPly: history.length, thinking: false, pendingPromotion: null, annotations: {} });
     gameId++; // invalidate any in-flight bot move
     get()._sync();
     get()._refreshAnalysis();
@@ -354,10 +367,46 @@ export const useGame = create<GameStore>((set, get) => ({
       analysisLines: [],
       analysisDepth: 0,
       evalScore: null,
+      annotations: {},
     });
     get()._sync();
     get()._refreshAnalysis();
     return true;
+  },
+
+  async reviewGame() {
+    const s0 = get();
+    if (s0.reviewing || s0.history.length === 0) return;
+    const myGame = gameId;
+    engine.stopAnalysis();
+    set({ reviewing: true, reviewProgress: 0, annotations: {} });
+
+    const fens = [s0.startFen, ...s0.history.map((h) => h.fen)];
+    const winWhite: number[] = [];
+    for (let i = 0; i < fens.length; i++) {
+      const score = await engine.evalOnce(fens[i]!, { movetimeMs: 300 });
+      if (gameId !== myGame) {
+        set({ reviewing: false });
+        return; // game changed under us
+      }
+      winWhite.push(whiteWinPercent(score));
+      set({ reviewProgress: Math.round(((i + 1) / fens.length) * 100) });
+    }
+
+    const ann: Record<number, Annotation> = {};
+    for (let i = 0; i < s0.history.length; i++) {
+      const before = winWhite[i];
+      const after = winWhite[i + 1];
+      if (before === undefined || after === undefined) continue;
+      const whiteMoved = i % 2 === 0;
+      const loss = whiteMoved ? before - after : after - before; // mover's win% drop
+      const ply = i + 1;
+      if (loss >= 30) ann[ply] = 'blunder';
+      else if (loss >= 18) ann[ply] = 'mistake';
+      else if (loss >= 9) ann[ply] = 'inaccuracy';
+    }
+    set({ annotations: ann, reviewing: false, reviewProgress: 100 });
+    get()._refreshAnalysis();
   },
 
   _tick(dtMs) {

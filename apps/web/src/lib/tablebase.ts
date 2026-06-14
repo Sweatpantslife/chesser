@@ -49,8 +49,9 @@ export function judgeMove(
 
   if (goal === 'win') {
     if (!WIN_CATS.includes(played.category)) return { kind: 'bad', text: 'That throws away the win!' };
-    if (best.dtz != null && played.dtz != null && Math.abs(played.dtz) <= Math.abs(best.dtz))
-      return { kind: 'good', text: 'Optimal — fastest win.' };
+    // DTZ lets us rank speed (online proxy); local Syzygy gives category only.
+    if (best.dtz == null || played.dtz == null) return { kind: 'good', text: 'Winning move.' };
+    if (Math.abs(played.dtz) <= Math.abs(best.dtz)) return { kind: 'good', text: 'Optimal — fastest win.' };
     return { kind: 'ok', text: 'Still winning, but not the quickest.' };
   }
   // draw

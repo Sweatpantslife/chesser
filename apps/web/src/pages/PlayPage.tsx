@@ -7,6 +7,7 @@ import { BotPanel } from '../components/BotPanel';
 import { Controls } from '../components/Controls';
 import { Clock } from '../components/Clock';
 import { ExplorerPanel } from '../components/ExplorerPanel';
+import { ReviewPanel } from '../components/ReviewPanel';
 import { PromotionDialog } from '../components/PromotionDialog';
 import { engine } from '../lib/engine';
 import { useGame, type Color } from '../store/game';
@@ -108,6 +109,7 @@ export function PlayPage() {
       </div>
       <div className="order-3 space-y-3">
         <AnalysisPanel />
+        <ReviewPanel />
         <MoveList />
         <ExplorerPanel />
       </div>

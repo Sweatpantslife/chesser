@@ -1,8 +1,15 @@
 import { useEffect, useRef } from 'react';
 import { useGame } from '../store/game';
 
+const GLYPH: Record<string, { mark: string; cls: string }> = {
+  blunder: { mark: '??', cls: 'text-rose-400' },
+  mistake: { mark: '?', cls: 'text-orange-400' },
+  inaccuracy: { mark: '?!', cls: 'text-amber-300' },
+};
+
 export function MoveList() {
   const { history, viewPly, goToPly } = useGame();
+  const annotations = useGame((s) => s.annotations);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -17,8 +24,10 @@ export function MoveList() {
     else rows[row]!.black = { san: m.san, ply: i + 1 };
   });
 
-  const cell = (move: { san: string; ply: number } | undefined) =>
-    move ? (
+  const cell = (move: { san: string; ply: number } | undefined) => {
+    if (!move) return <span />;
+    const g = GLYPH[annotations[move.ply] ?? ''];
+    return (
       <button
         data-current={viewPly === move.ply}
         onClick={() => goToPly(move.ply)}
@@ -27,10 +36,10 @@ export function MoveList() {
         }`}
       >
         {move.san}
+        {g && <span className={`ml-0.5 ${viewPly === move.ply ? 'text-white' : g.cls}`}>{g.mark}</span>}
       </button>
-    ) : (
-      <span />
     );
+  };
 
   return (
     <div ref={scrollRef} className="scroll-thin max-h-56 overflow-y-auto rounded-lg bg-panelmute p-1">
