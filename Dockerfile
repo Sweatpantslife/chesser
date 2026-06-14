@@ -86,8 +86,10 @@ COPY --from=build /app/apps/web/dist ./web
 # Engine binaries, networks and manifest.
 COPY --from=engines /app/engines ./engines
 
-# Persistent account/progress store lives on a mounted volume.
-RUN mkdir -p /data && chown -R node:node /app /data
+# The app only ever writes to the data volume; /app stays root-owned and
+# world-readable (the copied files keep their read/exec perms), which avoids a
+# costly chown -R copy-up of the engine binaries and follows least privilege.
+RUN mkdir -p /data && chown node:node /data
 USER node
 VOLUME ["/data"]
 EXPOSE 8787
