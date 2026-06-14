@@ -90,6 +90,13 @@ allowlist them in sandboxed networks, or they degrade gracefully:
 | Tablebase | `tablebase.lichess.ovh` | `CHESSER_TABLEBASE_URL` |
 | Explorer | `explorer.lichess.ovh` | `CHESSER_EXPLORER_MASTERS_URL` / `CHESSER_EXPLORER_LICHESS_URL` |
 
+> **Explorer auth:** Lichess now requires a logged-in account on
+> `explorer.lichess.ovh`, so unauthenticated requests get `401` and the explorer
+> reports itself unavailable. Set `CHESSER_LICHESS_TOKEN` to a
+> [Lichess API token](https://lichess.org/account/oauth/token) (no scopes
+> needed) and the server sends it as a `Bearer` header. Game **import** still
+> works without a token, since it reads public games from `lichess.org`.
+
 ### Syzygy tablebase
 
 Chesser uses Syzygy endgame tablebases two complementary ways:
