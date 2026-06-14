@@ -6,6 +6,8 @@ import { PUZZLES, type Difficulty } from '../trainers/tactics';
 import { useProgress } from '../store/progress';
 import { playMoveSound } from '../lib/sound';
 import { RushMode } from './RushMode';
+import { MistakesMode } from './MistakesMode';
+import { useMistakes } from '../store/mistakes';
 import type { Color } from '../store/game';
 
 type Phase = 'solving' | 'solved' | 'failed';
@@ -20,23 +22,25 @@ const DIFF_COLOR: Record<Difficulty, string> = {
 };
 
 export function TacticsPage() {
-  const [mode, setMode] = useState<'practice' | 'rush'>('practice');
+  const [mode, setMode] = useState<'practice' | 'rush' | 'mistakes'>('practice');
+  const mistakeCount = useMistakes((s) => s.cards.length);
+  const labels = { practice: 'Practice', rush: 'Puzzle rush', mistakes: `My mistakes${mistakeCount ? ` (${mistakeCount})` : ''}` };
   return (
     <div className="space-y-4">
       <div className="mx-auto flex w-full max-w-[1200px] gap-1">
-        {(['practice', 'rush'] as const).map((m) => (
+        {(['practice', 'rush', 'mistakes'] as const).map((m) => (
           <button
             key={m}
             onClick={() => setMode(m)}
-            className={`rounded px-3 py-1.5 text-sm capitalize ${
+            className={`rounded px-3 py-1.5 text-sm ${
               mode === m ? 'bg-emerald-600 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
             }`}
           >
-            {m === 'rush' ? 'Puzzle rush' : 'Practice'}
+            {labels[m]}
           </button>
         ))}
       </div>
-      {mode === 'practice' ? <PracticeTactics /> : <RushMode />}
+      {mode === 'practice' ? <PracticeTactics /> : mode === 'rush' ? <RushMode /> : <MistakesMode />}
     </div>
   );
 }

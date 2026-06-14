@@ -1,15 +1,43 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useGame } from '../store/game';
+import { useMistakes, type NewMistake } from '../store/mistakes';
 import { EvalGraph } from './EvalGraph';
 
 export function ReviewPanel() {
   const mode = useGame((s) => s.mode);
   const history = useGame((s) => s.history);
+  const startFen = useGame((s) => s.startFen);
+  const evalGraph = useGame((s) => s.evalGraph);
   const reviewing = useGame((s) => s.reviewing);
   const progress = useGame((s) => s.reviewProgress);
   const annotations = useGame((s) => s.annotations);
   const stats = useGame((s) => s.reviewStats);
   const reviewGame = useGame((s) => s.reviewGame);
+  const addMistakes = useMistakes((s) => s.addMany);
+  const [saved, setSaved] = useState<number | null>(null);
+
+  const saveMistakes = () => {
+    const cards: NewMistake[] = [];
+    for (const [plyStr, ann] of Object.entries(annotations)) {
+      if (ann === 'inaccuracy') continue; // drill the serious ones
+      const ply = Number(plyStr);
+      const i = ply - 1;
+      const move = history[i];
+      const w = evalGraph[i];
+      if (!move || w === undefined) continue;
+      const side = i % 2 === 0 ? 'white' : 'black';
+      cards.push({
+        fen: i === 0 ? startFen : history[i - 1]!.fen,
+        side,
+        playedSan: move.san,
+        expected: side === 'white' ? w : 100 - w,
+        severity: ann,
+      });
+    }
+    setSaved(addMistakes(cards));
+    setTimeout(() => setSaved(null), 2500);
+  };
+  const seriousCount = Object.values(annotations).filter((a) => a !== 'inaccuracy').length;
 
   const counts = useMemo(() => {
     const c = { white: { blunder: 0, mistake: 0, inaccuracy: 0 }, black: { blunder: 0, mistake: 0, inaccuracy: 0 } };
@@ -67,6 +95,14 @@ export function ReviewPanel() {
               ))}
             </tbody>
           </table>
+          {seriousCount > 0 && (
+            <button
+              onClick={saveMistakes}
+              className="w-full rounded bg-neutral-700 py-1.5 text-xs font-semibold text-neutral-100 hover:bg-neutral-600"
+            >
+              {saved !== null ? `✓ Added ${saved} to drill` : `Save ${seriousCount} mistakes to drill →`}
+            </button>
+          )}
         </div>
       ) : (
         <p className="text-xs text-neutral-500">

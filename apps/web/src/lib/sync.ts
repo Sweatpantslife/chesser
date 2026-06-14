@@ -1,6 +1,7 @@
 import { apiGetProgress, apiPutProgress } from './api';
 import { useProgress } from '../store/progress';
 import { useRepertoire } from '../store/repertoire';
+import { useMistakes } from '../store/mistakes';
 
 export type SyncState = 'off' | 'syncing' | 'synced' | 'error';
 
@@ -12,15 +13,17 @@ function gather() {
   return {
     progress: useProgress.getState().exportState(),
     repertoires: useRepertoire.getState().exportRepertoires(),
+    mistakes: useMistakes.getState().exportMistakes(),
   };
 }
 
 function apply(remote: unknown): void {
   if (!remote || typeof remote !== 'object') return;
   const r = remote as Record<string, unknown>;
-  if ('progress' in r || 'repertoires' in r) {
+  if ('progress' in r || 'repertoires' in r || 'mistakes' in r) {
     useProgress.getState().importMerge(r.progress);
     useRepertoire.getState().importMerge(r.repertoires);
+    useMistakes.getState().importMerge(r.mistakes);
   } else {
     useProgress.getState().importMerge(r); // legacy: bare progress blob
   }
@@ -50,6 +53,7 @@ export function startSync(token: string, onState: (s: SyncState) => void): void 
   };
   unsubs.push(useProgress.subscribe(schedule));
   unsubs.push(useRepertoire.subscribe(schedule));
+  unsubs.push(useMistakes.subscribe(schedule));
 }
 
 export function stopSync(): void {
