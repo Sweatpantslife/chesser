@@ -100,6 +100,8 @@ export interface GameStore {
   setMultipv(n: number): void;
   setBotConfig(bot: Partial<BotConfig>): void;
   setTimeControl(tc: TimeControl | null): void;
+  exploreMove(uci: string): void;
+  loadPgn(pgn: string): boolean;
 
   // internals
   _sync(): void;
@@ -313,6 +315,49 @@ export const useGame = create<GameStore>((set, get) => ({
 
   setTimeControl(tc) {
     set({ timeControl: tc });
+  },
+
+  // Play a move from the currently-viewed position (branches the line).
+  exploreMove(uci) {
+    const s = get();
+    if (s.mode !== 'analysis') return;
+    if (s.viewPly < s.history.length) {
+      const baseFen = s.viewPly === 0 ? s.startFen : s.history[s.viewPly - 1]!.fen;
+      game = new Chess(baseFen);
+      set({ history: s.history.slice(0, s.viewPly) });
+    }
+    get()._applyMove({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci.length > 4 ? uci[4] : undefined });
+  },
+
+  loadPgn(pgn) {
+    const probe = new Chess();
+    try {
+      probe.loadPgn(pgn);
+    } catch {
+      return false;
+    }
+    const verbose = probe.history({ verbose: true });
+    if (verbose.length === 0) return false;
+    game = new Chess(probe.fen());
+    gameId++;
+    set({
+      mode: 'analysis',
+      playerColor: null,
+      botColor: null,
+      history: verbose.map((m) => ({ san: m.san, uci: m.from + m.to + (m.promotion ?? ''), fen: m.after })),
+      viewPly: 0,
+      startFen: verbose[0]!.before,
+      thinking: false,
+      pendingPromotion: null,
+      flagged: null,
+      clock: null,
+      analysisLines: [],
+      analysisDepth: 0,
+      evalScore: null,
+    });
+    get()._sync();
+    get()._refreshAnalysis();
+    return true;
   },
 
   _tick(dtMs) {

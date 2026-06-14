@@ -20,6 +20,8 @@ interface ProgressState {
   dueIds(deck: Deck, ids: string[]): string[];
   seenIds(deck: Deck, ids: string[]): string[];
   stats(deck: Deck, ids: string[]): { total: number; seen: number; due: number };
+  exportState(): { cards: Record<string, SrsCard>; history: Record<string, DayStat>; lastActiveDay: string; streak: number };
+  importMerge(remote: unknown): void;
   reset(): void;
 }
 
@@ -75,6 +77,33 @@ export const useProgress = create<ProgressState>()(
         const seen = get().seenIds(deck, ids).length;
         const due = get().dueIds(deck, ids).length;
         return { total: ids.length, seen, due };
+      },
+
+      exportState() {
+        const { cards, history, lastActiveDay, streak } = get();
+        return { cards, history, lastActiveDay, streak };
+      },
+
+      // Merge a remote snapshot into local state (last-write-wins per card).
+      importMerge(remote) {
+        if (!remote || typeof remote !== 'object') return;
+        const r = remote as Partial<ProgressState>;
+        const cards = { ...get().cards };
+        for (const [k, rc] of Object.entries(r.cards ?? {})) {
+          const local = cards[k];
+          if (!local || (rc as SrsCard).last > local.last) cards[k] = rc as SrsCard;
+        }
+        const history = { ...get().history };
+        for (const [day, rs] of Object.entries(r.history ?? {})) {
+          const local = history[day];
+          const rstat = rs as DayStat;
+          history[day] = local
+            ? { reviews: Math.max(local.reviews, rstat.reviews), correct: Math.max(local.correct, rstat.correct) }
+            : rstat;
+        }
+        const lastActiveDay = (r.lastActiveDay ?? '') > get().lastActiveDay ? r.lastActiveDay! : get().lastActiveDay;
+        const streak = Math.max(get().streak, r.streak ?? 0);
+        set({ cards, history, lastActiveDay, streak });
       },
 
       reset() {

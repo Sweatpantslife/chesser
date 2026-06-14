@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useGame } from '../store/game';
 import { toPgn } from '../lib/pgn';
+import { PgnDialog } from './PgnDialog';
 
 function botLabel(style: string, elo?: number, maia?: number): string {
   if (style === 'human') return `Maia ${maia ?? ''}`.trim();
@@ -11,6 +12,7 @@ function botLabel(style: string, elo?: number, maia?: number): string {
 export function Controls() {
   const { history, viewPly, mode, playerColor, botConfig, stepView, goToPly, flip, takeback, newGame } = useGame();
   const [copied, setCopied] = useState(false);
+  const [pgnOpen, setPgnOpen] = useState(false);
 
   const copyPgn = async () => {
     const opp = botLabel(botConfig.style, botConfig.elo, botConfig.maiaRating);
@@ -60,6 +62,10 @@ export function Controls() {
       <button className={btn} onClick={copyPgn} disabled={history.length === 0} title="Copy PGN">
         {copied ? '✓ Copied' : 'PGN'}
       </button>
+      <button className={btn} onClick={() => setPgnOpen(true)} title="Import a PGN to review">
+        Import
+      </button>
+      {pgnOpen && <PgnDialog onClose={() => setPgnOpen(false)} />}
     </div>
   );
 }

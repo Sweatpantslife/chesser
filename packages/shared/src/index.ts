@@ -212,6 +212,32 @@ export interface TablebaseResult {
 }
 
 // ---------------------------------------------------------------------------
+// Opening explorer (proxied through the server; optional)
+// ---------------------------------------------------------------------------
+
+export type ExplorerDb = 'masters' | 'lichess';
+
+export interface ExplorerMove {
+  uci: string;
+  san: string;
+  white: number;
+  draws: number;
+  black: number;
+  total: number;
+}
+
+export interface ExplorerResult {
+  available: boolean;
+  reason?: string;
+  white?: number;
+  draws?: number;
+  black?: number;
+  total?: number;
+  moves?: ExplorerMove[];
+  opening?: { eco?: string; name?: string } | null;
+}
+
+// ---------------------------------------------------------------------------
 // Misc helpers
 // ---------------------------------------------------------------------------
 

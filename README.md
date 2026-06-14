@@ -21,7 +21,10 @@ endgames.
 | **Styles** | Human-like (Maia), Balanced, Aggressive, Defensive, Positional |
 | **Analysis** | Live multi-PV evaluation, eval bar, principal variations in SAN |
 | **Trainers** | Opening repertoire drills · engine-verified tactics puzzles · theoretical endgames played out vs Stockfish |
-| **Spaced repetition** | Openings and tactics are SM-2 scheduled and saved locally — “due” counts, streaks, review sessions |
+| **Spaced repetition** | Openings and tactics are SM-2 scheduled — “due” counts, streaks, review sessions |
+| **Accounts & sync** | Optional username/password accounts sync your progress across devices |
+| **Opening explorer** | Master / Lichess game stats for the current position (via a configurable proxy) |
+| **PGN review** | Import any PGN and step through it on the analysis board with the engine |
 | **Tablebase** | Optional Syzygy lookups (via a configurable proxy) for perfect endgame defence and move feedback |
 | **Clocks** | Real chess clocks with time-control presets (1+0 … 10+5) and increments |
 | **Stack** | pnpm monorepo · Node + Fastify + `ws` backend · React + Vite + TypeScript frontend · `chess.js` for rules |
@@ -42,7 +45,32 @@ endgames.
 
 Progress in the openings and tactics trainers is scheduled with a lightweight
 SM-2 spaced-repetition system and persisted in the browser, so “Review due”
-brings back exactly what you’re about to forget.
+brings back exactly what you’re about to forget. Create an account (username +
+password, hashed with scrypt) to sync that progress across devices — the client
+pulls + merges on sign-in and pushes on every change. Accounts live in a JSON
+store at `CHESSER_DATA_DIR` (default `data/`).
+
+### Bigger puzzle sets
+
+The shipped tactics are Stockfish-generated, but you can import the full
+[Lichess puzzle database](https://database.lichess.org/) (CC0):
+
+```bash
+# download + decompress, then:
+COUNT=500 MIN_RATING=1000 MAX_RATING=2200 \
+  node scripts/import-lichess-puzzles.mjs lichess_db_puzzle.csv
+```
+
+### External data (explorer & tablebase)
+
+Both the opening explorer and the tablebase proxy fetch from configurable
+upstreams (default: Lichess). Their hosts must be reachable from the server —
+allowlist them in sandboxed networks, or they degrade gracefully:
+
+| Feature | Default host | Env override |
+|---|---|---|
+| Tablebase | `tablebase.lichess.ovh` | `CHESSER_TABLEBASE_URL` |
+| Explorer | `explorer.lichess.ovh` | `CHESSER_EXPLORER_MASTERS_URL` / `CHESSER_EXPLORER_LICHESS_URL` |
 
 ### Syzygy tablebase
 
@@ -124,12 +152,13 @@ SKIP_LC0=1 pnpm setup:engines
 
 - [x] **Phase 5** — Spaced-repetition progress, larger datasets, Syzygy
   tablebase, and chess clocks
+- [x] **Phase 6** — Accounts + cross-device sync, opening explorer, PGN import &
+  review, and a Lichess puzzle-DB importer
 
 ### Next up
 
-- Accounts + server-side sync of progress across devices
-- Even larger puzzle sets (import from the Lichess puzzle database)
-- Opening explorer with master/engine statistics; PGN import & game review
+- Opening explorer → save lines straight into your repertoire deck
+- Tournament/puzzle-rush modes; richer game-review annotations
 
 ## Credits
 

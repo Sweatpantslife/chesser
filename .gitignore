@@ -16,6 +16,9 @@ engines/*.tar
 engines/*.zip
 engines/*.gz
 
+# Local account / progress database
+data/
+
 # Logs
 *.log
 npm-debug.log*

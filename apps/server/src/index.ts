@@ -5,6 +5,9 @@ import { engines } from './engine/manager.js';
 import { Session } from './ws.js';
 import { HOST, PORT } from './config.js';
 import { probeTablebase } from './tablebase.js';
+import { probeExplorer } from './explorer.js';
+import { registerAccountRoutes } from './accounts/routes.js';
+import type { ExplorerDb } from '@chesser/shared';
 
 const app = Fastify({ logger: false });
 await app.register(cors, { origin: true });
@@ -16,6 +19,12 @@ app.get('/api/tablebase', async (req) => {
   if (!fen) return { available: false, reason: 'no-fen' };
   return probeTablebase(fen);
 });
+app.get('/api/explorer', async (req) => {
+  const { fen, db } = req.query as { fen?: string; db?: string };
+  if (!fen) return { available: false, reason: 'no-fen' };
+  return probeExplorer(fen, (db === 'lichess' ? 'lichess' : 'masters') as ExplorerDb);
+});
+registerAccountRoutes(app);
 
 const wss = new WebSocketServer({ server: app.server, path: '/ws' });
 wss.on('connection', (ws) => {

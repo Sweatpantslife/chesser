@@ -1,5 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useGame } from './store/game';
+import { useAuth } from './store/auth';
+import { AccountButton } from './components/AccountPanel';
 import { PlayPage } from './pages/PlayPage';
 import { OpeningsPage } from './pages/OpeningsPage';
 import { TacticsPage } from './pages/TacticsPage';
@@ -57,6 +59,7 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
             <span className={`h-2 w-2 rounded-full ${connected ? 'bg-emerald-400' : 'bg-rose-400'}`} />
             {connected ? 'online' : 'connecting…'}
           </span>
+          <AccountButton />
         </div>
       </div>
     </header>
@@ -65,11 +68,13 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
 
 export default function App() {
   const init = useGame((s) => s.init);
+  const authInit = useAuth((s) => s.init);
   const [view, setView] = useState<View>('play');
 
   useEffect(() => {
     init();
-  }, [init]);
+    authInit();
+  }, [init, authInit]);
 
   return (
     <div className="flex min-h-screen flex-col">
