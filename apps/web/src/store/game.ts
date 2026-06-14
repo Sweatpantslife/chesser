@@ -458,6 +458,7 @@ export const useGame = create<GameStore>((set, get) => ({
     });
     get()._sync();
     get()._refreshAnalysis();
+    get()._maybeTriggerBot(); // resume the bot if the takeback left it on move
   },
 
   flip() {
