@@ -1,0 +1,21 @@
+{
+  "name": "Chesser — play & train",
+  "short_name": "Chesser",
+  "description": "Play vs bots and train openings, tactics and endgames with Stockfish and Maia.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0d1017",
+  "theme_color": "#0d1017",
+  "categories": ["games", "education"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

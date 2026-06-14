@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useGame } from './store/game';
 import { useAuth } from './store/auth';
 import { AccountButton } from './components/AccountPanel';
+import { InstallButton } from './components/InstallButton';
 import { SettingsDialog } from './components/SettingsDialog';
 import { PlayPage } from './pages/PlayPage';
 import { OpeningsPage } from './pages/OpeningsPage';
@@ -68,6 +69,7 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
             <span className={`h-2 w-2 rounded-full ${connected ? 'bg-emerald-400' : 'bg-rose-400'}`} />
             {connected ? 'online' : 'connecting…'}
           </span>
+          <InstallButton />
           <button
             onClick={() => setSettingsOpen(true)}
             title="Settings"
