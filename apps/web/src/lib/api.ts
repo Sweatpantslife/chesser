@@ -47,6 +47,49 @@ export function apiPutProgress(token: string, data: unknown): Promise<{ updatedA
   }).then(jsonOrThrow);
 }
 
+export interface SavedGame {
+  id: string;
+  pgn: string;
+  white: string;
+  black: string;
+  result: string;
+  savedAt: number;
+  source?: string;
+}
+
+export function apiListGames(token: string): Promise<{ games: SavedGame[] }> {
+  return fetch('/api/games', { headers: { Authorization: `Bearer ${token}` } }).then(jsonOrThrow);
+}
+
+export function apiSaveGame(token: string, g: Partial<SavedGame>): Promise<{ game: SavedGame }> {
+  return fetch('/api/games', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(g),
+  }).then(jsonOrThrow);
+}
+
+export function apiDeleteGame(token: string, id: string): Promise<void> {
+  return fetch(`/api/games/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }).then(() => undefined);
+}
+
+export interface ImportedGame {
+  pgn: string;
+  white: string;
+  black: string;
+  result: string;
+  url?: string;
+  date?: string;
+}
+
+export function apiImport(
+  site: 'lichess' | 'chesscom',
+  user: string,
+  max = 15,
+): Promise<{ available: boolean; reason?: string; games?: ImportedGame[] }> {
+  return fetch(`/api/import?site=${site}&user=${encodeURIComponent(user)}&max=${max}`).then((r) => r.json());
+}
+
 const explorerCache = new Map<string, ExplorerResult>();
 export async function apiExplorer(fen: string, db: ExplorerDb): Promise<ExplorerResult> {
   const key = `${db}:${fen}`;

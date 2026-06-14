@@ -25,13 +25,24 @@ interface DbProgress {
   data: unknown;
   updatedAt: number;
 }
+export interface GameEntry {
+  id: string;
+  pgn: string;
+  white: string;
+  black: string;
+  result: string;
+  savedAt: number;
+  source?: string;
+}
 interface DbShape {
   users: Record<string, DbUser>; // keyed by lowercased username
   sessions: Record<string, DbSession>; // keyed by token
   progress: Record<string, DbProgress>; // keyed by userId
+  games: Record<string, GameEntry[]>; // keyed by userId
 }
 
-const EMPTY: DbShape = { users: {}, sessions: {}, progress: {} };
+const EMPTY: DbShape = { users: {}, sessions: {}, progress: {}, games: {} };
+const MAX_GAMES = 300;
 
 class Store {
   private db: DbShape = EMPTY;
@@ -91,6 +102,24 @@ class Store {
 
   setProgress(userId: string, data: unknown): void {
     this.db.progress[userId] = { data, updatedAt: Date.now() };
+    this.persist();
+  }
+
+  getGames(userId: string): GameEntry[] {
+    return this.db.games[userId] ?? [];
+  }
+
+  addGame(userId: string, game: GameEntry): void {
+    const list = this.db.games[userId] ?? [];
+    list.unshift(game);
+    this.db.games[userId] = list.slice(0, MAX_GAMES);
+    this.persist();
+  }
+
+  deleteGame(userId: string, id: string): void {
+    const list = this.db.games[userId];
+    if (!list) return;
+    this.db.games[userId] = list.filter((g) => g.id !== id);
     this.persist();
   }
 }

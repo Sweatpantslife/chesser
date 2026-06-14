@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
-import { store } from './store.js';
+import { store, type GameEntry } from './store.js';
 import { hashPassword, newToken, newUserId, validateCredentials, verifyPassword } from './auth.js';
 
 function bearer(req: FastifyRequest): string | null {
@@ -69,5 +69,39 @@ export function registerAccountRoutes(app: FastifyInstance): void {
     const { data } = (req.body ?? {}) as { data?: unknown };
     store.setProgress(uid, data ?? null);
     return { ok: true, updatedAt: Date.now() };
+  });
+
+  // --- game library -------------------------------------------------------
+  app.get('/api/games', async (req, reply) => {
+    const uid = authUserId(req);
+    if (!uid) return reply.code(401).send({ error: 'Not authenticated.' });
+    return { games: store.getGames(uid) };
+  });
+
+  app.post('/api/games', async (req, reply) => {
+    const uid = authUserId(req);
+    if (!uid) return reply.code(401).send({ error: 'Not authenticated.' });
+    const b = (req.body ?? {}) as Partial<GameEntry>;
+    if (typeof b.pgn !== 'string' || b.pgn.length === 0 || b.pgn.length > 100_000) {
+      return reply.code(400).send({ error: 'Invalid PGN.' });
+    }
+    const game: GameEntry = {
+      id: newToken().slice(0, 16),
+      pgn: b.pgn,
+      white: typeof b.white === 'string' ? b.white.slice(0, 80) : 'White',
+      black: typeof b.black === 'string' ? b.black.slice(0, 80) : 'Black',
+      result: typeof b.result === 'string' ? b.result.slice(0, 8) : '*',
+      savedAt: Date.now(),
+      source: typeof b.source === 'string' ? b.source.slice(0, 40) : undefined,
+    };
+    store.addGame(uid, game);
+    return { game };
+  });
+
+  app.delete('/api/games/:id', async (req, reply) => {
+    const uid = authUserId(req);
+    if (!uid) return reply.code(401).send({ error: 'Not authenticated.' });
+    store.deleteGame(uid, (req.params as { id: string }).id);
+    return { ok: true };
   });
 }
