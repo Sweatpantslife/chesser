@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
-import { useGame } from '../store/game';
+import { mainlineOf, useGame } from '../store/game';
 import { useMistakes, type NewMistake } from '../store/mistakes';
 import { EvalGraph } from './EvalGraph';
 
 export function ReviewPanel() {
   const mode = useGame((s) => s.mode);
-  const history = useGame((s) => s.history);
+  const tree = useGame((s) => s.tree);
+  const rootId = useGame((s) => s.rootId);
   const startFen = useGame((s) => s.startFen);
   const evalGraph = useGame((s) => s.evalGraph);
   const reviewing = useGame((s) => s.reviewing);
@@ -16,20 +17,20 @@ export function ReviewPanel() {
   const addMistakes = useMistakes((s) => s.addMany);
   const [saved, setSaved] = useState<number | null>(null);
 
+  const mainline = useMemo(() => mainlineOf(tree, rootId), [tree, rootId]);
+
   const saveMistakes = () => {
     const cards: NewMistake[] = [];
-    for (const [plyStr, ann] of Object.entries(annotations)) {
-      if (ann === 'inaccuracy') continue; // drill the serious ones
-      const ply = Number(plyStr);
-      const i = ply - 1;
-      const move = history[i];
+    for (let i = 0; i < mainline.length; i++) {
+      const ann = annotations[mainline[i]!.id];
+      if (!ann || ann === 'inaccuracy') continue; // drill the serious ones
       const w = evalGraph[i];
-      if (!move || w === undefined) continue;
+      if (w === undefined) continue;
       const side = i % 2 === 0 ? 'white' : 'black';
       cards.push({
-        fen: i === 0 ? startFen : history[i - 1]!.fen,
+        fen: i === 0 ? startFen : mainline[i - 1]!.fen,
         side,
-        playedSan: move.san,
+        playedSan: mainline[i]!.san,
         expected: side === 'white' ? w : 100 - w,
         severity: ann,
       });
@@ -37,19 +38,20 @@ export function ReviewPanel() {
     setSaved(addMistakes(cards));
     setTimeout(() => setSaved(null), 2500);
   };
-  const seriousCount = Object.values(annotations).filter((a) => a !== 'inaccuracy').length;
 
   const counts = useMemo(() => {
     const c = { white: { blunder: 0, mistake: 0, inaccuracy: 0 }, black: { blunder: 0, mistake: 0, inaccuracy: 0 } };
-    for (const [plyStr, ann] of Object.entries(annotations)) {
-      const side = Number(plyStr) % 2 === 1 ? 'white' : 'black';
-      c[side][ann] += 1;
+    for (let i = 0; i < mainline.length; i++) {
+      const ann = annotations[mainline[i]!.id];
+      if (!ann) continue;
+      c[i % 2 === 0 ? 'white' : 'black'][ann] += 1;
     }
     return c;
-  }, [annotations]);
+  }, [annotations, mainline]);
 
+  const seriousCount = counts.white.blunder + counts.white.mistake + counts.black.blunder + counts.black.mistake;
   const hasResults = Object.keys(annotations).length > 0;
-  const disabled = mode !== 'analysis' || history.length === 0 || reviewing;
+  const disabled = mode !== 'analysis' || mainline.length === 0 || reviewing;
 
   return (
     <div className="rounded-lg bg-panel p-3">

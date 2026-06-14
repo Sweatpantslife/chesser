@@ -33,7 +33,8 @@ function PieceSwatch({ set }: { set: PieceSet }) {
 }
 
 export function SettingsDialog({ onClose }: { onClose: () => void }) {
-  const { sound, premove, boardTheme, pieceSet, setSound, setPremove, setBoardTheme, setPieceSet } = useSettings();
+  const { sound, premove, arrows, boardTheme, pieceSet, setSound, setPremove, setArrows, setBoardTheme, setPieceSet } =
+    useSettings();
 
   // Load every set's CSS so the previews below render.
   useEffect(() => loadAllPieceSets(), []);
@@ -47,6 +48,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
         <h3 className="mb-2 text-sm font-semibold text-ink">Settings</h3>
         <Toggle on={sound} onChange={setSound} label="Move sounds" />
         <Toggle on={premove} onChange={setPremove} label="Premoves (vs bot)" />
+        <Toggle on={arrows} onChange={setArrows} label="Engine arrows (analysis)" />
 
         <div className="mt-3">
           <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Board theme</div>

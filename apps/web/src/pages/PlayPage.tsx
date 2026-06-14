@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
+import type { DrawShape } from 'chessground/draw';
 import { Board } from '../board/Board';
 import { EvalBar } from '../components/EvalBar';
 import { AnalysisPanel } from '../components/AnalysisPanel';
@@ -12,6 +13,10 @@ import { ReviewPanel } from '../components/ReviewPanel';
 import { PromotionDialog } from '../components/PromotionDialog';
 import { engine } from '../lib/engine';
 import { useGame, type Color } from '../store/game';
+import { useSettings } from '../store/settings';
+
+// Brushes for the top engine lines, best → worst.
+const ARROW_BRUSHES = ['green', 'blue', 'yellow', 'red'];
 
 function ClockRow({ side }: { side: Color }) {
   const clock = useGame((s) => s.clock);
@@ -47,10 +52,25 @@ function BoardArea() {
   const inCheck = useGame((s) => s.inCheck);
   const evalScore = useGame((s) => s.evalScore);
   const analysisOn = useGame((s) => s.analysisOn);
+  const analysisLines = useGame((s) => s.analysisLines);
   const userMove = useGame((s) => s.userMove);
   const mode = useGame((s) => s.mode);
+  const arrowsOn = useSettings((s) => s.arrows);
 
   const topSide: Color = orientation === 'white' ? 'black' : 'white';
+
+  // Engine best-move arrows — analysis board only, so play isn't spoiled.
+  const shapes = useMemo<DrawShape[]>(() => {
+    if (mode !== 'analysis' || !analysisOn || !arrowsOn) return [];
+    return analysisLines
+      .filter((l) => l.pvUci[0])
+      .map((l, i) => ({
+        orig: l.pvUci[0]!.slice(0, 2) as DrawShape['orig'],
+        dest: l.pvUci[0]!.slice(2, 4) as DrawShape['dest'],
+        brush: ARROW_BRUSHES[i] ?? 'blue',
+        modifiers: { lineWidth: i === 0 ? 12 : Math.max(6, 11 - i * 2) },
+      }));
+  }, [analysisLines, analysisOn, arrowsOn, mode]);
 
   return (
     <div className="mx-auto w-full max-w-[560px]">
@@ -70,6 +90,7 @@ function BoardArea() {
             inCheck={inCheck}
             onMove={userMove}
             premove={mode === 'play'}
+            shapes={shapes}
           />
           <PromotionDialog />
         </div>

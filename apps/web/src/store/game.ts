@@ -25,6 +25,22 @@ export interface HistoryMove {
   fen: string; // position AFTER the move
 }
 
+/**
+ * A node in the variation tree. The root (ply 0) holds the starting position
+ * and a null move. Every other node is a move; `children[0]` is the main
+ * continuation and any further children are variations branching from the
+ * *same* parent position.
+ */
+export interface MoveNode {
+  id: string;
+  parentId: string | null;
+  san: string; // '' for the root
+  uci: string; // '' for the root
+  fen: string; // position AFTER this move (root: the start FEN)
+  ply: number; // 0 for the root
+  children: string[]; // [0] is the mainline continuation
+}
+
 interface PendingPromotion {
   from: string;
   to: string;
@@ -32,6 +48,53 @@ interface PendingPromotion {
 
 const opposite = (c: Color): Color => (c === 'white' ? 'black' : 'white');
 const colorOfFen = (fen: string): Color => (fen.split(' ')[1] === 'b' ? 'black' : 'white');
+
+let nodeCounter = 0;
+const uid = () => `n${(nodeCounter++).toString(36)}`;
+
+/** Build a fresh single-root tree for a starting position. */
+function newTree(fen: string): { tree: Record<string, MoveNode>; rootId: string } {
+  const rootId = uid();
+  return { tree: { [rootId]: { id: rootId, parentId: null, san: '', uci: '', fen, ply: 0, children: [] } }, rootId };
+}
+
+/** Follow `children[0]` from the root to the end of the main line (excludes root). */
+export function mainlineOf(tree: Record<string, MoveNode>, rootId: string): MoveNode[] {
+  const out: MoveNode[] = [];
+  let n = tree[rootId];
+  while (n && n.children[0]) {
+    n = tree[n.children[0]]!;
+    out.push(n);
+  }
+  return out;
+}
+
+/** The id of the last node on the main line (the live tip), or the root. */
+function tipOf(tree: Record<string, MoveNode>, rootId: string): string {
+  let n = tree[rootId]!;
+  while (n.children[0]) n = tree[n.children[0]]!;
+  return n.id;
+}
+
+/**
+ * The "current line": the path from the root through `currentId`, then continued
+ * along `children[0]` to the end of that branch. Includes the root at index 0.
+ */
+function lineOf(tree: Record<string, MoveNode>, currentId: string): MoveNode[] {
+  const up: MoveNode[] = [];
+  let n: MoveNode | undefined = tree[currentId];
+  while (n) {
+    up.push(n);
+    n = n.parentId ? tree[n.parentId] : undefined;
+  }
+  up.reverse(); // root … current
+  let tail = tree[currentId]!;
+  while (tail.children[0]) {
+    tail = tree[tail.children[0]]!;
+    up.push(tail);
+  }
+  return up;
+}
 
 export interface TimeControl {
   initialMs: number;
@@ -45,9 +108,6 @@ export interface ClockState {
 
 const ANALYSIS_DEPTH_CAP = 30;
 
-// The single source of truth for the live game. Navigation only changes the
-// *view*; this instance always holds the actual played-out position.
-let game = new Chess();
 let gameId = 0;
 
 export interface GameStore {
@@ -67,9 +127,12 @@ export interface GameStore {
   liveTurn: Color; // side to move in the actual game (for clocks)
   inCheck: boolean;
 
-  // move list / navigation
-  history: HistoryMove[];
-  viewPly: number;
+  // variation tree + navigation
+  tree: Record<string, MoveNode>;
+  rootId: string;
+  currentId: string;
+  history: HistoryMove[]; // the *current line*, derived (excludes root)
+  viewPly: number; // index of the current node within the current line
   startFen: string;
 
   // interaction
@@ -99,11 +162,11 @@ export interface GameStore {
   analysisDepth: number;
   evalScore: Score | null;
 
-  // game review (annotations keyed by ply, 1-based)
-  annotations: Record<number, Annotation>;
+  // game review (annotations keyed by node id; evalGraph aligned to the main line)
+  annotations: Record<string, Annotation>;
   reviewing: boolean;
   reviewProgress: number; // 0–100
-  evalGraph: number[]; // White win% per position (start + after each ply)
+  evalGraph: number[]; // White win% per main-line position (start + after each ply)
   reviewStats: ReviewStats | null;
 
   // actions
@@ -113,9 +176,12 @@ export interface GameStore {
   finalizePromotion(piece: 'q' | 'r' | 'b' | 'n'): void;
   cancelPromotion(): void;
   goToPly(ply: number): void;
+  goToNode(id: string): void;
   stepView(delta: number): void;
   takeback(): void;
   flip(): void;
+  promote(id: string): void;
+  deleteVariation(id: string): void;
   setAnalysisOn(on: boolean): void;
   setMultipv(n: number): void;
   setBotConfig(bot: Partial<BotConfig>): void;
@@ -135,6 +201,9 @@ export interface GameStore {
 
 const DEFAULT_BOT: BotConfig = { style: 'human', maiaRating: 1500, elo: 1500, moveTimeMs: 700 };
 
+const START = new Chess();
+const initial = newTree(START.fen());
+
 export const useGame = create<GameStore>((set, get) => ({
   connected: false,
   availability: null,
@@ -143,15 +212,18 @@ export const useGame = create<GameStore>((set, get) => ({
   mode: 'analysis',
   orientation: 'white',
 
-  fen: game.fen(),
+  fen: START.fen(),
   lastMove: undefined,
   turnColor: 'white',
   liveTurn: 'white',
   inCheck: false,
 
+  tree: initial.tree,
+  rootId: initial.rootId,
+  currentId: initial.rootId,
   history: [],
   viewPly: 0,
-  startFen: game.fen(),
+  startFen: START.fen(),
 
   movableColor: 'both',
   dests: new Map(),
@@ -190,8 +262,8 @@ export const useGame = create<GameStore>((set, get) => ({
   },
 
   newGame(cfg) {
-    game = new Chess();
     gameId++;
+    const fresh = newTree(new Chess().fen());
     const playerColor = cfg.mode === 'play' ? (cfg.playerColor ?? 'white') : null;
     const tc = get().timeControl;
     const clock = cfg.mode === 'play' && tc ? { whiteMs: tc.initialMs, blackMs: tc.initialMs } : null;
@@ -201,9 +273,10 @@ export const useGame = create<GameStore>((set, get) => ({
       playerColor,
       botColor: playerColor ? opposite(playerColor) : null,
       botConfig: cfg.bot ?? get().botConfig,
-      history: [],
-      viewPly: 0,
-      startFen: game.fen(),
+      tree: fresh.tree,
+      rootId: fresh.rootId,
+      currentId: fresh.rootId,
+      startFen: fresh.tree[fresh.rootId]!.fen,
       thinking: false,
       pendingPromotion: null,
       analysisLines: [],
@@ -222,9 +295,12 @@ export const useGame = create<GameStore>((set, get) => ({
 
   userMove(from, to) {
     const s = get();
-    if (s.viewPly !== s.history.length) return; // only move at the live position
     if (s.isGameOver) return;
-    const legal = game.moves({ verbose: true, square: from as any }).filter((m) => m.to === to);
+    // In play, only the live tip is interactive; analysis can branch anywhere.
+    if (s.mode === 'play' && s.currentId !== tipOf(s.tree, s.rootId)) return;
+    const baseFen = s.tree[s.currentId]!.fen;
+    const probe = new Chess(baseFen);
+    const legal = probe.moves({ verbose: true, square: from as any }).filter((m) => m.to === to);
     if (legal.length === 0) return;
     if (legal.some((m) => m.promotion)) {
       set({ pendingPromotion: { from, to } });
@@ -246,40 +322,78 @@ export const useGame = create<GameStore>((set, get) => ({
   },
 
   _applyMove(move) {
+    const s = get();
+    // Play always extends the live main line; analysis branches from the view.
+    const baseId = s.mode === 'play' ? tipOf(s.tree, s.rootId) : s.currentId;
+    const base = s.tree[baseId]!;
+    let mv;
     try {
-      const moverColor = colorOfFen(game.fen()); // side about to move
-      const mv = game.move({ from: move.from, to: move.to, promotion: move.promotion });
-      playMoveSound(mv.san);
-      const history = [...get().history, { san: mv.san, uci: mv.from + mv.to + (mv.promotion ?? ''), fen: game.fen() }];
-      // add the increment to the player who just moved
-      const tc = get().timeControl;
-      const clock = get().clock;
-      const nextClock =
-        clock && tc && !get().flagged
-          ? moverColor === 'white'
-            ? { ...clock, whiteMs: clock.whiteMs + tc.incrementMs }
-            : { ...clock, blackMs: clock.blackMs + tc.incrementMs }
-          : clock;
-      set({ history, viewPly: history.length, clock: nextClock, annotations: {}, evalGraph: [], reviewStats: null });
-      get()._sync();
-      get()._refreshAnalysis();
-      get()._maybeTriggerBot();
+      const c = new Chess(base.fen);
+      mv = c.move({ from: move.from, to: move.to, promotion: move.promotion });
     } catch {
       get()._sync();
+      return;
     }
+    if (!mv) {
+      get()._sync();
+      return;
+    }
+    const uci = mv.from + mv.to + (mv.promotion ?? '');
+
+    // If this move already exists as a child, just descend into it.
+    const existingId = base.children.find((id) => s.tree[id]!.uci === uci);
+    let tree = s.tree;
+    let currentId: string;
+    let structural = false;
+    if (existingId) {
+      currentId = existingId;
+    } else {
+      currentId = uid();
+      tree = {
+        ...tree,
+        [currentId]: { id: currentId, parentId: base.id, san: mv.san, uci, fen: mv.after, ply: base.ply + 1, children: [] },
+        [base.id]: { ...base, children: [...base.children, currentId] },
+      };
+      structural = true;
+    }
+    playMoveSound(mv.san);
+
+    // Clocks: add the increment to the side that just moved (play only).
+    const tc = get().timeControl;
+    const clock = get().clock;
+    const moverColor = colorOfFen(base.fen);
+    const nextClock =
+      s.mode === 'play' && clock && tc && !get().flagged
+        ? moverColor === 'white'
+          ? { ...clock, whiteMs: clock.whiteMs + tc.incrementMs }
+          : { ...clock, blackMs: clock.blackMs + tc.incrementMs }
+        : clock;
+
+    set({
+      tree,
+      currentId,
+      clock: nextClock,
+      // A new move invalidates a stale review (annotations are kept on navigation).
+      ...(structural ? { annotations: {}, evalGraph: [], reviewStats: null } : {}),
+    });
+    get()._sync();
+    get()._refreshAnalysis();
+    if (s.mode === 'play') get()._maybeTriggerBot();
   },
 
   _maybeTriggerBot() {
     const s = get();
-    if (s.mode !== 'play' || s.isGameOver || s.thinking) return;
-    if (colorOfFen(game.fen()) !== s.botColor) return;
+    if (s.mode !== 'play' || s.thinking) return;
+    const liveFen = s.tree[tipOf(s.tree, s.rootId)]!.fen;
+    const live = new Chess(liveFen);
+    if (live.isGameOver()) return;
+    if (colorOfFen(liveFen) !== s.botColor) return;
     const myGame = gameId;
     set({ thinking: true });
     const bot = s.botConfig;
-    const fen = game.fen();
     window.setTimeout(async () => {
       try {
-        const res = await engine.botMove(fen, bot);
+        const res = await engine.botMove(liveFen, bot);
         if (gameId !== myGame) return; // a new game started meanwhile
         const from = res.uci.slice(0, 2);
         const to = res.uci.slice(2, 4);
@@ -293,12 +407,18 @@ export const useGame = create<GameStore>((set, get) => ({
     }, 300);
   },
 
-  goToPly(ply) {
-    const s = get();
-    const clamped = Math.max(0, Math.min(ply, s.history.length));
-    set({ viewPly: clamped });
+  goToNode(id) {
+    if (!get().tree[id]) return;
+    set({ currentId: id });
     get()._sync();
     get()._refreshAnalysis();
+  },
+
+  goToPly(ply) {
+    const s = get();
+    const line = lineOf(s.tree, s.currentId);
+    const clamped = Math.max(0, Math.min(ply, line.length - 1));
+    get().goToNode(line[clamped]!.id);
   },
 
   stepView(delta) {
@@ -307,23 +427,80 @@ export const useGame = create<GameStore>((set, get) => ({
 
   takeback() {
     const s = get();
-    if (s.history.length === 0) return;
+    const tipId = tipOf(s.tree, s.rootId);
+    if (tipId === s.rootId) return;
     // In play, undo back to the human's turn (drop the bot's reply too).
     let undo = 1;
     if (s.mode === 'play' && s.botColor) {
-      const lastFen = s.history[s.history.length - 1]!.fen;
-      if (colorOfFen(lastFen) === s.playerColor && s.history.length >= 2) undo = 2;
+      const lastFen = s.tree[tipId]!.fen;
+      if (colorOfFen(lastFen) === s.playerColor) undo = 2;
     }
-    for (let i = 0; i < undo; i++) game.undo();
-    const history = s.history.slice(0, s.history.length - undo);
-    set({ history, viewPly: history.length, thinking: false, pendingPromotion: null, annotations: {}, evalGraph: [], reviewStats: null });
+    const tree = { ...s.tree };
+    let cut = tipId;
+    for (let i = 0; i < undo; i++) {
+      const node = tree[cut];
+      if (!node || !node.parentId) break;
+      const parent = { ...tree[node.parentId]! };
+      parent.children = parent.children.filter((c) => c !== cut);
+      tree[parent.id] = parent;
+      delete tree[cut];
+      cut = parent.id;
+    }
     gameId++; // invalidate any in-flight bot move
+    set({
+      tree,
+      currentId: tree[cut] ? cut : s.rootId,
+      thinking: false,
+      pendingPromotion: null,
+      annotations: {},
+      evalGraph: [],
+      reviewStats: null,
+    });
     get()._sync();
     get()._refreshAnalysis();
   },
 
   flip() {
     set({ orientation: opposite(get().orientation) });
+  },
+
+  // Make the line through `id` the main line (promote it at every level).
+  promote(id) {
+    const tree = { ...get().tree };
+    let n = tree[id];
+    while (n && n.parentId) {
+      const cur = n;
+      const p = tree[cur.parentId!]!;
+      if (p.children[0] !== cur.id) {
+        tree[p.id] = { ...p, children: [cur.id, ...p.children.filter((c) => c !== cur.id)] };
+      }
+      n = tree[p.id];
+    }
+    set({ tree });
+    get()._sync();
+  },
+
+  // Remove a node and its whole subtree.
+  deleteVariation(id) {
+    const s = get();
+    const node = s.tree[id];
+    if (!node || !node.parentId) return;
+    const tree = { ...s.tree };
+    const remove: string[] = [];
+    const stack = [id];
+    while (stack.length) {
+      const x = stack.pop()!;
+      remove.push(x);
+      for (const c of tree[x]!.children) stack.push(c);
+    }
+    const parent = { ...tree[node.parentId]! };
+    parent.children = parent.children.filter((c) => c !== id);
+    tree[parent.id] = parent;
+    for (const d of remove) delete tree[d];
+    const currentId = remove.includes(s.currentId) ? parent.id : s.currentId;
+    set({ tree, currentId });
+    get()._sync();
+    get()._refreshAnalysis();
   },
 
   setAnalysisOn(on) {
@@ -351,13 +528,7 @@ export const useGame = create<GameStore>((set, get) => ({
 
   // Play a move from the currently-viewed position (branches the line).
   exploreMove(uci) {
-    const s = get();
-    if (s.mode !== 'analysis') return;
-    if (s.viewPly < s.history.length) {
-      const baseFen = s.viewPly === 0 ? s.startFen : s.history[s.viewPly - 1]!.fen;
-      game = new Chess(baseFen);
-      set({ history: s.history.slice(0, s.viewPly) });
-    }
+    if (get().mode !== 'analysis') return;
     get()._applyMove({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci.length > 4 ? uci[4] : undefined });
   },
 
@@ -370,15 +541,32 @@ export const useGame = create<GameStore>((set, get) => ({
     }
     const verbose = probe.history({ verbose: true });
     if (verbose.length === 0) return false;
-    game = new Chess(probe.fen());
     gameId++;
+    const startFen = verbose[0]!.before;
+    const { tree, rootId } = newTree(startFen);
+    let parentId = rootId;
+    for (const m of verbose) {
+      const id = uid();
+      tree[id] = {
+        id,
+        parentId,
+        san: m.san,
+        uci: m.from + m.to + (m.promotion ?? ''),
+        fen: m.after,
+        ply: tree[parentId]!.ply + 1,
+        children: [],
+      };
+      tree[parentId]!.children.push(id);
+      parentId = id;
+    }
     set({
       mode: 'analysis',
       playerColor: null,
       botColor: null,
-      history: verbose.map((m) => ({ san: m.san, uci: m.from + m.to + (m.promotion ?? ''), fen: m.after })),
-      viewPly: 0,
-      startFen: verbose[0]!.before,
+      tree,
+      rootId,
+      currentId: rootId,
+      startFen,
       thinking: false,
       pendingPromotion: null,
       flagged: null,
@@ -402,15 +590,16 @@ export const useGame = create<GameStore>((set, get) => ({
     } catch {
       return false;
     }
-    game = c;
     gameId++;
+    const { tree, rootId } = newTree(c.fen());
     set({
       mode: 'analysis',
       playerColor: null,
       botColor: null,
       orientation: c.turn() === 'b' ? 'black' : 'white',
-      history: [],
-      viewPly: 0,
+      tree,
+      rootId,
+      currentId: rootId,
       startFen: c.fen(),
       thinking: false,
       pendingPromotion: null,
@@ -430,7 +619,8 @@ export const useGame = create<GameStore>((set, get) => ({
 
   async reviewGame() {
     const s0 = get();
-    if (s0.reviewing || s0.history.length === 0) return;
+    const mainline = mainlineOf(s0.tree, s0.rootId);
+    if (s0.reviewing || mainline.length === 0) return;
     const myGame = gameId;
     engine.stopAnalysis();
     set({ reviewing: true, reviewProgress: 0, annotations: {}, evalGraph: [], reviewStats: null });
@@ -439,7 +629,7 @@ export const useGame = create<GameStore>((set, get) => ({
     const cpOf = (sc: Score | null): number =>
       !sc ? 0 : sc.kind === 'mate' ? (sc.value > 0 ? 1500 : sc.value < 0 ? -1500 : 0) : cap(sc.value);
 
-    const fens = [s0.startFen, ...s0.history.map((h) => h.fen)];
+    const fens = [s0.startFen, ...mainline.map((n) => n.fen)];
     const winWhite: number[] = [];
     const cpWhite: number[] = [];
     for (let i = 0; i < fens.length; i++) {
@@ -454,12 +644,12 @@ export const useGame = create<GameStore>((set, get) => ({
     }
 
     // Per-move accuracy (Lichess curve) + centipawn loss, classified by win% swing.
-    const ann: Record<number, Annotation> = {};
+    const ann: Record<string, Annotation> = {};
     const agg = {
       white: { accSum: 0, cpl: 0, moves: 0 },
       black: { accSum: 0, cpl: 0, moves: 0 },
     };
-    for (let i = 0; i < s0.history.length; i++) {
+    for (let i = 0; i < mainline.length; i++) {
       const wb = winWhite[i]!;
       const wa = winWhite[i + 1]!;
       const cb = cpWhite[i]!;
@@ -473,10 +663,9 @@ export const useGame = create<GameStore>((set, get) => ({
       side.cpl += cpLoss;
       side.moves += 1;
 
-      const ply = i + 1;
-      if (winDrop >= 30) ann[ply] = 'blunder';
-      else if (winDrop >= 18) ann[ply] = 'mistake';
-      else if (winDrop >= 9) ann[ply] = 'inaccuracy';
+      if (winDrop >= 30) ann[mainline[i]!.id] = 'blunder';
+      else if (winDrop >= 18) ann[mainline[i]!.id] = 'mistake';
+      else if (winDrop >= 9) ann[mainline[i]!.id] = 'inaccuracy';
     }
 
     const side = (a: { accSum: number; cpl: number; moves: number }): SideReview => ({
@@ -497,12 +686,11 @@ export const useGame = create<GameStore>((set, get) => ({
 
   _tick(dtMs) {
     const s = get();
-    if (s.mode !== 'play' || !s.clock || s.isGameOver || s.flagged) return;
-    if (s.viewPly !== s.history.length) return; // not at the live position
-    if (s.history.length === 0 && s.thinking) {
-      // allow the very first bot move (bot is White) to start the clock
-    }
-    const turn = colorOfFen(game.fen());
+    if (s.mode !== 'play' || !s.clock || s.flagged) return;
+    if (s.currentId !== tipOf(s.tree, s.rootId)) return; // not at the live position
+    const liveFen = s.tree[s.currentId]!.fen;
+    if (new Chess(liveFen).isGameOver()) return;
+    const turn = colorOfFen(liveFen);
     const ms = turn === 'white' ? s.clock.whiteMs : s.clock.blackMs;
     const left = Math.max(0, ms - dtMs);
     const clock = turn === 'white' ? { ...s.clock, whiteMs: left } : { ...s.clock, blackMs: left };
@@ -516,59 +704,61 @@ export const useGame = create<GameStore>((set, get) => ({
 
   _sync() {
     const s = get();
-    const atLive = s.viewPly === s.history.length;
-    const viewedFen = s.viewPly === 0 ? s.startFen : s.history[s.viewPly - 1]!.fen;
-    const viewedLast =
-      s.viewPly === 0
-        ? undefined
-        : ((): [string, string] => {
-            const u = s.history[s.viewPly - 1]!.uci;
-            return [u.slice(0, 2), u.slice(2, 4)];
-          })();
+    const tipId = tipOf(s.tree, s.rootId);
+    const line = lineOf(s.tree, s.currentId);
+    const viewPly = line.findIndex((n) => n.id === s.currentId);
+    const history: HistoryMove[] = line.slice(1).map((n) => ({ san: n.san, uci: n.uci, fen: n.fen }));
+
+    const cur = s.tree[s.currentId]!;
+    const viewedFen = cur.fen;
+    const viewedLast: [string, string] | undefined = cur.parentId ? [cur.uci.slice(0, 2), cur.uci.slice(2, 4)] : undefined;
 
     const turnColor = colorOfFen(viewedFen);
-    const checkProbe = new Chess(viewedFen);
-    const inCheck = checkProbe.inCheck();
+    const viewProbe = new Chess(viewedFen);
+    const inCheck = viewProbe.inCheck();
 
-    // outcome (live position)
-    let status = `${colorOfFen(game.fen()) === 'white' ? 'White' : 'Black'} to move`;
+    // Outcome: the live tip in play, the viewed position in analysis.
+    const liveFen = s.tree[tipId]!.fen;
+    const outcomeFen = s.mode === 'play' ? liveFen : viewedFen;
+    const outcome = new Chess(outcomeFen);
+    let status = `${colorOfFen(outcomeFen) === 'white' ? 'White' : 'Black'} to move`;
     let isGameOver = false;
-    if (game.isCheckmate()) {
-      status = `Checkmate — ${colorOfFen(game.fen()) === 'white' ? 'Black' : 'White'} wins`;
+    if (outcome.isCheckmate()) {
+      status = `Checkmate — ${colorOfFen(outcomeFen) === 'white' ? 'Black' : 'White'} wins`;
       isGameOver = true;
-    } else if (game.isStalemate()) {
+    } else if (outcome.isStalemate()) {
       status = 'Draw — stalemate';
       isGameOver = true;
-    } else if (game.isInsufficientMaterial()) {
+    } else if (outcome.isInsufficientMaterial()) {
       status = 'Draw — insufficient material';
       isGameOver = true;
-    } else if (game.isThreefoldRepetition()) {
+    } else if (outcome.isThreefoldRepetition()) {
       status = 'Draw — threefold repetition';
       isGameOver = true;
-    } else if (game.isDraw()) {
+    } else if (outcome.isDraw()) {
       status = 'Draw — 50-move rule';
       isGameOver = true;
-    } else if (game.inCheck()) {
-      status = `${colorOfFen(game.fen()) === 'white' ? 'White' : 'Black'} to move — check`;
+    } else if (outcome.inCheck()) {
+      status = `${colorOfFen(outcomeFen) === 'white' ? 'White' : 'Black'} to move — check`;
     }
 
     // a flag fall ends the game regardless of board state
-    const flagged = get().flagged;
+    const flagged = s.flagged;
     if (flagged) {
       status = `${flagged === 'white' ? 'White' : 'Black'} flagged — ${flagged === 'white' ? 'Black' : 'White'} wins on time`;
       isGameOver = true;
     }
 
-    // interaction (only at the live position)
-    const canMove = atLive && !isGameOver;
+    // interaction
+    const atLive = s.currentId === tipId;
+    const canMove = s.mode === 'analysis' ? !new Chess(viewedFen).isGameOver() : atLive && !isGameOver;
     let movableColor: Color | 'both' | undefined;
     const dests = new Map<string, string[]>();
     if (canMove) {
-      const liveTurn = colorOfFen(game.fen());
-      const allowed = s.mode === 'analysis' || (liveTurn === s.playerColor && !s.thinking);
+      const allowed = s.mode === 'analysis' || (colorOfFen(viewedFen) === s.playerColor && !s.thinking);
       if (allowed) {
         movableColor = s.mode === 'analysis' ? 'both' : (s.playerColor ?? undefined);
-        for (const m of game.moves({ verbose: true })) {
+        for (const m of viewProbe.moves({ verbose: true })) {
           const arr = dests.get(m.from) ?? [];
           arr.push(m.to);
           dests.set(m.from, arr);
@@ -580,8 +770,11 @@ export const useGame = create<GameStore>((set, get) => ({
       fen: viewedFen,
       lastMove: viewedLast,
       turnColor,
-      liveTurn: colorOfFen(game.fen()),
+      liveTurn: colorOfFen(liveFen),
       inCheck,
+      history,
+      viewPly,
+      startFen: s.tree[s.rootId]!.fen,
       status,
       isGameOver,
       movableColor,
