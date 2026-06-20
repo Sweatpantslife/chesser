@@ -29,6 +29,9 @@ export function GameActions() {
   const claimDraw = useGame((s) => s.claimDraw);
   const rematch = useGame((s) => s.rematch);
   const switchColors = useGame((s) => s.switchColors);
+  const analyzeFinishedGame = useGame((s) => s.analyzeFinishedGame);
+  const reopenSummary = useGame((s) => s.reopenSummary);
+  const hasSummary = useGame((s) => s.gameSummary?.gameNo === s.gameNo);
 
   const [confirmResign, setConfirmResign] = useState(false);
   // Reset the resign confirmation whenever a new game starts.
@@ -110,12 +113,22 @@ export function GameActions() {
             <p className="text-xs text-emerald-400">✓ Ladder rung cleared — the next opponent is unlocked.</p>
           )}
           <div className="flex flex-wrap gap-1.5">
+            {hasSummary && (
+              <button className={`${btn} bg-indigo-600 text-white hover:bg-indigo-500`} onClick={() => void analyzeFinishedGame()}>
+                🔍 Analyze game
+              </button>
+            )}
             <button className={`${btn} bg-emerald-600 text-white hover:bg-emerald-500`} onClick={rematch}>
               ↻ Rematch
             </button>
             <button className={neutralBtn} onClick={switchColors}>
               ⇄ Switch colours
             </button>
+            {hasSummary && (
+              <button className={neutralBtn} onClick={reopenSummary}>
+                📊 Summary
+              </button>
+            )}
           </div>
         </div>
       )}

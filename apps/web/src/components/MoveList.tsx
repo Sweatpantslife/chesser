@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useGame, type MoveNode } from '../store/game';
+import { CLASSIFICATION_META } from '../lib/coach';
 
 const GLYPH: Record<string, { mark: string; cls: string }> = {
   blunder: { mark: '??', cls: 'text-rose-400' },
@@ -24,6 +25,7 @@ export function MoveList() {
   const rootId = useGame((s) => s.rootId);
   const currentId = useGame((s) => s.currentId);
   const annotations = useGame((s) => s.annotations);
+  const moveReviews = useGame((s) => s.moveReviews);
   const goToNode = useGame((s) => s.goToNode);
   const promote = useGame((s) => s.promote);
   const deleteVariation = useGame((s) => s.deleteVariation);
@@ -35,7 +37,11 @@ export function MoveList() {
 
   const Move = ({ node, withNumber }: { node: MoveNode; withNumber: boolean }) => {
     const isWhite = node.ply % 2 === 1;
-    const g = GLYPH[annotations[node.id] ?? ''];
+    // Prefer the rich grade (shows !! / ! / × too); fall back to the basic glyph.
+    const cls = moveReviews[node.id]?.classification;
+    const meta = cls ? CLASSIFICATION_META[cls] : null;
+    const mark = meta?.glyph || GLYPH[annotations[node.id] ?? '']?.mark;
+    const markCls = meta?.text ?? GLYPH[annotations[node.id] ?? '']?.cls;
     const current = currentId === node.id;
     return (
       <button
@@ -47,7 +53,7 @@ export function MoveList() {
       >
         {(withNumber || isWhite) && <span className="text-neutral-500">{num(node.ply)}</span>}
         {node.san}
-        {g && <span className={`ml-0.5 ${current ? 'text-white' : g.cls}`}>{g.mark}</span>}
+        {mark && <span className={`ml-0.5 ${current ? 'text-white' : markCls}`}>{mark}</span>}
       </button>
     );
   };

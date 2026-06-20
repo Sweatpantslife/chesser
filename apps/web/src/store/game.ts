@@ -5,6 +5,8 @@ import { STARTING_FEN } from '@chesser/shared';
 import { engine } from '../lib/engine';
 import { whiteWinPercent } from '../lib/format';
 import { playMoveSound } from '../lib/sound';
+import { buildMoveReviews, cpOf, type MoveReview, type PositionEval } from '../lib/coach';
+import { detectOpening } from '../lib/openings';
 
 export type Color = 'white' | 'black';
 export type Mode = 'play' | 'analysis';
@@ -125,6 +127,23 @@ export interface ManualResult {
 
 export type DrawOffer = 'idle' | 'pending' | 'declined' | 'accepted';
 
+/** Post-game snapshot driving the results modal (set once when a game ends). */
+export interface GameSummary {
+  gameNo: number;
+  outcome: 'win' | 'loss' | 'draw';
+  playerColor: Color;
+  opponent: Opponent | null;
+  endReason: string;
+  statusText: string;
+  timed: boolean;
+  category: 'bots' | 'blitz';
+  ratingBefore: number;
+  ratingAfter: number;
+  ratingDelta: number;
+  plies: number;
+  moves: number;
+}
+
 /** Everything needed to re-create the current vs-bot game (rematch / switch). */
 interface PlaySetup {
   bot: BotConfig;
@@ -212,6 +231,19 @@ export interface GameStore {
   reviewProgress: number; // 0–100
   evalGraph: number[]; // White win% per main-line position (start + after each ply)
   reviewStats: ReviewStats | null;
+  /** Rich per-move grades + explanations (keyed by node id), from the last review. */
+  moveReviews: Record<string, MoveReview>;
+  /** gameNo the current review belongs to (0 = none / stale). */
+  reviewGameNo: number;
+
+  // post-game results modal + guided walkthrough
+  gameSummary: GameSummary | null;
+  /** The user dismissed the results modal for the current game. */
+  modalDismissed: boolean;
+  /** The move-by-move coach walkthrough is engaged. */
+  coachActive: boolean;
+  /** The walkthrough is auto-advancing. */
+  coachPlaying: boolean;
 
   // actions
   init(): void;
@@ -249,6 +281,16 @@ export interface GameStore {
   loadPgn(pgn: string): boolean;
   loadFen(fen: string): boolean;
   reviewGame(): Promise<void>;
+
+  // results modal + guided walkthrough
+  setGameSummary(summary: GameSummary): void;
+  dismissModal(): void;
+  reopenSummary(): void;
+  /** Switch the just-finished game to the analysis board and start the walkthrough. */
+  analyzeFinishedGame(): Promise<void>;
+  startCoach(): void;
+  stopCoach(): void;
+  setCoachPlaying(playing: boolean): void;
 
   // internals
   _sync(): void;
@@ -319,6 +361,13 @@ export const useGame = create<GameStore>((set, get) => ({
   reviewProgress: 0,
   evalGraph: [],
   reviewStats: null,
+  moveReviews: {},
+  reviewGameNo: 0,
+
+  gameSummary: null,
+  modalDismissed: false,
+  coachActive: false,
+  coachPlaying: false,
 
   init() {
     engine.onStatus.add((connected) => set({ connected }));
@@ -401,6 +450,12 @@ export const useGame = create<GameStore>((set, get) => ({
       annotations: {},
       evalGraph: [],
       reviewStats: null,
+      moveReviews: {},
+      reviewGameNo: 0,
+      gameSummary: null,
+      modalDismissed: false,
+      coachActive: false,
+      coachPlaying: false,
     });
     get()._sync();
     get()._refreshAnalysis();
@@ -488,7 +543,9 @@ export const useGame = create<GameStore>((set, get) => ({
       currentId,
       clock: nextClock,
       // A new move invalidates a stale review (annotations are kept on navigation).
-      ...(structural ? { annotations: {}, evalGraph: [], reviewStats: null } : {}),
+      ...(structural
+        ? { annotations: {}, evalGraph: [], reviewStats: null, moveReviews: {}, reviewGameNo: 0, coachActive: false, coachPlaying: false }
+        : {}),
     });
     get()._sync();
     get()._refreshAnalysis();
@@ -569,6 +626,10 @@ export const useGame = create<GameStore>((set, get) => ({
       annotations: {},
       evalGraph: [],
       reviewStats: null,
+      moveReviews: {},
+      reviewGameNo: 0,
+      coachActive: false,
+      coachPlaying: false,
       manualResult: null, // taking back un-ends a resigned / drawn game
       drawOffer: 'idle',
     });
@@ -782,6 +843,12 @@ export const useGame = create<GameStore>((set, get) => ({
       annotations: {},
       evalGraph: [],
       reviewStats: null,
+      moveReviews: {},
+      reviewGameNo: 0,
+      gameSummary: null,
+      modalDismissed: false,
+      coachActive: false,
+      coachPlaying: false,
     });
     get()._sync();
     get()._refreshAnalysis();
@@ -821,6 +888,12 @@ export const useGame = create<GameStore>((set, get) => ({
       annotations: {},
       evalGraph: [],
       reviewStats: null,
+      moveReviews: {},
+      reviewGameNo: 0,
+      gameSummary: null,
+      modalDismissed: false,
+      coachActive: false,
+      coachPlaying: false,
     });
     get()._sync();
     get()._refreshAnalysis();
@@ -832,34 +905,65 @@ export const useGame = create<GameStore>((set, get) => ({
     const mainline = mainlineOf(s0.tree, s0.rootId);
     if (s0.reviewing || mainline.length === 0) return;
     const myGame = gameId;
+    const myGameNo = s0.gameNo;
     engine.stopAnalysis();
-    set({ reviewing: true, reviewProgress: 0, annotations: {}, evalGraph: [], reviewStats: null });
+    set({ reviewing: true, reviewProgress: 0, annotations: {}, evalGraph: [], reviewStats: null, moveReviews: {}, reviewGameNo: 0 });
 
-    const cap = (cp: number) => Math.max(-1500, Math.min(1500, cp));
-    const cpOf = (sc: Score | null): number =>
-      !sc ? 0 : sc.kind === 'mate' ? (sc.value > 0 ? 1500 : sc.value < 0 ? -1500 : 0) : cap(sc.value);
-
+    // Evaluate every position with 2 lines, so we get the best move (and the
+    // runner-up, for "only move" detection) at each step — not just the score.
     const fens = [s0.startFen, ...mainline.map((n) => n.fen)];
-    const winWhite: number[] = [];
-    const cpWhite: number[] = [];
+    const evals: PositionEval[] = [];
     for (let i = 0; i < fens.length; i++) {
-      const score = await engine.evalOnce(fens[i]!, { movetimeMs: 300 });
+      const lines = await engine.analyzeManyOnce(fens[i]!, { multipv: 2, movetimeMs: 300, depth: 22 });
       if (gameId !== myGame) {
         set({ reviewing: false });
         return; // game changed under us
       }
-      winWhite.push(whiteWinPercent(score));
-      cpWhite.push(cpOf(score));
+      const best = lines[0];
+      evals.push({
+        score: best?.score ?? null,
+        bestUci: best?.pvUci[0] ?? null,
+        bestSan: best?.pvSan[0] ?? null,
+        secondScore: lines[1]?.score ?? null,
+      });
       set({ reviewProgress: Math.round(((i + 1) / fens.length) * 100) });
     }
 
-    // Per-move accuracy (Lichess curve) + centipawn loss, classified by win% swing.
+    // How far the game stayed in opening theory (transposition-aware).
+    let bookPly = 0;
+    try {
+      const op = await detectOpening(mainline.map((n) => n.san));
+      bookPly = op?.ply ?? 0;
+    } catch {
+      bookPly = 0;
+    }
+    if (gameId !== myGame) {
+      set({ reviewing: false });
+      return;
+    }
+
+    const reviews = buildMoveReviews({
+      startFen: s0.startFen,
+      nodes: mainline.map((n) => ({ id: n.id, san: n.san, uci: n.uci, fen: n.fen, ply: n.ply })),
+      evals,
+      bookPly,
+    });
+
+    // Per-move accuracy (Lichess curve) + centipawn loss; annotations are derived
+    // from the rich grades so the move list, eval graph and counts agree.
+    const winWhite = evals.map((e) => whiteWinPercent(e.score));
+    const cpWhite = evals.map((e) => cpOf(e.score));
+    const moveReviews: Record<string, MoveReview> = {};
     const ann: Record<string, Annotation> = {};
-    const agg = {
-      white: { accSum: 0, cpl: 0, moves: 0 },
-      black: { accSum: 0, cpl: 0, moves: 0 },
-    };
+    const agg = { white: { accSum: 0, cpl: 0, moves: 0 }, black: { accSum: 0, cpl: 0, moves: 0 } };
     for (let i = 0; i < mainline.length; i++) {
+      const r = reviews[i];
+      if (r) {
+        moveReviews[r.id] = r;
+        if (r.classification === 'blunder') ann[r.id] = 'blunder';
+        else if (r.classification === 'mistake' || r.classification === 'miss') ann[r.id] = 'mistake';
+        else if (r.classification === 'inaccuracy') ann[r.id] = 'inaccuracy';
+      }
       const wb = winWhite[i]!;
       const wa = winWhite[i + 1]!;
       const cb = cpWhite[i]!;
@@ -872,10 +976,6 @@ export const useGame = create<GameStore>((set, get) => ({
       side.accSum += acc;
       side.cpl += cpLoss;
       side.moves += 1;
-
-      if (winDrop >= 30) ann[mainline[i]!.id] = 'blunder';
-      else if (winDrop >= 18) ann[mainline[i]!.id] = 'mistake';
-      else if (winDrop >= 9) ann[mainline[i]!.id] = 'inaccuracy';
     }
 
     const side = (a: { accSum: number; cpl: number; moves: number }): SideReview => ({
@@ -886,12 +986,59 @@ export const useGame = create<GameStore>((set, get) => ({
 
     set({
       annotations: ann,
+      moveReviews,
+      reviewGameNo: myGameNo,
       evalGraph: winWhite,
       reviewStats: { white: side(agg.white), black: side(agg.black) },
       reviewing: false,
       reviewProgress: 100,
     });
     get()._refreshAnalysis();
+  },
+
+  // --- results modal + guided walkthrough -----------------------------------
+
+  setGameSummary(summary) {
+    set({ gameSummary: summary, modalDismissed: false });
+  },
+
+  dismissModal() {
+    set({ modalDismissed: true });
+  },
+
+  reopenSummary() {
+    if (get().gameSummary) set({ modalDismissed: false });
+  },
+
+  async analyzeFinishedGame() {
+    const s = get();
+    if (!s.gameSummary) return;
+    const targetGameNo = s.gameSummary.gameNo;
+    // Hand the played game over to the analysis board (the tree is already the
+    // game), face it from the player's side, and rewind to the start.
+    set({ mode: 'analysis', modalDismissed: true, analysisOn: true });
+    get().goToPly(0);
+    // Reuse the modal's background review when it's for this game; otherwise run it.
+    if (engine.connected && get().reviewGameNo !== targetGameNo && !get().reviewing) {
+      await get().reviewGame();
+    }
+    if (get().gameNo !== targetGameNo) return; // a new game started meanwhile
+    get().startCoach();
+  },
+
+  startCoach() {
+    const s = get();
+    if (mainlineOf(s.tree, s.rootId).length === 0) return;
+    set({ coachActive: true, coachPlaying: true });
+    get().goToPly(1); // land on the first move so its explanation shows
+  },
+
+  stopCoach() {
+    set({ coachActive: false, coachPlaying: false });
+  },
+
+  setCoachPlaying(playing) {
+    set({ coachPlaying: playing });
   },
 
   _tick(dtMs) {
