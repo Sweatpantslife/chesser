@@ -12,7 +12,10 @@ import { ExplorerPanel } from '../components/ExplorerPanel';
 import { OpeningName } from '../components/OpeningName';
 import { ReviewPanel } from '../components/ReviewPanel';
 import { PromotionDialog } from '../components/PromotionDialog';
+import { GameOverModal } from '../components/GameOverModal';
+import { AnalysisCoach } from '../components/AnalysisCoach';
 import { engine } from '../lib/engine';
+import { CLASSIFICATION_META } from '../lib/coach';
 import { useGame, mainlineOf, type Color } from '../store/game';
 import { useSettings } from '../store/settings';
 import { useLadder } from '../store/ladder';
@@ -59,22 +62,38 @@ function BoardArea() {
   const analysisLines = useGame((s) => s.analysisLines);
   const userMove = useGame((s) => s.userMove);
   const mode = useGame((s) => s.mode);
+  const coachActive = useGame((s) => s.coachActive);
+  const moveReviews = useGame((s) => s.moveReviews);
+  const currentId = useGame((s) => s.currentId);
   const arrowsOn = useSettings((s) => s.arrows);
 
   const topSide: Color = orientation === 'white' ? 'black' : 'white';
 
-  // Engine best-move arrows — analysis board only, so play isn't spoiled.
+  // Engine best-move arrows (analysis board only, so play isn't spoiled), plus
+  // a coloured circle on the played move's square during a coach walkthrough.
   const shapes = useMemo<DrawShape[]>(() => {
-    if (mode !== 'analysis' || !analysisOn || !arrowsOn) return [];
-    return analysisLines
-      .filter((l) => l.pvUci[0])
-      .map((l, i) => ({
-        orig: l.pvUci[0]!.slice(0, 2) as DrawShape['orig'],
-        dest: l.pvUci[0]!.slice(2, 4) as DrawShape['dest'],
-        brush: ARROW_BRUSHES[i] ?? 'blue',
-        modifiers: { lineWidth: i === 0 ? 12 : Math.max(6, 11 - i * 2) },
-      }));
-  }, [analysisLines, analysisOn, arrowsOn, mode]);
+    const out: DrawShape[] = [];
+    const review = coachActive ? moveReviews[currentId] : undefined;
+    if (review) {
+      out.push({
+        orig: review.uci.slice(2, 4) as DrawShape['orig'],
+        brush: CLASSIFICATION_META[review.classification].brush,
+      });
+    }
+    if (mode === 'analysis' && analysisOn && arrowsOn) {
+      for (let i = 0; i < analysisLines.length; i++) {
+        const uci = analysisLines[i]!.pvUci[0];
+        if (!uci) continue;
+        out.push({
+          orig: uci.slice(0, 2) as DrawShape['orig'],
+          dest: uci.slice(2, 4) as DrawShape['dest'],
+          brush: ARROW_BRUSHES[i] ?? 'blue',
+          modifiers: { lineWidth: i === 0 ? 12 : Math.max(6, 11 - i * 2) },
+        });
+      }
+    }
+    return out;
+  }, [analysisLines, analysisOn, arrowsOn, mode, coachActive, moveReviews, currentId]);
 
   return (
     <div className="mx-auto w-full max-w-[560px]">
@@ -126,9 +145,27 @@ export function PlayPage() {
       const outcome: GameOutcome = s.winner === 'draw' ? 'draw' : s.winner === s.playerColor ? 'win' : 'loss';
       const opponentRating =
         s.opponent?.rating ?? (s.botConfig.style === 'human' ? s.botConfig.maiaRating : s.botConfig.elo) ?? 1500;
-      recordGameResult({ opponentRating, outcome, timed: s.clock !== null });
+      const rated = recordGameResult({ opponentRating, outcome, timed: s.clock !== null });
 
       if (s.opponent?.id && outcome === 'win') useLadder.getState().markDefeated(s.opponent.id);
+
+      // Capture a snapshot for the results modal (rating delta + headline stats).
+      const plies = mainlineOf(s.tree, s.rootId).length;
+      useGame.getState().setGameSummary({
+        gameNo: s.gameNo,
+        outcome,
+        playerColor: s.playerColor,
+        opponent: s.opponent,
+        endReason: s.endReason,
+        statusText: s.status,
+        timed: s.clock !== null,
+        category: rated.category === 'blitz' ? 'blitz' : 'bots',
+        ratingBefore: rated.ratingBefore,
+        ratingAfter: rated.ratingAfter,
+        ratingDelta: rated.ratingDelta,
+        plies,
+        moves: Math.ceil(plies / 2),
+      });
     });
   }, []);
 
@@ -174,12 +211,14 @@ export function PlayPage() {
         <Controls />
       </div>
       <div className="order-3 space-y-3">
+        <AnalysisCoach />
         <AnalysisPanel />
         <OpeningName />
         <ReviewPanel />
         <MoveList />
         <ExplorerPanel />
       </div>
+      <GameOverModal />
     </div>
   );
 }

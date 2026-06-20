@@ -15,7 +15,9 @@ export function ReviewPanel() {
   const progress = useGame((s) => s.reviewProgress);
   const annotations = useGame((s) => s.annotations);
   const stats = useGame((s) => s.reviewStats);
+  const moveReviews = useGame((s) => s.moveReviews);
   const reviewGame = useGame((s) => s.reviewGame);
+  const startCoach = useGame((s) => s.startCoach);
   const addMistakes = useMistakes((s) => s.addMany);
   const addPuzzles = useCustomPuzzles((s) => s.addMany);
   const [saved, setSaved] = useState<number | null>(null);
@@ -112,6 +114,14 @@ export function ReviewPanel() {
         </div>
       ) : hasResults ? (
         <div className="space-y-2">
+          {Object.keys(moveReviews).length > 0 && (
+            <button
+              onClick={startCoach}
+              className="w-full rounded bg-indigo-600 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500"
+            >
+              ▶ Guided walkthrough
+            </button>
+          )}
           <EvalGraph />
           <table className="w-full text-xs">
             <thead>

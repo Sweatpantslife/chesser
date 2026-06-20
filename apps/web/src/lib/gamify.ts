@@ -133,16 +133,25 @@ export function recordReview(correct: boolean): void {
   runAchievements();
 }
 
-/** A vs-bot game finished. `timed` routes it to the blitz vs bots rating. */
-export function recordGameResult(opts: { opponentRating: number; outcome: GameOutcome; timed: boolean }): void {
+/**
+ * A vs-bot game finished. `timed` routes it to the blitz vs bots rating.
+ * Returns the rating movement so the results modal can surface it.
+ */
+export function recordGameResult(opts: { opponentRating: number; outcome: GameOutcome; timed: boolean }): {
+  category: RatingCategory;
+  ratingBefore: number;
+  ratingAfter: number;
+  ratingDelta: number;
+} {
   const category: RatingCategory = opts.timed ? 'blitz' : 'bots';
   const before = useRatings.getState().categories[category].elo;
-  useRatings.getState().record(category, opts.opponentRating, opts.outcome);
+  const rec = useRatings.getState().record(category, opts.opponentRating, opts.outcome);
   // Base XP by result, with an upset bonus for beating a stronger opponent.
   let xp = opts.outcome === 'win' ? 25 : opts.outcome === 'draw' ? 12 : 6;
   if (opts.outcome === 'win' && opts.opponentRating > before) xp += Math.min(25, Math.round((opts.opponentRating - before) / 25));
   applyAward(xp);
   runAchievements();
+  return { category, ratingBefore: Math.round(before), ratingAfter: Math.round(rec.elo), ratingDelta: rec.eloDelta };
 }
 
 /** A puzzle-rush run ended with `score` solved. */
