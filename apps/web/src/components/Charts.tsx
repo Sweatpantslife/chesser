@@ -4,8 +4,8 @@ export function StatCard({ label, value, hint }: { label: string; value: ReactNo
   return (
     <div className="rounded-lg bg-panel p-3 text-center">
       <div className="text-2xl font-bold text-ink">{value}</div>
-      <div className="mt-0.5 text-[11px] uppercase tracking-wide text-neutral-500">{label}</div>
-      {hint && <div className="mt-0.5 text-[11px] text-neutral-400">{hint}</div>}
+      <div className="mt-0.5 text-xs uppercase tracking-wide text-neutral-400">{label}</div>
+      {hint && <div className="mt-0.5 text-xs text-neutral-400">{hint}</div>}
     </div>
   );
 }
@@ -64,7 +64,7 @@ export function RatingSparkline({ data }: { data: number[] }) {
       <svg viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" className="h-12 flex-1">
         <polyline points={pts} fill="none" stroke="#34d399" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
       </svg>
-      <div className="text-right text-[11px] text-neutral-500">
+      <div className="text-right text-xs text-neutral-400">
         <div className="text-emerald-300">{max}</div>
         <div>{min}</div>
       </div>

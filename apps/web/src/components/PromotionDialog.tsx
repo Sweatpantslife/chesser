@@ -31,7 +31,7 @@ export function PromotionDialog() {
           key={p}
           onClick={() => finalizePromotion(p)}
           aria-label={`Promote to ${PIECE_NAME[p]}`}
-          className="flex h-16 w-16 items-center justify-center rounded-lg bg-neutral-700 text-5xl leading-none text-neutral-50 hover:bg-emerald-600"
+          className="flex h-16 w-16 items-center justify-center rounded-lg bg-neutral-700 text-5xl leading-none text-neutral-50 hover:bg-emerald-700"
         >
           {glyphs[p]}
         </button>

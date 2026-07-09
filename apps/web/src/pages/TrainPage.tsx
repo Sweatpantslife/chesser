@@ -21,7 +21,7 @@ export function TrainPage({ tab, setTab }: { tab: TrainTab; setTab: (t: TrainTab
             title={t.hint}
             aria-pressed={tab === t.id}
             className={`rounded px-3 py-1.5 text-sm ${
-              tab === t.id ? 'bg-emerald-600 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+              tab === t.id ? 'bg-emerald-700 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
             }`}
           >
             {t.label}

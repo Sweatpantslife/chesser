@@ -34,7 +34,7 @@ const TABS: { id: View; label: string; hint: string }[] = [
 
 function Badge({ ok, children }: { ok: boolean; children: ReactNode }) {
   return (
-    <span className={`rounded px-1.5 py-0.5 ${ok ? 'bg-emerald-900/60 text-emerald-300' : 'bg-neutral-800 text-neutral-600'}`}>
+    <span className={`rounded px-1.5 py-0.5 ${ok ? 'bg-emerald-900/60 text-emerald-300' : 'bg-neutral-800 text-neutral-400'}`}>
       {children}
     </span>
   );
@@ -49,17 +49,22 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
       <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-3 px-4 py-3">
         <div className="flex items-baseline gap-2">
           <h1 className="text-lg font-bold text-ink">♟ Chesser</h1>
-          <span className="hidden text-xs text-neutral-500 sm:inline">Stockfish + Lc0/Maia</span>
+          <span className="hidden text-xs text-neutral-400 sm:inline">Stockfish + Lc0/Maia</span>
         </div>
-        <nav aria-label="Primary" className="order-3 flex w-full flex-wrap gap-1 sm:order-2 sm:w-auto">
+        {/* On small screens the 8 tabs scroll horizontally in one row (scrollbar hidden)
+            instead of wrapping into cramped lines; from sm up they wrap as before. */}
+        <nav
+          aria-label="Primary"
+          className="scrollbar-none order-3 flex w-full gap-1 overflow-x-auto sm:order-2 sm:w-auto sm:flex-wrap sm:overflow-x-visible"
+        >
           {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setView(t.id)}
               title={t.hint}
               aria-current={view === t.id ? 'page' : undefined}
-              className={`min-w-[4.5rem] flex-1 rounded px-3 py-1.5 text-sm sm:flex-none ${
-                view === t.id ? 'bg-emerald-600 text-white' : 'text-neutral-300 hover:bg-neutral-800'
+              className={`min-h-11 min-w-[4.5rem] shrink-0 whitespace-nowrap rounded px-3 py-1.5 text-sm sm:min-h-0 ${
+                view === t.id ? 'bg-emerald-700 text-white' : 'text-neutral-300 hover:bg-neutral-800'
               }`}
             >
               {t.label}
@@ -68,7 +73,7 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
         </nav>
         <div className="order-2 flex items-center gap-3 text-xs sm:order-3">
           {availability && (
-            <span className="hidden gap-2 text-neutral-500 md:flex">
+            <span className="hidden gap-2 text-neutral-400 md:flex">
               <Badge ok={availability.stockfish}>Stockfish</Badge>
               <Badge ok={availability.lc0}>Maia</Badge>
               {availability.syzygy && (
@@ -86,7 +91,7 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
             onClick={() => setSettingsOpen(true)}
             title="Settings"
             aria-label="Settings"
-            className="rounded bg-neutral-800 px-2 py-1 text-sm text-neutral-300 hover:bg-neutral-700"
+            className="min-h-11 min-w-11 rounded bg-neutral-800 px-2 py-1 text-sm text-neutral-300 hover:bg-neutral-700 sm:min-h-0 sm:min-w-0"
           >
             ⚙
           </button>

@@ -46,7 +46,7 @@ export function SaveLineDialog({ onClose }: { onClose: () => void }) {
             <div className="rounded bg-panelmute p-2 font-mono text-xs text-neutral-300">{defaultName}</div>
 
             <div>
-              <label htmlFor="save-line-repertoire" className="mb-1 block text-xs uppercase tracking-wide text-neutral-500">
+              <label htmlFor="save-line-repertoire" className="mb-1 block text-xs uppercase tracking-wide text-neutral-400">
                 Repertoire
               </label>
               <select
@@ -74,7 +74,7 @@ export function SaveLineDialog({ onClose }: { onClose: () => void }) {
             </div>
 
             <div>
-              <label htmlFor="save-line-name" className="mb-1 block text-xs uppercase tracking-wide text-neutral-500">
+              <label htmlFor="save-line-name" className="mb-1 block text-xs uppercase tracking-wide text-neutral-400">
                 Line name
               </label>
               <input
@@ -86,7 +86,7 @@ export function SaveLineDialog({ onClose }: { onClose: () => void }) {
             </div>
 
             <div>
-              <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">You play</div>
+              <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">You play</div>
               <div className="flex gap-1">
                 {(['white', 'black'] as const).map((c) => (
                   <button
@@ -94,7 +94,7 @@ export function SaveLineDialog({ onClose }: { onClose: () => void }) {
                     onClick={() => setSide(c)}
                     aria-pressed={side === c}
                     className={`flex-1 rounded px-2 py-1 text-sm capitalize ${
-                      side === c ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
+                      side === c ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                     }`}
                   >
                     {c}
@@ -107,7 +107,7 @@ export function SaveLineDialog({ onClose }: { onClose: () => void }) {
               <button onClick={onClose} className="rounded bg-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600">
                 Cancel
               </button>
-              <button onClick={save} className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500">
+              <button onClick={save} className="rounded bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800">
                 Save line
               </button>
             </div>

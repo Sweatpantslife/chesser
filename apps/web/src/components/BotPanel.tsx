@@ -96,14 +96,14 @@ export function BotPanel() {
   }
 
   const tab = (active: boolean) =>
-    `rounded px-2 py-1 text-xs ${active ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'}`;
+    `rounded px-2 py-1 text-xs ${active ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'}`;
 
   return (
     <div className="rounded-lg bg-panel p-3">
       <h3 className="mb-2 text-sm font-semibold text-ink">Custom game</h3>
 
       {/* style */}
-      <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Style</div>
+      <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Style</div>
       <div className="mb-2 flex flex-wrap gap-1">
         {styles.map((s) => (
           <button key={s.id} onClick={() => setStyle(s.id)} className={tab(style === s.id)}>
@@ -116,14 +116,14 @@ export function BotPanel() {
       {/* strength */}
       {isHuman ? (
         <div className="mb-3">
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Rating</div>
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Rating</div>
           <div className="flex gap-1">
             {maiaNets.map((n) => (
               <button
                 key={n.id}
                 onClick={() => setMaiaRating(n.rating)}
                 className={`flex-1 rounded px-2 py-1 text-xs ${
-                  maiaRating === n.rating ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
+                  maiaRating === n.rating ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                 }`}
               >
                 {n.rating}
@@ -134,7 +134,7 @@ export function BotPanel() {
       ) : (
         <div className="mb-3">
           <div className="mb-1 flex items-center justify-between text-xs">
-            <span className="uppercase tracking-wide text-neutral-500">Strength</span>
+            <span className="uppercase tracking-wide text-neutral-400">Strength</span>
             <span className="font-mono text-neutral-300">{elo >= 3190 ? 'max' : `${elo} Elo`}</span>
           </div>
           <input
@@ -148,18 +148,18 @@ export function BotPanel() {
           />
           <div className="mt-1 flex justify-between">
             {ELO_PRESETS.map((p) => (
-              <button key={p} onClick={() => setElo(p)} className="text-[10px] text-neutral-500 hover:text-neutral-200">
+              <button key={p} onClick={() => setElo(p)} className="text-xs text-neutral-400 hover:text-neutral-200">
                 {p === 3190 ? 'max' : p}
               </button>
             ))}
           </div>
           <div className="mt-2 flex items-center gap-1">
-            <span className="text-xs text-neutral-500">Think</span>
+            <span className="text-xs text-neutral-400">Think</span>
             {THINK_OPTIONS.map((t) => (
               <button
                 key={t.ms}
                 onClick={() => setMoveTimeMs(t.ms)}
-                className={`rounded px-2 py-0.5 text-[11px] ${
+                className={`rounded px-2 py-0.5 text-xs ${
                   moveTimeMs === t.ms ? 'bg-neutral-500 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                 }`}
               >
@@ -167,13 +167,13 @@ export function BotPanel() {
               </button>
             ))}
           </div>
-          <p className="mt-1 text-[10px] text-neutral-500">For sub-1320 opponents, climb the Ladder tab.</p>
+          <p className="mt-1 text-xs text-neutral-400">For sub-1320 opponents, climb the Ladder tab.</p>
         </div>
       )}
 
       {/* time control */}
       <div className="mb-3">
-        <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Time control</div>
+        <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Time control</div>
         <div className="flex gap-1">
           {TIME_CONTROLS.map((tc) => {
             const selected = (timeControl?.label ?? 'unlimited') === (tc?.label ?? 'unlimited');
@@ -188,7 +188,7 @@ export function BotPanel() {
 
       {/* color */}
       <div className="mb-3">
-        <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">You play</div>
+        <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">You play</div>
         <div className="flex gap-1">
           {(['white', 'black', 'random'] as const).map((c) => (
             <button key={c} onClick={() => setColor(c)} className={`flex-1 capitalize ${tab(color === c)} py-1`}>
@@ -200,7 +200,7 @@ export function BotPanel() {
 
       {/* start from */}
       <div className="mb-3">
-        <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Start from</div>
+        <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Start from</div>
         <div className="flex gap-1">
           {([
             ['standard', 'Standard'],
@@ -230,7 +230,7 @@ export function BotPanel() {
               }}
               placeholder="Paste a FEN…"
               rows={2}
-              className="w-full resize-none rounded bg-neutral-900 p-2 font-mono text-[11px] text-neutral-200 outline-none ring-1 ring-neutral-700 focus:ring-emerald-600"
+              className="w-full resize-none rounded bg-neutral-900 p-2 font-mono text-xs text-neutral-200 outline-none ring-1 ring-neutral-700 focus:ring-emerald-600"
             />
             <div className="mt-1 flex items-center justify-between">
               <button
@@ -238,11 +238,11 @@ export function BotPanel() {
                   setFenInput(liveFen);
                   setFenError(null);
                 }}
-                className="text-[11px] text-emerald-400 hover:text-emerald-300"
+                className="text-xs text-emerald-400 hover:text-emerald-300"
               >
                 Use current board position
               </button>
-              {fenError && <span className="text-[11px] text-rose-400">{fenError}</span>}
+              {fenError && <span className="text-xs text-rose-400">{fenError}</span>}
             </div>
           </div>
         )}
@@ -260,18 +260,18 @@ export function BotPanel() {
                 <button
                   key={o.id}
                   onClick={() => selectOpening(o)}
-                  className={`flex w-full items-center justify-between gap-2 rounded px-2 py-1 text-left text-[11px] ${
-                    openingId === o.id ? 'bg-emerald-600 text-white' : 'bg-neutral-800 text-neutral-200 hover:bg-neutral-700'
+                  className={`flex w-full items-center justify-between gap-2 rounded px-2 py-1 text-left text-xs ${
+                    openingId === o.id ? 'bg-emerald-700 text-white' : 'bg-neutral-800 text-neutral-200 hover:bg-neutral-700'
                   }`}
                 >
                   <span className="truncate">{o.name}</span>
                   <span className="shrink-0 font-mono opacity-60">{o.eco}</span>
                 </button>
               ))}
-              {filteredOpenings.length === 0 && <p className="px-2 py-1 text-[11px] text-neutral-500">No openings match.</p>}
+              {filteredOpenings.length === 0 && <p className="px-2 py-1 text-xs text-neutral-400">No openings match.</p>}
             </div>
             {selectedOpening && (
-              <p className="mt-1 text-[11px] text-neutral-400">
+              <p className="mt-1 text-xs text-neutral-400">
                 Start after <b className="text-neutral-200">{selectedOpening.moves.length}</b> moves of the{' '}
                 {selectedOpening.name}.
               </p>
@@ -283,7 +283,7 @@ export function BotPanel() {
       <button
         onClick={start}
         disabled={startDisabled}
-        className="w-full rounded bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-40"
+        className="w-full rounded bg-emerald-700 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
       >
         Start game
       </button>

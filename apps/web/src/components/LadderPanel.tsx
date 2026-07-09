@@ -57,14 +57,14 @@ export function LadderPanel() {
 
       {/* play-as colour */}
       <div className="mb-2">
-        <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">You play</div>
+        <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">You play</div>
         <div className="flex gap-1">
           {(['white', 'black', 'random'] as const).map((c) => (
             <button
               key={c}
               onClick={() => setColor(c)}
               className={`flex-1 rounded px-2 py-1 text-xs capitalize ${
-                color === c ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
+                color === c ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
               }`}
             >
               {c}
@@ -75,7 +75,7 @@ export function LadderPanel() {
 
       {/* time control */}
       <div className="mb-3">
-        <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Time control</div>
+        <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Time control</div>
         <div className="flex gap-1">
           {TIME_CONTROLS.map((tc) => {
             const selected = (timeControl?.label ?? 'unlimited') === (tc?.label ?? 'unlimited');
@@ -84,7 +84,7 @@ export function LadderPanel() {
                 key={tc?.label ?? 'unlimited'}
                 onClick={() => setTimeControl(tc)}
                 className={`flex-1 rounded px-1.5 py-1 text-xs ${
-                  selected ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
+                  selected ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                 }`}
               >
                 {tc?.label ?? '∞'}
@@ -122,25 +122,25 @@ export function LadderPanel() {
                     <span className="truncate text-sm font-semibold text-ink">{bot.name}</span>
                     <span className="shrink-0 font-mono text-xs text-neutral-400">{bot.rating}</span>
                   </div>
-                  <div className="text-[11px] text-neutral-500">
+                  <div className="text-xs text-neutral-400">
                     {bot.title}
                     {botCleared && <span className="ml-1 text-emerald-400">· ✓ cleared</span>}
                   </div>
-                  <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-neutral-400">{bot.bio}</p>
+                  <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-neutral-400">{bot.bio}</p>
                   {maiaStandin && unlocked && (
-                    <p className="mt-0.5 text-[10px] text-neutral-500">Maia offline — Stockfish stand-in at this rating.</p>
+                    <p className="mt-0.5 text-xs text-neutral-400">Maia offline — Stockfish stand-in at this rating.</p>
                   )}
                 </div>
               </div>
               <div className="mt-1.5 flex items-center justify-end">
                 {!unlocked ? (
-                  <span className="text-[11px] text-neutral-500">🔒 Beat {prev?.name ?? 'the previous bot'} to unlock</span>
+                  <span className="text-xs text-neutral-400">🔒 Beat {prev?.name ?? 'the previous bot'} to unlock</span>
                 ) : (
                   <button
                     onClick={() => start(bot)}
                     className={`rounded px-3 py-1 text-xs font-semibold ${
                       isNext && !botCleared
-                        ? 'bg-emerald-600 text-white hover:bg-emerald-500'
+                        ? 'bg-emerald-700 text-white hover:bg-emerald-800'
                         : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                     }`}
                   >
@@ -156,11 +156,11 @@ export function LadderPanel() {
       {/* reset */}
       <div className="mt-3 text-right">
         {!confirmReset ? (
-          <button onClick={() => setConfirmReset(true)} className="text-[11px] text-neutral-500 hover:text-neutral-300">
+          <button onClick={() => setConfirmReset(true)} className="text-xs text-neutral-400 hover:text-neutral-300">
             Reset ladder progress
           </button>
         ) : (
-          <span className="text-[11px] text-neutral-400">
+          <span className="text-xs text-neutral-400">
             Reset all progress?{' '}
             <button
               onClick={() => {

@@ -182,13 +182,13 @@ export function AntiBlunderPage() {
           <ReviewStats deck="blunders" ids={BLUNDER_IDS} />
           <button
             onClick={reviewDue}
-            className="mt-3 w-full rounded bg-emerald-600 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500"
+            className="mt-3 w-full rounded bg-emerald-700 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800"
           >
             Review due
           </button>
         </div>
         <div className="rounded-lg bg-panel p-3">
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Positions</div>
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Positions</div>
           <div className="flex flex-wrap gap-1">
             {BLUNDER_POSITIONS.map((b, i) => {
               const cd = cards[`blunders:${b.id}`];
@@ -198,7 +198,7 @@ export function AntiBlunderPage() {
                   key={b.id}
                   onClick={() => load(i)}
                   className={`rounded px-2 py-1 text-xs ${
-                    i === idx ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
+                    i === idx ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                   }`}
                 >
                   {i + 1}
@@ -252,7 +252,7 @@ export function AntiBlunderPage() {
             <div className="flex gap-2">
               <button
                 onClick={takeBack}
-                className="flex-1 rounded bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                className="flex-1 rounded bg-emerald-700 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
               >
                 Take it back
               </button>
@@ -290,7 +290,7 @@ export function AntiBlunderPage() {
             {(phase === 'solved' || phase === 'busted') && (
               <button
                 onClick={next}
-                className="mt-3 w-full rounded bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                className="mt-3 w-full rounded bg-emerald-700 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
               >
                 Next position
               </button>

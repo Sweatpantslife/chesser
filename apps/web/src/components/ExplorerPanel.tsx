@@ -88,7 +88,7 @@ export function ExplorerPanel() {
             <button
               key={d}
               onClick={() => setDb(d)}
-              className={`rounded px-1.5 py-0.5 capitalize ${db === d ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'}`}
+              className={`rounded px-1.5 py-0.5 capitalize ${db === d ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'}`}
             >
               {d}
             </button>
@@ -97,13 +97,13 @@ export function ExplorerPanel() {
       </div>
 
       {!data ? (
-        <p className="text-xs text-neutral-500">{loading ? 'loading…' : ''}</p>
+        <p className="text-xs text-neutral-400">{loading ? 'loading…' : ''}</p>
       ) : !data.available ? (
-        <p className="text-xs text-neutral-500">
+        <p className="text-xs text-neutral-400">
           Explorer unavailable here. Allowlist <code className="text-neutral-300">explorer.lichess.ovh</code> to enable it.
         </p>
       ) : (data.moves?.length ?? 0) === 0 ? (
-        <p className="text-xs text-neutral-500">No games in this database from here.</p>
+        <p className="text-xs text-neutral-400">No games in this database from here.</p>
       ) : (
         <>
           {mode === 'analysis' && canSave && (
@@ -132,7 +132,7 @@ export function ExplorerPanel() {
                   className="flex min-w-0 flex-1 items-center gap-2 rounded px-1 py-1 text-left hover:bg-neutral-700 disabled:cursor-default disabled:hover:bg-transparent"
                 >
                   <span className="w-10 shrink-0 font-mono text-sm text-neutral-200">{m.san}</span>
-                  <span className="w-10 shrink-0 text-right text-[11px] text-neutral-400">{fmtCount(m.total)}</span>
+                  <span className="w-10 shrink-0 text-right text-xs text-neutral-400">{fmtCount(m.total)}</span>
                   <span className="min-w-0 flex-1">
                     <WdlBar white={m.white} draws={m.draws} black={m.black} total={m.total} />
                   </span>
@@ -142,7 +142,7 @@ export function ExplorerPanel() {
                     onClick={() => saveMove(m)}
                     title="Save this line to your repertoire"
                     aria-label={`Save line with ${m.san} to your repertoire`}
-                    className={`shrink-0 rounded px-1.5 py-1 text-xs ${added === m.uci ? 'text-emerald-400' : 'text-neutral-500 hover:bg-neutral-700 hover:text-emerald-300'}`}
+                    className={`shrink-0 rounded px-1.5 py-1 text-xs ${added === m.uci ? 'text-emerald-400' : 'text-neutral-400 hover:bg-neutral-700 hover:text-emerald-300'}`}
                   >
                     {added === m.uci ? '✓' : '＋'}
                   </button>

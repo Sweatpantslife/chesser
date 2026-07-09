@@ -180,7 +180,7 @@ export function OpeningsPage() {
                     setCreating(false);
                     setRepId(id);
                   }}
-                  className="rounded bg-emerald-600 px-2 py-1 text-xs text-white"
+                  className="rounded bg-emerald-700 px-2 py-1 text-xs text-white"
                 >
                   Create
                 </button>
@@ -224,7 +224,7 @@ export function OpeningsPage() {
           <button
             onClick={reviewNext}
             disabled={lineIds.length === 0}
-            className="mt-2 w-full rounded bg-emerald-600 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-40"
+            className="mt-2 w-full rounded bg-emerald-700 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
           >
             Review due lines
           </button>
@@ -232,7 +232,7 @@ export function OpeningsPage() {
 
         <div className="scroll-thin max-h-[55vh] overflow-y-auto rounded-lg bg-panel p-3">
           {lines.length === 0 ? (
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-neutral-400">
               No lines yet. Build one on the <b className="text-neutral-300">Play</b> board, then “★ Save line”.
             </p>
           ) : (
@@ -241,7 +241,7 @@ export function OpeningsPage() {
               if (group.length === 0) return null;
               return (
                 <div key={c} className="mb-2">
-                  <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">As {c}</div>
+                  <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">As {c}</div>
                   <div className="space-y-1">
                     {group.map((l) => {
                       const cd = dueLabel((cards[`openings:${l.id}`] ?? { last: 0, due: 0 }) as any);
@@ -250,11 +250,11 @@ export function OpeningsPage() {
                           <button
                             onClick={() => start(l)}
                             className={`flex min-w-0 flex-1 items-center justify-between gap-2 rounded px-2 py-1.5 text-left text-xs ${
-                              line?.id === l.id ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
+                              line?.id === l.id ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                             }`}
                           >
                             <span className="truncate">{l.name}</span>
-                            <span className={`shrink-0 text-[10px] ${cd === 'due' ? 'text-amber-300' : 'opacity-60'}`}>{cd}</span>
+                            <span className={`shrink-0 text-xs ${cd === 'due' ? 'text-amber-300' : 'opacity-60'}`}>{cd}</span>
                           </button>
                           {editable && (
                             <button
@@ -267,7 +267,7 @@ export function OpeningsPage() {
                               }}
                               title="Delete line"
                               aria-label="Delete line"
-                              className="shrink-0 rounded px-1.5 py-1 text-xs text-neutral-500 hover:bg-neutral-700 hover:text-rose-300"
+                              className="shrink-0 rounded px-1.5 py-1 text-xs text-neutral-400 hover:bg-neutral-700 hover:text-rose-300"
                             >
                               ×
                             </button>
@@ -289,7 +289,7 @@ export function OpeningsPage() {
           <span className="text-neutral-300">{line?.name ?? 'Pick a line'}</span>
           {line && (
             <>
-              <span className="text-neutral-600">·</span>
+              <span className="text-neutral-400">·</span>
               <span className="text-neutral-400">
                 you play <b className="text-neutral-200">{side}</b>
               </span>
@@ -311,7 +311,7 @@ export function OpeningsPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {phase !== 'playing' && line && (
-            <button onClick={() => start(line)} className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500">
+            <button onClick={() => start(line)} className="rounded bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800">
               {phase === 'done' ? 'Repeat line' : 'Start drill'}
             </button>
           )}
@@ -344,14 +344,14 @@ export function OpeningsPage() {
           {line?.idea && <p className="text-xs leading-snug text-neutral-400">{line.idea}</p>}
         </div>
         <div className="rounded-lg bg-panelmute p-2">
-          <div className="mb-1 px-1 text-xs uppercase tracking-wide text-neutral-500">Moves</div>
+          <div className="mb-1 px-1 text-xs uppercase tracking-wide text-neutral-400">Moves</div>
           <div className="px-1 font-mono text-sm text-neutral-200">
             {playedSan.length === 0 ? (
-              <span className="text-neutral-600">—</span>
+              <span className="text-neutral-400">—</span>
             ) : (
               playedSan.map((san, i) => (
                 <span key={i}>
-                  {i % 2 === 0 && <span className="text-neutral-500">{i / 2 + 1}.</span>} {san}{' '}
+                  {i % 2 === 0 && <span className="text-neutral-400">{i / 2 + 1}.</span>} {san}{' '}
                 </span>
               ))
             )}

@@ -204,7 +204,7 @@ export function CoordinatePage() {
           {running && mode === 'find' && (
             <>
               <span className="text-neutral-400">Click</span>
-              <span className="rounded bg-emerald-600 px-3 py-0.5 font-mono text-lg font-bold text-white">{target}</span>
+              <span className="rounded bg-emerald-700 px-3 py-0.5 font-mono text-lg font-bold text-white">{target}</span>
             </>
           )}
           {running && mode === 'name' && <span className="text-neutral-400">Name the highlighted square</span>}
@@ -214,7 +214,7 @@ export function CoordinatePage() {
               Click every knight move — <span className="text-emerald-400">{knightLeft.length} left</span>
             </span>
           )}
-          {!running && <span className="text-neutral-500">Board vision: a 30-second sprint.</span>}
+          {!running && <span className="text-neutral-400">Board vision: a 30-second sprint.</span>}
         </div>
 
         <div className="relative mx-auto w-full max-w-[520px]">
@@ -234,7 +234,7 @@ export function CoordinatePage() {
               {phase === 'idle' ? (
                 <button
                   onClick={start}
-                  className="rounded bg-emerald-600 px-5 py-2.5 font-semibold text-white hover:bg-emerald-500"
+                  className="rounded bg-emerald-700 px-5 py-2.5 font-semibold text-white hover:bg-emerald-800"
                 >
                   Start
                 </button>
@@ -245,7 +245,7 @@ export function CoordinatePage() {
                   {score >= best && score > 0 && <div className="mb-1 text-xs text-amber-300">🏆 New best!</div>}
                   <button
                     onClick={start}
-                    className="mt-2 rounded bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-500"
+                    className="mt-2 rounded bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800"
                   >
                     Again
                   </button>
@@ -289,25 +289,25 @@ export function CoordinatePage() {
 
       <div className="space-y-3">
         <div className="rounded-lg bg-panel p-4 text-center">
-          <div className="text-xs uppercase tracking-wide text-neutral-500">Time</div>
+          <div className="text-xs uppercase tracking-wide text-neutral-400">Time</div>
           <div className={`font-mono text-3xl ${timeLeft <= 5 && running ? 'text-rose-400' : 'text-ink'}`}>
             0:{String(timeLeft).padStart(2, '0')}
           </div>
           <div className="mt-2 flex items-center justify-center gap-6">
             <div>
-              <div className="text-xs uppercase tracking-wide text-neutral-500">Score</div>
+              <div className="text-xs uppercase tracking-wide text-neutral-400">Score</div>
               <div className="text-2xl font-bold text-emerald-400">{score}</div>
             </div>
             <div>
-              <div className="text-xs uppercase tracking-wide text-neutral-500">Best</div>
+              <div className="text-xs uppercase tracking-wide text-neutral-400">Best</div>
               <div className="text-2xl font-bold text-neutral-200">{best}</div>
             </div>
           </div>
-          <div className="mt-1 text-[11px] text-neutral-500">best for “{MODE_LABEL[mode]}”</div>
+          <div className="mt-1 text-xs text-neutral-400">best for “{MODE_LABEL[mode]}”</div>
         </div>
 
         <div className="rounded-lg bg-panel p-3 text-sm">
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Mode</div>
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Mode</div>
           <div className="mb-3 grid grid-cols-2 gap-1">
             {(['find', 'name', 'color', 'knight'] as const).map((m) => (
               <button
@@ -315,7 +315,7 @@ export function CoordinatePage() {
                 disabled={running}
                 onClick={() => setMode(m)}
                 className={`rounded px-2 py-1 text-xs disabled:opacity-50 ${
-                  mode === m ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                  mode === m ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                 }`}
               >
                 {MODE_LABEL[m]}
@@ -323,7 +323,7 @@ export function CoordinatePage() {
             ))}
           </div>
 
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Side</div>
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Side</div>
           <div className="mb-3 flex gap-1">
             {(['white', 'black', 'random'] as const).map((sv) => (
               <button
@@ -331,7 +331,7 @@ export function CoordinatePage() {
                 disabled={running}
                 onClick={() => setSideOpt(sv)}
                 className={`flex-1 rounded px-2 py-1 text-xs capitalize disabled:opacity-50 ${
-                  sideOpt === sv ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                  sideOpt === sv ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                 }`}
               >
                 {sv}
@@ -351,7 +351,7 @@ export function CoordinatePage() {
           )}
         </div>
 
-        <p className="px-1 text-xs leading-snug text-neutral-500">{MODE_BLURB[mode]}</p>
+        <p className="px-1 text-xs leading-snug text-neutral-400">{MODE_BLURB[mode]}</p>
       </div>
     </div>
   );

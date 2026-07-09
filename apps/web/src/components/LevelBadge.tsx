@@ -11,9 +11,9 @@ export function LevelBadge({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       title="Your profile — level, ratings & badges"
       aria-label={`Your profile — level ${level}${streak > 0 ? `, ${streak}-day streak` : ''}`}
-      className="flex items-center gap-2 rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200 hover:bg-neutral-700"
+      className="flex min-h-11 items-center gap-2 rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200 hover:bg-neutral-700 sm:min-h-0"
     >
-      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">
+      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-700 text-xs font-bold text-white">
         {level}
       </span>
       <span className="hidden h-1.5 w-10 overflow-hidden rounded-full bg-neutral-700 sm:block">

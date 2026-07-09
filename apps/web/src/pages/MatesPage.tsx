@@ -157,7 +157,7 @@ export function MatesPage() {
           <ReviewStats deck="mates" ids={MATE_DRILL_IDS} />
           <button
             onClick={reviewDue}
-            className="mt-3 w-full rounded bg-emerald-600 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500"
+            className="mt-3 w-full rounded bg-emerald-700 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800"
           >
             Review due
           </button>
@@ -166,9 +166,9 @@ export function MatesPage() {
         <div className="scroll-thin max-h-[60vh] space-y-2 overflow-y-auto rounded-lg bg-panel p-3">
           {MATE_PATTERNS.map((p: MatePattern) => (
             <div key={p.id}>
-              <div className="mb-1 flex items-baseline gap-1 text-xs uppercase tracking-wide text-neutral-500">
+              <div className="mb-1 flex items-baseline gap-1 text-xs uppercase tracking-wide text-neutral-400">
                 <span>{p.name}</span>
-                {p.aka && <span className="normal-case text-neutral-600">· {p.aka}</span>}
+                {p.aka && <span className="normal-case text-neutral-400">· {p.aka}</span>}
               </div>
               <div className="mb-2 flex flex-wrap gap-1">
                 {p.drills.map((d, i) => {
@@ -180,12 +180,12 @@ export function MatesPage() {
                       key={d.id}
                       onClick={() => load(gi)}
                       className={`flex items-center gap-1 rounded px-2 py-1 text-xs ${
-                        active ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
+                        active ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                       }`}
                     >
                       <span>#{i + 1}</span>
                       <span className="opacity-70">M{d.mateIn}</span>
-                      <span className={`text-[10px] ${cd === 'due' ? 'text-amber-300' : 'opacity-60'}`}>{cd}</span>
+                      <span className={`text-xs ${cd === 'due' ? 'text-amber-300' : 'opacity-60'}`}>{cd}</span>
                     </button>
                   );
                 })}
@@ -219,7 +219,7 @@ export function MatesPage() {
           {phase === 'failed' && (
             <button
               onClick={retry}
-              className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500"
+              className="rounded bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800"
             >
               Try again
             </button>
@@ -257,7 +257,7 @@ export function MatesPage() {
           {phase === 'solved' && (
             <button
               onClick={next}
-              className="mt-3 w-full rounded bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+              className="mt-3 w-full rounded bg-emerald-700 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
             >
               Next drill
             </button>

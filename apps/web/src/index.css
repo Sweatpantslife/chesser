@@ -44,6 +44,8 @@ body {
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
+  /* Defensive: coord labels must never widen the page (5-7px phone scroll bug). */
+  overflow-x: clip;
 }
 .board-wrap .cg-wrap {
   position: absolute;
@@ -58,6 +60,21 @@ body {
 }
 .board-wrap .cg-wrap coords.files coord {
   text-align: center;
+}
+
+/* Board coordinate labels. chessground's stock CSS uses a 9px font at 80%
+   opacity (near-invisible) and offsets `coords.files` by `left: 24px` with
+   `width: 100%`, which pushes each file letter ~24px right of its square and
+   overflows the board horizontally on phones. Align the row with the squares
+   and make the labels legible. */
+.board-wrap .cg-wrap coords {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 1;
+}
+.board-wrap .cg-wrap coords.files {
+  left: 0;
+  bottom: 0;
 }
 
 /* Board themes — only the light base colour changes; chessground's embedded SVG
@@ -90,6 +107,15 @@ body {
 .scroll-thin::-webkit-scrollbar-thumb {
   background: #3a4150;
   border-radius: 4px;
+}
+
+/* Hidden scrollbar (mobile header nav scrolls horizontally without a bar). */
+.scrollbar-none {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
 
 /* Gamification toast slide-in */

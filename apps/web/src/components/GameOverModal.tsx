@@ -111,13 +111,13 @@ export function GameOverModal() {
             {summary.opponent && <BotAvatar name={summary.opponent.name} accent={summary.opponent.accent} motif={summary.opponent.motif} size={40} />}
             <div className="min-w-0">
               <div className="truncate text-sm font-semibold text-ink">{summary.opponent?.name ?? 'Opponent'}</div>
-              <div className="text-xs text-neutral-500">
+              <div className="text-xs text-neutral-400">
                 You played <span className="capitalize text-neutral-300">{summary.playerColor}</span>
               </div>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-[11px] uppercase tracking-wide text-neutral-500">{summary.category === 'blitz' ? 'Blitz' : 'Bots'} rating</div>
+            <div className="text-xs uppercase tracking-wide text-neutral-400">{summary.category === 'blitz' ? 'Blitz' : 'Bots'} rating</div>
             <div className="flex items-baseline justify-end gap-1.5">
               <span className="text-lg font-bold text-ink">{summary.ratingAfter}</span>
               <span className={`text-sm font-semibold ${deltaTone}`}>{deltaStr}</span>
@@ -127,10 +127,10 @@ export function GameOverModal() {
 
         {/* accuracy */}
         <div className="mb-4 space-y-2.5 rounded-xl bg-neutral-800/40 p-3">
-          <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-neutral-500">
+          <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-neutral-400">
             <span>Accuracy</span>
             {!reviewReady && (
-              <span className="text-neutral-500">{connected ? (reviewing ? `analysing ${progress}%` : 'analysing…') : 'engine offline'}</span>
+              <span className="text-neutral-400">{connected ? (reviewing ? `analysing ${progress}%` : 'analysing…') : 'engine offline'}</span>
             )}
           </div>
           {(['you', 'opp'] as const).map((who) => {
@@ -140,7 +140,7 @@ export function GameOverModal() {
               <div key={who}>
                 <div className="mb-1 flex items-center justify-between text-sm">
                   <span className="truncate text-neutral-300">{label}</span>
-                  <span className={`font-semibold tabular-nums ${acc == null ? 'text-neutral-600' : 'text-emerald-300'}`}>
+                  <span className={`font-semibold tabular-nums ${acc == null ? 'text-neutral-400' : 'text-emerald-300'}`}>
                     {acc == null ? '—' : `${acc}%`}
                   </span>
                 </div>
@@ -153,7 +153,7 @@ export function GameOverModal() {
               {chips.map(({ cls, n }) => {
                 const m = CLASSIFICATION_META[cls];
                 return (
-                  <span key={cls} className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${m.bg} ${m.text} ring-1 ${m.ring}`}>
+                  <span key={cls} className={`rounded px-1.5 py-0.5 text-xs font-semibold ${m.bg} ${m.text} ring-1 ${m.ring}`}>
                     {n} {m.label.toLowerCase()}
                   </span>
                 );
@@ -165,11 +165,11 @@ export function GameOverModal() {
         {/* small facts */}
         <div className="mb-5 grid grid-cols-2 gap-2 text-sm">
           <div className="rounded-lg bg-neutral-800/40 px-3 py-2">
-            <div className="text-[11px] uppercase tracking-wide text-neutral-500">Moves</div>
+            <div className="text-xs uppercase tracking-wide text-neutral-400">Moves</div>
             <div className="font-semibold text-neutral-200">{summary.moves}</div>
           </div>
           <div className="rounded-lg bg-neutral-800/40 px-3 py-2">
-            <div className="text-[11px] uppercase tracking-wide text-neutral-500">Opening</div>
+            <div className="text-xs uppercase tracking-wide text-neutral-400">Opening</div>
             <div className="truncate font-semibold text-neutral-200" title={opening?.name}>
               {opening?.name ?? '—'}
             </div>
@@ -180,15 +180,15 @@ export function GameOverModal() {
         <div className="space-y-2">
           <button
             onClick={() => void useGame.getState().analyzeFinishedGame()}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700"
           >
             🔍 Analyze game
-            <span className="text-xs font-normal text-indigo-200">· move-by-move walkthrough</span>
+            <span className="text-xs font-normal text-indigo-100">· move-by-move walkthrough</span>
           </button>
           <div className="flex gap-2">
             <button
               onClick={() => useGame.getState().rematch()}
-              className="flex-1 rounded-lg bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500"
+              className="flex-1 rounded-lg bg-emerald-700 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800"
             >
               ↻ Rematch
             </button>

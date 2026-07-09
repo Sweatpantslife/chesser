@@ -11,6 +11,8 @@ const THEMES: { id: BoardTheme; swatch: string }[] = [
 ];
 
 function Toggle({ on, onChange, label }: { on: boolean; onChange: (b: boolean) => void; label: string }) {
+  // Track colour is a non-text state indicator: emerald-600 keeps ≥3:1 against
+  // the panel bg (emerald-700 would drop to ~2.8:1), so it stays at 600.
   return (
     <label className="flex cursor-pointer items-center justify-between py-1.5 text-sm text-neutral-200">
       {label}
@@ -57,7 +59,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
         <Toggle on={arrows} onChange={setArrows} label="Engine arrows (analysis)" />
 
         <div className="mt-3">
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Headline rating</div>
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Headline rating</div>
           <div className="flex gap-1">
             {([
               { id: 'elo', label: 'Elo' },
@@ -68,18 +70,18 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
                 onClick={() => setRatingMeter(m.id)}
                 aria-pressed={ratingMeter === m.id}
                 className={`flex-1 rounded px-2 py-1 text-xs ${
-                  ratingMeter === m.id ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                  ratingMeter === m.id ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                 }`}
               >
                 {m.label}
               </button>
             ))}
           </div>
-          <p className="mt-1 text-[11px] text-neutral-500">Glicko-2 always drives difficulty &amp; pairings behind the scenes.</p>
+          <p className="mt-1 text-xs text-neutral-400">Glicko-2 always drives difficulty &amp; pairings behind the scenes.</p>
         </div>
 
         <div className="mt-3">
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Board theme</div>
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Board theme</div>
           <div className="flex gap-2">
             {THEMES.map((t) => (
               <button
@@ -96,7 +98,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="mt-3">
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Pieces</div>
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Pieces</div>
           <div className="grid grid-cols-3 gap-2">
             {PIECE_SETS.map((p) => (
               <button
@@ -109,7 +111,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
                 }`}
               >
                 <PieceSwatch set={p.id} />
-                <span className="max-w-full truncate text-[10px] text-neutral-300">{p.label}</span>
+                <span className="max-w-full truncate text-xs text-neutral-300">{p.label}</span>
               </button>
             ))}
           </div>

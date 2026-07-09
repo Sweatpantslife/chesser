@@ -31,7 +31,7 @@ function AuthForm({ onClose }: { onClose: () => void }) {
             type="button"
             onClick={() => setMode(m)}
             aria-pressed={mode === m}
-            className={`flex-1 rounded px-2 py-1 capitalize ${mode === m ? 'bg-emerald-600 text-white' : 'text-neutral-300'}`}
+            className={`flex-1 rounded px-2 py-1 capitalize ${mode === m ? 'bg-emerald-700 text-white' : 'text-neutral-300'}`}
           >
             {m === 'login' ? 'Sign in' : 'Create account'}
           </button>
@@ -73,7 +73,7 @@ function AuthForm({ onClose }: { onClose: () => void }) {
       <button
         type="submit"
         disabled={busy}
-        className="w-full rounded bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+        className="w-full rounded bg-emerald-700 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
       >
         {busy ? '…' : mode === 'login' ? 'Sign in' : 'Create account'}
       </button>
@@ -87,7 +87,7 @@ function AccountInfo({ onClose }: { onClose: () => void }) {
   return (
     <div className="space-y-3">
       <div>
-        <div className="text-xs uppercase tracking-wide text-neutral-500">Signed in as</div>
+        <div className="text-xs uppercase tracking-wide text-neutral-400">Signed in as</div>
         <div className="text-lg font-semibold text-ink">{username}</div>
       </div>
       <div className="flex items-center gap-2 text-sm text-neutral-300">
@@ -116,7 +116,7 @@ export function AccountButton() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 rounded bg-neutral-800 px-2.5 py-1 text-xs text-neutral-200 hover:bg-neutral-700"
+        className="flex min-h-11 items-center gap-1.5 rounded bg-neutral-800 px-2.5 py-1 text-xs text-neutral-200 hover:bg-neutral-700 sm:min-h-0"
       >
         {username ? (
           <>

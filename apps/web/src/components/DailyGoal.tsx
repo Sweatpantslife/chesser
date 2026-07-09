@@ -25,7 +25,7 @@ function GoalRing({ value, goal, streak }: { value: number; goal: number; streak
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-lg font-bold text-ink">🔥{streak}</span>
-        <span className="text-[10px] uppercase tracking-wide text-neutral-500">streak</span>
+        <span className="text-xs uppercase tracking-wide text-neutral-400">streak</span>
       </div>
     </div>
   );
@@ -44,27 +44,27 @@ export function DailyGoal() {
     <div className="rounded-lg bg-panel p-4">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-ink">Daily goal</h3>
-        <span className="text-xs text-neutral-500">best 🔥{bestStreak}</span>
+        <span className="text-xs text-neutral-400">best 🔥{bestStreak}</span>
       </div>
       <div className="flex items-center gap-4">
         <GoalRing value={todayXp} goal={goalXp} streak={streak} />
         <div className="min-w-0 flex-1">
           <div className="text-sm text-neutral-200">
             <span className="font-bold text-emerald-300">{todayXp}</span>
-            <span className="text-neutral-500"> / {goalXp} XP today</span>
+            <span className="text-neutral-400"> / {goalXp} XP today</span>
           </div>
-          <p className={`mt-0.5 text-xs ${met ? 'text-emerald-400' : 'text-neutral-500'}`}>
+          <p className={`mt-0.5 text-xs ${met ? 'text-emerald-400' : 'text-neutral-400'}`}>
             {met ? '✓ Goal met — streak safe!' : `${goalXp - todayXp} XP to keep your streak`}
           </p>
           <div className="mt-2">
-            <div className="mb-1 text-[11px] uppercase tracking-wide text-neutral-500">Goal</div>
+            <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Goal</div>
             <div className="flex gap-1">
               {GOAL_PRESETS.map((g) => (
                 <button
                   key={g}
                   onClick={() => setGoalXp(g)}
                   className={`flex-1 rounded px-1.5 py-1 text-xs ${
-                    goalXp === g ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                    goalXp === g ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                   }`}
                 >
                   {g}

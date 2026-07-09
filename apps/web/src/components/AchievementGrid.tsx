@@ -24,10 +24,10 @@ function Badge({ a, unlocked, ctx }: { a: Achievement; unlocked: boolean; ctx: R
       }`}
     >
       <div className="flex items-start gap-2">
-        <span className={`text-2xl ${unlocked ? '' : 'opacity-30 grayscale'}`}>{a.icon}</span>
+        <span className={`text-2xl ${unlocked ? '' : 'opacity-50 grayscale'}`}>{a.icon}</span>
         <div className="min-w-0 flex-1">
           <div className={`truncate text-sm font-semibold ${unlocked ? 'text-ink' : 'text-neutral-400'}`}>{a.name}</div>
-          <div className="truncate text-[11px] text-neutral-500">{a.desc}</div>
+          <div className="truncate text-xs text-neutral-400">{a.desc}</div>
         </div>
         {unlocked && <span className="text-emerald-400">✓</span>}
       </div>
@@ -36,13 +36,13 @@ function Badge({ a, unlocked, ctx }: { a: Achievement; unlocked: boolean; ctx: R
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-800">
             <div className="h-full rounded-full bg-emerald-500/70" style={{ width: `${pct}%` }} />
           </div>
-          <div className="mt-1 text-right text-[10px] text-neutral-600">
+          <div className="mt-1 text-right text-xs text-neutral-400">
             {Math.min(value, target)} / {target}
             {a.xp > 0 && <span className="ml-2 text-amber-300/70">+{a.xp} XP</span>}
           </div>
         </div>
       )}
-      {unlocked && done && a.xp > 0 && <div className="mt-2 text-right text-[10px] text-amber-300/70">+{a.xp} XP</div>}
+      {unlocked && done && a.xp > 0 && <div className="mt-2 text-right text-xs text-amber-300/70">+{a.xp} XP</div>}
     </div>
   );
 }
@@ -75,14 +75,14 @@ export function AchievementGrid() {
     <div className="rounded-lg bg-panel p-4">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-ink">Achievements</h3>
-        <span className="text-xs text-neutral-500">
+        <span className="text-xs text-neutral-400">
           {earned} / {ACHIEVEMENTS.length} earned
         </span>
       </div>
       <div className="space-y-4">
         {grouped.map(([cat, list]) => (
           <div key={cat}>
-            <div className="mb-2 text-[11px] uppercase tracking-wide text-neutral-500">{ACHIEVEMENT_CATEGORY_LABELS[cat]}</div>
+            <div className="mb-2 text-xs uppercase tracking-wide text-neutral-400">{ACHIEVEMENT_CATEGORY_LABELS[cat]}</div>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {list.map((a) => (
                 <Badge key={a.id} a={a} unlocked={a.id in unlocked} ctx={ctx} />
