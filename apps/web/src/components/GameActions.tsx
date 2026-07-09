@@ -57,7 +57,7 @@ export function GameActions() {
           </div>
           <div className="text-xs text-neutral-400">
             You play <span className="capitalize text-neutral-300">{playerColor}</span>
-            {thinking && <span className="ml-1 animate-pulse text-emerald-400">· thinking…</span>}
+            {thinking && <span className="ml-1 animate-pulse-soft text-emerald-400">· thinking…</span>}
           </div>
         </div>
       </div>

@@ -331,7 +331,7 @@ function PracticeTactics() {
           <span className={`text-xs capitalize ${DIFF_COLOR[puzzle.difficulty]}`}>{puzzle.difficulty}</span>
           <span className="text-xs text-neutral-400">rated {pr}</span>
           <span className="text-neutral-400">{puzzle.turn === 'white' ? 'White' : 'Black'} to move</span>
-          {solverToMove && <span className="animate-pulse text-emerald-400">· your move</span>}
+          {solverToMove && <span className="animate-pulse-soft text-emerald-400">· your move</span>}
         </div>
         <div className="mx-auto w-full max-w-[540px]">
           <Board

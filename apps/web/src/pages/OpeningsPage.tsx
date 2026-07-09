@@ -158,6 +158,7 @@ export function OpeningsPage() {
           <select
             value={repId}
             onChange={(e) => setRepId(e.target.value)}
+            aria-label="Repertoire"
             className="w-full rounded bg-neutral-800 px-2 py-1.5 text-sm text-ink outline-none"
           >
             {reps.map((r) => (
@@ -249,16 +250,29 @@ export function OpeningsPage() {
                   <div className="space-y-1">
                     {group.map((l) => {
                       const cd = dueLabel((cards[`openings:${l.id}`] ?? { last: 0, due: 0 }) as any);
+                      const selected = line?.id === l.id;
                       return (
                         <div key={l.id} className="flex items-center gap-1">
                           <button
                             onClick={() => start(l)}
                             className={`flex min-w-0 flex-1 items-center justify-between gap-2 rounded px-2 py-1.5 text-left text-xs ${
-                              line?.id === l.id ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
+                              selected ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                             }`}
                           >
                             <span className="truncate">{l.name}</span>
-                            <span className={`shrink-0 text-xs ${cd === 'due' ? 'text-amber-300' : 'opacity-60'}`}>{cd}</span>
+                            <span
+                              className={`shrink-0 text-xs ${
+                                cd === 'due'
+                                  ? selected
+                                    ? 'text-amber-100'
+                                    : 'text-amber-300'
+                                  : selected
+                                    ? 'text-emerald-100'
+                                    : 'text-neutral-300'
+                              }`}
+                            >
+                              {cd}
+                            </span>
                           </button>
                           {editable && (
                             <button
@@ -299,7 +313,7 @@ export function OpeningsPage() {
               </span>
             </>
           )}
-          {traineeToMove && <span className="animate-pulse text-emerald-400">· your move</span>}
+          {traineeToMove && <span className="animate-pulse-soft text-emerald-400">· your move</span>}
         </div>
         <div className="mx-auto w-full max-w-[540px]">
           <Board

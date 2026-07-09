@@ -195,7 +195,9 @@ export function EndgamePage() {
                 }`}
               >
                 <span className="truncate">{s.name}</span>
-                <span className="shrink-0 text-xs uppercase opacity-60">{s.goal}</span>
+                <span className={`shrink-0 text-xs uppercase ${study.id === s.id ? 'text-emerald-100' : 'text-neutral-300'}`}>
+                  {s.goal}
+                </span>
               </button>
             ))}
           </div>

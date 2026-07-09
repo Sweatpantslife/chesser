@@ -71,10 +71,19 @@ body {
   font-size: 11px;
   font-weight: 600;
   opacity: 1;
+  /* Pieces paint at z-index 2 (chessground.base.css) and would otherwise
+     cover the labels entirely on occupied squares. */
+  z-index: 3;
 }
 .board-wrap .cg-wrap coords.files {
   left: 0;
   bottom: 0;
+}
+/* Corner-align the file letters (lichess-style, bottom-left of each square)
+   so they don't sit centered under every piece base. */
+.board-wrap .cg-wrap coords.files coord {
+  text-align: left;
+  padding-left: 2px;
 }
 
 /* Board themes. chessground's stock dark squares are a washed-out 20% black
@@ -142,6 +151,18 @@ body {
 }
 .gamify-toast {
   animation: gamify-toast-in 0.22s ease-out;
+}
+
+/* Like Tailwind's animate-pulse but with a 0.75 opacity floor: emerald-400
+   text on the page background stays ≥5.9:1 (AA) at the dimmest point of the
+   cycle, where the stock 0.5 floor dropped it to ~3.3:1. */
+@keyframes pulse-soft {
+  50% {
+    opacity: 0.75;
+  }
+}
+.animate-pulse-soft {
+  animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 /* Subtle fade-in when switching header tabs (content is hard-swapped). */

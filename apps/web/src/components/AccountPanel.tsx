@@ -24,7 +24,8 @@ function AuthForm({ onClose }: { onClose: () => void }) {
 
   return (
     <form onSubmit={submit} className="space-y-3">
-      <div className="flex gap-1 rounded bg-panelmute p-1 text-sm">
+      {/* mr-9 keeps the switcher clear of the dialog's absolute 44px close target on phones */}
+      <div className="mr-9 flex gap-1 rounded bg-panelmute p-1 text-sm sm:mr-0">
         {(['login', 'register'] as const).map((m) => (
           <button
             key={m}

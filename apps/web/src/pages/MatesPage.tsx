@@ -184,8 +184,14 @@ export function MatesPage() {
                       }`}
                     >
                       <span>#{i + 1}</span>
-                      <span className="opacity-70">M{d.mateIn}</span>
-                      <span className={`text-xs ${cd === 'due' ? 'text-amber-300' : 'opacity-60'}`}>{cd}</span>
+                      <span className={active ? 'text-emerald-100' : 'text-neutral-300'}>M{d.mateIn}</span>
+                      <span
+                        className={`text-xs ${
+                          cd === 'due' ? (active ? 'text-amber-100' : 'text-amber-300') : active ? 'text-emerald-100' : 'text-neutral-300'
+                        }`}
+                      >
+                        {cd}
+                      </span>
                     </button>
                   );
                 })}
@@ -201,7 +207,7 @@ export function MatesPage() {
           <span className="rounded bg-neutral-700 px-2 py-0.5 text-xs text-neutral-200">{pattern.name}</span>
           <span className="text-xs text-rose-300">mate in {drill.mateIn}</span>
           <span className="text-neutral-400">{drill.turn === 'white' ? 'White' : 'Black'} to move</span>
-          {solverToMove && <span className="animate-pulse text-emerald-400">· your move</span>}
+          {solverToMove && <span className="animate-pulse-soft text-emerald-400">· your move</span>}
         </div>
         <div className="mx-auto w-full max-w-[540px]">
           <Board

@@ -14,7 +14,7 @@ function LevelHeader() {
     <div className="rounded-lg bg-panel p-4">
       <div className="flex items-center gap-4">
         <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-full bg-emerald-700 text-white">
-          <span className="text-[9px] uppercase tracking-wide opacity-80">level</span>
+          <span className="text-[10px] uppercase tracking-wide">level</span>
           <span className="text-2xl font-bold leading-none">{level}</span>
         </div>
         <div className="min-w-0 flex-1">
