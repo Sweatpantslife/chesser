@@ -5,6 +5,7 @@ import { AccountButton } from './components/AccountPanel';
 import { InstallButton } from './components/InstallButton';
 import { SettingsDialog } from './components/SettingsDialog';
 import { PlayPage } from './pages/PlayPage';
+import { HumansPage } from './humans/HumansPage';
 import { OpeningsPage } from './pages/OpeningsPage';
 import { TacticsPage } from './pages/TacticsPage';
 import { EndgamePage } from './pages/EndgamePage';
@@ -17,10 +18,11 @@ import { GamifyToasts } from './components/GamifyToasts';
 import { initGamify } from './lib/gamify';
 import type { DeckTarget } from './lib/decks';
 
-type View = 'play' | 'openings' | 'tactics' | 'endgame' | 'train' | 'coordinates' | 'stats' | 'profile';
+type View = 'play' | 'friends' | 'openings' | 'tactics' | 'endgame' | 'train' | 'coordinates' | 'stats' | 'profile';
 
 const TABS: { id: View; label: string; hint: string }[] = [
   { id: 'play', label: 'Play', hint: 'vs bots & analysis' },
+  { id: 'friends', label: 'Friends', hint: 'pass & play · online friend games' },
   { id: 'openings', label: 'Openings', hint: 'repertoire drills' },
   { id: 'tactics', label: 'Middlegame', hint: 'tactics puzzles' },
   { id: 'endgame', label: 'Endgame', hint: 'theory & technique' },
@@ -97,8 +99,17 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
 export default function App() {
   const init = useGame((s) => s.init);
   const authInit = useAuth((s) => s.init);
-  const [view, setView] = useState<View>('play');
+  // A shared friend-game link (#/friend/CODE) lands straight on the Friends view.
+  const [view, setView] = useState<View>(() => (window.location.hash.startsWith('#/friend/') ? 'friends' : 'play'));
   const [trainTab, setTrainTab] = useState<TrainTab>('mates');
+
+  useEffect(() => {
+    const onHash = () => {
+      if (window.location.hash.startsWith('#/friend/')) setView('friends');
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
 
   // Jump to a deck's trainer (used by the unified review summary on Stats).
   const goto = (target: DeckTarget) => {
@@ -117,6 +128,10 @@ export default function App() {
       <Header view={view} setView={setView} />
       <main className="flex-1 p-4">
         {view === 'play' && <PlayPage />}
+        {/* Kept mounted so a live human-vs-human game survives tab switches. */}
+        <div className={view === 'friends' ? undefined : 'hidden'}>
+          <HumansPage />
+        </div>
         {view === 'openings' && <OpeningsPage />}
         {view === 'tactics' && <TacticsPage />}
         {view === 'endgame' && <EndgamePage />}
