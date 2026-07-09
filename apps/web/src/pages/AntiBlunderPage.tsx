@@ -146,7 +146,9 @@ export function AntiBlunderPage() {
     setPhase('busted');
     grade('blunders', pos.id, 'again');
     recordReview(false);
-    setFeedback({ kind: 'bad', text: `${temptingSan}?? ${pos.explanation}` });
+    // The explanations already open with the annotated move ("Rxd7?? …") —
+    // don't prepend it a second time.
+    setFeedback({ kind: 'bad', text: pos.explanation });
     // Replay the full refutation from the original position.
     game.current = new Chess(pos.fen);
     setFen(game.current.fen());
