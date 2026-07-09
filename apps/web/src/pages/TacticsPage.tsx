@@ -8,8 +8,16 @@ import { useCustomPuzzles } from '../store/customPuzzles';
 import { useRatings, ratingValue } from '../store/ratings';
 import { useSettings } from '../store/settings';
 import { puzzleRatingOf } from '../lib/puzzleRating';
-import { recordPuzzle } from '../lib/gamify';
-import { classifyMotifs, MOTIF_LABELS, MOTIF_ORDER, type Motif } from '../lib/motifs';
+import {
+  checkKeyMove,
+  ensureBandsFor,
+  FILTER_THEMES,
+  getDailyPuzzle,
+  getLoadedPuzzles,
+  getNextPuzzle,
+  puzzleHasTheme,
+  recordResult,
+} from '../lib/puzzleService';
 import { playMoveSound } from '../lib/sound';
 import { useTimeoutRef } from '../lib/useTimeoutRef';
 import { RushMode } from './RushMode';
@@ -31,17 +39,6 @@ const DIFF_COLOR: Record<Difficulty, string> = {
   medium: 'text-amber-300',
   hard: 'text-rose-300',
 };
-
-// Motif classification is pure + stable per puzzle id — cache it.
-const motifCache = new Map<string, Motif[]>();
-function themesOf(p: AnyPuzzle): Motif[] {
-  let m = motifCache.get(p.id);
-  if (!m) {
-    m = classifyMotifs(p.fen, p.solution, p.theme);
-    motifCache.set(p.id, m);
-  }
-  return m;
-}
 
 export function TacticsPage() {
   const [mode, setMode] = useState<'practice' | 'rush' | 'mistakes'>('practice');
@@ -75,9 +72,11 @@ function PracticeTactics() {
 
   const [source, setSource] = useState<Source>('builtin');
   const [diffFilter, setDiffFilter] = useState<DiffFilter>('all');
-  const [themeFilter, setThemeFilter] = useState<'all' | Motif>('all');
+  const [themeFilter, setThemeFilter] = useState<'all' | string>('all');
   const [ratedOrder, setRatedOrder] = useState(false);
   const [pos, setPos] = useState(0);
+  // A puzzle served outside the sequential queue (rated pick / daily puzzle).
+  const [override, setOverride] = useState<{ p: AnyPuzzle; label: string } | null>(null);
   const [phase, setPhase] = useState<Phase>('solving');
   const [fen, setFen] = useState(game.current.fen());
   const [lastMove, setLastMove] = useState<[string, string] | undefined>();
@@ -107,32 +106,52 @@ function PracticeTactics() {
     [sourced, diffFilter],
   );
   const themeCounts = useMemo(() => {
-    const c = new Map<Motif, number>();
-    for (const p of byDifficulty) for (const m of themesOf(p)) c.set(m, (c.get(m) ?? 0) + 1);
+    const c = new Map<string, number>();
+    for (const t of FILTER_THEMES) {
+      let n = 0;
+      for (const p of byDifficulty) if (puzzleHasTheme(p, t.tag)) n++;
+      if (n > 0) c.set(t.tag, n);
+    }
     return c;
   }, [byDifficulty]);
   const queue = useMemo(
-    () => byDifficulty.filter((p) => themeFilter === 'all' || themesOf(p).includes(themeFilter)),
+    () => byDifficulty.filter((p) => themeFilter === 'all' || puzzleHasTheme(p, themeFilter)),
     [byDifficulty, themeFilter],
   );
-  const puzzle = queue[pos] ?? queue[0];
+  const puzzle = override?.p ?? queue[pos] ?? queue[0];
 
-  const load = (i: number, q = queue) => {
-    const p = q[i];
-    if (!p) return;
+  const setupBoard = (p: AnyPuzzle) => {
     // Stop any in-flight solution animation: its pending ticks belong to the
     // previous puzzle and would play illegal moves on the new position.
     if (demoTimer.current) clearTimeout(demoTimer.current);
     demoTimer.current = null;
     game.current = new Chess(p.fen);
     attempt.current = { failed: false, revealed: false, rated: false };
-    setPos(i);
     setPhase('solving');
     setDelta(null);
     setFeedback({ kind: 'info', text: `${p.turn === 'white' ? 'White' : 'Black'} to play and win.` });
     setFen(game.current.fen());
     setLastMove(undefined);
   };
+
+  const load = (i: number, q = queue) => {
+    const p = q[i];
+    if (!p) return;
+    setOverride(null);
+    setPos(i);
+    setupBoard(p);
+  };
+
+  /** Load a puzzle served by the puzzle service (may not be in the queue). */
+  const loadDirect = (p: AnyPuzzle, label: string) => {
+    setOverride({ p, label });
+    setupBoard(p);
+  };
+
+  // Warm the rating bands around the player's level for adaptive serving.
+  useEffect(() => {
+    void ensureBandsFor(decisionRating);
+  }, [decisionRating]);
 
   // Reset to the first puzzle whenever the filters change the queue identity.
   useEffect(() => {
@@ -167,7 +186,7 @@ function PracticeTactics() {
     if (!puzzle || attempt.current.rated) return;
     attempt.current.rated = true;
     sessionSeen.current.add(puzzle.id);
-    const res = recordPuzzle(puzzleRatingOf(puzzle), success);
+    const res = recordResult(puzzle, success);
     setDelta(meter === 'elo' ? res.eloDelta : res.glickoDelta);
   };
 
@@ -188,16 +207,18 @@ function PracticeTactics() {
   const onMove = (from: string, to: string) => {
     if (!solverToMove || !puzzle) return;
     const key = puzzle.solution[0]!;
-    if (key.slice(0, 2) === from && key.slice(2, 4) === to) {
-      const mv = game.current.move({ from, to, promotion: key[4] });
+    // Exact match, or any alternate immediate mate when the key move mates.
+    const check = checkKeyMove(game.current.fen(), key, from, to);
+    if (check.ok) {
+      const mv = game.current.move({ from, to, promotion: check.altMate ? check.promotion : key[4] });
       playMoveSound(mv.san);
       sync();
       setPhase('solved');
       setSessionSolved((n) => n + 1);
-      setFeedback({ kind: 'ok', text: `✓ ${mv.san} — ${puzzle.theme}!` });
+      setFeedback({ kind: 'ok', text: check.altMate ? `✓ ${mv.san} — checkmate!` : `✓ ${mv.san} — ${puzzle.theme}!` });
       grade('tactics', puzzle.id, attempt.current.failed ? 'hard' : 'good');
       rateOnce(!attempt.current.failed && !attempt.current.revealed);
-      demoRest(1);
+      if (!check.altMate) demoRest(1);
     } else {
       attempt.current.failed = true;
       rateOnce(false);
@@ -231,6 +252,20 @@ function PracticeTactics() {
   };
 
   const next = () => {
+    // Adaptive serving for the bundled set goes through the puzzle service:
+    // rating-windowed pick over embedded core + lazily fetched bands.
+    if (ratedOrder && source === 'builtin') {
+      const p = getNextPuzzle({
+        rating: decisionRating,
+        themes: themeFilter === 'all' ? undefined : [themeFilter],
+        excludeIds: sessionSeen.current,
+        difficulty: diffFilter === 'all' ? undefined : diffFilter,
+      });
+      if (p) {
+        loadDirect(p, 'Rated pick');
+        return;
+      }
+    }
     if (queue.length === 0) return;
     if (ratedOrder) {
       // Pick the unseen puzzle closest to your rating; once all are seen, reset
@@ -261,12 +296,30 @@ function PracticeTactics() {
 
   const reviewDue = () => {
     const due = dueIds('tactics', queue.map((p) => p.id));
-    if (due.length === 0) {
-      setFeedback({ kind: 'info', text: 'No reviews due right now — try new puzzles!' });
-      return;
+    if (due.length) {
+      const i = queue.findIndex((p) => p.id === due[0]);
+      if (i >= 0) {
+        load(i);
+        return;
+      }
     }
-    const i = queue.findIndex((p) => p.id === due[0]);
-    if (i >= 0) load(i);
+    // Cards from rated picks / the daily puzzle can reference band-served
+    // puzzles that never appear in the sequential queue — review those too.
+    if (source !== 'mine') {
+      const loaded = getLoadedPuzzles();
+      const dueLoaded = dueIds('tactics', loaded.map((p) => p.id));
+      const p = dueLoaded.length ? loaded.find((x) => x.id === dueLoaded[0]) : undefined;
+      if (p) {
+        loadDirect(p, 'Review');
+        return;
+      }
+    }
+    setFeedback({ kind: 'info', text: 'No reviews due right now — try new puzzles!' });
+  };
+
+  // Same puzzle for everyone on a given date, and it works offline.
+  const daily = () => {
+    loadDirect(getDailyPuzzle(new Date().toISOString().slice(0, 10)), 'Daily puzzle');
   };
 
   const SOURCES: { id: Source; label: string }[] = [
@@ -275,24 +328,29 @@ function PracticeTactics() {
     { id: 'all', label: 'All' },
   ];
 
+  const sidebar = (
+    <Sidebar
+      source={source}
+      setSource={setSource}
+      sources={SOURCES}
+      rating={rating}
+      meter={meter}
+      diffFilter={diffFilter}
+      setDiffFilter={setDiffFilter}
+      themeFilter={themeFilter}
+      setThemeFilter={setThemeFilter}
+      themeCounts={themeCounts}
+      ratedOrder={ratedOrder}
+      setRatedOrder={setRatedOrder}
+      reviewDue={reviewDue}
+      onDaily={daily}
+    />
+  );
+
   if (!puzzle) {
     return (
       <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
-        <Sidebar
-          source={source}
-          setSource={setSource}
-          sources={SOURCES}
-          rating={rating}
-          meter={meter}
-          diffFilter={diffFilter}
-          setDiffFilter={setDiffFilter}
-          themeFilter={themeFilter}
-          setThemeFilter={setThemeFilter}
-          themeCounts={themeCounts}
-          ratedOrder={ratedOrder}
-          setRatedOrder={setRatedOrder}
-          reviewDue={reviewDue}
-        />
+        {sidebar}
         <div className="order-1 rounded-lg bg-panel p-4 text-sm text-neutral-400 lg:order-2">
           {source === 'mine' ? (
             <>
@@ -316,21 +374,7 @@ function PracticeTactics() {
 
   return (
     <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
-      <Sidebar
-        source={source}
-        setSource={setSource}
-        sources={SOURCES}
-        rating={rating}
-        meter={meter}
-        diffFilter={diffFilter}
-        setDiffFilter={setDiffFilter}
-        themeFilter={themeFilter}
-        setThemeFilter={setThemeFilter}
-        themeCounts={themeCounts}
-        ratedOrder={ratedOrder}
-        setRatedOrder={setRatedOrder}
-        reviewDue={reviewDue}
-      />
+      {sidebar}
 
       <div className="order-1 space-y-3 lg:order-2">
         <div className="flex min-h-7 flex-wrap items-center gap-2 text-sm">
@@ -373,7 +417,7 @@ function PracticeTactics() {
         <div className="rounded-lg bg-panel p-3">
           <div className="mb-2 flex items-center justify-between text-sm">
             <span className="text-neutral-300">
-              Puzzle {pos + 1}/{queue.length}
+              {override ? override.label : `Puzzle ${pos + 1}/${queue.length}`}
             </span>
             <span className="text-xs text-neutral-400">{sessionSolved} solved this session</span>
           </div>
@@ -432,14 +476,15 @@ function Sidebar(props: {
   meter: 'elo' | 'glicko';
   diffFilter: DiffFilter;
   setDiffFilter: (d: DiffFilter) => void;
-  themeFilter: 'all' | Motif;
-  setThemeFilter: (m: 'all' | Motif) => void;
-  themeCounts: Map<Motif, number>;
+  themeFilter: 'all' | string;
+  setThemeFilter: (t: 'all' | string) => void;
+  themeCounts: Map<string, number>;
   ratedOrder: boolean;
   setRatedOrder: (b: boolean) => void;
   reviewDue: () => void;
+  onDaily: () => void;
 }) {
-  const themes = MOTIF_ORDER.filter((m) => (props.themeCounts.get(m) ?? 0) > 0);
+  const themes = FILTER_THEMES.filter((t) => (props.themeCounts.get(t.tag) ?? 0) > 0);
   return (
     <div className="order-2 space-y-3 lg:order-1">
       <div className="rounded-lg bg-panel p-3">
@@ -500,16 +545,16 @@ function Sidebar(props: {
             >
               All
             </button>
-            {themes.map((m) => (
+            {themes.map((t) => (
               <button
-                key={m}
-                onClick={() => props.setThemeFilter(m)}
-                title={`${props.themeCounts.get(m)} puzzles`}
+                key={t.tag}
+                onClick={() => props.setThemeFilter(t.tag)}
+                title={`${props.themeCounts.get(t.tag)} puzzles`}
                 className={`rounded px-2 py-1 text-xs ${
-                  props.themeFilter === m ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                  props.themeFilter === t.tag ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                 }`}
               >
-                {MOTIF_LABELS[m]}
+                {t.label}
               </button>
             ))}
             {themes.length === 0 && <span className="px-1 py-1 text-xs text-neutral-400">no themes here</span>}
@@ -526,6 +571,13 @@ function Sidebar(props: {
           className="mt-3 w-full rounded bg-emerald-700 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800"
         >
           Review due
+        </button>
+
+        <button
+          onClick={props.onDaily}
+          className="mt-2 w-full rounded bg-neutral-700 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600"
+        >
+          Daily puzzle
         </button>
       </div>
     </div>

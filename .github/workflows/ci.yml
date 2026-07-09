@@ -47,6 +47,10 @@ jobs:
       - name: Validate trainer data
         run: pnpm validate:trainers
 
+      # Replay every bundled tactics puzzle (embedded core + band files).
+      - name: Validate puzzle data
+        run: pnpm validate:puzzles
+
       # Web unit tests: lesson step engine + machine-validation of the lesson
       # content (legal FENs, solvable exercises, playable scripted lines).
       - name: Unit tests (web)

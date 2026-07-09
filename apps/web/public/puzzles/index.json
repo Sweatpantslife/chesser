@@ -1,0 +1,68 @@
+{
+  "v": 1,
+  "source": "Lichess puzzle database (CC0) — https://database.lichess.org/#puzzles",
+  "format": "rows: [id, fen, moves, rating, themes] — see scripts/import-lichess-puzzles.mjs",
+  "total": 50000,
+  "bands": [
+    {
+      "file": "band-0600.json",
+      "min": 600,
+      "max": 800,
+      "count": 5000
+    },
+    {
+      "file": "band-0800.json",
+      "min": 800,
+      "max": 1000,
+      "count": 5000
+    },
+    {
+      "file": "band-1000.json",
+      "min": 1000,
+      "max": 1200,
+      "count": 5000
+    },
+    {
+      "file": "band-1200.json",
+      "min": 1200,
+      "max": 1400,
+      "count": 5000
+    },
+    {
+      "file": "band-1400.json",
+      "min": 1400,
+      "max": 1600,
+      "count": 5000
+    },
+    {
+      "file": "band-1600.json",
+      "min": 1600,
+      "max": 1800,
+      "count": 5000
+    },
+    {
+      "file": "band-1800.json",
+      "min": 1800,
+      "max": 2000,
+      "count": 5000
+    },
+    {
+      "file": "band-2000.json",
+      "min": 2000,
+      "max": 2200,
+      "count": 5000
+    },
+    {
+      "file": "band-2200.json",
+      "min": 2200,
+      "max": 2400,
+      "count": 5000
+    },
+    {
+      "file": "band-2400.json",
+      "min": 2400,
+      "max": 2600,
+      "count": 5000
+    }
+  ]
+}

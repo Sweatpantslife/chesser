@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
 import { Board } from '../board/Board';
-import { PUZZLES, type Puzzle } from '../trainers/tactics';
+import { type Puzzle } from '../trainers/tactics';
+import { checkKeyMove, getLoadedPuzzles } from '../lib/puzzleService';
 import { useRepertoire } from '../store/repertoire';
 import { playMoveSound } from '../lib/sound';
 import { recordRush } from '../lib/gamify';
@@ -13,11 +14,20 @@ const MAX_STRIKES = 3;
 
 type Phase = 'idle' | 'running' | 'over';
 
+function shuffleInPlace<T>(arr: T[]): void {
+  // Fisher-Yates shuffle (unbiased, unlike sort with a random comparator)
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j]!, arr[i]!];
+  }
+}
+
 function shuffleRamp(): Puzzle[] {
   // ramp difficulty: easy → hard, shuffled within each band for variety
+  // (pool = embedded core + any rating bands the service has already fetched)
   const byBand: { easy: Puzzle[]; medium: Puzzle[]; hard: Puzzle[] } = { easy: [], medium: [], hard: [] };
-  for (const p of PUZZLES) byBand[p.difficulty].push(p);
-  for (const band of [byBand.easy, byBand.medium, byBand.hard]) band.sort(() => Math.random() - 0.5);
+  for (const p of getLoadedPuzzles()) byBand[p.difficulty].push(p);
+  for (const band of [byBand.easy, byBand.medium, byBand.hard]) shuffleInPlace(band);
   return [...byBand.easy, ...byBand.medium, ...byBand.hard];
 }
 
@@ -102,8 +112,10 @@ export function RushMode() {
     if (!solverToMove || !puzzle) return;
     busy.current = true;
     const key = puzzle.solution[0]!;
-    if (key.slice(0, 2) === from && key.slice(2, 4) === to) {
-      const mv = game.current.move({ from, to, promotion: key[4] });
+    // Shared check: exact key move, or an alternate immediate mate.
+    const check = checkKeyMove(game.current.fen(), key, from, to);
+    if (check.ok) {
+      const mv = game.current.move({ from, to, promotion: check.altMate ? check.promotion : key[4] });
       playMoveSound(mv.san);
       const hist = game.current.history({ verbose: true });
       const last = hist[hist.length - 1];
