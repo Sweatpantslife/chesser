@@ -6,6 +6,7 @@ import { InstallButton } from './components/InstallButton';
 import { SettingsDialog } from './components/SettingsDialog';
 import { PlayPage } from './pages/PlayPage';
 import { HumansPage } from './humans/HumansPage';
+import { LearnPage } from './pages/LearnPage';
 import { OpeningsPage } from './pages/OpeningsPage';
 import { TacticsPage } from './pages/TacticsPage';
 import { EndgamePage } from './pages/EndgamePage';
@@ -18,10 +19,11 @@ import { GamifyToasts } from './components/GamifyToasts';
 import { initGamify } from './lib/gamify';
 import type { DeckTarget } from './lib/decks';
 
-type View = 'play' | 'friends' | 'openings' | 'tactics' | 'endgame' | 'train' | 'coordinates' | 'stats' | 'profile';
+type View = 'play' | 'learn' | 'friends' | 'openings' | 'tactics' | 'endgame' | 'train' | 'coordinates' | 'stats' | 'profile';
 
 const TABS: { id: View; label: string; hint: string }[] = [
   { id: 'play', label: 'Play', hint: 'vs bots & analysis' },
+  { id: 'learn', label: 'Learn', hint: 'rules & guided lessons' },
   { id: 'friends', label: 'Friends', hint: 'pass & play · online friend games' },
   { id: 'openings', label: 'Openings', hint: 'repertoire drills' },
   { id: 'tactics', label: 'Middlegame', hint: 'tactics puzzles' },
@@ -128,6 +130,7 @@ export default function App() {
       <Header view={view} setView={setView} />
       <main className="flex-1 p-4">
         {view === 'play' && <PlayPage />}
+        {view === 'learn' && <LearnPage />}
         {/* Kept mounted so a live human-vs-human game survives tab switches. */}
         <div className={view === 'friends' ? undefined : 'hidden'}>
           <HumansPage />

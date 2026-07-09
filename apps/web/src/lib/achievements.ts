@@ -7,8 +7,9 @@
  * and calls `evaluateAchievements` after every relevant event.
  */
 import type { RatingCategory } from '../store/ratings';
+import { ALL_LESSONS } from '../learn';
 
-export type AchievementCategory = 'tactics' | 'play' | 'ladder' | 'streak' | 'rating' | 'rush' | 'dedication';
+export type AchievementCategory = 'learn' | 'tactics' | 'play' | 'ladder' | 'streak' | 'rating' | 'rush' | 'dedication';
 
 export interface AchievementCtx {
   level: number;
@@ -25,6 +26,7 @@ export interface AchievementCtx {
   rushBest: number;
   reviews: number; // total SRS reviews across decks
   activeDays: number;
+  lessonsCompleted: number; // distinct lessons finished on the Learn tab
 }
 
 export interface Achievement {
@@ -47,6 +49,15 @@ function tiers(
 }
 
 export const ACHIEVEMENTS: Achievement[] = [
+  // — Learning —
+  ...tiers(
+    { category: 'learn', icon: '🎓', desc: 'Complete interactive lessons.', value: (c) => c.lessonsCompleted },
+    [
+      { suffix: 'lesson-1', name: 'First Steps', target: 1, xp: 20 },
+      { suffix: 'lesson-10', name: 'Eager Student', target: 10, xp: 60 },
+      { suffix: 'lesson-all', name: 'Graduate', target: ALL_LESSONS.length, xp: 150 },
+    ],
+  ),
   // — Tactics —
   ...tiers(
     { category: 'tactics', icon: '🎯', desc: 'Solve rated tactics puzzles.', value: (c) => c.puzzlesSolved },
@@ -183,6 +194,7 @@ export const ACHIEVEMENTS: Achievement[] = [
 export const ACHIEVEMENTS_BY_ID: Record<string, Achievement> = Object.fromEntries(ACHIEVEMENTS.map((a) => [a.id, a]));
 
 export const ACHIEVEMENT_CATEGORY_LABELS: Record<AchievementCategory, string> = {
+  learn: 'Learning',
   tactics: 'Tactics',
   play: 'Playing',
   ladder: 'The Ladder',

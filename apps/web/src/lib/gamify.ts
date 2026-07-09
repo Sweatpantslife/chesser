@@ -15,6 +15,7 @@ import { useAchievements } from '../store/achievements';
 import { useProgress } from '../store/progress';
 import { useRepertoire } from '../store/repertoire';
 import { useLadder } from '../store/ladder';
+import { useLessons } from '../store/lessons';
 import { ROSTER_BY_ID } from '../data/botRoster';
 import { ACHIEVEMENTS_BY_ID, evaluateAchievements, type AchievementCtx } from './achievements';
 
@@ -93,6 +94,7 @@ export function buildAchievementCtx(): AchievementCtx {
     rushBest: useRepertoire.getState().rushHighScore,
     reviews,
     activeDays: activeDays.size,
+    lessonsCompleted: Object.keys(useLessons.getState().completed).length,
   };
 }
 
@@ -152,6 +154,12 @@ export function recordGameResult(opts: { opponentRating: number; outcome: GameOu
   applyAward(xp);
   runAchievements();
   return { category, ratingBefore: Math.round(before), ratingAfter: Math.round(rec.elo), ratingDelta: rec.eloDelta };
+}
+
+/** A lesson was finished. First completions pay full XP; replays a token amount. */
+export function recordLesson(opts: { firstTime: boolean; stars: number }): void {
+  applyAward(opts.firstTime ? 15 + opts.stars * 5 : 5);
+  runAchievements();
 }
 
 /** A puzzle-rush run ended with `score` solved. */
