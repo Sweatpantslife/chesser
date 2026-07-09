@@ -17,11 +17,13 @@ export async function fetchTablebase(fen: string): Promise<TablebaseResult> {
 }
 
 export function categoryLabel(cat: TablebaseCategory | undefined, dtm: number | null | undefined): string {
+  // dtm is a distance in plies (half-moves); "mate in N" is counted in moves.
+  const mateIn = (d: number) => Math.ceil(Math.abs(d) / 2);
   switch (cat) {
     case 'win':
-      return dtm ? `Tablebase: win, mate in ${Math.abs(dtm)}` : 'Tablebase: winning';
+      return dtm ? `Tablebase: win, mate in ${mateIn(dtm)}` : 'Tablebase: winning';
     case 'loss':
-      return dtm ? `Tablebase: loss, mated in ${Math.abs(dtm)}` : 'Tablebase: losing';
+      return dtm ? `Tablebase: loss, mated in ${mateIn(dtm)}` : 'Tablebase: losing';
     case 'draw':
       return 'Tablebase: drawn';
     case 'cursed-win':
