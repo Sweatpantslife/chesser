@@ -213,7 +213,7 @@ export function LocalGame({ config, onExit }: { config: LocalGameConfig; onExit:
           />
         </div>
 
-        <div className="rounded-lg bg-panel p-3">
+        <div className="rounded-2xl bg-panel shadow-soft p-3">
           {!over ? (
             <div className="space-y-2">
               <div className="flex flex-wrap gap-1.5">

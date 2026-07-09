@@ -94,7 +94,7 @@ export function SaveLineDialog({ onClose }: { onClose: () => void }) {
                     onClick={() => setSide(c)}
                     aria-pressed={side === c}
                     className={`flex-1 rounded px-2 py-1 text-sm capitalize ${
-                      side === c ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
+                      side === c ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                     }`}
                   >
                     {c}

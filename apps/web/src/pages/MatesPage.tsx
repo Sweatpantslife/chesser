@@ -151,7 +151,7 @@ export function MatesPage() {
     <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)_300px]">
       {/* pattern library */}
       <div className="order-2 space-y-3 lg:order-1">
-        <div className="rounded-lg bg-panel p-3">
+        <div className="rounded-2xl bg-panel shadow-soft p-3">
           <h3 className="mb-1 text-sm font-semibold text-ink">Checkmate patterns</h3>
           <p className="mb-2 text-xs text-neutral-400">Learn the classic mating nets, then drill them to recall.</p>
           <ReviewStats deck="mates" ids={MATE_DRILL_IDS} />
@@ -163,7 +163,7 @@ export function MatesPage() {
           </button>
         </div>
 
-        <div className="scroll-thin max-h-[60vh] space-y-2 overflow-y-auto rounded-lg bg-panel p-3">
+        <div className="scroll-thin max-h-[60vh] space-y-2 overflow-y-auto rounded-2xl bg-panel shadow-soft p-3">
           {MATE_PATTERNS.map((p: MatePattern) => (
             <div key={p.id}>
               <div className="mb-1 flex items-baseline gap-1 text-xs uppercase tracking-wide text-neutral-400">
@@ -180,7 +180,7 @@ export function MatesPage() {
                       key={d.id}
                       onClick={() => load(gi)}
                       className={`flex items-center gap-1 rounded px-2 py-1 text-xs ${
-                        active ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
+                        active ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                       }`}
                     >
                       <span>#{i + 1}</span>
@@ -243,7 +243,7 @@ export function MatesPage() {
 
       {/* info */}
       <div className="order-3 space-y-3">
-        <div className="rounded-lg bg-panel p-3">
+        <div className="rounded-2xl bg-panel shadow-soft p-3">
           <div className="mb-2 flex items-center justify-between text-sm">
             <span className="text-neutral-300">
               {pattern.name} #{drillNoInPattern}

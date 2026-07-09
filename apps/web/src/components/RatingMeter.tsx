@@ -32,18 +32,18 @@ export function RatingMeter({ category }: { category: RatingCategory }) {
       : `${c.won}W ${c.drawn}D ${c.lost}L`;
 
   return (
-    <div className="rounded-lg bg-panel p-4">
+    <div className="card-lift rounded-2xl bg-panel p-4 shadow-soft">
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-lg">{ICONS[category]}</span>
-          <span className="text-sm font-semibold text-ink">{CATEGORY_LABELS[category]}</span>
+          <span className="font-display text-sm font-semibold text-ink">{CATEGORY_LABELS[category]}</span>
         </div>
         <span className="text-xs uppercase tracking-wide text-neutral-400">peak {peak}</span>
       </div>
 
       <div className="flex items-end justify-between">
         <div>
-          <div className="font-mono text-3xl font-bold text-emerald-300">{primary}</div>
+          <div className="font-display text-3xl font-bold text-brand-300">{primary}</div>
           <div className="mt-0.5 text-xs text-neutral-400">
             {secondaryLabel} {secondary}
             {meter === 'glicko' ? '' : ` ± ${band}`}

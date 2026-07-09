@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useGame } from '../store/game';
 import { BotAvatar } from './BotAvatar';
 
-const btn = 'rounded px-3 py-1.5 text-sm font-medium disabled:opacity-50';
+const btn = 'btn-press rounded-full px-3 py-1.5 text-sm font-semibold disabled:opacity-50';
 const neutralBtn = `${btn} bg-neutral-700 text-neutral-200 hover:bg-neutral-600`;
 
 /**
@@ -46,7 +46,7 @@ export function GameActions() {
   const beatLadderBot = youWon && !!opponent.id;
 
   return (
-    <div className="rounded-lg bg-panel p-3">
+    <div className="rounded-2xl bg-panel p-3 shadow-soft">
       {/* opponent chip */}
       <div className="mb-3 flex items-center gap-2.5">
         <BotAvatar name={opponent.name} accent={opponent.accent} motif={opponent.motif} size={40} />
@@ -102,11 +102,11 @@ export function GameActions() {
       ) : (
         <div className="space-y-2">
           <div
-            className={`rounded-md px-3 py-2 text-sm font-semibold ${
+            className={`pop-in rounded-xl px-3 py-2 text-sm font-semibold ${
               youWon ? 'bg-emerald-900/50 text-emerald-300' : youLost ? 'bg-rose-900/50 text-rose-300' : 'bg-neutral-700/60 text-neutral-200'
             }`}
           >
-            {youWon ? 'You won! 🎉' : youLost ? 'You lost.' : drew ? 'Draw.' : 'Game over.'}
+            {youWon ? 'You won! 🎉' : youLost ? 'You lost — rematch?' : drew ? 'Draw.' : 'Game over.'}
             {endReason && <span className="ml-1 font-normal opacity-80">· {endReason}</span>}
           </div>
           {beatLadderBot && (
@@ -114,7 +114,7 @@ export function GameActions() {
           )}
           <div className="flex flex-wrap gap-1.5">
             {hasSummary && (
-              <button className={`${btn} bg-indigo-600 text-white hover:bg-indigo-700`} onClick={() => void analyzeFinishedGame()}>
+              <button className={`${btn} bg-brand-600 text-white hover:bg-brand-700`} onClick={() => void analyzeFinishedGame()}>
                 🔍 Analyze game
               </button>
             )}

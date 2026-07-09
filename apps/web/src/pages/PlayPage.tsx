@@ -18,6 +18,7 @@ import { engine } from '../lib/engine';
 import { CLASSIFICATION_META } from '../lib/coach';
 import { useGame, type Color } from '../store/game';
 import { useSettings } from '../store/settings';
+import { ThinkingDots } from '../components/icons';
 
 // Brushes for the top engine lines, best → worst.
 const ARROW_BRUSHES = ['green', 'blue', 'yellow', 'red'];
@@ -39,8 +40,13 @@ function StatusLine() {
   const isGameOver = useGame((s) => s.isGameOver);
   return (
     <div className="flex h-7 items-center gap-2 text-sm">
-      <span className={isGameOver ? 'font-semibold text-amber-300' : 'text-neutral-300'}>{status}</span>
-      {thinking && <span className="animate-pulse text-emerald-400">· bot is thinking…</span>}
+      <span className={isGameOver ? 'font-display font-semibold text-gold-400' : 'text-neutral-300'}>{status}</span>
+      {thinking && (
+        <span className="flex items-center gap-1.5 text-brand-300">
+          · thinking
+          <ThinkingDots />
+        </span>
+      )}
       {mode === 'analysis' && !isGameOver && <span className="text-neutral-400">· analysis board</span>}
     </div>
   );

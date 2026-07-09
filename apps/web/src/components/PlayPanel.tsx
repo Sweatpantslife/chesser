@@ -12,8 +12,8 @@ export function PlayPanel() {
     <button
       key={id}
       onClick={() => setTab(id)}
-      className={`flex-1 rounded px-3 py-1.5 text-sm font-medium ${
-        tab === id ? 'bg-emerald-700 text-white' : 'text-neutral-300 hover:bg-neutral-800'
+      className={`btn-press flex-1 rounded-full px-3 py-1.5 text-sm font-semibold ${
+        tab === id ? 'bg-brand-600 text-white shadow-glow' : 'text-neutral-300 hover:bg-neutral-800'
       }`}
     >
       {label}
@@ -22,7 +22,7 @@ export function PlayPanel() {
 
   return (
     <div className="space-y-3">
-      <div className="flex gap-1 rounded-lg bg-panel p-1">
+      <div className="flex gap-1 rounded-full bg-panel p-1 shadow-soft">
         {tabBtn('ladder', '🪜 Ladder')}
         {tabBtn('custom', '⚙ Custom')}
       </div>

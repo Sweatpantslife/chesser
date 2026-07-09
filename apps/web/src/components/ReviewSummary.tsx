@@ -9,7 +9,7 @@ export function ReviewSummary({ goto }: { goto: (target: DeckTarget) => void }) 
   const { decks, totalDue, totalSeen, totalCards } = useReviewSummary();
 
   return (
-    <div className="rounded-lg bg-panel p-4">
+    <div className="rounded-2xl bg-panel shadow-soft p-4">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-ink">Review queue</h3>
         <span className="text-xs text-neutral-400">

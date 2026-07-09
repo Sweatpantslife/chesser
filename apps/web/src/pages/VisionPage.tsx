@@ -28,7 +28,7 @@ export function VisionPage() {
             key={m}
             onClick={() => setSub(m)}
             className={`rounded px-3 py-1.5 text-sm ${
-              sub === m ? 'bg-emerald-700 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+              sub === m ? 'bg-brand-600 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
             }`}
           >
             {m === 'visualize' ? 'Visualize' : 'Blindfold solve'}
@@ -95,7 +95,7 @@ function Visualize() {
       </div>
 
       <div className="space-y-3">
-        <div className="rounded-lg bg-panel p-3">
+        <div className="rounded-2xl bg-panel shadow-soft p-3">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-ink">Visualize</h3>
             <span className="text-xs text-neutral-400">
@@ -146,7 +146,7 @@ function Visualize() {
                   const isPicked = i === picked;
                   let cls = 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600';
                   if (stage === 'answered') {
-                    if (isAnswer) cls = 'bg-emerald-700 text-white';
+                    if (isAnswer) cls = 'bg-brand-600 text-white';
                     else if (isPicked) cls = 'bg-rose-700 text-white';
                     else cls = 'bg-neutral-800 text-neutral-400';
                   }
@@ -249,7 +249,7 @@ function Blindfold() {
   };
 
   if (!puzzle) {
-    return <div className="mx-auto max-w-md rounded-lg bg-panel p-4 text-sm text-neutral-400">No easy puzzles available.</div>;
+    return <div className="mx-auto max-w-md rounded-2xl bg-panel shadow-soft p-4 text-sm text-neutral-400">No easy puzzles available.</div>;
   }
 
   const onPick = (sq: string) => {
@@ -315,7 +315,7 @@ function Blindfold() {
       </div>
 
       <div className="space-y-3">
-        <div className="rounded-lg bg-panel p-3">
+        <div className="rounded-2xl bg-panel shadow-soft p-3">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="text-sm font-semibold text-ink">Blindfold solve</h3>
             <span className="text-xs text-neutral-400">

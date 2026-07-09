@@ -159,7 +159,7 @@ export function OpeningsPage() {
     <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)_300px]">
       {/* repertoire + lines */}
       <div className="order-2 space-y-3 lg:order-1">
-        <div className="rounded-lg bg-panel p-3">
+        <div className="rounded-2xl bg-panel shadow-soft p-3">
           <h3 className="mb-2 text-sm font-semibold text-ink">Repertoire</h3>
           <select
             value={repId}
@@ -241,7 +241,7 @@ export function OpeningsPage() {
           </button>
         </div>
 
-        <div className="scroll-thin max-h-[55vh] overflow-y-auto rounded-lg bg-panel p-3">
+        <div className="scroll-thin max-h-[55vh] overflow-y-auto rounded-2xl bg-panel shadow-soft p-3">
           {lines.length === 0 ? (
             <p className="text-xs text-neutral-400">
               No lines yet. Build one on the <b className="text-neutral-300">Play</b> board, then “★ Save line”.
@@ -262,7 +262,7 @@ export function OpeningsPage() {
                           <button
                             onClick={() => start(l)}
                             className={`flex min-w-0 flex-1 items-center justify-between gap-2 rounded px-2 py-1.5 text-left text-xs ${
-                              selected ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
+                              selected ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                             }`}
                           >
                             <span className="truncate">{l.name}</span>
@@ -350,7 +350,7 @@ export function OpeningsPage() {
 
       {/* info */}
       <div className="order-3 space-y-3">
-        <div className="rounded-lg bg-panel p-3">
+        <div className="rounded-2xl bg-panel shadow-soft p-3">
           <div className="mb-2 flex items-center justify-between text-sm">
             <span className="font-semibold text-ink">Move {moveNo}</span>
             <span className="text-xs text-neutral-400">
@@ -368,7 +368,7 @@ export function OpeningsPage() {
           )}
           {line?.idea && <p className="text-xs leading-snug text-neutral-400">{line.idea}</p>}
         </div>
-        <div className="rounded-lg bg-panelmute p-2">
+        <div className="rounded-2xl bg-panelmute p-2">
           <div className="mb-1 px-1 text-xs uppercase tracking-wide text-neutral-400">Moves</div>
           <div className="px-1 font-mono text-sm text-neutral-200">
             {playedSan.length === 0 ? (

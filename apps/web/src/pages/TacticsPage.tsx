@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
 import { Board } from '../board/Board';
+import { EmptyPuzzleArt } from '../components/icons';
 import { ReviewStats } from '../components/ReviewStats';
 import { PUZZLES, type Difficulty, type Puzzle } from '../trainers/tactics';
 import { useProgress } from '../store/progress';
@@ -52,7 +53,7 @@ export function TacticsPage() {
             key={m}
             onClick={() => setMode(m)}
             className={`rounded px-3 py-1.5 text-sm ${
-              mode === m ? 'bg-emerald-700 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+              mode === m ? 'bg-brand-600 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
             }`}
           >
             {labels[m]}
@@ -351,16 +352,18 @@ function PracticeTactics() {
     return (
       <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
         {sidebar}
-        <div className="order-1 rounded-lg bg-panel p-4 text-sm text-neutral-400 lg:order-2">
+        <div className="order-1 flex flex-col items-center gap-3 rounded-2xl bg-panel shadow-soft p-6 text-center text-sm text-neutral-400 lg:order-2">
+          <EmptyPuzzleArt width={150} height={112} />
           {source === 'mine' ? (
-            <>
-              No puzzles from your games yet. Open a game on the <b>Play</b> tab, then use{' '}
-              <b>“Make puzzles from this game”</b> in the Game-review panel.
-            </>
+            <div>
+              <div className="mb-1 font-display text-base font-semibold text-ink">No puzzles from your games yet</div>
+              Open a game on the <b>Play</b> tab, then use <b>“Make puzzles from this game”</b> in the Game-review panel.
+            </div>
           ) : (
-            <>
+            <div>
+              <div className="mb-1 font-display text-base font-semibold text-ink">Nothing matches this filter</div>
               No puzzles for this filter. Generate more with <code className="text-neutral-200">pnpm gen:tactics</code>.
-            </>
+            </div>
           )}
         </div>
         <div className="order-3" />
@@ -414,7 +417,7 @@ function PracticeTactics() {
       </div>
 
       <div className="order-3 space-y-3">
-        <div className="rounded-lg bg-panel p-3">
+        <div className="rounded-2xl bg-panel shadow-soft p-3">
           <div className="mb-2 flex items-center justify-between text-sm">
             <span className="text-neutral-300">
               {override ? override.label : `Puzzle ${pos + 1}/${queue.length}`}
@@ -487,8 +490,8 @@ function Sidebar(props: {
   const themes = FILTER_THEMES.filter((t) => (props.themeCounts.get(t.tag) ?? 0) > 0);
   return (
     <div className="order-2 space-y-3 lg:order-1">
-      <div className="rounded-lg bg-panel p-3">
-        <h3 className="mb-1 text-sm font-semibold text-ink">Tactics</h3>
+      <div className="rounded-2xl bg-panel shadow-soft p-3">
+        <h3 className="mb-1 font-display text-sm font-semibold text-ink">Tactics</h3>
         <p className="mb-2 text-xs text-neutral-400">Find the one winning move — every puzzle is engine-verified.</p>
 
         <div className="mb-3 flex items-center justify-between rounded bg-panelmute px-2.5 py-1.5">
@@ -508,7 +511,7 @@ function Sidebar(props: {
                 key={s.id}
                 onClick={() => props.setSource(s.id)}
                 className={`flex-1 rounded px-1.5 py-1 text-xs ${
-                  props.source === s.id ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                  props.source === s.id ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                 }`}
               >
                 {s.label}
@@ -525,7 +528,7 @@ function Sidebar(props: {
                 key={f}
                 onClick={() => props.setDiffFilter(f)}
                 className={`flex-1 rounded px-1.5 py-1 text-xs capitalize ${
-                  props.diffFilter === f ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                  props.diffFilter === f ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                 }`}
               >
                 {f}
@@ -540,7 +543,7 @@ function Sidebar(props: {
             <button
               onClick={() => props.setThemeFilter('all')}
               className={`rounded px-2 py-1 text-xs ${
-                props.themeFilter === 'all' ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                props.themeFilter === 'all' ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
               }`}
             >
               All
@@ -551,7 +554,7 @@ function Sidebar(props: {
                 onClick={() => props.setThemeFilter(t.tag)}
                 title={`${props.themeCounts.get(t.tag)} puzzles`}
                 className={`rounded px-2 py-1 text-xs ${
-                  props.themeFilter === t.tag ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                  props.themeFilter === t.tag ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                 }`}
               >
                 {t.label}

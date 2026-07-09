@@ -143,7 +143,7 @@ export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: (
 
   if (fatal) {
     return (
-      <div className="mx-auto max-w-md space-y-3 rounded-lg bg-panel p-4">
+      <div className="mx-auto max-w-md space-y-3 rounded-2xl bg-panel shadow-soft p-4">
         <p className="text-sm text-rose-300" data-testid="online-error">
           {fatal}
         </p>
@@ -156,8 +156,8 @@ export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: (
 
   if (!state || !seat) {
     return (
-      <div className="mx-auto max-w-md space-y-3 rounded-lg bg-panel p-4">
-        <p className="animate-pulse text-sm text-neutral-400">{connected ? 'Setting up the game…' : 'Connecting…'}</p>
+      <div className="mx-auto max-w-md space-y-3 rounded-2xl bg-panel shadow-soft p-4">
+        <p className="animate-pulse-soft text-sm text-neutral-400">{connected ? 'Setting up the game…' : 'Connecting…'}</p>
         {error && <p className="text-sm text-rose-300">{error}</p>}
         <button className={neutralBtn} onClick={leave}>
           ← Back
@@ -186,11 +186,11 @@ export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: (
           <span className="text-neutral-400">
             · game <span className="font-mono text-neutral-300" data-testid="game-code">{state.code}</span> · unrated
           </span>
-          {!connected && <span className="animate-pulse text-rose-400">· reconnecting…</span>}
+          {!connected && <span className="animate-pulse-soft text-rose-400">· reconnecting…</span>}
         </div>
 
         {state.status === 'waiting' && (
-          <div className="space-y-2 rounded-lg bg-panel p-3" data-testid="invite-box">
+          <div className="space-y-2 rounded-2xl bg-panel shadow-soft p-3" data-testid="invite-box">
             <p className="text-sm text-neutral-300">Send this link to your friend — the game starts when they open it:</p>
             <div className="flex flex-wrap items-center gap-2">
               <code className="max-w-full overflow-x-auto rounded bg-panelmute px-2 py-1 text-xs text-emerald-300" data-testid="invite-link">
@@ -273,7 +273,7 @@ export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: (
           </p>
         )}
 
-        <div className="rounded-lg bg-panel p-3">
+        <div className="rounded-2xl bg-panel shadow-soft p-3">
           {!over ? (
             <div className="space-y-2">
               <div className="flex flex-wrap gap-1.5">

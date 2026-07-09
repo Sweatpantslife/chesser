@@ -7,6 +7,8 @@ const THEME_COLORS: Record<BoardTheme, { light: string; dark: string }> = {
   blue: { light: '#e3e7ee', dark: '#8ca2ad' },
   green: { light: '#ebecd0', dark: '#86a666' },
   gray: { light: '#d9d9d9', dark: '#9b9b9b' },
+  candy: { light: '#f2ecfb', dark: '#bda2e8' },
+  mint: { light: '#eaf6ee', dark: '#82c9a0' },
 };
 
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];

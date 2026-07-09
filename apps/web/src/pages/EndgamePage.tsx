@@ -217,7 +217,7 @@ export function EndgamePage() {
   return (
     <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
       <div className="order-2 space-y-3 lg:order-1">
-        <div className="rounded-lg bg-panel p-3">
+        <div className="rounded-2xl bg-panel shadow-soft p-3">
           <h3 className="mb-2 text-sm font-semibold text-ink">Endgame studies</h3>
           <div className="scroll-thin max-h-[60vh] space-y-1 overflow-y-auto">
             {ENDGAMES.map((s) => (
@@ -225,7 +225,7 @@ export function EndgamePage() {
                 key={s.id}
                 onClick={() => load(s)}
                 className={`flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-left text-xs ${
-                  study.id === s.id ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
+                  study.id === s.id ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                 }`}
               >
                 <span className="truncate">{s.name}</span>
@@ -278,7 +278,7 @@ export function EndgamePage() {
       </div>
 
       <div className="order-3 space-y-3">
-        <div className="rounded-lg bg-panel p-3">
+        <div className="rounded-2xl bg-panel shadow-soft p-3">
           <h4 className="mb-1 text-sm font-semibold text-ink">{study.name}</h4>
           <p className="mb-2 text-xs text-neutral-400">
             You play <b className="capitalize text-neutral-200">{youPlay}</b> — goal:{' '}

@@ -89,17 +89,17 @@ export function BotPanel() {
 
   if (styles.length === 0) {
     return (
-      <div className="rounded-lg bg-panel p-3 text-sm text-neutral-400">
+      <div className="rounded-2xl bg-panel shadow-soft p-3 text-sm text-neutral-400">
         Waiting for the engine server… (run <code className="text-neutral-200">pnpm dev:server</code>)
       </div>
     );
   }
 
   const tab = (active: boolean) =>
-    `rounded px-2 py-1 text-xs ${active ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'}`;
+    `rounded px-2 py-1 text-xs ${active ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'}`;
 
   return (
-    <div className="rounded-lg bg-panel p-3">
+    <div className="rounded-2xl bg-panel shadow-soft p-3">
       <h3 className="mb-2 text-sm font-semibold text-ink">Custom game</h3>
 
       {/* style */}
@@ -123,7 +123,7 @@ export function BotPanel() {
                 key={n.id}
                 onClick={() => setMaiaRating(n.rating)}
                 className={`flex-1 rounded px-2 py-1 text-xs ${
-                  maiaRating === n.rating ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
+                  maiaRating === n.rating ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                 }`}
               >
                 {n.rating}
@@ -261,7 +261,7 @@ export function BotPanel() {
                   key={o.id}
                   onClick={() => selectOpening(o)}
                   className={`flex w-full items-center justify-between gap-2 rounded px-2 py-1 text-left text-xs ${
-                    openingId === o.id ? 'bg-emerald-700 text-white' : 'bg-neutral-800 text-neutral-200 hover:bg-neutral-700'
+                    openingId === o.id ? 'bg-brand-600 text-white' : 'bg-neutral-800 text-neutral-200 hover:bg-neutral-700'
                   }`}
                 >
                   <span className="truncate">{o.name}</span>

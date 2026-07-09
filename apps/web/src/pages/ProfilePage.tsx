@@ -6,24 +6,33 @@ import { BOT_ROSTER, type RosterBot } from '../data/botRoster';
 import { RatingMeter } from '../components/RatingMeter';
 import { DailyGoal } from '../components/DailyGoal';
 import { AchievementGrid } from '../components/AchievementGrid';
+import mascotUrl from '../assets/img/mascot.svg';
 
 function LevelHeader() {
   const xp = useGamify((s) => s.xp);
   const { level, intoLevel, span, toNext, pct } = levelProgress(xp);
   return (
-    <div className="rounded-lg bg-panel p-4">
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-800/60 via-panel to-panel p-4 shadow-soft">
+      <img
+        src={mascotUrl}
+        alt=""
+        className="float-soft pointer-events-none absolute bottom-1 right-2 hidden h-24 w-24 sm:block"
+      />
       <div className="flex items-center gap-4">
-        <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-full bg-emerald-700 text-white">
+        <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-accent-500 text-white shadow-glow">
           <span className="text-[10px] uppercase tracking-wide">level</span>
-          <span className="text-2xl font-bold leading-none">{level}</span>
+          <span className="font-display text-2xl font-bold leading-none">{level}</span>
         </div>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 pr-16 sm:pr-20">
           <div className="mb-1 flex items-baseline justify-between text-sm">
-            <span className="font-semibold text-ink">{xp.toLocaleString()} XP</span>
+            <span className="font-display font-semibold text-ink">{xp.toLocaleString()} XP</span>
             <span className="text-xs text-neutral-400">{toNext} XP to level {level + 1}</span>
           </div>
           <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-800">
-            <div className="h-full rounded-full bg-emerald-400" style={{ width: `${pct}%` }} />
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-brand-400 to-accent-400 transition-[width] duration-500"
+              style={{ width: `${pct}%` }}
+            />
           </div>
           <div className="mt-1 text-right text-xs text-neutral-400">
             {intoLevel} / {span}
@@ -38,12 +47,12 @@ function MeterToggle() {
   const meter = useSettings((s) => s.ratingMeter);
   const setMeter = useSettings((s) => s.setRatingMeter);
   return (
-    <div className="inline-flex overflow-hidden rounded border border-neutral-700 text-xs">
+    <div className="inline-flex overflow-hidden rounded-full border border-neutral-700 text-xs">
       {(['elo', 'glicko'] as const).map((m) => (
         <button
           key={m}
           onClick={() => setMeter(m)}
-          className={`px-2.5 py-1 capitalize ${meter === m ? 'bg-emerald-700 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'}`}
+          className={`btn-press px-2.5 py-1 font-semibold capitalize ${meter === m ? 'bg-brand-600 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'}`}
         >
           {m === 'glicko' ? 'Glicko-2' : 'Elo'}
         </button>
@@ -66,8 +75,8 @@ function SuggestedOpponent({ goPlay }: { goPlay: () => void }) {
   const defeated = useLadder((s) => s.defeated);
   const bot = suggestOpponent(glicko, defeated);
   return (
-    <div className="rounded-lg bg-panel p-4">
-      <h3 className="mb-3 text-sm font-semibold text-ink">Suggested next opponent</h3>
+    <div className="rounded-2xl bg-panel p-4 shadow-soft">
+      <h3 className="mb-3 font-display text-sm font-semibold text-ink">Suggested next opponent</h3>
       <div className="flex items-center gap-3">
         <span
           className="flex h-11 w-11 items-center justify-center rounded-full text-xl"
@@ -81,7 +90,10 @@ function SuggestedOpponent({ goPlay }: { goPlay: () => void }) {
           </div>
           <div className="truncate text-xs text-neutral-400">{bot.title}</div>
         </div>
-        <button onClick={goPlay} className="shrink-0 rounded bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800">
+        <button
+          onClick={goPlay}
+          className="btn-press shrink-0 rounded-full bg-brand-600 px-4 py-1.5 text-sm font-bold text-white hover:bg-brand-700"
+        >
           Play
         </button>
       </div>
@@ -94,7 +106,7 @@ export function ProfilePage({ goPlay }: { goPlay: () => void }) {
   return (
     <div className="mx-auto w-full max-w-[1000px] space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-ink">Profile</h2>
+        <h2 className="font-display text-base font-semibold text-ink">Profile</h2>
         <div className="flex items-center gap-2 text-xs text-neutral-400">
           <span>Show ratings as</span>
           <MeterToggle />

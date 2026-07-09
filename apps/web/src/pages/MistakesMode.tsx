@@ -114,7 +114,7 @@ export function MistakesMode() {
 
   if (!card) {
     return (
-      <div className="mx-auto max-w-md rounded-lg bg-panel p-4 text-sm text-neutral-400">
+      <div className="mx-auto max-w-md rounded-2xl bg-panel shadow-soft p-4 text-sm text-neutral-400">
         No saved mistakes yet. On the <b className="text-neutral-300">Play</b> board, review a game and “Save mistakes to drill”.
       </div>
     );
@@ -148,7 +148,7 @@ export function MistakesMode() {
       </div>
 
       <div className="space-y-3">
-        <div className="rounded-lg bg-panel p-3">
+        <div className="rounded-2xl bg-panel shadow-soft p-3">
           <div className="mb-1 flex items-center justify-between text-sm">
             <span className="font-semibold text-ink">Your mistakes</span>
             <span className="text-xs text-neutral-400">{idx + 1}/{cards.length}</span>
