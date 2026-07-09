@@ -277,7 +277,12 @@ export class FriendRoom {
     }
   }
 
-  /** End the game on time if the side to move has run out. Safe to call any time. */
+  /**
+   * End the game on time if the side to move has run out. Safe to call any
+   * time. Broadcasts the game-over state itself: a caller that trips the flag
+   * mid-action (e.g. a move arriving after time expired) throws before its own
+   * broadcast, and the opponent must still learn the game ended.
+   */
   checkFlag(): void {
     if (this.status !== 'active' || !this.clock) return;
     const turn: FriendColor = this.chess.turn() === 'w' ? 'white' : 'black';
@@ -286,6 +291,7 @@ export class FriendRoom {
     if (left <= 0) {
       this.clock[key] = 0;
       this.finishOnTime(turn);
+      this.broadcast();
     }
   }
 
@@ -373,10 +379,7 @@ export class FriendRoom {
     if (!this.clock || this.status !== 'active') return;
     const turn = this.chess.turn() === 'w' ? 'whiteMs' : 'blackMs';
     const ms = this.clock[turn] + 50; // small grace so the timer fires after zero
-    this.cancelFlagTimer = this.deps.schedule(() => {
-      this.checkFlag();
-      if (this.finished) this.broadcast();
-    }, ms);
+    this.cancelFlagTimer = this.deps.schedule(() => this.checkFlag(), ms); // checkFlag broadcasts the flag
   }
 
   private touch(): void {

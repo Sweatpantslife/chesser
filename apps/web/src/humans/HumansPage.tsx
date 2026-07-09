@@ -70,11 +70,17 @@ export function HumansPage() {
     return code ? { kind: 'online', intent: { kind: 'join', code, name: loadName() } } : { kind: 'menu' };
   });
 
-  // Opening a friend link while the app is already running jumps into the game.
+  // Opening a friend link while the app is already running jumps into the
+  // game. Re-announcing the code of the game we're already in is a no-op.
   useEffect(() => {
     const onHash = () => {
       const code = codeFromHash();
-      if (code) setScreen({ kind: 'online', intent: { kind: 'join', code, name: loadName() } });
+      if (!code) return;
+      setScreen((cur) =>
+        cur.kind === 'online' && cur.intent.kind === 'join' && cur.intent.code === code
+          ? cur
+          : { kind: 'online', intent: { kind: 'join', code, name: loadName() } },
+      );
     };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
@@ -84,7 +90,10 @@ export function HumansPage() {
     return <LocalGame config={screen.config} onExit={() => setScreen({ kind: 'menu' })} />;
   }
   if (screen.kind === 'online') {
-    return <OnlineGame intent={screen.intent} onExit={() => setScreen({ kind: 'menu' })} />;
+    // Keyed by game identity so switching to a different friend link tears the
+    // old client/state down and joins the new game cleanly.
+    const gameKey = screen.intent.kind === 'join' ? `join-${screen.intent.code}` : 'create';
+    return <OnlineGame key={gameKey} intent={screen.intent} onExit={() => setScreen({ kind: 'menu' })} />;
   }
   return <Menu start={setScreen} />;
 }

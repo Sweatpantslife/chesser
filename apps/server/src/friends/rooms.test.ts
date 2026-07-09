@@ -248,6 +248,24 @@ describe('clocks', () => {
     assert.equal(s.clock?.whiteMs, 0);
   });
 
+  it('a flag tripped by a late move is broadcast to the opponent (no desync)', () => {
+    // Timers never fire here, so the flag can only surface through checkFlag()
+    // inside move() — which throws to the mover. The opponent must still be
+    // told the game is over via a broadcast.
+    let now = 1_000_000;
+    const deps: RoomDeps = { now: () => now, schedule: () => () => {} };
+    const mgr = new FriendRoomManager(deps);
+    const { room, whiteToken, blackToken } = pair(mgr, TC_1_0);
+    const blackSaw: string[] = [];
+    room.attach(blackToken, (m) => {
+      if (m.t === 'state') blackSaw.push(m.state.status);
+    });
+    now += 61_000; // white (on move) is out of time
+    assert.throws(() => room.move(whiteToken, 'e2e4'), /over/);
+    assert.equal(blackSaw.at(-1), 'over');
+    assert.deepEqual(room.state().result, { winner: 'black', reason: 'on time' });
+  });
+
   it('a move that arrives after the flag loses on time instead of landing', () => {
     const fake = fakeDeps();
     const mgr = new FriendRoomManager(fake.deps);

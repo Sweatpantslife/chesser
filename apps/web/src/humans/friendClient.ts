@@ -146,7 +146,15 @@ export class FriendClient {
   close(): void {
     this.closed = true;
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
-    this.ws?.close();
+    if (this.ws) {
+      // Unbind before closing: the async onclose would otherwise fire after a
+      // replacement client exists and wrongly report "disconnected".
+      this.ws.onopen = null;
+      this.ws.onclose = null;
+      this.ws.onerror = null;
+      this.ws.onmessage = null;
+      this.ws.close();
+    }
     this.ws = null;
   }
 }

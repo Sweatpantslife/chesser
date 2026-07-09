@@ -38,7 +38,8 @@ export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: (
       onSeat: (s) => {
         setSeat(s);
         // Make the URL shareable/refreshable: refresh rejoins this game.
-        window.location.hash = `#/friend/${s.code}`;
+        // replaceState avoids firing hashchange, which would remount us.
+        history.replaceState(null, '', `#/friend/${s.code}`);
       },
       onState: (st) => {
         receivedAtRef.current = performance.now();

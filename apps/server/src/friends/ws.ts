@@ -30,7 +30,11 @@ export class FriendSession {
   private onMessage(data: RawData): void {
     let msg: FriendClientMessage;
     try {
-      msg = JSON.parse(data.toString());
+      const parsed: unknown = JSON.parse(data.toString());
+      // Valid JSON that isn't a tagged message object (null, numbers, arrays,
+      // strings) is silently dropped rather than exploding in handle().
+      if (!parsed || typeof parsed !== 'object' || typeof (parsed as { t?: unknown }).t !== 'string') return;
+      msg = parsed as FriendClientMessage;
     } catch {
       return;
     }
