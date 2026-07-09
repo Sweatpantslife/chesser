@@ -70,6 +70,7 @@ function PracticeTactics() {
   const game = useRef(new Chess());
   const attempt = useRef({ failed: false, revealed: false, rated: false });
   const sessionSeen = useRef(new Set<string>());
+  const demoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [source, setSource] = useState<Source>('builtin');
   const [diffFilter, setDiffFilter] = useState<DiffFilter>('all');
@@ -118,6 +119,10 @@ function PracticeTactics() {
   const load = (i: number, q = queue) => {
     const p = q[i];
     if (!p) return;
+    // Stop any in-flight solution animation: its pending ticks belong to the
+    // previous puzzle and would play illegal moves on the new position.
+    if (demoTimer.current) clearTimeout(demoTimer.current);
+    demoTimer.current = null;
     game.current = new Chess(p.fen);
     attempt.current = { failed: false, revealed: false, rated: false };
     setPos(i);
@@ -134,6 +139,12 @@ function PracticeTactics() {
     if (queue.length) load(0, queue);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source, diffFilter, themeFilter]);
+
+  useEffect(() => {
+    return () => {
+      if (demoTimer.current) clearTimeout(demoTimer.current);
+    };
+  }, []);
 
   const sync = () => {
     const hist = game.current.history({ verbose: true });
@@ -166,6 +177,7 @@ function PracticeTactics() {
   };
 
   const demoRest = (fromStep: number) => {
+    if (demoTimer.current) clearTimeout(demoTimer.current);
     let step = fromStep;
     const tick = () => {
       const uci = puzzle?.solution[step];
@@ -173,9 +185,9 @@ function PracticeTactics() {
       game.current.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] });
       sync();
       step++;
-      if (puzzle && step < puzzle.solution.length) setTimeout(tick, 600);
+      demoTimer.current = puzzle && step < puzzle.solution.length ? setTimeout(tick, 600) : null;
     };
-    setTimeout(tick, 500);
+    demoTimer.current = setTimeout(tick, 500);
   };
 
   const onMove = (from: string, to: string) => {
