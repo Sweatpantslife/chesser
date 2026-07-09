@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { STARTING_FEN } from '@chesser/shared';
 import { mainlineOf, useGame, type Color } from '../store/game';
+import { useAnalysisReport } from '../store/analysisReport';
 import { detectOpening, type OpeningInfo } from '../lib/openings';
 import { CLASSIFICATION_META, type Classification } from '../lib/coach';
 import { BotAvatar } from './BotAvatar';
@@ -41,10 +42,13 @@ export function GameOverModal() {
   const show = !!summary && !dismissed && summary.gameNo === gameNo;
 
   // Auto-run a background review the first time the modal opens for this game.
+  // A cached report for the same game short-circuits the engine entirely.
   useEffect(() => {
     if (!show) return;
     const st = useGame.getState();
-    if (connected && st.reviewGameNo !== st.gameNo && !st.reviewing) void st.reviewGame();
+    if (connected && st.reviewGameNo !== st.gameNo && !st.reviewing) {
+      if (!useAnalysisReport.getState().tryHydrateFromCache()) void st.reviewGame();
+    }
   }, [show, connected]);
 
   // Celebrate a win with a confetti burst (skipped under reduced motion).
