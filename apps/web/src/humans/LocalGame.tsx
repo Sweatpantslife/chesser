@@ -168,7 +168,7 @@ export function LocalGame({ config, onExit }: { config: LocalGameConfig; onExit:
           <span data-testid="human-status" className={over ? 'font-semibold text-amber-300' : 'text-neutral-300'}>
             {status}
           </span>
-          <span className="text-neutral-600">· pass &amp; play · unrated</span>
+          <span className="text-neutral-400">· pass &amp; play · unrated</span>
         </div>
         <div className="mx-auto w-full max-w-[560px] space-y-2">
           <PlayerBar
