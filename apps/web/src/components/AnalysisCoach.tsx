@@ -37,8 +37,11 @@ export function AnalysisCoach() {
       return;
     }
     const t = window.setTimeout(() => {
+      useGame.getState().stepView(1);
+      // Re-read the store: stepView() replaced the state object, so a snapshot
+      // taken before it would still hold the previous currentId and pause one
+      // move AFTER each notable move instead of on it.
       const s = useGame.getState();
-      s.stepView(1);
       const rev = s.moveReviews[s.currentId];
       if (rev && IMPORTANT.has(rev.classification)) s.setCoachPlaying(false);
     }, DWELL_MS);
