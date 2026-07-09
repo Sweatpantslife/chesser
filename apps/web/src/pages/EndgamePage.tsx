@@ -105,7 +105,7 @@ export function EndgamePage() {
   };
 
   const load = (s: EndgameStudy) => {
-    gameId.current++;
+    const id = ++gameId.current;
     game.current = new Chess(s.fen);
     setStudy(s);
     setPhase('playing');
@@ -116,6 +116,10 @@ export function EndgamePage() {
     setFen(game.current.fen());
     setLastMove(undefined);
     setTimeout(() => {
+      // Only kick the defender for the load that scheduled this: switching
+      // studies within 300ms would otherwise run a stale askDefender closure
+      // (old study's side) against the new position.
+      if (gameId.current !== id) return;
       if (game.current.turn() !== (s.youPlay === 'white' ? 'w' : 'b')) askDefender();
     }, 300);
   };
