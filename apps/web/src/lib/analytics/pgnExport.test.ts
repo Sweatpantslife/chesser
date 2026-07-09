@@ -246,4 +246,24 @@ describe('annotatedPgn — movetext numbering', () => {
     expect(body(pgn).endsWith('1/2-1/2')).toBe(true);
     expect(pgn.endsWith('\n')).toBe(true);
   });
+
+  it('numbers a black-to-move custom position from the FEN fullmove counter', () => {
+    // "Practice this position" games often start with Black to move mid-game;
+    // the movetext must open "N... <san>" with the FEN's own numbering.
+    const fen = '4k3/8/8/8/8/8/8/4K2R b K - 0 12';
+    const moves = [
+      detail({ ply: 1, side: 'black', san: 'Kd7', uci: 'e8d7', fenBefore: fen, evalAfter: null }),
+      detail({ ply: 2, side: 'white', san: 'Rh8', uci: 'h1h8', evalAfter: null }),
+      detail({ ply: 3, side: 'black', san: 'Kc7', uci: 'd7c7', evalAfter: null }),
+    ];
+    const pgn = annotatedPgn(
+      report(moves, { meta: { ...report([]).meta, startFen: fen } }),
+      { ...META, result: '*' },
+    );
+    expect(body(pgn)).toBe('12... Kd7 13. Rh8 Kc7 *');
+
+    const c = new Chess();
+    c.loadPgn(pgn);
+    expect(c.history()).toEqual(['Kd7', 'Rh8', 'Kc7']);
+  });
 });

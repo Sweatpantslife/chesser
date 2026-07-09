@@ -89,6 +89,42 @@ describe('classifyMove — mate-against and missed mates (non-mating rows)', () 
   });
 });
 
+describe('classifyMove — losing a forced mate (lila MateLost ladder)', () => {
+  // The ±1000 ceiling makes mate-for → still-winning-cp a < 2-point win% drop,
+  // so the drop thresholds alone would grade these 'best'/'good' while the
+  // explanation says "You had mate in N".
+  it('is at least an inaccuracy even when the position stays totally winning', () => {
+    const r = row({ evalBefore: { mate: 3 }, winBefore: 97.5, evalAfter: { cp: 1200 }, winAfter: 97.5, coachGrade: 'good' });
+    expect(classifyMove(r)).toBe('inaccuracy');
+  });
+
+  it('is a mistake when the mover slips below the +10 ceiling but stays winning', () => {
+    const r = row({ evalBefore: { mate: 3 }, winBefore: 97.5, evalAfter: { cp: 800 }, winAfter: 96.9, coachGrade: 'best' });
+    expect(classifyMove(r)).toBe('mistake');
+  });
+
+  it('is a blunder below the winning band, and for Black with mover-POV signs', () => {
+    expect(classifyMove(row({ evalBefore: { mate: 2 }, winBefore: 97.5, evalAfter: { cp: 500 }, winAfter: 92, coachGrade: 'good' }))).toBe('blunder');
+    const black = row({ side: 'black', evalBefore: { mate: -2 }, winBefore: 2.5, evalAfter: { cp: -800 }, winAfter: 3.1 });
+    expect(classifyMove(black)).toBe('mistake');
+  });
+
+  it('does not punish a DELAYED mate (still mate-for after the move)', () => {
+    const r = row({ evalBefore: { mate: 2 }, evalAfter: { mate: 5 }, winBefore: 97.5, winAfter: 97.5, coachGrade: 'good' });
+    expect(classifyMove(r)).toBe('good');
+  });
+
+  it("exempts the engine's own first choice", () => {
+    const r = row({ uci: 'e2e4', bestMoveUci: 'e2e4', evalBefore: { mate: 3 }, evalAfter: { cp: 800 }, winBefore: 97.5, winAfter: 96.9, coachGrade: 'best' });
+    expect(classifyMove(r)).toBe('best');
+  });
+
+  it('never overrides the delivered mate itself', () => {
+    const r = row({ san: 'Qg7#', isMate: true, evalBefore: { mate: 1 }, evalAfter: { mate: 0 } });
+    expect(classifyMove(r)).toBe('best');
+  });
+});
+
 describe('classifyMove — coach grade passthrough and escalation', () => {
   it('passes every non-mate coach grade through when the drop is small', () => {
     const grades = ['brilliant', 'great', 'best', 'good', 'book', 'inaccuracy', 'mistake', 'blunder', 'miss'] as const;

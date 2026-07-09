@@ -99,7 +99,10 @@ export function ReviewPanel() {
   }, [annotations, mainline]);
 
   const seriousCount = counts.white.blunder + counts.white.mistake + counts.black.blunder + counts.black.mistake;
-  const hasResults = Object.keys(annotations).length > 0;
+  // Keyed off moveReviews (filled for EVERY reviewed move), not annotations
+  // (only error moves) — a clean game must still show its results and offer
+  // an explicit Re-review.
+  const hasResults = Object.keys(moveReviews).length > 0;
   const disabled = mode !== 'analysis' || mainline.length === 0 || reviewing;
   const activeReport = report && reportGameNo === gameNo ? report : null;
 

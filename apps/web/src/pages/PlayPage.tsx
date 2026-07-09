@@ -23,7 +23,7 @@ import { engine } from '../lib/engine';
 import { CLASSIFICATION_META } from '../lib/coach';
 import { goToMainlinePly } from '../lib/mainlineNav';
 import { annotatedPgn } from '../lib/analytics/pgnExport';
-import { useGame, mainlineOf, type Color } from '../store/game';
+import { useGame, type Color } from '../store/game';
 import { useAnalysisReport } from '../store/analysisReport';
 import { useSettings } from '../store/settings';
 import { ThinkingDots } from '../components/icons';

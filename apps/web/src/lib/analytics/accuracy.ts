@@ -73,6 +73,16 @@ function stdev(xs: number[]): number {
  * mean of window-volatility-weighted move accuracies blended 50/50 with their
  * harmonic mean. Volatile stretches of the game weigh more, and the harmonic
  * mean makes single large blunders costly. One decimal; empty input → 100.
+ *
+ * Known, deliberate deviations from lila's AccuracyPercent.gameAccuracy
+ * (identical weight bounds [0.5, 12] and window bounds [2, 8]): the
+ * volatility windows are centred over the SIDE'S OWN winBefore series rather
+ * than trailing over all interleaved plies (which also makes the window size
+ * ~half lila's for the same game), the initial-position eval (lila prepends
+ * win% 52.75) is not prepended, and the harmonic term floors each accuracy at
+ * 1 where lila lets a 0-accuracy move pull it to ~0. Kept because SPEC §2a
+ * pins this formulation and the own-side series is what phaseBreakdown can
+ * meaningfully window over phase-restricted rows.
  */
 export function gameAccuracy(rows: MoveRow[], side: Side): number {
   const own = rows.filter((r) => r.side === side);

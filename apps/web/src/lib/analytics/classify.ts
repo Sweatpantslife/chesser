@@ -13,17 +13,24 @@
  * disagree with anything on screen. Rows without a coach grade
  * (cached/imported games) are derived from scratch at the same thresholds.
  *
- * The one override in both paths: a move that delivers checkmate is always
+ * Two overrides apply on both paths: a move that delivers checkmate is always
  * best-tier for the mover, never a mistake/miss — detected purely from data
- * (the SAN suffix '#', surfaced as row.isMate).
+ * (the SAN suffix '#', surfaced as row.isMate) — and a move that throws away
+ * a forced mate is always at least an error (lila's MateLost judgement),
+ * since the win%-drop thresholds cannot see a mate-for → still-winning swing
+ * under the ±1000 eval ceiling.
  */
 import { Chess } from 'chess.js';
-import { winPercent } from './accuracy';
-import type { Classification, MoveRow, Side } from './types';
+import { cpValue, winPercent } from './accuracy';
+import type { Classification, EvalPoint, MoveRow, Side } from './types';
 
 const PIECE_VALUE: Record<string, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
 
 const povWin = (whiteWin: number, side: Side) => (side === 'white' ? whiteWin : 100 - whiteWin);
+
+/** True when the eval says the MOVER has a forced mate. */
+const mateFor = (ev: EvalPoint | null, side: Side): boolean =>
+  ev?.mate !== undefined && ev.mate !== 0 && (side === 'white' ? ev.mate > 0 : ev.mate < 0);
 
 /** Net material on the board (White − Black), in pawns. */
 function material(fen: string): number {
@@ -137,13 +144,34 @@ function deriveGrade(row: MoveRow): Classification {
 }
 
 /**
+/**
+ * lila MateAdvice's MateLost ladder: how bad throwing away a forced mate is,
+ * by the mover-POV eval the game is left at (still totally winning →
+ * inaccuracy, winning → mistake, anything less → blunder). Needed because the
+ * ±1000 eval ceiling makes a mate-for → still-winning-cp swing a < 2-point
+ * win% drop, invisible to every drop threshold.
+ */
+function lostMateTier(row: MoveRow): Classification {
+  const moverCpAfter = row.side === 'white' ? cpValue(row.evalAfter) : -cpValue(row.evalAfter);
+  if (moverCpAfter > 999) return 'inaccuracy';
+  if (moverCpAfter > 700) return 'mistake';
+  return 'blunder';
+}
+
+/**
  * Final report-layer grade for a row. Precedence (first match wins):
  *  1. delivered checkmate → best-tier (an existing brilliant/great sticks,
  *     anything else becomes 'best') — never a bad grade;
- *  2. a coach grade passes through, escalated to the lichess error tier its
+ *  2. losing a forced mate is always at least an error (lila MateAdvice's
+ *     MateLost, cp-laddered): the explanation template ("You had mate in N…")
+ *     fires on exactly this condition, so the badge must agree with the
+ *     prose. The house 'miss' grade survives where it applies; a DELAYED mate
+ *     (still mate-for after) is not an error, and the engine's own first
+ *     choice is exempt as always;
+ *  3. a coach grade passes through, escalated to the lichess error tier its
  *     win% drop lands in (brilliant/great/miss and the engine's own first
  *     choice are exempt; never downgraded);
- *  3. otherwise derive from the row (drop thresholds, then book / miss /
+ *  4. otherwise derive from the row (drop thresholds, then book / miss /
  *     brilliant / great refinements).
  */
 export function classifyMove(row: MoveRow): Classification {
@@ -151,8 +179,14 @@ export function classifyMove(row: MoveRow): Classification {
     // Seam: consolidate with checkmateWinner() from lib/coach.ts once fix/coach-trainers lands.
     return row.coachGrade === 'brilliant' || row.coachGrade === 'great' ? row.coachGrade : 'best';
   }
-  if (row.coachGrade) return escalateCoachGrade(row, row.coachGrade);
-  return deriveGrade(row);
+  const base = row.coachGrade ? escalateCoachGrade(row, row.coachGrade) : deriveGrade(row);
+  const playedIsBest = !!row.bestMoveUci && row.uci === row.bestMoveUci;
+  if (!playedIsBest && mateFor(row.evalBefore, row.side) && !mateFor(row.evalAfter, row.side)) {
+    if (base === 'miss') return 'miss'; // "missed win" is exactly what happened
+    const tier = lostMateTier(row);
+    return (ERROR_RANK[base] ?? 0) >= (ERROR_RANK[tier] ?? 0) ? base : tier;
+  }
+  return base;
 }
 
 /** classifyMove over all rows, in order. */

@@ -79,12 +79,16 @@ export function annotatedPgn(report: AnalysisReport, meta: PgnMeta): string {
   }
 
   const tokens: string[] = [];
+  // Move numbers come from the mover's side and the start FEN's fullmove
+  // counter, not ply parity — a black-to-move custom position ("Practice this
+  // position" games) must open "N... <san>" with the FEN's own numbering.
+  const fullmoveField = Number.parseInt(report.meta.startFen.split(' ')[5] ?? '1', 10);
+  let moveNo = Number.isFinite(fullmoveField) && fullmoveField >= 1 ? fullmoveField : 1;
   // PGN convention: a black move restates its number ("3...") at the start of
   // the movetext and after a comment.
   let numberBlack = true;
   for (const m of report.moves) {
-    const moveNo = Math.ceil(m.ply / 2);
-    if (m.ply % 2 === 1) tokens.push(`${moveNo}.`);
+    if (m.side === 'white') tokens.push(`${moveNo}.`);
     else if (numberBlack) tokens.push(`${moveNo}...`);
     tokens.push(m.san);
 
@@ -100,6 +104,7 @@ export function annotatedPgn(report: AnalysisReport, meta: PgnMeta): string {
     } else {
       numberBlack = false;
     }
+    if (m.side === 'black') moveNo += 1;
   }
   tokens.push(meta.result);
 

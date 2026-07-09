@@ -112,7 +112,7 @@ export type PhaseName = 'opening' | 'middlegame' | 'endgame';
 export interface SideAccuracy {
   /** 0–100, one decimal. */
   accuracy: number;
-  /** Average centipawn loss (mate clamped to ±1500). */
+  /** Average centipawn loss (evals ceiled to ±1000, mate included — see the header block). */
   acpl: number;
   moves: number;
 }
