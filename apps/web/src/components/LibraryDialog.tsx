@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { apiDeleteGame, apiImport, apiListGames, type ImportedGame, type SavedGame } from '../lib/api';
 import { useAuth } from '../store/auth';
 import { useGame } from '../store/game';
+import { Modal } from './Modal';
 
 type Tab = 'saved' | 'import' | 'pgn' | 'fen';
 
@@ -21,7 +22,10 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
   const [pgn, setPgn] = useState('');
 
   useEffect(() => {
-    if (tab === 'saved' && token) apiListGames(token).then((r) => setSaved(r.games)).catch(() => {});
+    if (tab === 'saved' && token)
+      apiListGames(token)
+        .then((r) => setSaved(r.games))
+        .catch(() => setMsg('Could not load your saved games — check your connection and reopen the library.'));
   }, [tab, token]);
 
   const open = (pgn: string) => {
@@ -46,15 +50,15 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
   const tabBtn = (id: Tab, label: string) => (
     <button
       onClick={() => setTab(id)}
-      className={`flex-1 rounded px-2 py-1 text-sm ${tab === id ? 'bg-emerald-600 text-white' : 'text-neutral-300 hover:bg-neutral-700'}`}
+      aria-pressed={tab === id}
+      className={`flex-1 rounded px-2 py-1 text-sm ${tab === id ? 'bg-emerald-700 text-white' : 'text-neutral-300 hover:bg-neutral-700'}`}
     >
       {label}
     </button>
   );
 
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
-      <div className="flex max-h-[80vh] w-full max-w-lg flex-col rounded-xl bg-panel p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={onClose} label="Game library" className="flex max-h-[80vh] w-full max-w-lg flex-col rounded-xl bg-panel p-4 shadow-2xl">
         <div className="mb-3 flex gap-1 rounded bg-panelmute p-1">
           {tabBtn('saved', 'My games')}
           {tabBtn('import', 'Import')}
@@ -62,7 +66,11 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
           {tabBtn('fen', 'FEN')}
         </div>
 
-        {msg && <p className="mb-2 text-xs text-amber-300">{msg}</p>}
+        {msg && (
+          <p role="status" className="mb-2 text-xs text-amber-300">
+            {msg}
+          </p>
+        )}
 
         {tab === 'saved' && (
           <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">
@@ -75,13 +83,19 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
                 {saved.map((g) => (
                   <li key={g.id} className="flex items-center gap-2">
                     <button onClick={() => open(g.pgn)} className="min-w-0 flex-1 rounded px-2 py-1.5 text-left text-sm hover:bg-neutral-700">
-                      <span className="text-neutral-200">{g.white}</span> <span className="text-neutral-500">vs</span>{' '}
+                      <span className="text-neutral-200">{g.white}</span> <span className="text-neutral-400">vs</span>{' '}
                       <span className="text-neutral-200">{g.black}</span>
-                      <span className="ml-2 text-xs text-neutral-500">{g.result}</span>
+                      <span className="ml-2 text-xs text-neutral-400">{g.result}</span>
                     </button>
                     <button
-                      onClick={() => token && apiDeleteGame(token, g.id).then(() => setSaved((s) => s.filter((x) => x.id !== g.id)))}
-                      className="rounded px-1.5 py-1 text-xs text-neutral-500 hover:text-rose-300"
+                      onClick={() =>
+                        token &&
+                        apiDeleteGame(token, g.id)
+                          .then(() => setSaved((s) => s.filter((x) => x.id !== g.id)))
+                          .catch(() => setMsg('Could not delete game.'))
+                      }
+                      aria-label={`Delete game ${g.white} vs ${g.black}`}
+                      className="min-h-11 min-w-11 rounded px-1.5 py-1 text-xs text-neutral-400 hover:text-rose-300 sm:min-h-0 sm:min-w-0"
                     >
                       ×
                     </button>
@@ -100,7 +114,8 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
                   <button
                     key={s}
                     onClick={() => setSite(s)}
-                    className={`rounded px-2 py-1 text-xs ${site === s ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-300'}`}
+                    aria-pressed={site === s}
+                    className={`rounded px-2 py-1 text-xs ${site === s ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-300'}`}
                   >
                     {s === 'chesscom' ? 'Chess.com' : 'Lichess'}
                   </button>
@@ -111,10 +126,11 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
                 onChange={(e) => setUser(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && user.trim() && runImport()}
                 placeholder="username"
+                aria-label={`${site === 'chesscom' ? 'Chess.com' : 'Lichess'} username`}
                 className="min-w-0 flex-1 rounded bg-neutral-800 px-2 py-1 text-sm text-ink outline-none"
               />
-              <button onClick={runImport} disabled={busy || !user.trim()} className="rounded bg-emerald-600 px-3 py-1 text-sm font-semibold text-white disabled:opacity-50">
-                {busy ? '…' : 'Fetch'}
+              <button onClick={runImport} disabled={busy || !user.trim()} className="rounded bg-emerald-700 px-3 py-1 text-sm font-semibold text-white disabled:opacity-50">
+                {busy ? 'Fetching…' : 'Fetch'}
               </button>
             </div>
             <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">
@@ -123,9 +139,9 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
                   {imported.map((g, i) => (
                     <li key={i}>
                       <button onClick={() => open(g.pgn)} className="w-full rounded px-2 py-1.5 text-left text-sm hover:bg-neutral-700">
-                        <span className="text-neutral-200">{g.white}</span> <span className="text-neutral-500">vs</span>{' '}
+                        <span className="text-neutral-200">{g.white}</span> <span className="text-neutral-400">vs</span>{' '}
                         <span className="text-neutral-200">{g.black}</span>
-                        <span className="ml-2 text-xs text-neutral-500">
+                        <span className="ml-2 text-xs text-neutral-400">
                           {g.result} {g.date ?? ''}
                         </span>
                       </button>
@@ -148,13 +164,14 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
               }}
               rows={8}
               placeholder={'[Event "..."]\n\n1. e4 e5 2. Nf3 Nc6 ...'}
+              aria-label="PGN text"
               className="w-full rounded bg-neutral-900 p-2 font-mono text-xs text-ink outline-none"
             />
             <div className="mt-3 flex justify-end">
               <button
                 onClick={() => (loadPgn(pgn.trim()) ? onClose() : setMsg('Could not read that PGN.'))}
                 disabled={!pgn.trim()}
-                className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
+                className="rounded bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
               >
                 Load game
               </button>
@@ -172,13 +189,14 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
                 setMsg(null);
               }}
               placeholder="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+              aria-label="FEN position"
               className="w-full rounded bg-neutral-900 px-2 py-1.5 font-mono text-xs text-ink outline-none"
             />
             <div className="mt-3 flex justify-end">
               <button
                 onClick={() => (loadFen(fen.trim()) ? onClose() : setMsg('Invalid FEN.'))}
                 disabled={!fen.trim()}
-                className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
+                className="rounded bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
               >
                 Analyze
               </button>
@@ -186,10 +204,12 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
-        <button onClick={onClose} className="mt-3 self-end text-xs text-neutral-500 hover:text-neutral-300">
-          close
+        <button
+          onClick={onClose}
+          className="mt-3 min-h-11 self-end rounded bg-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600 sm:min-h-0"
+        >
+          Close
         </button>
-      </div>
-    </div>
+    </Modal>
   );
 }

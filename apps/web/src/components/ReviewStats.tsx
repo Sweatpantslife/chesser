@@ -33,7 +33,7 @@ export function ReviewStats({ deck, ids }: { deck: Deck; ids: string[] }) {
       <span>
         <span className="text-neutral-200">{seen}</span>/{ids.length} learned
       </span>
-      <span className={due > 0 ? 'text-amber-300' : 'text-neutral-500'}>{due} due</span>
+      <span className={due > 0 ? 'text-amber-300' : 'text-neutral-400'}>{due} due</span>
       {streak > 0 && <span title="Daily streak">🔥 {streak}</span>}
     </div>
   );

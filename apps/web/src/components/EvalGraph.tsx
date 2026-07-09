@@ -6,7 +6,7 @@ export function EvalGraph() {
   const data = useGame((s) => s.evalGraph);
   const viewPly = useGame((s) => s.viewPly);
   const goToPly = useGame((s) => s.goToPly);
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLButtonElement>(null);
 
   if (data.length < 2) return null;
   const W = data.length - 1;
@@ -14,14 +14,29 @@ export function EvalGraph() {
   const area = `0,100 ${line} ${W},100`;
 
   const onClick = (e: React.MouseEvent) => {
+    if (e.detail === 0) return; // keyboard activation — arrow keys already step moves
     const r = ref.current?.getBoundingClientRect();
     if (!r) return;
     const frac = (e.clientX - r.left) / r.width;
     goToPly(Math.max(0, Math.min(W, Math.round(frac * W))));
   };
 
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    goToPly(Math.max(0, Math.min(W, viewPly + (e.key === 'ArrowLeft' ? -1 : 1))));
+  };
+
   return (
-    <div ref={ref} onClick={onClick} className="cursor-pointer" title="Click to jump to a move">
+    <button
+      type="button"
+      ref={ref}
+      onClick={onClick}
+      onKeyDown={onKeyDown}
+      className="block w-full cursor-pointer"
+      title="Click to jump to a move"
+      aria-label={`Evaluation graph, move ${viewPly} of ${W}. Use arrow keys to step through moves.`}
+    >
       <svg viewBox={`0 0 ${W} 100`} preserveAspectRatio="none" className="h-12 w-full rounded">
         <rect x={0} y={0} width={W} height={50} fill="#20242e" />
         <rect x={0} y={50} width={W} height={50} fill="#10131a" />
@@ -30,6 +45,6 @@ export function EvalGraph() {
         <polyline points={line} fill="none" stroke="#34d399" strokeWidth={1.25} vectorEffect="non-scaling-stroke" />
         <line x1={viewPly} y1={0} x2={viewPly} y2={100} stroke="#e7e2d6" strokeWidth={1} vectorEffect="non-scaling-stroke" />
       </svg>
-    </div>
+    </button>
   );
 }

@@ -33,7 +33,7 @@ export function InstallButton() {
         setPrompt(null);
       }}
       title="Install Chesser as an app"
-      className="rounded bg-neutral-800 px-2 py-1 text-sm text-emerald-300 hover:bg-neutral-700"
+      className="min-h-11 rounded bg-neutral-800 px-2 py-1 text-sm text-emerald-300 hover:bg-neutral-700 sm:min-h-0"
     >
       ⤓ Install
     </button>

@@ -113,6 +113,7 @@ export function CoordinateBoard({
         <button
           key={square}
           disabled={disabled}
+          aria-label={square}
           onClick={() => onPick?.(square)}
           className="relative flex aspect-square items-center justify-center"
           style={{ background: isLight ? colors.light : colors.dark, cursor: disabled ? 'default' : 'pointer' }}

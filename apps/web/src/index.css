@@ -12,6 +12,18 @@
   color-scheme: dark;
 }
 
+/* Visible focus ring on keyboard focus only. Uses box-shadow (not outline) so
+   the many `outline-none` utilities in the codebase can't suppress it; element
+   ring utilities (e.g. focus:ring-1) still win where they're declared. */
+@layer base {
+  :focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px #0d1017,
+      0 0 0 4px theme('colors.emerald.400');
+  }
+}
+
 html,
 body,
 #root {
@@ -32,6 +44,8 @@ body {
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
+  /* Defensive: coord labels must never widen the page (5-7px phone scroll bug). */
+  overflow-x: clip;
 }
 .board-wrap .cg-wrap {
   position: absolute;
@@ -48,19 +62,50 @@ body {
   text-align: center;
 }
 
-/* Board themes — only the light base colour changes; chessground's embedded SVG
-   overlays the dark squares (a 20% black tint), so the checkerboard is kept. */
+/* Board coordinate labels. chessground's stock CSS uses a 9px font at 80%
+   opacity (near-invisible) and offsets `coords.files` by `left: 24px` with
+   `width: 100%`, which pushes each file letter ~24px right of its square and
+   overflows the board horizontally on phones. Align the row with the squares
+   and make the labels legible. */
+.board-wrap .cg-wrap coords {
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 1;
+  /* Pieces paint at z-index 2 (chessground.base.css) and would otherwise
+     cover the labels entirely on occupied squares. */
+  z-index: 3;
+}
+.board-wrap .cg-wrap coords.files {
+  left: 0;
+  bottom: 0;
+}
+/* Corner-align the file letters (lichess-style, bottom-left of each square)
+   so they don't sit centered under every piece base. */
+.board-wrap .cg-wrap coords.files coord {
+  text-align: left;
+  padding-left: 2px;
+}
+
+/* Board themes. chessground's stock dark squares are a washed-out 20% black
+   tint of the light colour; replace its checker overlay with fully-opaque
+   classic dark squares (same pairs CoordinateBoard's THEME_COLORS uses, e.g.
+   lichess-like #b58863 on #f0d9b5 for brown). The SVG is an 8×8 grid of unit
+   squares on the odd (file+rank) cells, so it scales with the board. */
 .board-brown cg-board {
   background-color: #f0d9b5;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%208%208'%20shape-rendering='crispEdges'%3E%3Cpath%20fill='%23b58863'%20d='M1%200h1v1H1zM3%200h1v1H3zM5%200h1v1H5zM7%200h1v1H7zM0%201h1v1H0zM2%201h1v1H2zM4%201h1v1H4zM6%201h1v1H6zM1%202h1v1H1zM3%202h1v1H3zM5%202h1v1H5zM7%202h1v1H7zM0%203h1v1H0zM2%203h1v1H2zM4%203h1v1H4zM6%203h1v1H6zM1%204h1v1H1zM3%204h1v1H3zM5%204h1v1H5zM7%204h1v1H7zM0%205h1v1H0zM2%205h1v1H2zM4%205h1v1H4zM6%205h1v1H6zM1%206h1v1H1zM3%206h1v1H3zM5%206h1v1H5zM7%206h1v1H7zM0%207h1v1H0zM2%207h1v1H2zM4%207h1v1H4zM6%207h1v1H6z'/%3E%3C/svg%3E");
 }
 .board-blue cg-board {
   background-color: #e3e7ee;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%208%208'%20shape-rendering='crispEdges'%3E%3Cpath%20fill='%238ca2ad'%20d='M1%200h1v1H1zM3%200h1v1H3zM5%200h1v1H5zM7%200h1v1H7zM0%201h1v1H0zM2%201h1v1H2zM4%201h1v1H4zM6%201h1v1H6zM1%202h1v1H1zM3%202h1v1H3zM5%202h1v1H5zM7%202h1v1H7zM0%203h1v1H0zM2%203h1v1H2zM4%203h1v1H4zM6%203h1v1H6zM1%204h1v1H1zM3%204h1v1H3zM5%204h1v1H5zM7%204h1v1H7zM0%205h1v1H0zM2%205h1v1H2zM4%205h1v1H4zM6%205h1v1H6zM1%206h1v1H1zM3%206h1v1H3zM5%206h1v1H5zM7%206h1v1H7zM0%207h1v1H0zM2%207h1v1H2zM4%207h1v1H4zM6%207h1v1H6z'/%3E%3C/svg%3E");
 }
 .board-green cg-board {
   background-color: #ebecd0;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%208%208'%20shape-rendering='crispEdges'%3E%3Cpath%20fill='%2386a666'%20d='M1%200h1v1H1zM3%200h1v1H3zM5%200h1v1H5zM7%200h1v1H7zM0%201h1v1H0zM2%201h1v1H2zM4%201h1v1H4zM6%201h1v1H6zM1%202h1v1H1zM3%202h1v1H3zM5%202h1v1H5zM7%202h1v1H7zM0%203h1v1H0zM2%203h1v1H2zM4%203h1v1H4zM6%203h1v1H6zM1%204h1v1H1zM3%204h1v1H3zM5%204h1v1H5zM7%204h1v1H7zM0%205h1v1H0zM2%205h1v1H2zM4%205h1v1H4zM6%205h1v1H6zM1%206h1v1H1zM3%206h1v1H3zM5%206h1v1H5zM7%206h1v1H7zM0%207h1v1H0zM2%207h1v1H2zM4%207h1v1H4zM6%207h1v1H6z'/%3E%3C/svg%3E");
 }
 .board-gray cg-board {
   background-color: #d9d9d9;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%208%208'%20shape-rendering='crispEdges'%3E%3Cpath%20fill='%239b9b9b'%20d='M1%200h1v1H1zM3%200h1v1H3zM5%200h1v1H5zM7%200h1v1H7zM0%201h1v1H0zM2%201h1v1H2zM4%201h1v1H4zM6%201h1v1H6zM1%202h1v1H1zM3%202h1v1H3zM5%202h1v1H5zM7%202h1v1H7zM0%203h1v1H0zM2%203h1v1H2zM4%203h1v1H4zM6%203h1v1H6zM1%204h1v1H1zM3%204h1v1H3zM5%204h1v1H5zM7%204h1v1H7zM0%205h1v1H0zM2%205h1v1H2zM4%205h1v1H4zM6%205h1v1H6zM1%206h1v1H1zM3%206h1v1H3zM5%206h1v1H5zM7%206h1v1H7zM0%207h1v1H0zM2%207h1v1H2zM4%207h1v1H4zM6%207h1v1H6z'/%3E%3C/svg%3E");
 }
 
 /* A single-piece swatch (Settings piece-set previews). The set's CSS supplies
@@ -71,13 +116,26 @@ body {
   background-position: center;
 }
 
-/* Custom scrollbar for panels */
+/* Custom scrollbar for panels (scrollbar-width/-color cover Firefox) */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #3a4150 transparent;
+}
 .scroll-thin::-webkit-scrollbar {
   width: 8px;
 }
 .scroll-thin::-webkit-scrollbar-thumb {
   background: #3a4150;
   border-radius: 4px;
+}
+
+/* Hidden scrollbar (mobile header nav scrolls horizontally without a bar). */
+.scrollbar-none {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
 
 /* Gamification toast slide-in */
@@ -93,4 +151,44 @@ body {
 }
 .gamify-toast {
   animation: gamify-toast-in 0.22s ease-out;
+}
+
+/* Like Tailwind's animate-pulse but with a 0.75 opacity floor: emerald-400
+   text on the page background stays ≥5.9:1 (AA) at the dimmest point of the
+   cycle, where the stock 0.5 floor dropped it to ~3.3:1. */
+@keyframes pulse-soft {
+  50% {
+    opacity: 0.75;
+  }
+}
+.animate-pulse-soft {
+  animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Subtle fade-in when switching header tabs (content is hard-swapped). */
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.page-fade {
+  animation: page-fade-in 150ms ease-out;
+}
+
+/* Respect the user's reduced-motion preference: collapse the CSS transitions
+   and animations we control (toasts, pulses, page fade, toggle knobs, bar
+   transitions). chessground's piece movement is JS-driven and configured
+   elsewhere; this rule doesn't touch it. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

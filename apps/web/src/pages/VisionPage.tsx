@@ -28,7 +28,7 @@ export function VisionPage() {
             key={m}
             onClick={() => setSub(m)}
             className={`rounded px-3 py-1.5 text-sm ${
-              sub === m ? 'bg-emerald-600 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+              sub === m ? 'bg-emerald-700 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
             }`}
           >
             {m === 'visualize' ? 'Visualize' : 'Blindfold solve'}
@@ -91,7 +91,7 @@ function Visualize() {
             disabled
           />
         </div>
-        {!showPieces && <p className="text-center text-xs text-neutral-500">Pieces hidden — picture the position.</p>}
+        {!showPieces && <p className="text-center text-xs text-neutral-400">Pieces hidden — picture the position.</p>}
       </div>
 
       <div className="space-y-3">
@@ -108,7 +108,7 @@ function Visualize() {
               <p className="mb-3 text-xs text-neutral-400">Study the position, then hide it and calculate the line below.</p>
               <button
                 onClick={() => setStage('hidden')}
-                className="w-full rounded bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                className="w-full rounded bg-emerald-700 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
               >
                 Hide pieces & show the line
               </button>
@@ -117,11 +117,11 @@ function Visualize() {
 
           {(stage === 'hidden' || stage === 'question' || stage === 'answered') && (
             <div className="mb-3">
-              <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">The line</div>
+              <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">The line</div>
               <div className="font-mono text-sm text-neutral-200">
                 {puzzle.line.map((m, i) => (
                   <span key={i}>
-                    {i % 2 === 0 && <span className="text-neutral-500">{i / 2 + 1}.</span>} {m}{' '}
+                    {i % 2 === 0 && <span className="text-neutral-400">{i / 2 + 1}.</span>} {m}{' '}
                   </span>
                 ))}
               </div>
@@ -131,7 +131,7 @@ function Visualize() {
           {stage === 'hidden' && (
             <button
               onClick={() => setStage('question')}
-              className="w-full rounded bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+              className="w-full rounded bg-emerald-700 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
             >
               I’ve calculated it →
             </button>
@@ -146,9 +146,9 @@ function Visualize() {
                   const isPicked = i === picked;
                   let cls = 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600';
                   if (stage === 'answered') {
-                    if (isAnswer) cls = 'bg-emerald-600 text-white';
+                    if (isAnswer) cls = 'bg-emerald-700 text-white';
                     else if (isPicked) cls = 'bg-rose-700 text-white';
-                    else cls = 'bg-neutral-800 text-neutral-500';
+                    else cls = 'bg-neutral-800 text-neutral-400';
                   }
                   return (
                     <button
@@ -173,14 +173,14 @@ function Visualize() {
               </p>
               <button
                 onClick={next}
-                className="mt-3 w-full rounded bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                className="mt-3 w-full rounded bg-emerald-700 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
               >
                 Next puzzle
               </button>
             </>
           )}
         </div>
-        <p className="px-1 text-xs leading-snug text-neutral-500">
+        <p className="px-1 text-xs leading-snug text-neutral-400">
           Calculating without moving the pieces is the engine of tactics and endgames. Start short, build up.
         </p>
       </div>
@@ -298,7 +298,7 @@ function Blindfold() {
       <div className="space-y-3">
         <div className="flex h-7 items-center gap-2 text-sm text-neutral-400">
           <span className="rounded bg-neutral-700 px-2 py-0.5 text-xs text-neutral-200">Blindfold</span>
-          <span className="capitalize">{puzzle.turn} to play and win</span>
+          <span>{puzzle.turn === 'white' ? 'White' : 'Black'} to play and win</span>
         </div>
         <div className="mx-auto w-full max-w-[480px]">
           <CoordinateBoard
@@ -324,11 +324,11 @@ function Blindfold() {
           </div>
           <div className="space-y-1 text-sm">
             <div>
-              <span className="text-xs uppercase tracking-wide text-neutral-500">White:</span>{' '}
+              <span className="text-xs uppercase tracking-wide text-neutral-400">White:</span>{' '}
               <span className="font-mono text-neutral-200">{desc.white}</span>
             </div>
             <div>
-              <span className="text-xs uppercase tracking-wide text-neutral-500">Black:</span>{' '}
+              <span className="text-xs uppercase tracking-wide text-neutral-400">Black:</span>{' '}
               <span className="font-mono text-neutral-200">{desc.black}</span>
             </div>
           </div>
@@ -352,13 +352,13 @@ function Blindfold() {
             )}
             <button
               onClick={next}
-              className="rounded bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-500"
+              className="rounded bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800"
             >
               Next puzzle →
             </button>
           </div>
         </div>
-        <p className="px-1 text-xs leading-snug text-neutral-500">
+        <p className="px-1 text-xs leading-snug text-neutral-400">
           Holding the position in your mind’s eye and finding a move blind is the ultimate board-vision test.
         </p>
       </div>

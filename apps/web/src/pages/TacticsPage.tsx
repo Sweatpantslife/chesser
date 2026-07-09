@@ -55,7 +55,7 @@ export function TacticsPage() {
             key={m}
             onClick={() => setMode(m)}
             className={`rounded px-3 py-1.5 text-sm ${
-              mode === m ? 'bg-emerald-600 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+              mode === m ? 'bg-emerald-700 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
             }`}
           >
             {labels[m]}
@@ -333,12 +333,12 @@ function PracticeTactics() {
       />
 
       <div className="order-1 space-y-3 lg:order-2">
-        <div className="flex h-7 flex-wrap items-center gap-2 text-sm">
+        <div className="flex min-h-7 flex-wrap items-center gap-2 text-sm">
           <span className="rounded bg-neutral-700 px-2 py-0.5 text-xs text-neutral-200">{puzzle.theme}</span>
           <span className={`text-xs capitalize ${DIFF_COLOR[puzzle.difficulty]}`}>{puzzle.difficulty}</span>
-          <span className="text-xs text-neutral-500">rated {pr}</span>
-          <span className="capitalize text-neutral-400">{puzzle.turn} to move</span>
-          {solverToMove && <span className="animate-pulse text-emerald-400">· your move</span>}
+          <span className="text-xs text-neutral-400">rated {pr}</span>
+          <span className="text-neutral-400">{puzzle.turn === 'white' ? 'White' : 'Black'} to move</span>
+          {solverToMove && <span className="animate-pulse-soft text-emerald-400">· your move</span>}
         </div>
         <div className="mx-auto w-full max-w-[540px]">
           <Board
@@ -354,7 +354,7 @@ function PracticeTactics() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {phase === 'failed' && (
-            <button onClick={retry} className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500">
+            <button onClick={retry} className="rounded bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800">
               Try again
             </button>
           )}
@@ -392,17 +392,17 @@ function PracticeTactics() {
                 {delta >= 0 ? '+' : ''}
                 {delta} rating
               </span>{' '}
-              <span className="text-neutral-500">→ {rating}</span>
+              <span className="text-neutral-400">→ {rating}</span>
             </p>
           )}
-          {puzzle.source && <p className="mt-2 text-xs text-neutral-500">from {puzzle.source}</p>}
+          {puzzle.source && <p className="mt-2 text-xs text-neutral-400">from {puzzle.source}</p>}
           {solvedCard?.last && phase === 'solving' && (
-            <p className="mt-2 text-xs text-neutral-500">You’ve seen this one before — recall the idea.</p>
+            <p className="mt-2 text-xs text-neutral-400">You’ve seen this one before — recall the idea.</p>
           )}
           {phase === 'solved' && (
             <button
               onClick={next}
-              className="mt-3 w-full rounded bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+              className="mt-3 w-full rounded bg-emerald-700 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
             >
               Next puzzle
             </button>
@@ -447,8 +447,8 @@ function Sidebar(props: {
         <p className="mb-2 text-xs text-neutral-400">Find the one winning move — every puzzle is engine-verified.</p>
 
         <div className="mb-3 flex items-center justify-between rounded bg-panelmute px-2.5 py-1.5">
-          <span className="text-xs uppercase tracking-wide text-neutral-500">
-            Your rating <span className="text-neutral-600">· {props.meter === 'glicko' ? 'Glicko' : 'Elo'}</span>
+          <span className="text-xs uppercase tracking-wide text-neutral-400">
+            Your rating <span className="text-neutral-400">· {props.meter === 'glicko' ? 'Glicko' : 'Elo'}</span>
           </span>
           <span className="font-mono text-lg font-bold text-emerald-300">{props.rating}</span>
         </div>
@@ -456,14 +456,14 @@ function Sidebar(props: {
         <ReviewStats deck="tactics" ids={ALL_IDS} />
 
         <div className="mt-3">
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Source</div>
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Source</div>
           <div className="flex gap-1">
             {props.sources.map((s) => (
               <button
                 key={s.id}
                 onClick={() => props.setSource(s.id)}
                 className={`flex-1 rounded px-1.5 py-1 text-xs ${
-                  props.source === s.id ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                  props.source === s.id ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                 }`}
               >
                 {s.label}
@@ -473,14 +473,14 @@ function Sidebar(props: {
         </div>
 
         <div className="mt-3">
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Difficulty</div>
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Difficulty</div>
           <div className="flex gap-1">
             {(['all', 'easy', 'medium', 'hard'] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => props.setDiffFilter(f)}
                 className={`flex-1 rounded px-1.5 py-1 text-xs capitalize ${
-                  props.diffFilter === f ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                  props.diffFilter === f ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                 }`}
               >
                 {f}
@@ -490,12 +490,12 @@ function Sidebar(props: {
         </div>
 
         <div className="mt-3">
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Theme</div>
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Theme</div>
           <div className="flex flex-wrap gap-1">
             <button
               onClick={() => props.setThemeFilter('all')}
               className={`rounded px-2 py-1 text-xs ${
-                props.themeFilter === 'all' ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                props.themeFilter === 'all' ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
               }`}
             >
               All
@@ -506,13 +506,13 @@ function Sidebar(props: {
                 onClick={() => props.setThemeFilter(m)}
                 title={`${props.themeCounts.get(m)} puzzles`}
                 className={`rounded px-2 py-1 text-xs ${
-                  props.themeFilter === m ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                  props.themeFilter === m ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                 }`}
               >
                 {MOTIF_LABELS[m]}
               </button>
             ))}
-            {themes.length === 0 && <span className="px-1 py-1 text-xs text-neutral-600">no themes here</span>}
+            {themes.length === 0 && <span className="px-1 py-1 text-xs text-neutral-400">no themes here</span>}
           </div>
         </div>
 
@@ -523,7 +523,7 @@ function Sidebar(props: {
 
         <button
           onClick={props.reviewDue}
-          className="mt-3 w-full rounded bg-emerald-600 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500"
+          className="mt-3 w-full rounded bg-emerald-700 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800"
         >
           Review due
         </button>

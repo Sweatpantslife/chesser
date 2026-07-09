@@ -4,8 +4,8 @@ export function StatCard({ label, value, hint }: { label: string; value: ReactNo
   return (
     <div className="rounded-lg bg-panel p-3 text-center">
       <div className="text-2xl font-bold text-ink">{value}</div>
-      <div className="mt-0.5 text-[11px] uppercase tracking-wide text-neutral-500">{label}</div>
-      {hint && <div className="mt-0.5 text-[11px] text-neutral-400">{hint}</div>}
+      <div className="mt-0.5 text-xs uppercase tracking-wide text-neutral-400">{label}</div>
+      {hint && <div className="mt-0.5 text-xs text-neutral-400">{hint}</div>}
     </div>
   );
 }
@@ -33,6 +33,13 @@ const heatLevel = (v: number) => (v === 0 ? 0 : v <= 3 ? 1 : v <= 9 ? 2 : v <= 1
 
 /** GitHub-style activity calendar. `days` are chronological, starting on a Sunday. */
 export function Heatmap({ days }: { days: { date: string; value: number }[] }) {
+  if (days.every((d) => d.value === 0)) {
+    return (
+      <p className="rounded border border-dashed border-neutral-700 px-3 py-2 text-sm text-neutral-400">
+        No activity yet — solved puzzles and drills will light up this calendar.
+      </p>
+    );
+  }
   return (
     <div
       className="grid w-full gap-[3px]"
@@ -64,7 +71,7 @@ export function RatingSparkline({ data }: { data: number[] }) {
       <svg viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" className="h-12 flex-1">
         <polyline points={pts} fill="none" stroke="#34d399" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
       </svg>
-      <div className="text-right text-[11px] text-neutral-500">
+      <div className="text-right text-xs text-neutral-400">
         <div className="text-emerald-300">{max}</div>
         <div>{min}</div>
       </div>
@@ -80,6 +87,13 @@ export interface DayPoint {
 
 /** Reviews-per-day bars with an accuracy-% line overlaid. */
 export function ActivityChart({ data }: { data: DayPoint[] }) {
+  if (data.every((d) => d.reviews === 0)) {
+    return (
+      <div className="flex h-28 w-full items-center justify-center rounded border border-dashed border-neutral-700 px-3 text-center text-sm text-neutral-400">
+        No activity yet — play a game or solve a puzzle to start the chart.
+      </div>
+    );
+  }
   const n = data.length;
   const maxReviews = Math.max(1, ...data.map((d) => d.reviews));
   const H = 100;

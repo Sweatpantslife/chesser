@@ -49,7 +49,7 @@ function TimeControlPicker({ value, onChange }: { value: TimeControl | null; onC
             key={tc?.label ?? 'unlimited'}
             onClick={() => onChange(tc)}
             className={`flex-1 rounded px-2 py-1 text-xs font-medium ${
-              selected ? 'bg-emerald-600 text-white' : 'text-neutral-300 hover:bg-neutral-800'
+              selected ? 'bg-emerald-700 text-white' : 'text-neutral-300 hover:bg-neutral-800'
             }`}
           >
             {tc?.label ?? '∞'}
@@ -62,7 +62,7 @@ function TimeControlPicker({ value, onChange }: { value: TimeControl | null; onC
 
 const inputCls =
   'w-full rounded bg-panelmute px-2 py-1.5 text-sm text-ink placeholder-neutral-600 outline-none focus:ring-1 focus:ring-emerald-600';
-const labelCls = 'text-xs font-medium uppercase tracking-wide text-neutral-500';
+const labelCls = 'text-xs font-medium uppercase tracking-wide text-neutral-400';
 
 export function HumansPage() {
   const [screen, setScreen] = useState<Screen>(() => {
@@ -156,7 +156,7 @@ function Menu({ start }: { start: (s: Screen) => void }) {
     <div className="mx-auto w-full max-w-[900px] space-y-4">
       <div>
         <h2 className="text-lg font-bold text-ink">Play a human</h2>
-        <p className="text-sm text-neutral-500">Casual, unrated games — on this device or online with a friend.</p>
+        <p className="text-sm text-neutral-400">Casual, unrated games — on this device or online with a friend.</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -164,7 +164,7 @@ function Menu({ start }: { start: (s: Screen) => void }) {
         <section className="space-y-3 rounded-lg bg-panel p-4" data-testid="card-local">
           <div>
             <h3 className="font-semibold text-ink">🤝 Pass &amp; play</h3>
-            <p className="text-xs text-neutral-500">Two players, one device. Hand it over between moves.</p>
+            <p className="text-xs text-neutral-400">Two players, one device. Hand it over between moves.</p>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <label className="space-y-1">
@@ -193,7 +193,7 @@ function Menu({ start }: { start: (s: Screen) => void }) {
         <section className="space-y-3 rounded-lg bg-panel p-4" data-testid="card-online">
           <div>
             <h3 className="font-semibold text-ink">🔗 Play a friend online</h3>
-            <p className="text-xs text-neutral-500">Create a game and share the link — no account needed.</p>
+            <p className="text-xs text-neutral-400">Create a game and share the link — no account needed.</p>
           </div>
           <label className="block space-y-1">
             <span className={labelCls}>Your name (optional)</span>
@@ -218,7 +218,7 @@ function Menu({ start }: { start: (s: Screen) => void }) {
                   onClick={() => setMyColor(c)}
                   data-testid={`color-${c}`}
                   className={`flex-1 rounded px-2 py-1 text-xs font-medium capitalize ${
-                    myColor === c ? 'bg-emerald-600 text-white' : 'text-neutral-300 hover:bg-neutral-800'
+                    myColor === c ? 'bg-emerald-700 text-white' : 'text-neutral-300 hover:bg-neutral-800'
                   }`}
                 >
                   {c === 'random' ? '⚄ Random' : c === 'white' ? '□ White' : '■ Black'}
@@ -251,12 +251,12 @@ function Menu({ start }: { start: (s: Screen) => void }) {
           <ul className="space-y-1 text-sm text-neutral-400">
             {recent.map((g, i) => (
               <li key={`${g.at}-${i}`} className="flex flex-wrap items-center gap-x-2">
-                <span className="text-neutral-500">{new Date(g.at).toLocaleDateString()}</span>
+                <span className="text-neutral-400">{new Date(g.at).toLocaleDateString()}</span>
                 <span className="text-neutral-300">
                   {g.white} vs {g.black}
                 </span>
                 <span>{g.winner === 'draw' ? '½–½' : g.winner === 'white' ? '1–0' : '0–1'}</span>
-                <span className="text-neutral-600">
+                <span className="text-neutral-400">
                   · {g.reason} · {g.mode === 'local' ? 'pass & play' : 'friend link'}
                 </span>
               </li>

@@ -225,11 +225,13 @@ export function EndgamePage() {
                 key={s.id}
                 onClick={() => load(s)}
                 className={`flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-left text-xs ${
-                  study.id === s.id ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
+                  study.id === s.id ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                 }`}
               >
                 <span className="truncate">{s.name}</span>
-                <span className="shrink-0 text-[10px] uppercase opacity-60">{s.goal}</span>
+                <span className={`shrink-0 text-xs uppercase ${study.id === s.id ? 'text-emerald-100' : 'text-neutral-300'}`}>
+                  {s.goal}
+                </span>
               </button>
             ))}
           </div>
@@ -263,7 +265,7 @@ export function EndgamePage() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={() => load(study)} className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500">
+          <button onClick={() => load(study)} className="rounded bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800">
             Restart
           </button>
           <button
@@ -284,7 +286,7 @@ export function EndgamePage() {
           </p>
           <p className="text-xs leading-snug text-neutral-400">{study.technique}</p>
           {phase === 'playing' && (
-            <p className="mt-2 font-mono text-xs text-neutral-500">
+            <p className="mt-2 font-mono text-xs text-neutral-400">
               {tb?.available
                 ? `${tb.source === 'syzygy' ? 'syzygy' : 'tablebase'} · ${tb.category}${tb.dtz != null ? ` · dtz ${tb.dtz}` : ''}`
                 : analysis.score
@@ -293,7 +295,7 @@ export function EndgamePage() {
             </p>
           )}
           {syzygy.on && (
-            <p className="mt-2 text-[11px] leading-snug text-emerald-400/80">
+            <p className="mt-2 text-xs leading-snug text-emerald-400/80">
               ♟ Syzygy {syzygy.max ?? 7}-man tablebases loaded — the defender is perfect.
             </p>
           )}
