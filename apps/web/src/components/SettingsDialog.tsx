@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { createElement, useEffect } from 'react';
 import { useSettings, PIECE_SETS, type BoardTheme, type PieceSet } from '../store/settings';
 import { loadAllPieceSets } from '../styles/pieceSets';
 
@@ -23,11 +23,13 @@ function Toggle({ on, onChange, label }: { on: boolean; onChange: (b: boolean) =
   );
 }
 
-/** A king swatch rendered with the given piece set's CSS. */
+/** A king swatch rendered with the given piece set's CSS. The generated set
+ *  CSS targets the chessground `piece` *element* (`.pieces-<id> piece.king.white`),
+ *  so the swatch must be a real <piece> element — a class on a span never matches. */
 function PieceSwatch({ set }: { set: PieceSet }) {
   return (
     <span className={`pieces-${set} block h-7 w-7`}>
-      <span className="piece king white piece-preview block h-full w-full" />
+      {createElement('piece', { className: 'king white piece-preview block h-full w-full' })}
     </span>
   );
 }
