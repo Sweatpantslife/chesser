@@ -124,7 +124,7 @@ export function MoveDetailPanel({ move, onShowArrow, onPlayVariation, onPractice
                 {glyph && <span className="ml-1">{glyph}</span>}
               </span>
             </div>
-            <div className="text-xs text-neutral-500">
+            <div className="text-xs text-neutral-400">
               eval <span className="font-mono text-neutral-300">{evalBefore}</span> →{' '}
               <span className="font-mono text-neutral-300">{evalAfter}</span>
             </div>
@@ -145,7 +145,7 @@ export function MoveDetailPanel({ move, onShowArrow, onPlayVariation, onPractice
 
         {move.pv.length > 0 && (
           <div>
-            <div className="mb-1 text-[11px] uppercase tracking-wide text-neutral-500">Engine line</div>
+            <div className="mb-1 text-[11px] uppercase tracking-wide text-neutral-400">Engine line</div>
             <div className="flex flex-wrap gap-x-1 gap-y-1 text-xs">
               {move.pv.map((san, i) => {
                 const label = pvLabel(move.ply + i, i);
@@ -156,7 +156,7 @@ export function MoveDetailPanel({ move, onShowArrow, onPlayVariation, onPractice
                     title="Play the line up to here on the board"
                     className="btn-press rounded px-1 py-0.5 font-mono text-neutral-200 hover:bg-neutral-700 hover:text-emerald-300"
                   >
-                    {label && <span className="mr-0.5 text-neutral-500">{label}</span>}
+                    {label && <span className="mr-0.5 text-neutral-400">{label}</span>}
                     {san}
                   </button>
                 );

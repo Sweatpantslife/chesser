@@ -162,7 +162,7 @@ export function MistakeReviewPanel({
       <div className="flex items-center justify-between">
         <h3 className="font-display text-sm font-semibold text-ink">
           Mistakes
-          {total > 0 && <span className="ml-1.5 text-xs font-normal text-neutral-500">{total}</span>}
+          {total > 0 && <span className="ml-1.5 text-xs font-normal text-neutral-400">{total}</span>}
         </h3>
         {total > 1 && (
           <button
@@ -177,7 +177,7 @@ export function MistakeReviewPanel({
       </div>
 
       {total === 0 ? (
-        <p className="mt-2 text-xs text-neutral-500">No mistakes — clean game!</p>
+        <p className="mt-2 text-xs text-neutral-400">No mistakes — clean game!</p>
       ) : (
         <>
           <div className="mt-2 flex flex-wrap items-center gap-1">
@@ -193,7 +193,7 @@ export function MistakeReviewPanel({
                   onClick={() => toggleClass(cls)}
                   title={`${meta.label} — click to ${on ? 'hide' : 'show'}`}
                   className={`btn-press rounded-full px-2 py-0.5 text-xs font-semibold ring-1 disabled:opacity-40 ${
-                    on ? `${meta.bg} ${meta.text} ${meta.ring}` : 'bg-neutral-800 text-neutral-500 ring-neutral-700 hover:text-neutral-300'
+                    on ? `${meta.bg} ${meta.text} ${meta.ring}` : 'bg-neutral-800 text-neutral-400 ring-neutral-700 hover:text-neutral-300'
                   }`}
                 >
                   {CLASSIFICATION_GLYPH[cls]} {counts[cls]}
@@ -207,7 +207,7 @@ export function MistakeReviewPanel({
                   data-side={s}
                   aria-pressed={side === s}
                   onClick={() => setSide(s)}
-                  className={`px-1.5 py-0.5 text-[11px] capitalize ${side === s ? 'bg-neutral-700 text-ink' : 'text-neutral-500 hover:text-neutral-300'}`}
+                  className={`px-1.5 py-0.5 text-[11px] capitalize ${side === s ? 'bg-neutral-700 text-ink' : 'text-neutral-400 hover:text-neutral-300'}`}
                 >
                   {s}
                 </button>
@@ -216,7 +216,7 @@ export function MistakeReviewPanel({
           </div>
 
           {rows.length === 0 ? (
-            <p className="mt-2 text-xs text-neutral-500">No moves match the current filters.</p>
+            <p className="mt-2 text-xs text-neutral-400">No moves match the current filters.</p>
           ) : (
             <ul ref={listRef} onKeyDown={onListKeyDown} aria-label="Mistakes in this game" className="mt-2 space-y-1">
               {rows.map((m) => {
@@ -258,7 +258,7 @@ export function MistakeReviewPanel({
                     </div>
                     {cause && <p className="mt-0.5 truncate pl-8 text-[11px] leading-tight text-neutral-400">{cause}</p>}
                     {m.bestMoveSan && (
-                      <p className="mt-0.5 truncate pl-8 text-[11px] leading-tight text-neutral-500">
+                      <p className="mt-0.5 truncate pl-8 text-[11px] leading-tight text-neutral-400">
                         Best <span className="font-mono text-emerald-300">{line || m.bestMoveSan}</span>
                         {m.bestReplySan && (
                           // The reply refutes the PLAYED move, not the best line — name the move.

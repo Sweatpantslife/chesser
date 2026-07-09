@@ -174,17 +174,17 @@ export function ReviewSummary({ report, reviewing, onSelectPly, onFilterClass, o
                   )}
                   <span className="min-w-0 flex-1 text-xs leading-tight text-neutral-200">{opening.name}</span>
                 </div>
-                {theory && <p className="mt-1 text-[11px] text-neutral-500">{theory}</p>}
+                {theory && <p className="mt-1 text-[11px] text-neutral-400">{theory}</p>}
               </>
             ) : (
-              <p className="text-xs text-neutral-500">No book opening detected.</p>
+              <p className="text-xs text-neutral-400">No book opening detected.</p>
             )}
           </div>
 
           <div className="border-t border-neutral-800 pt-2">
             <table className="w-full text-xs">
               <thead>
-                <tr className="text-neutral-500">
+                <tr className="text-neutral-400">
                   <th className="text-left font-normal">Phase</th>
                   <th className="w-14 text-center font-normal">White</th>
                   <th className="w-14 text-center font-normal">Black</th>
@@ -197,7 +197,7 @@ export function ReviewSummary({ report, reviewing, onSelectPly, onFilterClass, o
                     <tr key={p.phase}>
                       <td className="py-0.5">
                         {empty ? (
-                          <span className="text-neutral-600">{PHASE_LABEL[p.phase]}</span>
+                          <span className="text-neutral-400">{PHASE_LABEL[p.phase]}</span>
                         ) : (
                           <button
                             data-phase={p.phase}
@@ -220,7 +220,7 @@ export function ReviewSummary({ report, reviewing, onSelectPly, onFilterClass, o
 
           {criticalMoments.length > 0 && (
             <div className="border-t border-neutral-800 pt-2">
-              <h4 className="text-[11px] uppercase tracking-wide text-neutral-500">Key moments</h4>
+              <h4 className="text-[11px] uppercase tracking-wide text-neutral-400">Key moments</h4>
               <div className="mt-1 space-y-0.5">
                 {criticalMoments.map((c) => (
                   <button
