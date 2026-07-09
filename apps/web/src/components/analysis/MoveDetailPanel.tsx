@@ -51,7 +51,7 @@ export function displayClassification(move: MoveDetail): Classification {
 }
 
 const ctrl =
-  'flex h-6 w-7 items-center justify-center rounded text-xs text-neutral-300 bg-neutral-700 hover:bg-neutral-600 disabled:opacity-30 disabled:hover:bg-neutral-700';
+  'btn-press flex h-6 w-7 items-center justify-center rounded-lg text-xs text-neutral-300 bg-neutral-700 hover:bg-neutral-600 disabled:opacity-30 disabled:hover:bg-neutral-700';
 
 const moveLabel = (ply: number) => `${Math.ceil(ply / 2)}${ply % 2 === 1 ? '.' : '…'}`;
 
@@ -89,9 +89,9 @@ export function MoveDetailPanel({ move, onShowArrow, onPlayVariation, onPractice
   const hasArrow = bestMoveArrow(move.bestMoveUci) !== null;
 
   return (
-    <div className="rounded-lg bg-panel p-3">
+    <div className="rounded-2xl bg-panel p-3 shadow-soft">
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-ink">Move detail</h3>
+        <h3 className="font-display text-sm font-semibold text-ink">Move detail</h3>
         {onSelectPly && (
           <div className="flex items-center gap-1">
             <button onClick={() => onSelectPly(move.ply - 1)} disabled={move.ply <= 0} title="Previous move" className={ctrl}>
@@ -137,7 +137,7 @@ export function MoveDetailPanel({ move, onShowArrow, onPlayVariation, onPractice
           <button
             onClick={() => onPlayVariation([move.pv[0] ?? move.bestMoveSan!], move.ply)}
             title="Play the engine's move on the board"
-            className="block w-full rounded-md bg-emerald-500/10 px-2.5 py-1.5 text-left text-xs text-neutral-300 ring-1 ring-emerald-400/30 hover:bg-emerald-500/20"
+            className="btn-press block w-full rounded-lg bg-emerald-500/10 px-2.5 py-1.5 text-left text-xs text-neutral-300 ring-1 ring-emerald-400/30 hover:bg-emerald-500/20"
           >
             Best was <span className="font-mono font-semibold text-emerald-300">{move.bestMoveSan}</span>
           </button>
@@ -154,7 +154,7 @@ export function MoveDetailPanel({ move, onShowArrow, onPlayVariation, onPractice
                     key={`${i}-${san}`}
                     onClick={() => onPlayVariation(move.pv.slice(0, i + 1), move.ply)}
                     title="Play the line up to here on the board"
-                    className="rounded px-1 py-0.5 font-mono text-neutral-200 hover:bg-neutral-700 hover:text-emerald-300"
+                    className="btn-press rounded px-1 py-0.5 font-mono text-neutral-200 hover:bg-neutral-700 hover:text-emerald-300"
                   >
                     {label && <span className="mr-0.5 text-neutral-500">{label}</span>}
                     {san}
@@ -169,14 +169,14 @@ export function MoveDetailPanel({ move, onShowArrow, onPlayVariation, onPractice
           {hasArrow && (
             <button
               onClick={() => setShowBest((v) => !v)}
-              className="rounded bg-neutral-700 px-2 py-1 text-xs font-semibold text-neutral-100 hover:bg-neutral-600"
+              className="btn-press rounded-lg bg-neutral-700 px-2 py-1 text-xs font-semibold text-neutral-100 hover:bg-neutral-600"
             >
               {showBest ? 'Hide best move' : 'Show best move'}
             </button>
           )}
           <button
             onClick={() => onPractice(move.ply)}
-            className="rounded bg-neutral-700 px-2 py-1 text-xs font-semibold text-neutral-100 hover:bg-neutral-600"
+            className="btn-press rounded-lg bg-brand-600 px-2 py-1 text-xs font-semibold text-white hover:bg-brand-500"
           >
             Practice this position
           </button>

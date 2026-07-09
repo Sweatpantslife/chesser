@@ -74,15 +74,15 @@ export function theoryText(leftTheoryAtPly: number, totalPlies: number): string 
 
 function PlayerCard({ side, summary, rating, isYou }: { side: Side; summary: PlayerSummary; rating: number; isYou: boolean }) {
   return (
-    <div className="rounded bg-neutral-800/60 p-2">
+    <div className="rounded-xl bg-neutral-800/60 p-2">
       <div className="flex items-center gap-1.5">
         <span
           className={`h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-neutral-600 ${side === 'white' ? 'bg-neutral-100' : 'bg-neutral-900'}`}
         />
         <span className="text-xs font-semibold capitalize text-neutral-300">{side}</span>
-        {isYou && <span className="rounded bg-indigo-500/20 px-1 text-[10px] font-semibold text-indigo-300">you</span>}
+        {isYou && <span className="rounded-full bg-brand-500/20 px-1.5 text-[10px] font-semibold text-brand-300">you</span>}
       </div>
-      <div className="mt-1.5 text-2xl font-bold leading-none text-emerald-300">
+      <div className="mt-1.5 font-display text-2xl font-bold leading-none text-emerald-300">
         {summary.accuracy}
         <span className="text-sm font-semibold">%</span>
       </div>
@@ -102,7 +102,7 @@ function CountCell({ side, cls, count, onFilterClass }: { side: Side; cls: Class
       onClick={() => onFilterClass(cls)}
       disabled={count === 0}
       title={count > 0 ? `Show ${CLASSIFICATION_META[cls].label.toLowerCase()} moves` : undefined}
-      className="w-full rounded px-1 py-0.5 text-neutral-300 enabled:hover:bg-neutral-700 enabled:hover:text-ink disabled:text-neutral-600"
+      className="btn-press w-full rounded px-1 py-0.5 text-neutral-300 enabled:hover:bg-neutral-700 enabled:hover:text-ink disabled:text-neutral-600"
     >
       {count}
     </button>
@@ -115,13 +115,13 @@ export function ReviewSummary({ report, reviewing, onSelectPly, onFilterClass, o
   const phaseEmpty = (p: PhaseStats) => p.endPly < p.startPly || p.white.moves + p.black.moves === 0;
 
   return (
-    <div className="rounded-lg bg-panel p-3">
+    <div className="rounded-2xl bg-panel p-3 shadow-soft">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-ink">Game report</h3>
+        <h3 className="font-display text-sm font-semibold text-ink">Game report</h3>
         {onExportPgn && (
           <button
             onClick={onExportPgn}
-            className="rounded px-1.5 py-0.5 text-xs text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+            className="btn-press rounded-lg px-1.5 py-0.5 text-xs text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
           >
             Export PGN
           </button>
@@ -131,11 +131,11 @@ export function ReviewSummary({ report, reviewing, onSelectPly, onFilterClass, o
       {reviewing ? (
         <div className="mt-2 animate-pulse space-y-2" data-skeleton>
           <div className="grid grid-cols-2 gap-2">
-            <div className="h-20 rounded bg-neutral-800" />
-            <div className="h-20 rounded bg-neutral-800" />
+            <div className="h-20 rounded-xl bg-neutral-800" />
+            <div className="h-20 rounded-xl bg-neutral-800" />
           </div>
-          <div className="h-28 rounded bg-neutral-800" />
-          <div className="h-16 rounded bg-neutral-800" />
+          <div className="h-28 rounded-xl bg-neutral-800" />
+          <div className="h-16 rounded-xl bg-neutral-800" />
         </div>
       ) : (
         <div className="mt-2 space-y-3">
@@ -227,7 +227,7 @@ export function ReviewSummary({ report, reviewing, onSelectPly, onFilterClass, o
                     key={c.ply}
                     data-moment-ply={c.ply}
                     onClick={() => onSelectPly(c.ply)}
-                    className="flex w-full items-start gap-1.5 rounded px-1.5 py-1 text-left text-xs hover:bg-neutral-700/60"
+                    className="btn-press flex w-full items-start gap-1.5 rounded-lg px-1.5 py-1 text-left text-xs hover:bg-neutral-700/60"
                   >
                     <span className={`w-5 shrink-0 text-center font-semibold ${KIND_META[c.kind].text}`}>{KIND_META[c.kind].icon}</span>
                     <span className="min-w-0 flex-1 leading-tight text-neutral-300">{c.description}</span>

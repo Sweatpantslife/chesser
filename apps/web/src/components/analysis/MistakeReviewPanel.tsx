@@ -158,9 +158,9 @@ export function MistakeReviewPanel({
   };
 
   return (
-    <div className="rounded-lg bg-panel p-3">
+    <div className="rounded-2xl bg-panel p-3 shadow-soft">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-ink">
+        <h3 className="font-display text-sm font-semibold text-ink">
           Mistakes
           {total > 0 && <span className="ml-1.5 text-xs font-normal text-neutral-500">{total}</span>}
         </h3>
@@ -169,7 +169,7 @@ export function MistakeReviewPanel({
             data-sort
             onClick={() => setOrder((o) => (o === 'severity' ? 'ply' : 'severity'))}
             title="Toggle list order"
-            className="rounded px-1.5 py-0.5 text-xs text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+            className="btn-press rounded-lg px-1.5 py-0.5 text-xs text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
           >
             {order === 'severity' ? 'Worst first' : 'Game order'}
           </button>
@@ -192,7 +192,7 @@ export function MistakeReviewPanel({
                   disabled={counts[cls] === 0}
                   onClick={() => toggleClass(cls)}
                   title={`${meta.label} — click to ${on ? 'hide' : 'show'}`}
-                  className={`rounded-full px-2 py-0.5 text-xs font-semibold ring-1 disabled:opacity-40 ${
+                  className={`btn-press rounded-full px-2 py-0.5 text-xs font-semibold ring-1 disabled:opacity-40 ${
                     on ? `${meta.bg} ${meta.text} ${meta.ring}` : 'bg-neutral-800 text-neutral-500 ring-neutral-700 hover:text-neutral-300'
                   }`}
                 >
@@ -200,7 +200,7 @@ export function MistakeReviewPanel({
                 </button>
               );
             })}
-            <div className="ml-auto flex overflow-hidden rounded ring-1 ring-neutral-700">
+            <div className="ml-auto flex overflow-hidden rounded-lg ring-1 ring-neutral-700">
               {(['both', 'white', 'black'] as const).map((s) => (
                 <button
                   key={s}
@@ -230,7 +230,7 @@ export function MistakeReviewPanel({
                     key={m.ply}
                     data-row-ply={m.ply}
                     data-current={current || undefined}
-                    className={`rounded-md px-2 py-1.5 ${current ? 'bg-neutral-700/50 ring-1 ring-neutral-500/50' : 'hover:bg-neutral-800/60'}`}
+                    className={`rounded-lg px-2 py-1.5 ${current ? 'bg-brand-500/15 ring-1 ring-brand-400/40' : 'hover:bg-neutral-800/60'}`}
                   >
                     <div className="flex items-center gap-1.5">
                       <button
@@ -251,7 +251,7 @@ export function MistakeReviewPanel({
                         data-practice={m.ply}
                         onClick={() => onPractice(m.ply)}
                         title="Practice vs engine from this position"
-                        className="shrink-0 rounded bg-neutral-700 px-1.5 py-0.5 text-[11px] font-semibold text-neutral-100 hover:bg-neutral-600"
+                        className="btn-press shrink-0 rounded-lg bg-neutral-700 px-1.5 py-0.5 text-[11px] font-semibold text-neutral-100 hover:bg-neutral-600"
                       >
                         Practice
                       </button>

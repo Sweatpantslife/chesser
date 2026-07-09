@@ -99,8 +99,9 @@ export function markerFill(move: MoveDetail): string | null {
   return MARKER_FILL[move.classification] ?? null;
 }
 
+// Phase tints from the "playful night" palette: brand violet / mint / gold.
 const PHASE_TINT: Record<PhaseName, string> = {
-  opening: 'rgba(129, 140, 248, 0.06)',
+  opening: 'rgba(139, 92, 246, 0.08)',
   middlegame: 'rgba(52, 211, 153, 0.05)',
   endgame: 'rgba(251, 191, 36, 0.06)',
 };
@@ -202,18 +203,19 @@ export function EvalGraphPro({
       onMouseMove={sparkline ? undefined : (e) => setHoverPly(plyFromEvent(e))}
       onMouseLeave={sparkline ? undefined : () => setHoverPly(null)}
       onKeyDown={interactive ? onKeyDown : undefined}
-      className={`relative w-full select-none rounded focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-400/60 ${interactive ? 'cursor-pointer' : ''}`}
+      className={`relative w-full select-none rounded-lg focus:outline-none focus-visible:ring-1 focus-visible:ring-brand-400/60 ${interactive ? 'cursor-pointer' : ''}`}
     >
-      <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" width="100%" height={h} className="block rounded">
-        {/* Black's share: the dark background above the white area. */}
-        <rect x={0} y={0} width={w} height={h} fill="#141821" />
+      <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" width="100%" height={h} className="block rounded-lg">
+        {/* Black's share: the dark background above the white area
+            (neutral-900 from the design tokens). */}
+        <rect x={0} y={0} width={w} height={h} fill="#181530" />
         {bands.map((b) => (
           <rect key={b.phase} x={b.x0} y={0} width={b.width} height={h} fill={PHASE_TINT[b.phase]} />
         ))}
         {/* White's share of the win chance. */}
-        <path d={area} fill="#d8dce4" fillOpacity={0.92} />
-        <path d={line} fill="none" stroke="#f4f6f9" strokeWidth={1.25} strokeLinejoin="round" />
-        <line x1={0} y1={h / 2} x2={w} y2={h / 2} stroke="#3a4150" strokeWidth={1} opacity={0.9} />
+        <path d={area} fill="#ece9f7" fillOpacity={0.92} />
+        <path d={line} fill="none" stroke="#f7f5fd" strokeWidth={1.25} strokeLinejoin="round" />
+        <line x1={0} y1={h / 2} x2={w} y2={h / 2} stroke="#3a3560" strokeWidth={1} opacity={0.9} />
         {!sparkline &&
           (criticalMoments ?? [])
             .filter((c) => c.ply >= 1 && c.ply <= n)
@@ -232,9 +234,9 @@ export function EvalGraphPro({
             ))}
         {bands.map((b, i) => (
           <g key={`edge-${b.phase}`}>
-            {i > 0 && <line x1={b.x0} y1={0} x2={b.x0} y2={h} stroke="#4b5563" strokeWidth={1} opacity={0.5} strokeDasharray="3 3" />}
+            {i > 0 && <line x1={b.x0} y1={0} x2={b.x0} y2={h} stroke="#4c4677" strokeWidth={1} opacity={0.5} strokeDasharray="3 3" />}
             {b.width >= 56 && (
-              <text x={b.x0 + 4} y={10} fontSize={8} fill="#6b7280" style={{ letterSpacing: '0.08em' }}>
+              <text x={b.x0 + 4} y={10} fontSize={8} fill="#a49cc8" style={{ letterSpacing: '0.08em' }}>
                 {PHASE_LABEL[b.phase]}
               </text>
             )}
@@ -253,15 +255,15 @@ export function EvalGraphPro({
                 cy={yOf(points[i + 1]!.win)}
                 r={3}
                 fill={fill}
-                stroke="#10131a"
+                stroke="#0f0d1d"
                 strokeWidth={1}
               />
             );
           })}
         {hoverPly !== null && !sparkline && (
           <g>
-            <line x1={xOf(hoverPly)} y1={0} x2={xOf(hoverPly)} y2={h} stroke="#e7e2d6" strokeWidth={1} opacity={0.35} />
-            <circle cx={xOf(hoverPly)} cy={yOf(points[hoverPly]!.win)} r={2.5} fill="none" stroke="#e7e2d6" strokeWidth={1} opacity={0.7} />
+            <line x1={xOf(hoverPly)} y1={0} x2={xOf(hoverPly)} y2={h} stroke="#ddd8ee" strokeWidth={1} opacity={0.35} />
+            <circle cx={xOf(hoverPly)} cy={yOf(points[hoverPly]!.win)} r={2.5} fill="none" stroke="#ddd8ee" strokeWidth={1} opacity={0.7} />
           </g>
         )}
         <line x1={xOf(cursorPly)} y1={0} x2={xOf(cursorPly)} y2={h} stroke="#34d399" strokeWidth={1.5} />
@@ -269,7 +271,7 @@ export function EvalGraphPro({
       </svg>
       {hovered && hoverPly !== null && (
         <div
-          className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded border border-neutral-700 bg-neutral-900/95 px-2 py-1 text-[11px] leading-tight shadow-lg"
+          className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-lg border border-neutral-700 bg-neutral-900/95 px-2 py-1 text-[11px] leading-tight shadow-soft"
           style={{ left: `${Math.max(10, Math.min(90, (hoverPly / n) * 100))}%` }}
         >
           <div className="font-semibold text-ink">
