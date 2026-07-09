@@ -3,11 +3,15 @@
  * grade the new analysis report renders (glyphs live in
  * CLASSIFICATION_GLYPH, lib/analytics/types.ts).
  *
- * The existing coach grade (lib/coach.ts) is consumed as a prior: when the
- * row carries one we pass it through unchanged — coach.ts already applies the
- * book/miss/brilliant/great logic and both layers must agree. We only derive a
- * grade ourselves for rows without one (cached/imported games), using the
- * exact same thresholds, so the two paths are indistinguishable.
+ * The existing coach grade (lib/coach.ts) is consumed as a prior: special
+ * grades (brilliant/great/miss) pass through untouched, but the normal tiers
+ * are re-checked against lichess's stricter error thresholds and escalated
+ * when the win% drop warrants it — the coach's HOUSE thresholds (30/20/10)
+ * are 2× more lenient than lila's 15/10/5 and under-grade canonical blunders.
+ * The report layer is the single visible source of grades (the store's legacy
+ * fields are hydrated from it on both paths), so escalating here cannot
+ * disagree with anything on screen. Rows without a coach grade
+ * (cached/imported games) are derived from scratch at the same thresholds.
  *
  * The one override in both paths: a move that delivers checkmate is always
  * best-tier for the mover, never a mistake/miss — detected purely from data
@@ -53,30 +57,66 @@ function sacrificedMaterial(fenBefore: string, playedUci: string, replyUci: stri
   }
 }
 
-/** Derivation path for rows with no coach grade — same thresholds as lib/coach.ts. */
+// — Error thresholds in mover-POV win% points, matching lichess's shipped
+// judgements (lila Advice.scala / scalachess winningChances deltas of
+// 0.3/0.2/0.1 on the ±1 scale = 15/10/5 points). lib/coach.ts still grades at
+// the 2× looser HOUSE scale (30/20/10) — hands-off until fix/coach-trainers
+// lands; the report layer's grades win everywhere visible via hydration. —
+const DROP_BLUNDER = 15;
+const DROP_MISTAKE = 10;
+const DROP_INACCURACY = 5;
+
+/** Error rank for escalation; non-error grades rank 0. */
+const ERROR_RANK: Partial<Record<Classification, number>> = { inaccuracy: 1, mistake: 2, blunder: 3 };
+
+/** The error tier a mover-POV win% drop lands in, or null below inaccuracy. */
+function dropTier(drop: number): Classification | null {
+  if (drop >= DROP_BLUNDER) return 'blunder';
+  if (drop >= DROP_MISTAKE) return 'mistake';
+  if (drop >= DROP_INACCURACY) return 'inaccuracy';
+  return null;
+}
+
+/** A serious error that only squandered a *winning* edge reads as a missed win. */
+const isMissedWin = (moverWinBefore: number, moverWinAfter: number) =>
+  moverWinBefore >= 75 && moverWinAfter >= 38 && moverWinAfter <= 65;
+
+/**
+ * Re-check a coach normal-tier grade against the stricter thresholds and
+ * escalate when the drop warrants it (never downgrade — coach errors imply a
+ * bigger drop than ours). The engine's own first choice is exempt: a win%
+ * drop on the move the engine itself wanted is eval noise, not an error.
+ */
+function escalateCoachGrade(row: MoveRow, grade: Classification): Classification {
+  if (grade === 'brilliant' || grade === 'great' || grade === 'miss') return grade;
+  const playedIsBest = !!row.bestMoveUci && row.uci === row.bestMoveUci;
+  if (playedIsBest) return grade;
+  const moverWinBefore = povWin(row.winBefore, row.side);
+  const moverWinAfter = povWin(row.winAfter, row.side);
+  const tier = dropTier(Math.max(0, moverWinBefore - moverWinAfter));
+  if (!tier || (ERROR_RANK[tier] ?? 0) <= (ERROR_RANK[grade] ?? 0)) return grade;
+  // The coach's own miss check only fires at its looser scale — re-apply it
+  // for grades that became errors here.
+  if ((tier === 'mistake' || tier === 'blunder') && isMissedWin(moverWinBefore, moverWinAfter)) return 'miss';
+  return tier;
+}
+
+/** Derivation path for rows with no coach grade. */
 function deriveGrade(row: MoveRow): Classification {
   const moverWinBefore = povWin(row.winBefore, row.side);
   const moverWinAfter = povWin(row.winAfter, row.side);
   const drop = Math.max(0, moverWinBefore - moverWinAfter);
   const playedIsBest = !!row.bestMoveUci && row.uci === row.bestMoveUci;
 
-  // — Base grade from the mover-POV win% swing. HOUSE thresholds (30/20/10
-  // win% points), shared with lib/coach.ts so both layers agree. NOTE: these
-  // are 2× more lenient than lichess's actual judgements — lila's
-  // Advice.scala fires blunder/mistake/inaccuracy at 15/10/5 win% points.
-  // Tightening must happen in BOTH layers at once; planned after
-  // fix/coach-trainers lands (coach.ts is currently hands-off). —
-  let cls: Classification;
-  if (drop >= 30) cls = 'blunder';
-  else if (drop >= 20) cls = 'mistake';
-  else if (drop >= 10) cls = 'inaccuracy';
-  else cls = playedIsBest || drop < 2 ? 'best' : 'good';
+  // Base grade from the mover-POV win% swing; the engine's own first choice
+  // is never an error (see escalateCoachGrade).
+  const tier = playedIsBest ? null : dropTier(drop);
+  const cls: Classification = tier ?? (playedIsBest || drop < 2 ? 'best' : 'good');
 
   // Theory moves that didn't lose anything are just "book".
-  if (row.isBook && drop < 10) return 'book';
+  if (row.isBook && drop < DROP_INACCURACY) return 'book';
 
-  // A serious error that only squandered a *winning* edge reads as a missed win.
-  if ((cls === 'mistake' || cls === 'blunder') && moverWinBefore >= 75 && moverWinAfter >= 38 && moverWinAfter <= 65) {
+  if ((cls === 'mistake' || cls === 'blunder') && isMissedWin(moverWinBefore, moverWinAfter)) {
     return 'miss';
   }
 
@@ -100,7 +140,9 @@ function deriveGrade(row: MoveRow): Classification {
  * Final report-layer grade for a row. Precedence (first match wins):
  *  1. delivered checkmate → best-tier (an existing brilliant/great sticks,
  *     anything else becomes 'best') — never a bad grade;
- *  2. a coach grade passes through unchanged;
+ *  2. a coach grade passes through, escalated to the lichess error tier its
+ *     win% drop lands in (brilliant/great/miss and the engine's own first
+ *     choice are exempt; never downgraded);
  *  3. otherwise derive from the row (drop thresholds, then book / miss /
  *     brilliant / great refinements).
  */
@@ -109,7 +151,7 @@ export function classifyMove(row: MoveRow): Classification {
     // Seam: consolidate with checkmateWinner() from lib/coach.ts once fix/coach-trainers lands.
     return row.coachGrade === 'brilliant' || row.coachGrade === 'great' ? row.coachGrade : 'best';
   }
-  if (row.coachGrade) return row.coachGrade;
+  if (row.coachGrade) return escalateCoachGrade(row, row.coachGrade);
   return deriveGrade(row);
 }
 

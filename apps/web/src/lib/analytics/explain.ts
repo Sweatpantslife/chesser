@@ -309,6 +309,11 @@ export function explainMove(row: MoveRow, classification: Classification): strin
       return best ? `A solid move; the engine slightly preferred ${best}.` : 'A solid, accurate move.';
     }
     case 'inaccuracy':
+      // Only claim an "edge" the mover actually had; from a worse position the
+      // better move was a defence, not a way to keep an advantage.
+      if (povWin(row.winBefore, side) < 50) {
+        return best ? `Inaccurate — ${best} was a tougher defence.` : 'Inaccurate — there was a tougher defence.';
+      }
       return best ? `Inaccurate — ${best} would have kept more of your edge.` : 'Inaccurate — there was a more precise move.';
     case 'mistake':
       return `A mistake — it lets your position slip to ${advWord(moverCpAfter)}.${best ? ` ${best} was stronger.` : ''}`;

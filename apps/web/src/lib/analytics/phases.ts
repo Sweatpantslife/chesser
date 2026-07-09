@@ -255,12 +255,17 @@ export function findCriticalMoments(moves: MoveDetail[], limit = 6): CriticalMom
 
   const built: CriticalMoment[] = candidates.map((m) => {
     const kind = momentKind(m);
+    // A delivered mate ends at the mover's edge whatever the terminal eval
+    // ({mate: 0} → 50%) says — mirrors EvalGraphPro's pinning so the exposed
+    // winSwing points the right way.
+    // Seam: consolidate with checkmateWinner() from lib/coach.ts once fix/coach-trainers lands.
+    const winAfter = m.isMate ? (m.side === 'white' ? 100 : 0) : m.winAfter;
     return {
       ply: m.ply,
       san: m.san,
       side: m.side,
       kind,
-      winSwing: Math.abs(m.winAfter - m.winBefore),
+      winSwing: Math.abs(winAfter - m.winBefore),
       description: describeMoment(m, kind),
     };
   });

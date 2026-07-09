@@ -88,6 +88,16 @@ describe('EvalGraphPro', () => {
     expect(container.querySelectorAll('[data-classification="blunder"]')).toHaveLength(0);
   });
 
+  it('is purely presentational without onSelectPly (no slider semantics, no click affordance)', () => {
+    const { container } = render(<EvalGraphPro moves={game()} phases={noPhases} viewPly={4} sparkline />);
+    expect(screen.queryByRole('slider')).toBeNull();
+    const img = screen.getByRole('img');
+    expect(img.getAttribute('title')).toBeNull();
+    expect(img.getAttribute('tabindex')).toBeNull();
+    expect(img.className).not.toContain('cursor-pointer');
+    expect(container.querySelector('svg')).toBeTruthy();
+  });
+
   it('jumps plies with arrow keys, clamped to the game', () => {
     const onSelectPly = vi.fn();
     render(<EvalGraphPro moves={game()} phases={noPhases} viewPly={1} onSelectPly={onSelectPly} />);

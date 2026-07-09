@@ -92,21 +92,23 @@ describe('cpValue', () => {
 });
 
 describe('moveAccuracy', () => {
-  it('is ~100 when the mover loses no win%', () => {
-    expect(moveAccuracy(50, 50, 'white')).toBeCloseTo(100, 3);
-    expect(moveAccuracy(50, 50, 'black')).toBeCloseTo(100, 3);
+  it('is exactly 100 when the mover loses no win% (lila early return)', () => {
+    expect(moveAccuracy(50, 50, 'white')).toBe(100);
+    expect(moveAccuracy(50, 50, 'black')).toBe(100);
   });
 
-  it('treats a win% gain as zero drop (clamped, still ~100)', () => {
-    expect(moveAccuracy(40, 80, 'white')).toBeCloseTo(100, 3);
-    expect(moveAccuracy(80, 40, 'black')).toBeCloseTo(100, 3);
+  it('treats a win% gain as no loss (exactly 100)', () => {
+    expect(moveAccuracy(40, 80, 'white')).toBe(100);
+    expect(moveAccuracy(80, 40, 'black')).toBe(100);
   });
 
-  it('matches the Lichess curve constants exactly', () => {
-    // 10 win% dropped by the mover.
-    const expected = 103.1668 * Math.exp(-0.04354 * 10) - 3.1669;
+  it('matches lila AccuracyPercent.fromWinPercents exactly (full constants + the +1 bonus)', () => {
+    // 10 win% dropped by the mover — lichess production yields ~64.58, one
+    // point above the truncated published-page formula (~63.58).
+    const expected = 103.1668100711649 * Math.exp(-0.04354415386753951 * 10) - 3.166924740191411 + 1;
     expect(moveAccuracy(60, 50, 'white')).toBeCloseTo(expected, 10);
     expect(moveAccuracy(40, 50, 'black')).toBeCloseTo(expected, 10);
+    expect(expected).toBeCloseTo(64.5798, 3);
   });
 
   it('applies the mover perspective to White-POV inputs', () => {

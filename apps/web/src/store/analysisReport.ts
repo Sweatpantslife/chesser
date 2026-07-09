@@ -132,7 +132,18 @@ export const useAnalysisReport = create<AnalysisReportState>((set) => ({
     } catch {
       // The report still builds without a named opening.
     }
-    if (useGame.getState().gameNo !== input.gameNo) return; // stale review
+    const g = useGame.getState();
+    if (g.gameNo !== input.gameNo) return; // stale review
+    // Same game but the MAINLINE grew/changed while the opening lookup ran —
+    // publishing now would overwrite the store's review invalidation with a
+    // stale projection. (Variation moves don't touch the mainline and are fine.)
+    const mainline = mainlineOf(g.tree, g.rootId);
+    if (
+      mainline.length !== input.nodes.length ||
+      mainline[mainline.length - 1]?.id !== input.nodes[input.nodes.length - 1]?.id
+    ) {
+      return;
+    }
     try {
       const rows = buildRows(input);
       const report = buildAnalysisReport(
@@ -162,6 +173,22 @@ export const useAnalysisReport = create<AnalysisReportState>((set) => ({
     const g = useGame.getState();
     const mainline = mainlineOf(g.tree, g.rootId);
     if (mainline.length === 0) return false;
+
+    // In-memory fast path: the published report already belongs to this exact
+    // mainline (node ids match) — re-hydrate the legacy fields directly, no
+    // storage round-trip. Covers "restore the review after exploring a PV
+    // variation" even when localStorage is unavailable.
+    const current = useAnalysisReport.getState();
+    if (
+      current.report &&
+      current.gameNo === g.gameNo &&
+      current.report.moves.length === mainline.length &&
+      current.report.moves.every((m, i) => m.nodeId === mainline[i]!.id)
+    ) {
+      hydrateLegacyReviewFields(current.report, g.gameNo);
+      return true;
+    }
+
     const key = reportCacheKey(
       g.startFen,
       mainline.map((n) => n.uci),

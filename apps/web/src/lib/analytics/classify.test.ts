@@ -89,41 +89,66 @@ describe('classifyMove — mate-against and missed mates (non-mating rows)', () 
   });
 });
 
-describe('classifyMove — coach grade passthrough', () => {
-  it('passes a coach grade through unchanged, ignoring the row numbers', () => {
-    const r = row({ coachGrade: 'inaccuracy', winBefore: 90, winAfter: 20 });
-    expect(classifyMove(r)).toBe('inaccuracy');
-  });
-
-  it('passes every non-mate coach grade through', () => {
+describe('classifyMove — coach grade passthrough and escalation', () => {
+  it('passes every non-mate coach grade through when the drop is small', () => {
     const grades = ['brilliant', 'great', 'best', 'good', 'book', 'inaccuracy', 'mistake', 'blunder', 'miss'] as const;
     for (const g of grades) expect(classifyMove(row({ coachGrade: g }))).toBe(g);
   });
+
+  it('escalates a coach "good" to the lichess tier its drop lands in', () => {
+    expect(classifyMove(row({ coachGrade: 'good', winBefore: 60, winAfter: 53, bestMoveUci: 'g1f3' }))).toBe('inaccuracy');
+    expect(classifyMove(row({ coachGrade: 'good', winBefore: 60, winAfter: 48, bestMoveUci: 'g1f3' }))).toBe('mistake');
+    expect(classifyMove(row({ coachGrade: 'good', winBefore: 60, winAfter: 40, bestMoveUci: 'g1f3' }))).toBe('blunder');
+  });
+
+  it('escalates a coach "inaccuracy" past the mistake tier when the drop says blunder', () => {
+    const r = row({ coachGrade: 'inaccuracy', winBefore: 70, winAfter: 20, bestMoveUci: 'g1f3' });
+    expect(classifyMove(r)).toBe('blunder');
+  });
+
+  it('re-applies the missed-win read to escalated errors', () => {
+    // Coach "good" (house drop < 30) but a 25-point drop from a winning
+    // position that lands near equal → miss, not blunder.
+    const r = row({ coachGrade: 'good', winBefore: 85, winAfter: 60, bestMoveUci: 'g1f3' });
+    expect(classifyMove(r)).toBe('miss');
+  });
+
+  it('never escalates the engine\'s own first choice, whatever the eval noise says', () => {
+    const r = row({ coachGrade: 'best', uci: 'e2e4', bestMoveUci: 'e2e4', winBefore: 60, winAfter: 48 });
+    expect(classifyMove(r)).toBe('best');
+  });
+
+  it('never downgrades a coach error and leaves special grades alone', () => {
+    expect(classifyMove(row({ coachGrade: 'blunder', winBefore: 50, winAfter: 49 }))).toBe('blunder');
+    expect(classifyMove(row({ coachGrade: 'brilliant', winBefore: 90, winAfter: 20 }))).toBe('brilliant');
+    expect(classifyMove(row({ coachGrade: 'great', winBefore: 90, winAfter: 20 }))).toBe('great');
+    expect(classifyMove(row({ coachGrade: 'miss', winBefore: 90, winAfter: 20 }))).toBe('miss');
+  });
 });
 
-describe('classifyMove — win%-drop thresholds (derived path)', () => {
-  it('drop ≥ 30 → blunder', () => {
-    expect(classifyMove(row({ winBefore: 60, winAfter: 30 }))).toBe('blunder');
+describe('classifyMove — win%-drop thresholds (derived path, lichess 15/10/5)', () => {
+  it('drop ≥ 15 → blunder', () => {
+    expect(classifyMove(row({ winBefore: 60, winAfter: 45 }))).toBe('blunder');
   });
 
-  it('drop just under 30 → mistake', () => {
-    expect(classifyMove(row({ winBefore: 60, winAfter: 30.1 }))).toBe('mistake');
+  it('drop just under 15 → mistake', () => {
+    expect(classifyMove(row({ winBefore: 60, winAfter: 45.1 }))).toBe('mistake');
   });
 
-  it('drop ≥ 20 → mistake', () => {
-    expect(classifyMove(row({ winBefore: 60, winAfter: 40 }))).toBe('mistake');
+  it('drop ≥ 10 → mistake', () => {
+    expect(classifyMove(row({ winBefore: 60, winAfter: 50 }))).toBe('mistake');
   });
 
-  it('drop just under 20 → inaccuracy', () => {
-    expect(classifyMove(row({ winBefore: 60, winAfter: 40.1 }))).toBe('inaccuracy');
+  it('drop just under 10 → inaccuracy', () => {
+    expect(classifyMove(row({ winBefore: 60, winAfter: 50.1 }))).toBe('inaccuracy');
   });
 
-  it('drop ≥ 10 → inaccuracy', () => {
-    expect(classifyMove(row({ winBefore: 60, winAfter: 50 }))).toBe('inaccuracy');
+  it('drop ≥ 5 → inaccuracy', () => {
+    expect(classifyMove(row({ winBefore: 60, winAfter: 55 }))).toBe('inaccuracy');
   });
 
-  it('drop just under 10 → good when not the engine move', () => {
-    expect(classifyMove(row({ winBefore: 60, winAfter: 50.1, bestMoveUci: 'g1f3' }))).toBe('good');
+  it('drop just under 5 → good when not the engine move', () => {
+    expect(classifyMove(row({ winBefore: 60, winAfter: 55.1, bestMoveUci: 'g1f3' }))).toBe('good');
   });
 
   it('drop < 2 → best even when not the engine move', () => {
@@ -146,11 +171,11 @@ describe('classifyMove — win%-drop thresholds (derived path)', () => {
 
 describe('classifyMove — book', () => {
   it('book when still in theory and the drop is small', () => {
-    expect(classifyMove(row({ isBook: true, winBefore: 55, winAfter: 50 }))).toBe('book');
+    expect(classifyMove(row({ isBook: true, winBefore: 55, winAfter: 52 }))).toBe('book');
   });
 
-  it('not book when the theory move loses 10+ win% (engine disagrees with the book)', () => {
-    expect(classifyMove(row({ isBook: true, winBefore: 60, winAfter: 50 }))).toBe('inaccuracy');
+  it('not book when the theory move loses 5+ win% (engine disagrees with the book)', () => {
+    expect(classifyMove(row({ isBook: true, winBefore: 60, winAfter: 55 }))).toBe('inaccuracy');
   });
 });
 
@@ -172,8 +197,8 @@ describe('classifyMove — miss thresholds', () => {
     expect(classifyMove(row({ winBefore: 74.9, winAfter: 40 }))).toBe('blunder');
   });
 
-  it('drop under 20 never misses (gate is mistake/blunder only)', () => {
-    expect(classifyMove(row({ winBefore: 80, winAfter: 65.1 }))).toBe('inaccuracy');
+  it('drop under 10 never misses (gate is mistake/blunder only)', () => {
+    expect(classifyMove(row({ winBefore: 80, winAfter: 70.1 }))).toBe('inaccuracy');
   });
 });
 

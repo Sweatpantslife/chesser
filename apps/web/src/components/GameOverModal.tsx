@@ -173,13 +173,8 @@ export function GameOverModal() {
           {report && reportGameNo === gameNo && report.moves.length >= 2 && (
             // Compact win-chance sparkline of the whole game, from the report.
             <div className="pt-1">
-              <EvalGraphPro
-                moves={report.moves}
-                phases={report.phases}
-                viewPly={report.moves.length}
-                onSelectPly={() => undefined}
-                sparkline
-              />
+              {/* No onSelectPly: purely presentational here — no dead click affordance. */}
+              <EvalGraphPro moves={report.moves} phases={report.phases} viewPly={report.moves.length} sparkline />
             </div>
           )}
           {chips.length > 0 && (

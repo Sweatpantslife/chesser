@@ -22,6 +22,12 @@ export interface MistakeReviewPanelProps {
   viewPly: number;
   onSelectPly(ply: number): void;
   onPractice(ply: number): void;
+  /**
+   * Controlled class filter (ReviewSummary's count cells drive it via
+   * PlayPage); omit both to let the panel manage its own chips.
+   */
+  activeClasses?: ReadonlySet<Classification>;
+  onActiveClassesChange?(next: ReadonlySet<Classification>): void;
 }
 
 export type MistakeClass = Extract<Classification, 'inaccuracy' | 'mistake' | 'blunder' | 'miss'>;
@@ -115,8 +121,17 @@ export function pvSnippet(m: MoveDetail, max = 4): string[] {
 
 const moveLabel = (ply: number) => `${Math.ceil(ply / 2)}${ply % 2 === 1 ? '.' : '…'}`;
 
-export function MistakeReviewPanel({ moves, viewPly, onSelectPly, onPractice }: MistakeReviewPanelProps): JSX.Element {
-  const [active, setActive] = useState<ReadonlySet<Classification>>(MISTAKE_SET);
+export function MistakeReviewPanel({
+  moves,
+  viewPly,
+  onSelectPly,
+  onPractice,
+  activeClasses,
+  onActiveClassesChange,
+}: MistakeReviewPanelProps): JSX.Element {
+  const [ownActive, setOwnActive] = useState<ReadonlySet<Classification>>(MISTAKE_SET);
+  const active = activeClasses ?? ownActive;
+  const setActive = onActiveClassesChange ?? setOwnActive;
   const [side, setSide] = useState<SideFilter>('both');
   const [order, setOrder] = useState<SortOrder>('severity');
   const listRef = useRef<HTMLUListElement>(null);
@@ -125,12 +140,11 @@ export function MistakeReviewPanel({ moves, viewPly, onSelectPly, onPractice }: 
   const counts = useMemo(() => mistakeCounts(moves, side), [moves, side]);
   const rows = useMemo(() => mistakeRows(moves, active, side, order), [moves, active, side, order]);
 
-  const toggleClass = (cls: Classification) =>
-    setActive((prev) => {
-      const next = new Set(prev);
-      if (!next.delete(cls)) next.add(cls);
-      return next;
-    });
+  const toggleClass = (cls: Classification) => {
+    const next = new Set(active);
+    if (!next.delete(cls)) next.add(cls);
+    setActive(next);
+  };
 
   // Roving arrow-key navigation between the rows' jump buttons.
   const onListKeyDown = (e: KeyboardEvent<HTMLUListElement>) => {

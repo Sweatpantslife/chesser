@@ -123,4 +123,27 @@ describe('useAnalysisReport', () => {
     expect(useGame.getState().loadPgn('1. d4 d5 2. c4')).toBe(true);
     expect(useAnalysisReport.getState().tryHydrateFromCache()).toBe(false);
   });
+
+  it('aborts when the mainline changed during the build (same game, new move)', async () => {
+    // Simulate a review snapshot taken before another mainline move landed:
+    // the input's nodes are one short of the store's current mainline.
+    const input = reviewInput();
+    const stale = { ...input, nodes: input.nodes.slice(0, -1), evals: SCORES.slice(0, -1) };
+    await useAnalysisReport.getState().buildFromReview(stale);
+    expect(useAnalysisReport.getState().report).toBeNull();
+    expect(useGame.getState().reviewGameNo).toBe(0); // legacy fields untouched
+  });
+
+  it('re-hydrates the legacy fields from the in-memory report without touching storage', async () => {
+    await useAnalysisReport.getState().buildFromReview(reviewInput());
+    // A structural (variation) move wipes the legacy review fields…
+    useGame.setState({ moveReviews: {}, annotations: {}, evalGraph: [], reviewStats: null, reviewGameNo: 0 });
+    // …and even with the storage cache gone, the published report restores them.
+    localStorage.clear();
+    expect(useAnalysisReport.getState().tryHydrateFromCache()).toBe(true);
+    const g = useGame.getState();
+    expect(g.reviewGameNo).toBe(g.gameNo);
+    expect(Object.keys(g.moveReviews)).toHaveLength(7);
+    expect(g.reviewStats).not.toBeNull();
+  });
 });

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Chess } from 'chess.js';
 import type { DrawShape } from 'chessground/draw';
 import { Board } from '../board/Board';
@@ -16,8 +16,9 @@ import { PromotionDialog } from '../components/PromotionDialog';
 import { GameOverModal } from '../components/GameOverModal';
 import { AnalysisCoach } from '../components/AnalysisCoach';
 import { ReviewSummary } from '../components/analysis/ReviewSummary';
-import { MistakeReviewPanel } from '../components/analysis/MistakeReviewPanel';
+import { MistakeReviewPanel, MISTAKE_CLASSES } from '../components/analysis/MistakeReviewPanel';
 import { MoveDetailPanel } from '../components/analysis/MoveDetailPanel';
+import type { Classification } from '../lib/analytics/types';
 import { engine } from '../lib/engine';
 import { CLASSIFICATION_META } from '../lib/coach';
 import { goToMainlinePly } from '../lib/mainlineNav';
@@ -160,6 +161,8 @@ function ReportSection() {
   const viewPly = useGame((s) => s.viewPly);
   const currentId = useGame((s) => s.currentId);
   const reviewing = useGame((s) => s.reviewing);
+  // Class filter for the mistake list, shared with the summary's count cells.
+  const [mistakeFilter, setMistakeFilter] = useState<ReadonlySet<Classification>>(() => new Set(MISTAKE_CLASSES));
   if (mode !== 'analysis' || !report || reportGameNo !== gameNo) return null;
 
   // Stable references — safe as effect deps downstream. Ply jumps resolve via
@@ -184,6 +187,10 @@ function ReportSection() {
       if (!mv) break;
       st.exploreMove(mv.from + mv.to + (mv.promotion ?? ''));
     }
+    // The variation moves are structural, so the store just cleared its legacy
+    // review fields (graph/table/walkthrough) — restore them from the report;
+    // the mainline is unchanged, so the review is still valid.
+    useAnalysisReport.getState().tryHydrateFromCache();
   };
 
   // Play the position out against the engine, from before the chosen move.
@@ -210,8 +217,18 @@ function ReportSection() {
   const exportPgn = () => {
     const s = useGame.getState();
     const last = report.moves[report.moves.length - 1];
+    // The review hook stamps meta.result null; fall back to the mate on the
+    // board, then to the finished-game summary (resignation, flag, draw).
+    const sum = s.gameSummary && s.gameSummary.gameNo === s.gameNo ? s.gameSummary : null;
+    const summaryResult = sum
+      ? sum.outcome === 'draw'
+        ? '1/2-1/2'
+        : (sum.outcome === 'win') === (sum.playerColor === 'white')
+          ? '1-0'
+          : '0-1'
+      : null;
     const result =
-      report.meta.result ?? (last?.isMate ? (last.side === 'white' ? '1-0' : '0-1') : '*');
+      report.meta.result ?? (last?.isMate ? (last.side === 'white' ? '1-0' : '0-1') : summaryResult ?? '*');
     const pc = report.meta.playerColor;
     const opp = s.opponent?.name ?? 'Chesser bot';
     const pgn = annotatedPgn(report, {
@@ -230,8 +247,21 @@ function ReportSection() {
 
   return (
     <>
-      <ReviewSummary report={report} reviewing={reviewing} onSelectPly={goToMainlinePly} onExportPgn={exportPgn} />
-      <MistakeReviewPanel moves={report.moves} viewPly={viewPly} onSelectPly={goToMainlinePly} onPractice={practice} />
+      <ReviewSummary
+        report={report}
+        reviewing={reviewing}
+        onSelectPly={goToMainlinePly}
+        onFilterClass={(cls) => setMistakeFilter(new Set([cls]))}
+        onExportPgn={exportPgn}
+      />
+      <MistakeReviewPanel
+        moves={report.moves}
+        viewPly={viewPly}
+        onSelectPly={goToMainlinePly}
+        onPractice={practice}
+        activeClasses={mistakeFilter}
+        onActiveClassesChange={setMistakeFilter}
+      />
       <MoveDetailPanel
         move={currentMove}
         onShowArrow={setArrow}

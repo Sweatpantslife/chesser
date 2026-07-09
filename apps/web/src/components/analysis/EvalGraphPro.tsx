@@ -27,8 +27,9 @@ export interface EvalGraphProProps {
   phases: PhaseStats[];
   /** Current ply (0 = start position). */
   viewPly: number;
-  /** Click / arrow-key jump. */
-  onSelectPly(ply: number): void;
+  /** Click / arrow-key jump; omit for a purely presentational graph (no
+   *  pointer cursor, no slider semantics — e.g. the game-over sparkline). */
+  onSelectPly?(ply: number): void;
   /** Graph height in px; defaults to 96 (40 in sparkline mode). */
   height?: number;
   /** Compact win-chance mode: area + midline + cursor only. */
@@ -154,7 +155,10 @@ export function EvalGraphPro({
     return Math.max(0, Math.min(n, Math.round(frac * n)));
   };
 
+  const interactive = onSelectPly !== undefined;
+
   const onKeyDown = (e: React.KeyboardEvent) => {
+    if (!onSelectPly) return;
     if (e.key === 'ArrowLeft') {
       e.preventDefault();
       onSelectPly(Math.max(0, cursorPly - 1));
@@ -180,21 +184,25 @@ export function EvalGraphPro({
   return (
     <div
       ref={ref}
-      role="slider"
-      tabIndex={0}
-      aria-label="Advantage graph — click or use arrow keys to jump to a move"
-      aria-valuemin={0}
-      aria-valuemax={n}
-      aria-valuenow={cursorPly}
-      title={sparkline ? 'Click to jump to a move' : undefined}
-      onClick={(e) => {
-        const ply = plyFromEvent(e);
-        if (ply !== null) onSelectPly(ply);
-      }}
+      role={interactive ? 'slider' : 'img'}
+      tabIndex={interactive ? 0 : undefined}
+      aria-label={interactive ? 'Advantage graph — click or use arrow keys to jump to a move' : 'Advantage graph'}
+      aria-valuemin={interactive ? 0 : undefined}
+      aria-valuemax={interactive ? n : undefined}
+      aria-valuenow={interactive ? cursorPly : undefined}
+      title={sparkline && interactive ? 'Click to jump to a move' : undefined}
+      onClick={
+        interactive
+          ? (e) => {
+              const ply = plyFromEvent(e);
+              if (ply !== null) onSelectPly?.(ply);
+            }
+          : undefined
+      }
       onMouseMove={sparkline ? undefined : (e) => setHoverPly(plyFromEvent(e))}
       onMouseLeave={sparkline ? undefined : () => setHoverPly(null)}
-      onKeyDown={onKeyDown}
-      className="relative w-full cursor-pointer select-none rounded focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-400/60"
+      onKeyDown={interactive ? onKeyDown : undefined}
+      className={`relative w-full select-none rounded focus:outline-none focus-visible:ring-1 focus-visible:ring-emerald-400/60 ${interactive ? 'cursor-pointer' : ''}`}
     >
       <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" width="100%" height={h} className="block rounded">
         {/* Black's share: the dark background above the white area. */}

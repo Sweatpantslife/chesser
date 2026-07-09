@@ -43,14 +43,20 @@ export function cpValue(ev: EvalPoint | null): number {
 }
 
 /**
- * Per-move accuracy on the Lichess pointwise curve (identical constants to the
- * store's review loop): 103.1668·e^(−0.04354·winDrop) − 3.1669, clamped to
- * [0, 100]. winDrop is the win% the MOVER lost across the move; winBefore /
- * winAfter are White-POV percentages.
+ * Per-move accuracy, exactly lila's shipped AccuracyPercent.fromWinPercents:
+ * 100 when the mover lost no win%, otherwise the full-precision exponential
+ * curve plus the +1 "uncertainty bonus due to imperfect analysis", clamped to
+ * [0, 100]. (The lichess.org/page/accuracy write-up — and the store's inline
+ * review loop, hands-off until fix/coach-trainers lands — omits the bonus and
+ * truncates the constants, landing ~1 point lower; the report's numbers win
+ * everywhere visible via hydration.) winBefore/winAfter are White-POV.
  */
 export function moveAccuracy(winBefore: number, winAfter: number, side: Side): number {
-  const winDrop = Math.max(0, povWin(winBefore, side) - povWin(winAfter, side));
-  return Math.max(0, Math.min(100, 103.1668 * Math.exp(-0.04354 * winDrop) - 3.1669));
+  const before = povWin(winBefore, side);
+  const after = povWin(winAfter, side);
+  if (after >= before) return 100;
+  const raw = 103.1668100711649 * Math.exp(-0.04354415386753951 * (before - after)) - 3.166924740191411 + 1;
+  return Math.max(0, Math.min(100, raw));
 }
 
 /** Population standard deviation; 0 for fewer than two samples. */

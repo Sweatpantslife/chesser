@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Chess } from 'chess.js';
 import type { Score } from '@chesser/shared';
@@ -326,8 +327,16 @@ describe('reportCacheKey', () => {
     expect(reportCacheKey(START_FEN, ['e2e4', 'e7e5'], { multipv: 3, movetimeMs: 300, depth: 22 })).not.toBe(key);
   });
 
-  it('exposes the settings the store review actually runs with', () => {
-    expect(REVIEW_ENGINE_SETTINGS).toEqual({ multipv: 2, movetimeMs: 300, depth: 22 });
+  it('stays in sync with the options reviewGame actually passes to analyzeManyOnce', () => {
+    // The constant is the settings half of the cache key; if the store's
+    // (hands-off) review loop changes its engine options without this
+    // constant, stale cached reports would keep hitting under a lying key.
+    const src = readFileSync(new URL('../../store/game.ts', import.meta.url), 'utf8');
+    const m = src.match(/analyzeManyOnce\([^,]+,\s*\{\s*multipv:\s*(\d+),\s*movetimeMs:\s*(\d+),\s*depth:\s*(\d+)\s*\}\s*\)/);
+    expect(m).not.toBeNull();
+    expect({ multipv: Number(m![1]), movetimeMs: Number(m![2]), depth: Number(m![3]) }).toEqual(
+      REVIEW_ENGINE_SETTINGS,
+    );
   });
 });
 
@@ -366,6 +375,19 @@ describe('serialization', () => {
     expect(deserializeReport(JSON.stringify(corrupt))).toBeNull();
     const junkMoves = { ...original, moves: [{}, 42, null] };
     expect(deserializeReport(JSON.stringify(junkMoves))).toBeNull();
+  });
+
+  it('rejects version-1 entries whose top-level shape is truncated (corrupt cache)', () => {
+    const original = report();
+    for (const missing of ['meta', 'white', 'black', 'opening', 'phases', 'criticalMoments', 'estimatedPerformanceRating'] as const) {
+      const truncated: Record<string, unknown> = { ...original };
+      delete truncated[missing];
+      expect(deserializeReport(JSON.stringify(truncated))).toBeNull();
+    }
+    const badSummary = { ...original, white: { ...original.white, accuracy: 'high' } };
+    expect(deserializeReport(JSON.stringify(badSummary))).toBeNull();
+    const badRating = { ...original, estimatedPerformanceRating: { white: 1500 } };
+    expect(deserializeReport(JSON.stringify(badRating))).toBeNull();
   });
 });
 

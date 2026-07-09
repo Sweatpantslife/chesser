@@ -344,8 +344,11 @@ describe('explainMove — good/normal fallbacks', () => {
 });
 
 describe('explainMove — generic error fallbacks (no board/PV evidence)', () => {
-  it('inaccuracy', () => {
+  it('inaccuracy claims an edge only when the mover had one', () => {
     expect(explainMove(row({ bestMoveSan: 'Nf3', winBefore: 60, winAfter: 48 }), 'inaccuracy')).toBe('Inaccurate — Nf3 would have kept more of your edge.');
+    // From a worse position the better move was a defence, not an edge-keeper.
+    expect(explainMove(row({ bestMoveSan: 'Qb4+', winBefore: 20, winAfter: 12 }), 'inaccuracy')).toBe('Inaccurate — Qb4+ was a tougher defence.');
+    expect(explainMove(row({ side: 'black', ply: 2, bestMoveSan: 'Na6', winBefore: 80, winAfter: 88 }), 'inaccuracy')).toBe('Inaccurate — Na6 was a tougher defence.');
   });
 
   it('mistake', () => {

@@ -141,6 +141,37 @@ describe('MistakeReviewPanel', () => {
     expect(screen.getByText('No moves match the current filters.')).toBeTruthy();
   });
 
+  it('supports a controlled class filter (ReviewSummary count-cell wiring)', () => {
+    const onChange = vi.fn();
+    const { container, rerender } = render(
+      <MistakeReviewPanel
+        moves={game()}
+        viewPly={0}
+        onSelectPly={noop}
+        onPractice={noop}
+        activeClasses={new Set(['blunder'])}
+        onActiveClassesChange={onChange}
+      />,
+    );
+    // Only the controlled class is listed…
+    expect(container.querySelector('[data-row-ply="5"]')).toBeTruthy(); // the blunder
+    expect(container.querySelector('[data-row-ply="3"]')).toBeNull(); // the inaccuracy
+    // …and chip toggles report to the owner instead of mutating local state.
+    fireEvent.click(container.querySelector('[data-chip="inaccuracy"]') as HTMLButtonElement);
+    expect(onChange).toHaveBeenCalledWith(new Set(['blunder', 'inaccuracy']));
+    rerender(
+      <MistakeReviewPanel
+        moves={game()}
+        viewPly={0}
+        onSelectPly={noop}
+        onPractice={noop}
+        activeClasses={new Set(['blunder', 'inaccuracy'])}
+        onActiveClassesChange={onChange}
+      />,
+    );
+    expect(container.querySelector('[data-row-ply="3"]')).toBeTruthy();
+  });
+
   it('filters by player', () => {
     const { container } = render(<MistakeReviewPanel moves={game()} viewPly={0} onSelectPly={noop} onPractice={noop} />);
     fireEvent.click(container.querySelector('[data-side="white"]') as HTMLButtonElement);

@@ -123,6 +123,8 @@ describe('ReviewSummary', () => {
     expect(onFilterClass).toHaveBeenCalledWith('blunder');
     // Zero counts are disabled — nothing to filter.
     expect((container.querySelector('[data-count="black-blunder"]') as HTMLButtonElement).disabled).toBe(true);
+    // Non-mistake classes can't be filtered to — no button, no dead affordance.
+    expect(container.querySelector('[data-count="white-best"]')).toBeNull();
   });
 
   it('shows the opening with ECO and the theory-departure line', () => {

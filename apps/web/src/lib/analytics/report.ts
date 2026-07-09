@@ -35,6 +35,9 @@ export const REPORT_VERSION = 1;
  * The engine settings reviewGame currently runs with (store/game.ts
  * `analyzeManyOnce(fen, {...})`) — the settings half of the cache key.
  * Keep in sync with the store; a change invalidates every cached report.
+ * report.test.ts greps the store literal, so a drift fails the suite
+ * (the loop itself is hands-off until fix/coach-trainers lands; afterwards,
+ * pass the actual options through ReviewRowsInput and delete this constant).
  */
 export const REVIEW_ENGINE_SETTINGS: EngineReviewSettings = { multipv: 2, movetimeMs: 300, depth: 22 };
 
@@ -221,9 +224,27 @@ function isPlausibleMove(m: unknown): boolean {
 }
 
 /**
+ * A serialized player summary carries the numeric fields the hydration path
+ * and ReviewSummary dereference (accuracy/acpl/moves plus the counts grid).
+ */
+function isPlausibleSummary(p: unknown): boolean {
+  if (typeof p !== 'object' || p === null) return false;
+  const s = p as Record<string, unknown>;
+  return (
+    typeof s.accuracy === 'number' &&
+    typeof s.acpl === 'number' &&
+    typeof s.moves === 'number' &&
+    typeof s.counts === 'object' &&
+    s.counts !== null
+  );
+}
+
+/**
  * Parse a serialized report. Returns null on parse errors, a version
- * mismatch or malformed move rows. Node ids are runtime-only, so cached rows
- * come back with `nodeId: null` — callers must re-map moves by ply.
+ * mismatch, malformed move rows or a truncated top-level shape (a tampered
+ * cache entry must read as a miss, not hydrate NaNs / throw in the UI).
+ * Node ids are runtime-only, so cached rows come back with `nodeId: null` —
+ * callers must re-map moves by ply.
  */
 export function deserializeReport(json: string): AnalysisReport | null {
   try {
@@ -231,6 +252,23 @@ export function deserializeReport(json: string): AnalysisReport | null {
     if (typeof parsed !== 'object' || parsed === null) return null;
     const report = parsed as AnalysisReport;
     if (report.version !== REPORT_VERSION || typeof report.gameKey !== 'string' || !Array.isArray(report.moves)) {
+      return null;
+    }
+    const rating: unknown = report.estimatedPerformanceRating;
+    if (
+      typeof report.meta !== 'object' ||
+      report.meta === null ||
+      typeof report.opening !== 'object' ||
+      report.opening === null ||
+      !Array.isArray(report.phases) ||
+      !Array.isArray(report.criticalMoments) ||
+      !isPlausibleSummary(report.white) ||
+      !isPlausibleSummary(report.black) ||
+      typeof rating !== 'object' ||
+      rating === null ||
+      typeof (rating as Record<string, unknown>).white !== 'number' ||
+      typeof (rating as Record<string, unknown>).black !== 'number'
+    ) {
       return null;
     }
     if (!report.moves.every(isPlausibleMove)) return null;

@@ -47,6 +47,12 @@ const CLASS_ORDER: Classification[] = [
 
 const PHASE_LABEL: Record<PhaseName, string> = { opening: 'Opening', middlegame: 'Middlegame', endgame: 'Endgame' };
 
+/**
+ * Classes whose counts click through to the mistake list — only those the
+ * MistakeReviewPanel can actually filter to (no dead buttons on best/good).
+ */
+const FILTERABLE: ReadonlySet<Classification> = new Set<Classification>(['inaccuracy', 'mistake', 'blunder', 'miss']);
+
 const KIND_META: Record<CriticalMomentKind, { icon: string; text: string }> = {
   blunder: { icon: '??', text: 'text-rose-300' },
   'missed-win': { icon: '✗', text: 'text-rose-300' },
@@ -143,7 +149,7 @@ export function ReviewSummary({ report, reviewing, onSelectPly, onFilterClass, o
               {CLASS_ORDER.map((cls) => (
                 <tr key={cls}>
                   <td className="w-10 text-center">
-                    <CountCell side="white" cls={cls} count={white.counts[cls]} onFilterClass={onFilterClass} />
+                    <CountCell side="white" cls={cls} count={white.counts[cls]} onFilterClass={FILTERABLE.has(cls) ? onFilterClass : undefined} />
                   </td>
                   <td className="py-0.5 text-center">
                     <span className={`mr-1.5 inline-block w-5 text-right font-semibold ${CLASSIFICATION_META[cls].text}`}>
@@ -152,7 +158,7 @@ export function ReviewSummary({ report, reviewing, onSelectPly, onFilterClass, o
                     <span className="text-neutral-400">{CLASSIFICATION_META[cls].label}</span>
                   </td>
                   <td className="w-10 text-center">
-                    <CountCell side="black" cls={cls} count={black.counts[cls]} onFilterClass={onFilterClass} />
+                    <CountCell side="black" cls={cls} count={black.counts[cls]} onFilterClass={FILTERABLE.has(cls) ? onFilterClass : undefined} />
                   </td>
                 </tr>
               ))}
