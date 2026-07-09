@@ -5,6 +5,7 @@ import { PUZZLES, type Puzzle } from '../trainers/tactics';
 import { useRepertoire } from '../store/repertoire';
 import { playMoveSound } from '../lib/sound';
 import { recordRush } from '../lib/gamify';
+import { useTimeoutRef } from '../lib/useTimeoutRef';
 import type { Color } from '../store/game';
 
 const RUSH_SECONDS = 300;
@@ -29,7 +30,7 @@ export function RushMode() {
   const game = useRef(new Chess());
   const pool = useRef<Puzzle[]>([]);
   const busy = useRef(false);
-  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const advanceTimer = useTimeoutRef();
   const [phase, setPhase] = useState<Phase>('idle');
   const [idx, setIdx] = useState(0);
   const [score, setScore] = useState(0);
@@ -71,12 +72,6 @@ export function RushMode() {
     setHighScore(finalScore);
     recordRush(finalScore);
   };
-
-  useEffect(() => {
-    return () => {
-      if (advanceTimer.current) clearTimeout(advanceTimer.current);
-    };
-  }, []);
 
   // countdown
   useEffect(() => {

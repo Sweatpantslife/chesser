@@ -953,12 +953,13 @@ export const useGame = create<GameStore>((set, get) => ({
     // from the rich grades so the move list, eval graph and counts agree.
     // Terminal positions have no engine eval (score null → 50/50), so score a
     // checkmate from its FEN — otherwise the mating move reads as a huge drop.
+    const mateWinner = fens.map((f) => checkmateWinner(f));
     const winWhite = evals.map((e, i) => {
-      const w = checkmateWinner(fens[i]!);
+      const w = mateWinner[i];
       return w ? (w === 'white' ? 100 : 0) : whiteWinPercent(e.score);
     });
     const cpWhite = evals.map((e, i) => {
-      const w = checkmateWinner(fens[i]!);
+      const w = mateWinner[i];
       return w ? (w === 'white' ? 1500 : -1500) : cpOf(e.score);
     });
     const moveReviews: Record<string, MoveReview> = {};

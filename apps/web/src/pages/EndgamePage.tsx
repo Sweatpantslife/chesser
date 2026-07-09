@@ -15,6 +15,9 @@ type Phase = 'playing' | 'won' | 'drawn' | 'lost';
 
 const HOLD_PLIES = 20; // plies to survive before a draw study counts as held
 
+/** Men on the board — positions with more than 7 are outside tablebase coverage. */
+const pieceCount = (fen: string) => fen.split(' ')[0]!.replace(/[^a-zA-Z]/g, '').length;
+
 export function EndgamePage() {
   const game = useRef(new Chess());
   const gameId = useRef(0);
@@ -57,8 +60,7 @@ export function EndgamePage() {
   // Keep tablebase data in sync with the position (best-effort; may be unavailable).
   useEffect(() => {
     let cancelled = false;
-    const pieces = fen.split(' ')[0]!.replace(/[^a-zA-Z]/g, '').length;
-    if (pieces > 7) {
+    if (pieceCount(fen) > 7) {
       setTb(null);
       return;
     }
@@ -176,8 +178,7 @@ export function EndgamePage() {
       // Data for the pre-move position may still be in flight — judge when it
       // arrives, unless the study reloaded or the player has moved again.
       const id = gameId.current;
-      const pieces = preFen.split(' ')[0]!.replace(/[^a-zA-Z]/g, '').length;
-      if (pieces <= 7) {
+      if (pieceCount(preFen) <= 7) {
         fetchTablebase(preFen).then((r) => {
           if (gameId.current !== id || moveSeq.current !== seq || !r.available) return;
           setMoveNote(judgeMove(r, uci, study.goal));

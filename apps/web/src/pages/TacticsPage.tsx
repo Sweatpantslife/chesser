@@ -11,6 +11,7 @@ import { puzzleRatingOf } from '../lib/puzzleRating';
 import { recordPuzzle } from '../lib/gamify';
 import { classifyMotifs, MOTIF_LABELS, MOTIF_ORDER, type Motif } from '../lib/motifs';
 import { playMoveSound } from '../lib/sound';
+import { useTimeoutRef } from '../lib/useTimeoutRef';
 import { RushMode } from './RushMode';
 import { MistakesMode } from './MistakesMode';
 import { useMistakes } from '../store/mistakes';
@@ -70,7 +71,7 @@ function PracticeTactics() {
   const game = useRef(new Chess());
   const attempt = useRef({ failed: false, revealed: false, rated: false });
   const sessionSeen = useRef(new Set<string>());
-  const demoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const demoTimer = useTimeoutRef();
 
   const [source, setSource] = useState<Source>('builtin');
   const [diffFilter, setDiffFilter] = useState<DiffFilter>('all');
@@ -139,12 +140,6 @@ function PracticeTactics() {
     if (queue.length) load(0, queue);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source, diffFilter, themeFilter]);
-
-  useEffect(() => {
-    return () => {
-      if (demoTimer.current) clearTimeout(demoTimer.current);
-    };
-  }, []);
 
   const sync = () => {
     const hist = game.current.history({ verbose: true });

@@ -5,6 +5,7 @@ import { engine } from '../lib/engine';
 import { whiteWinPercent } from '../lib/format';
 import { useMistakes } from '../store/mistakes';
 import { playMoveSound } from '../lib/sound';
+import { useTimeoutRef } from '../lib/useTimeoutRef';
 import type { Color } from '../store/game';
 
 type Phase = 'solving' | 'checking' | 'good' | 'bad';
@@ -14,7 +15,7 @@ export function MistakesMode() {
   const remove = useMistakes((s) => s.remove);
   const game = useRef(new Chess());
   const busy = useRef(false);
-  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resetTimer = useTimeoutRef();
   const [idx, setIdx] = useState(0);
   const [phase, setPhase] = useState<Phase>('solving');
   const [fen, setFen] = useState(game.current.fen());
@@ -40,12 +41,6 @@ export function MistakesMode() {
     setFeedback(`You played ${card.playedSan} here — find a stronger move.`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [card?.id]);
-
-  useEffect(() => {
-    return () => {
-      if (resetTimer.current) clearTimeout(resetTimer.current);
-    };
-  }, []);
 
   const solving = phase === 'solving' && !!card && !busy.current;
 
