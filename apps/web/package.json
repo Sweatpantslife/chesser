@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "test": "node --import tsx --test src/store/game.premove.test.ts && vitest run --exclude \"**/game.premove.test.ts\"",
+    "test": "node --import tsx --test src/store/game.premove.test.ts src/store/game.test.ts src/lib/drawPolicy.test.ts src/lib/repetition.test.ts && vitest run --exclude \"**/game.premove.test.ts\" --exclude \"**/game.test.ts\" --exclude \"**/drawPolicy.test.ts\" --exclude \"**/repetition.test.ts\"",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
