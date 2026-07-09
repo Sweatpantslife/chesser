@@ -37,6 +37,16 @@ body {
   position: absolute;
   inset: 0;
 }
+/* File letters: stock chessground offsets the row 24px right of the board,
+   which overflows the page (5-7px horizontal scroll) at phone widths. Keep
+   the row inside the board and centre each letter under its file instead. */
+.board-wrap .cg-wrap coords.files {
+  left: 0;
+  width: 100%;
+}
+.board-wrap .cg-wrap coords.files coord {
+  text-align: center;
+}
 
 /* Board themes — only the light base colour changes; chessground's embedded SVG
    overlays the dark squares (a 20% black tint), so the checkerboard is kept. */
