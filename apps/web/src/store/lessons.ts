@@ -59,17 +59,21 @@ export const useLessons = create<LessonsState>()(
         return { completed: get().completed };
       },
 
-      // Union of both devices: earliest completion time, best stars.
+      // Union of both devices: earliest completion time, best stars. Malformed
+      // remote payloads are ignored field-by-field rather than throwing.
       importMerge(remote) {
         if (!remote || typeof remote !== 'object') return;
         const r = remote as Partial<LessonsState>;
+        if (!r.completed || typeof r.completed !== 'object' || Array.isArray(r.completed)) return;
         const completed = { ...get().completed };
-        for (const [id, rec] of Object.entries(r.completed ?? {})) {
+        for (const [id, rec] of Object.entries(r.completed)) {
           if (!rec || typeof rec !== 'object') continue;
+          const ts = typeof rec.ts === 'number' ? rec.ts : undefined;
+          const stars = typeof rec.stars === 'number' ? rec.stars : undefined;
           const local = completed[id];
           completed[id] = local
-            ? { ts: Math.min(local.ts, rec.ts ?? local.ts), stars: Math.max(local.stars, rec.stars ?? 0) }
-            : { ts: rec.ts ?? Date.now(), stars: rec.stars ?? 1 };
+            ? { ts: Math.min(local.ts, ts ?? local.ts), stars: Math.max(local.stars, stars ?? 0) }
+            : { ts: ts ?? Date.now(), stars: stars ?? 1 };
         }
         set({ completed });
       },

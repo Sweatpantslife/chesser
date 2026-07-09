@@ -150,6 +150,30 @@ describe('tryStep — promotion goal', () => {
   });
 });
 
+describe('tryStep — onlyFrom enforcement', () => {
+  // Boxed-in knight: the e2/g2 pawns could also capture f3, but the step
+  // restricts the origin to the knight on g1.
+  const step = ex({
+    fen: '7k/8/8/8/8/5p2/4PPPP/4K1N1 w - - 0 1',
+    goal: { type: 'capture' },
+    onlyFrom: ['g1'],
+  });
+
+  it('rejects a goal-satisfying move from an excluded origin', () => {
+    // exf3 is a legal capture, but not by the allowed piece
+    expect(tryStep(step, startExercise(step), { from: 'e2', to: 'f3' }).verdict).toBe('illegal');
+    expect(tryStep(step, startExercise(step), { from: 'g2', to: 'f3' }).verdict).toBe('illegal');
+  });
+
+  it('accepts the same goal from the allowed origin', () => {
+    expect(tryStep(step, startExercise(step), { from: 'g1', to: 'f3' }).verdict).toBe('correct');
+  });
+
+  it('solutionMove only ever suggests allowed origins', () => {
+    expect(solutionMove(step, startExercise(step))).toEqual({ from: 'g1', to: 'f3' });
+  });
+});
+
 describe('tryStep — any goal (escape check)', () => {
   const step = ex({ fen: '7k/8/8/8/8/8/8/r3K3 w - - 0 1', goal: { type: 'any' } });
 

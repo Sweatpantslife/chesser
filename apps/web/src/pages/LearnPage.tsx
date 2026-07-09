@@ -128,13 +128,23 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
   const [wrongCount, setWrongCount] = useState(0);
   const [earnedStars, setEarnedStars] = useState(0);
   const [wasFirstTime, setWasFirstTime] = useState(false);
+  /** True while a scripted opponent reply is animating (board input frozen). */
+  const [replyPending, setReplyPending] = useState(false);
   const replyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const complete = useLessons((s) => s.complete);
 
   const step = lesson.steps[stepIdx];
 
+  const clearReplyTimer = () => {
+    if (replyTimer.current) {
+      clearTimeout(replyTimer.current);
+      replyTimer.current = null;
+    }
+    setReplyPending(false);
+  };
+
   const loadStep = (idx: number) => {
-    if (replyTimer.current) clearTimeout(replyTimer.current);
+    clearReplyTimer();
     const s = lesson.steps[idx];
     if (!s) return;
     setStepIdx(idx);
@@ -154,16 +164,14 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
   useEffect(() => {
     setWrongCount(0);
     loadStep(0);
-    return () => {
-      if (replyTimer.current) clearTimeout(replyTimer.current);
-    };
+    return clearReplyTimer;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lesson.id]);
 
   const dests = useMemo(() => {
-    if (phase !== 'solving' || !step || step.kind !== 'exercise' || !exState) return EMPTY_DESTS;
+    if (phase !== 'solving' || replyPending || !step || step.kind !== 'exercise' || !exState) return EMPTY_DESTS;
     return legalDests(exState.fen, step.onlyFrom);
-  }, [phase, step, exState]);
+  }, [phase, replyPending, step, exState]);
 
   const finishLesson = () => {
     const stars = wrongCount === 0 ? 3 : wrongCount <= 2 ? 2 : 1;
@@ -180,7 +188,10 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
   };
 
   const applyAttempt = (from: string, to: string, viaReveal = false) => {
-    if (!step || step.kind !== 'exercise' || !exState || phase !== 'solving') return;
+    // The replyTimer guard freezes input while a scripted opponent reply is
+    // animating — the engine state is already past the reply, so a move made
+    // mid-animation would be judged against a position the board isn't showing.
+    if (!step || step.kind !== 'exercise' || !exState || phase !== 'solving' || replyTimer.current) return;
     const res = tryStep(step, exState, { from, to });
     if (res.verdict === 'illegal') return;
     playMoveSound(res.san);
@@ -202,7 +213,10 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
       const reply = res.reply;
       const finalFen = res.state.fen;
       setFeedback({ kind: 'ok', text: `✓ ${res.san}` });
+      setReplyPending(true);
       replyTimer.current = setTimeout(() => {
+        replyTimer.current = null; // unlock input — the board now matches the engine state
+        setReplyPending(false);
         playMoveSound(reply.san);
         setDisplayFen(finalFen);
         setLastMove([reply.uci.slice(0, 2), reply.uci.slice(2, 4)]);
@@ -293,7 +307,7 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
             shapes={shapes}
           />
         </div>
-        {phase === 'solving' && (
+        {phase === 'solving' && !replyPending && (
           <div className="flex h-5 items-center gap-2 text-xs text-neutral-400">
             <span className="animate-pulse text-emerald-400">● your move</span>
             {lineProgress && lineProgress.n > 1 && (

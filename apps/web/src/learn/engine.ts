@@ -108,6 +108,9 @@ export function isPromotion(fen: string, from: string, to: string): boolean {
 /** Evaluate one attempted move against the step's goal. */
 export function tryStep(step: ExerciseStep, state: ExerciseState, attempt: MoveAttempt): AttemptResult {
   if (state.done) return { verdict: 'illegal' };
+  // Enforce the origin restriction here too, not just in the UI's dests map —
+  // e.g. a capture goal must not be satisfiable by a piece the step excludes.
+  if (step.onlyFrom && !step.onlyFrom.includes(attempt.from)) return { verdict: 'illegal' };
   const game = new Chess(state.fen);
   const promotion = isPromotion(state.fen, attempt.from, attempt.to) ? promotionFor(step, state, attempt) : undefined;
   let move;
