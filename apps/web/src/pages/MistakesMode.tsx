@@ -116,7 +116,7 @@ export function MistakesMode() {
           >
             {card.severity}
           </span>
-          <span className="capitalize text-neutral-400">{card.side} to move</span>
+          <span className="text-neutral-400">{card.side === 'white' ? 'White' : 'Black'} to move</span>
         </div>
         <div className="mx-auto w-full max-w-[520px]">
           <Board
@@ -145,7 +145,7 @@ export function MistakesMode() {
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {phase === 'good' && (
-              <button onClick={learned} className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500">
+              <button onClick={learned} className="rounded bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800">
                 Got it ✓
               </button>
             )}

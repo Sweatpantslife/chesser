@@ -46,12 +46,13 @@ export function MoveList() {
     return (
       <button
         data-current={current}
+        aria-current={current ? 'step' : undefined}
         onClick={() => goToNode(node.id)}
         className={`rounded px-1 py-0.5 font-mono text-sm ${
-          current ? 'bg-emerald-600 text-white' : 'text-neutral-200 hover:bg-neutral-700'
+          current ? 'bg-emerald-700 text-white' : 'text-neutral-200 hover:bg-neutral-700'
         }`}
       >
-        {(withNumber || isWhite) && <span className="text-neutral-500">{num(node.ply)}</span>}
+        {(withNumber || isWhite) && <span className={current ? 'text-emerald-100' : 'text-neutral-400'}>{num(node.ply)}</span>}
         {node.san}
         {mark && <span className={`ml-0.5 ${current ? 'text-white' : markCls}`}>{mark}</span>}
       </button>
@@ -83,11 +84,11 @@ export function MoveList() {
     const v = tree[startId];
     if (!v) return null;
     return (
-      <span className="my-0.5 block rounded border-l-2 border-neutral-700 pl-2 text-neutral-400">
-        <span className="text-neutral-600">(</span>
+      <span role="group" aria-label="Variation" className="my-0.5 block rounded border-l-2 border-neutral-700 pl-2 text-neutral-400">
+        <span className="text-neutral-400">(</span>
         <Move node={v} withNumber />
         <Continuation from={v} />
-        <span className="text-neutral-600">)</span>
+        <span className="text-neutral-400">)</span>
       </span>
     );
   };
@@ -102,22 +103,22 @@ export function MoveList() {
           <button
             onClick={() => promote(currentId)}
             title="Make this the main line"
-            className="rounded bg-neutral-700 px-1.5 py-0.5 text-[11px] text-neutral-200 hover:bg-neutral-600"
+            className="min-h-11 rounded bg-neutral-700 px-2 py-0.5 text-xs text-neutral-200 hover:bg-neutral-600 sm:min-h-0"
           >
             ⤴ Promote
           </button>
           <button
             onClick={() => deleteVariation(currentId)}
             title="Delete this variation"
-            className="rounded bg-neutral-700 px-1.5 py-0.5 text-[11px] text-neutral-300 hover:bg-rose-900/60 hover:text-rose-200"
+            className="min-h-11 rounded bg-neutral-700 px-2 py-0.5 text-xs text-neutral-300 hover:bg-rose-900/60 hover:text-rose-200 sm:min-h-0"
           >
             🗑 Delete
           </button>
         </div>
       )}
-      <div ref={scrollRef} className="scroll-thin max-h-56 overflow-y-auto px-1 leading-7">
+      <div ref={scrollRef} role="region" aria-label="Moves" className="scroll-thin max-h-56 overflow-y-auto px-1 leading-7">
         {!hasMoves ? (
-          <p className="p-2 text-xs text-neutral-500">No moves yet. Make moves on the board to build lines.</p>
+          <p className="p-2 text-xs text-neutral-400">No moves yet. Make moves on the board to build lines.</p>
         ) : (
           <Continuation from={tree[rootId]!} />
         )}

@@ -183,8 +183,8 @@ export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: (
           <span data-testid="online-status" className={over ? 'font-semibold text-amber-300' : 'text-neutral-300'}>
             {status}
           </span>
-          <span className="text-neutral-600">
-            · game <span className="font-mono text-neutral-400" data-testid="game-code">{state.code}</span> · unrated
+          <span className="text-neutral-400">
+            · game <span className="font-mono text-neutral-300" data-testid="game-code">{state.code}</span> · unrated
           </span>
           {!connected && <span className="animate-pulse text-rose-400">· reconnecting…</span>}
         </div>
@@ -200,7 +200,7 @@ export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: (
                 {copied ? '✓ Copied' : 'Copy link'}
               </button>
             </div>
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-neutral-400">
               …or they can enter the code <span className="font-mono text-neutral-300">{state.code}</span> under Friends → Join.
             </p>
           </div>

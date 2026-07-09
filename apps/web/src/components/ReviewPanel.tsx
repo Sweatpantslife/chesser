@@ -102,7 +102,7 @@ export function ReviewPanel() {
         <button
           onClick={() => reviewGame()}
           disabled={disabled}
-          className="rounded bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-500 disabled:opacity-40"
+          className="rounded bg-emerald-700 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
         >
           {reviewing ? `${progress}%` : hasResults ? 'Re-review' : 'Review game'}
         </button>
@@ -117,7 +117,7 @@ export function ReviewPanel() {
           {Object.keys(moveReviews).length > 0 && (
             <button
               onClick={startCoach}
-              className="w-full rounded bg-indigo-600 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500"
+              className="w-full rounded bg-indigo-600 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
             >
               ▶ Guided walkthrough
             </button>
@@ -125,7 +125,7 @@ export function ReviewPanel() {
           <EvalGraph />
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-neutral-500">
+              <tr className="text-neutral-400">
                 <th className="text-left font-normal" />
                 <th className="font-normal text-neutral-400">acc.</th>
                 <th className="font-normal text-neutral-400">acpl</th>
@@ -157,7 +157,7 @@ export function ReviewPanel() {
           )}
         </div>
       ) : (
-        <p className="text-xs text-neutral-500">
+        <p className="text-xs text-neutral-400">
           {mode === 'analysis' ? 'Analyse a game, then review it for blunders and inaccuracies.' : 'Switch to the analysis board to review a game.'}
         </p>
       )}
@@ -167,7 +167,7 @@ export function ReviewPanel() {
           <button
             onClick={makePuzzles}
             disabled={reviewing}
-            className="w-full rounded bg-neutral-700 py-1.5 text-xs font-semibold text-neutral-100 hover:bg-neutral-600 disabled:opacity-40"
+            className="w-full rounded bg-neutral-700 py-1.5 text-xs font-semibold text-neutral-100 hover:bg-neutral-600 disabled:opacity-50"
           >
             {gen
               ? `Mining… ${gen.done}/${gen.total} · ${gen.found} found (click to stop)`
@@ -181,7 +181,7 @@ export function ReviewPanel() {
           {genResult !== null && !gen && (
             <p className="mt-1.5 text-xs text-emerald-300">
               {genResult > 0
-                ? `✓ Added ${genResult} puzzle${genResult === 1 ? '' : 's'} — find them under Middlegame → My games.`
+                ? `✓ Added ${genResult} puzzle${genResult === 1 ? '' : 's'} — find them under Tactics → My games.`
                 : 'No new tactics found in this game.'}
             </p>
           )}

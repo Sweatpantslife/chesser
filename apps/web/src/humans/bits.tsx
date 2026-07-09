@@ -4,9 +4,9 @@ import { Clock } from '../components/Clock';
 import type { Color } from '../store/game';
 import { cap } from './chessUtil';
 
-export const btn = 'rounded px-3 py-1.5 text-sm font-medium disabled:opacity-40';
+export const btn = 'rounded px-3 py-1.5 text-sm font-medium disabled:opacity-50';
 export const neutralBtn = `${btn} bg-neutral-700 text-neutral-200 hover:bg-neutral-600`;
-export const primaryBtn = `${btn} bg-emerald-600 text-white hover:bg-emerald-500`;
+export const primaryBtn = `${btn} bg-emerald-700 text-white hover:bg-emerald-800`;
 export const dangerBtn = `${btn} bg-rose-600 text-white hover:bg-rose-500`;
 
 /** One player's row above/below the board: name, optional presence, clock. */
@@ -105,7 +105,7 @@ export function HumanMoveList({ sans, replay }: { sans: string[]; replay?: Repla
   }, [sans.length, atLive]);
   if (sans.length === 0) {
     return (
-      <p className="text-sm text-neutral-500" data-testid="human-movelist">
+      <p className="text-sm text-neutral-400" data-testid="human-movelist">
         No moves yet.
       </p>
     );
@@ -130,7 +130,7 @@ export function HumanMoveList({ sans, replay }: { sans: string[]; replay?: Repla
         <div className="grid grid-cols-[2.5rem_1fr_1fr] gap-y-0.5">
           {rows.map((r) => (
             <div key={r.n} className="contents">
-              <span className="text-neutral-500">{r.n}.</span>
+              <span className="text-neutral-400">{r.n}.</span>
               {cell(r.w, r.n * 2 - 1)}
               {cell(r.b, r.n * 2)}
             </div>

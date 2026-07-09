@@ -41,7 +41,7 @@ function StatusLine() {
     <div className="flex h-7 items-center gap-2 text-sm">
       <span className={isGameOver ? 'font-semibold text-amber-300' : 'text-neutral-300'}>{status}</span>
       {thinking && <span className="animate-pulse text-emerald-400">· bot is thinking…</span>}
-      {mode === 'analysis' && !isGameOver && <span className="text-neutral-600">· analysis board</span>}
+      {mode === 'analysis' && !isGameOver && <span className="text-neutral-400">· analysis board</span>}
     </div>
   );
 }

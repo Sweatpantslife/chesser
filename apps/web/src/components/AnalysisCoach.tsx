@@ -5,9 +5,9 @@ import { CLASSIFICATION_META, IMPORTANT } from '../lib/coach';
 const DWELL_MS = 1600; // how long auto-play lingers on an ordinary move
 
 const ctrl =
-  'flex h-8 w-9 items-center justify-center rounded text-sm text-neutral-200 bg-neutral-700 hover:bg-neutral-600 disabled:opacity-30 disabled:hover:bg-neutral-700';
+  'flex h-8 w-9 items-center justify-center rounded text-sm text-neutral-200 bg-neutral-700 hover:bg-neutral-600 disabled:opacity-50 disabled:hover:bg-neutral-700';
 const ctrlPrimary =
-  'flex h-8 w-12 items-center justify-center rounded text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 disabled:hover:bg-emerald-600';
+  'flex h-8 w-12 items-center justify-center rounded text-sm font-semibold text-white bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 disabled:hover:bg-emerald-700';
 
 const moveLabel = (ply: number) => `${Math.ceil(ply / 2)}${ply % 2 === 1 ? '.' : '…'}`;
 
@@ -61,14 +61,17 @@ export function AnalysisCoach() {
   return (
     <div className="rounded-lg bg-panel p-3">
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-ink">Game review</h3>
+        {/* ReviewPanel is also titled "Game review" and can be stacked with this
+            panel during a walkthrough — keep the two titles distinct. */}
+        <h3 className="text-sm font-semibold text-ink">Coach</h3>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-neutral-500">
+          <span className="text-xs text-neutral-400">
             {Math.min(viewPly, len)} / {len}
           </span>
           <button
             onClick={() => useGame.getState().stopCoach()}
             title="Exit walkthrough"
+            aria-label="Exit walkthrough"
             className="rounded px-1.5 py-0.5 text-xs text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
           >
             ✕
@@ -98,7 +101,7 @@ export function AnalysisCoach() {
                 </span>
                 <span className={`text-sm font-semibold ${meta.text}`}>{meta.label}</span>
               </div>
-              <div className="text-xs text-neutral-500">
+              <div className="text-xs text-neutral-400">
                 eval <span className="font-mono text-neutral-300">{review.evalText}</span>
               </div>
             </div>
@@ -113,15 +116,15 @@ export function AnalysisCoach() {
           )}
         </div>
       ) : (
-        <p className="py-3 text-sm text-neutral-500">No grade for this move.</p>
+        <p className="py-3 text-sm text-neutral-400">No grade for this move.</p>
       )}
 
       {/* transport controls */}
       <div className="mt-3 flex items-center justify-center gap-1">
-        <button onClick={() => nav((s) => s.goToPly(0))} disabled={atStart} className={ctrl} title="Start">
+        <button onClick={() => nav((s) => s.goToPly(0))} disabled={atStart} className={ctrl} title="Start" aria-label="Go to start">
           ⏮
         </button>
-        <button onClick={() => nav((s) => s.stepView(-1))} disabled={atStart} className={ctrl} title="Previous">
+        <button onClick={() => nav((s) => s.stepView(-1))} disabled={atStart} className={ctrl} title="Previous" aria-label="Previous move">
           ◀
         </button>
         <button
@@ -129,13 +132,14 @@ export function AnalysisCoach() {
           disabled={atEnd && !coachPlaying}
           className={ctrlPrimary}
           title={coachPlaying ? 'Pause' : 'Play'}
+          aria-label={coachPlaying ? 'Pause' : 'Play'}
         >
           {coachPlaying ? '⏸' : '▶'}
         </button>
-        <button onClick={() => nav((s) => s.stepView(1))} disabled={atEnd} className={ctrl} title="Next">
+        <button onClick={() => nav((s) => s.stepView(1))} disabled={atEnd} className={ctrl} title="Next" aria-label="Next move">
           ▶
         </button>
-        <button onClick={() => nav((s) => s.goToPly(len))} disabled={atEnd} className={ctrl} title="End">
+        <button onClick={() => nav((s) => s.goToPly(len))} disabled={atEnd} className={ctrl} title="End" aria-label="Go to end">
           ⏭
         </button>
       </div>

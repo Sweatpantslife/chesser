@@ -26,7 +26,7 @@ const TABS: { id: View; label: string; hint: string }[] = [
   { id: 'learn', label: 'Learn', hint: 'rules & guided lessons' },
   { id: 'friends', label: 'Friends', hint: 'pass & play · online friend games' },
   { id: 'openings', label: 'Openings', hint: 'repertoire drills' },
-  { id: 'tactics', label: 'Middlegame', hint: 'tactics puzzles' },
+  { id: 'tactics', label: 'Tactics', hint: 'tactics puzzles' },
   { id: 'endgame', label: 'Endgame', hint: 'theory & technique' },
   { id: 'train', label: 'Train', hint: 'vision · mates · anti-blunder' },
   { id: 'coordinates', label: 'Coords', hint: 'board-vision trainer' },
@@ -36,7 +36,7 @@ const TABS: { id: View; label: string; hint: string }[] = [
 
 function Badge({ ok, children }: { ok: boolean; children: ReactNode }) {
   return (
-    <span className={`rounded px-1.5 py-0.5 ${ok ? 'bg-emerald-900/60 text-emerald-300' : 'bg-neutral-800 text-neutral-600'}`}>
+    <span className={`rounded px-1.5 py-0.5 ${ok ? 'bg-emerald-900/60 text-emerald-300' : 'bg-neutral-800 text-neutral-400'}`}>
       {children}
     </span>
   );
@@ -51,16 +51,22 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
       <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-3 px-4 py-3">
         <div className="flex items-baseline gap-2">
           <h1 className="text-lg font-bold text-ink">♟ Chesser</h1>
-          <span className="hidden text-xs text-neutral-500 sm:inline">Stockfish + Lc0/Maia</span>
+          <span className="hidden text-xs text-neutral-400 sm:inline">Stockfish + Lc0/Maia</span>
         </div>
-        <nav className="order-3 flex w-full flex-wrap gap-1 sm:order-2 sm:w-auto">
+        {/* On small screens the 8 tabs scroll horizontally in one row (scrollbar hidden)
+            instead of wrapping into cramped lines; from sm up they wrap as before. */}
+        <nav
+          aria-label="Primary"
+          className="scrollbar-none order-3 flex w-full gap-1 overflow-x-auto sm:order-2 sm:w-auto sm:flex-wrap sm:overflow-x-visible"
+        >
           {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setView(t.id)}
               title={t.hint}
-              className={`min-w-[4.5rem] flex-1 rounded px-3 py-1.5 text-sm sm:flex-none ${
-                view === t.id ? 'bg-emerald-600 text-white' : 'text-neutral-300 hover:bg-neutral-800'
+              aria-current={view === t.id ? 'page' : undefined}
+              className={`min-h-11 min-w-[4.5rem] shrink-0 whitespace-nowrap rounded px-3 py-1.5 text-sm sm:min-h-0 ${
+                view === t.id ? 'bg-emerald-700 text-white' : 'text-neutral-300 hover:bg-neutral-800'
               }`}
             >
               {t.label}
@@ -69,7 +75,7 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
         </nav>
         <div className="order-2 flex items-center gap-3 text-xs sm:order-3">
           {availability && (
-            <span className="hidden gap-2 text-neutral-500 md:flex">
+            <span className="hidden gap-2 text-neutral-400 md:flex">
               <Badge ok={availability.stockfish}>Stockfish</Badge>
               <Badge ok={availability.lc0}>Maia</Badge>
               {availability.syzygy && (
@@ -77,7 +83,15 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
               )}
             </span>
           )}
-          <span className={`flex items-center gap-1.5 ${connected ? 'text-emerald-400' : 'text-rose-400'}`}>
+          <span
+            role="status"
+            title={
+              connected
+                ? 'Connected to the engine server'
+                : 'Trying to reach the engine server — bot play and analysis resume once connected'
+            }
+            className={`flex items-center gap-1.5 ${connected ? 'text-emerald-400' : 'text-rose-400'}`}
+          >
             <span className={`h-2 w-2 rounded-full ${connected ? 'bg-emerald-400' : 'bg-rose-400'}`} />
             {connected ? 'online' : 'connecting…'}
           </span>
@@ -86,7 +100,8 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
           <button
             onClick={() => setSettingsOpen(true)}
             title="Settings"
-            className="rounded bg-neutral-800 px-2 py-1 text-sm text-neutral-300 hover:bg-neutral-700"
+            aria-label="Settings"
+            className="min-h-11 min-w-11 rounded bg-neutral-800 px-2 py-1 text-sm text-neutral-300 hover:bg-neutral-700 sm:min-h-0 sm:min-w-0"
           >
             ⚙
           </button>
@@ -127,8 +142,16 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-emerald-700 focus:px-3 focus:py-1.5 focus:text-sm focus:text-white"
+      >
+        Skip to content
+      </a>
       <Header view={view} setView={setView} />
-      <main className="flex-1 p-4">
+      {/* key={view} remounts the content on tab switch so .page-fade replays
+          its 150ms fade (disabled under prefers-reduced-motion in index.css). */}
+      <main key={view} id="main" className="page-fade flex-1 p-4">
         {view === 'play' && <PlayPage />}
         {view === 'learn' && <LearnPage />}
         {/* Kept mounted so a live human-vs-human game survives tab switches. */}

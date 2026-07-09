@@ -37,7 +37,7 @@ export function AnalysisPanel() {
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-ink">Engine</h3>
           {analysisOn && (
-            <span className="rounded bg-neutral-700 px-1.5 py-0.5 text-[10px] text-neutral-300">
+            <span className="rounded bg-neutral-700 px-1.5 py-0.5 text-xs text-neutral-300">
               Stockfish · depth {analysisDepth}
             </span>
           )}
@@ -56,8 +56,8 @@ export function AnalysisPanel() {
               <button
                 key={n}
                 onClick={() => setMultipv(n)}
-                className={`h-5 w-5 rounded text-[11px] ${
-                  multipv === n ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                className={`h-5 w-5 rounded text-xs ${
+                  multipv === n ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                 }`}
               >
                 {n}
@@ -65,7 +65,7 @@ export function AnalysisPanel() {
             ))}
           </div>
           <ol className="space-y-1">
-            {analysisLines.length === 0 && <li className="text-xs text-neutral-500">thinking…</li>}
+            {analysisLines.length === 0 && <li className="text-xs text-neutral-400">thinking…</li>}
             {analysisLines.map((line) => (
               <li key={line.multipv} className="flex items-baseline gap-2 text-sm">
                 <span className={`w-12 shrink-0 font-mono font-semibold tabular-nums ${scoreClass(line)}`}>
@@ -79,7 +79,7 @@ export function AnalysisPanel() {
           </ol>
         </>
       ) : (
-        <p className="text-xs text-neutral-500">Analysis is off.</p>
+        <p className="text-xs text-neutral-400">Analysis is off.</p>
       )}
     </div>
   );

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useGame } from '../store/game';
 import { BotAvatar } from './BotAvatar';
 
-const btn = 'rounded px-3 py-1.5 text-sm font-medium disabled:opacity-40';
+const btn = 'rounded px-3 py-1.5 text-sm font-medium disabled:opacity-50';
 const neutralBtn = `${btn} bg-neutral-700 text-neutral-200 hover:bg-neutral-600`;
 
 /**
@@ -55,9 +55,9 @@ export function GameActions() {
             {opponent.name}
             {opponent.rating != null && <span className="ml-1 font-normal text-neutral-400">· {opponent.rating}</span>}
           </div>
-          <div className="text-xs text-neutral-500">
+          <div className="text-xs text-neutral-400">
             You play <span className="capitalize text-neutral-300">{playerColor}</span>
-            {thinking && <span className="ml-1 animate-pulse text-emerald-400">· thinking…</span>}
+            {thinking && <span className="ml-1 animate-pulse-soft text-emerald-400">· thinking…</span>}
           </div>
         </div>
       </div>
@@ -114,11 +114,11 @@ export function GameActions() {
           )}
           <div className="flex flex-wrap gap-1.5">
             {hasSummary && (
-              <button className={`${btn} bg-indigo-600 text-white hover:bg-indigo-500`} onClick={() => void analyzeFinishedGame()}>
+              <button className={`${btn} bg-indigo-600 text-white hover:bg-indigo-700`} onClick={() => void analyzeFinishedGame()}>
                 🔍 Analyze game
               </button>
             )}
-            <button className={`${btn} bg-emerald-600 text-white hover:bg-emerald-500`} onClick={rematch}>
+            <button className={`${btn} bg-emerald-700 text-white hover:bg-emerald-800`} onClick={rematch}>
               ↻ Rematch
             </button>
             <button className={neutralBtn} onClick={switchColors}>

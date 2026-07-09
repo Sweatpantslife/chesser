@@ -55,9 +55,10 @@ export function GamifyToasts() {
     };
   }, []);
 
-  if (toasts.length === 0) return null;
+  // The container stays mounted (even when empty) so screen readers treat it
+  // as a stable live region and announce toasts as they arrive.
   return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-72 flex-col gap-2">
+    <div role="status" aria-live="polite" className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-72 flex-col gap-2">
       {toasts.map((t) => (
         <div
           key={t.id}

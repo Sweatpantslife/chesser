@@ -129,7 +129,7 @@ export function StatsPage({ goto }: { goto: (target: DeckTarget) => void }) {
       <Section
         title="Ratings"
         aside={
-          <span className="text-xs text-neutral-500">
+          <span className="text-xs text-neutral-400">
             {puzzlesSolved} solved · {customPuzzles} from your games
           </span>
         }
@@ -141,18 +141,21 @@ export function StatsPage({ goto }: { goto: (target: DeckTarget) => void }) {
         </div>
       </Section>
 
-      <Section title="Activity" aside={<span className="text-xs text-neutral-500">last {HEATMAP_WEEKS} weeks</span>}>
+      <Section title="Activity" aside={<span className="text-xs text-neutral-400">last {HEATMAP_WEEKS} weeks</span>}>
         <Heatmap days={heat} />
-        <div className="mt-2 flex items-center justify-end gap-1.5 text-[11px] text-neutral-500">
-          less
-          {['#1b2029', '#14532d', '#166534', '#16a34a', '#34d399'].map((c) => (
-            <span key={c} className="h-2.5 w-2.5 rounded-[2px]" style={{ background: c }} />
-          ))}
-          more
-        </div>
+        {/* colour legend only makes sense once the calendar has data */}
+        {heat.some((d) => d.value > 0) && (
+          <div className="mt-2 flex items-center justify-end gap-1.5 text-xs text-neutral-400">
+            less
+            {['#1b2029', '#14532d', '#166534', '#16a34a', '#34d399'].map((c) => (
+              <span key={c} className="h-2.5 w-2.5 rounded-[2px]" style={{ background: c }} />
+            ))}
+            more
+          </div>
+        )}
       </Section>
 
-      <Section title="Last 30 days" aside={<span className="text-xs text-neutral-500">reviews ▮ · accuracy ▬</span>}>
+      <Section title="Last 30 days" aside={<span className="text-xs text-neutral-400">reviews ▮ · accuracy ▬</span>}>
         <ActivityChart data={series} />
       </Section>
 
@@ -176,7 +179,7 @@ export function StatsPage({ goto }: { goto: (target: DeckTarget) => void }) {
             ].map((b) => (
               <div key={b.label}>
                 <div className="text-2xl font-bold text-emerald-400">{b.value}</div>
-                <div className="text-[11px] uppercase tracking-wide text-neutral-500">{b.label}</div>
+                <div className="text-xs uppercase tracking-wide text-neutral-400">{b.label}</div>
               </div>
             ))}
           </div>
