@@ -1149,9 +1149,17 @@ export const useGame = create<GameStore>((set, get) => ({
     let movableColor: Color | 'both' | undefined;
     const dests = new Map<string, string[]>();
     if (canMove) {
+      if (s.mode === 'analysis') {
+        movableColor = 'both';
+      } else {
+        // Keep the player's pieces grabbable even while the bot is on move so
+        // chessground can queue a premove (it needs movable.color to stay the
+        // player's colour). Real destinations only exist on the player's turn,
+        // so no actual move can slip through out of turn.
+        movableColor = s.playerColor ?? undefined;
+      }
       const allowed = s.mode === 'analysis' || (colorOfFen(viewedFen) === s.playerColor && !s.thinking);
       if (allowed) {
-        movableColor = s.mode === 'analysis' ? 'both' : (s.playerColor ?? undefined);
         for (const m of viewProbe.moves({ verbose: true })) {
           const arr = dests.get(m.from) ?? [];
           arr.push(m.to);

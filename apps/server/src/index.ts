@@ -6,6 +6,8 @@ import fastifyStatic from '@fastify/static';
 import { WebSocketServer } from 'ws';
 import { engines } from './engine/manager.js';
 import { Session } from './ws.js';
+import { FriendRoomManager } from './friends/rooms.js';
+import { FriendSession } from './friends/ws.js';
 import { HOST, LOG_ENABLED, PORT, WEB_DIR } from './config.js';
 import { probeTablebase } from './tablebase.js';
 import { shutdownLocalTablebase } from './tablebase-local.js';
@@ -56,9 +58,28 @@ if (WEB_DIR && fs.existsSync(path.join(WEB_DIR, 'index.html'))) {
   console.warn(`[server] CHESSER_WEB_DIR is set but no index.html found at ${process.env.CHESSER_WEB_DIR}`);
 }
 
-const wss = new WebSocketServer({ server: app.server, path: '/ws' });
+// Two WebSocket endpoints share the HTTP server, so upgrades are routed by
+// path here (two path-bound WebSocketServer instances would each try to answer
+// every upgrade): /ws is the engine session, /ws/friend the friend-game rooms.
+const wss = new WebSocketServer({ noServer: true });
 wss.on('connection', (ws) => {
   new Session(ws);
+});
+const friendRooms = new FriendRoomManager();
+const friendWss = new WebSocketServer({ noServer: true });
+friendWss.on('connection', (ws) => {
+  new FriendSession(ws, friendRooms);
+});
+const friendSweep = setInterval(() => friendRooms.sweep(), 60_000);
+friendSweep.unref();
+app.server.on('upgrade', (req, socket, head) => {
+  const pathname = (req.url ?? '').split('?', 1)[0];
+  const target = pathname === '/ws' ? wss : pathname === '/ws/friend' ? friendWss : null;
+  if (!target) {
+    socket.destroy();
+    return;
+  }
+  target.handleUpgrade(req, socket, head, (ws) => target.emit('connection', ws, req));
 });
 
 async function shutdown(): Promise<void> {
