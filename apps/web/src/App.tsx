@@ -51,12 +51,13 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
           <h1 className="text-lg font-bold text-ink">♟ Chesser</h1>
           <span className="hidden text-xs text-neutral-500 sm:inline">Stockfish + Lc0/Maia</span>
         </div>
-        <nav className="order-3 flex w-full flex-wrap gap-1 sm:order-2 sm:w-auto">
+        <nav aria-label="Primary" className="order-3 flex w-full flex-wrap gap-1 sm:order-2 sm:w-auto">
           {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setView(t.id)}
               title={t.hint}
+              aria-current={view === t.id ? 'page' : undefined}
               className={`min-w-[4.5rem] flex-1 rounded px-3 py-1.5 text-sm sm:flex-none ${
                 view === t.id ? 'bg-emerald-600 text-white' : 'text-neutral-300 hover:bg-neutral-800'
               }`}
@@ -75,7 +76,7 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
               )}
             </span>
           )}
-          <span className={`flex items-center gap-1.5 ${connected ? 'text-emerald-400' : 'text-rose-400'}`}>
+          <span role="status" className={`flex items-center gap-1.5 ${connected ? 'text-emerald-400' : 'text-rose-400'}`}>
             <span className={`h-2 w-2 rounded-full ${connected ? 'bg-emerald-400' : 'bg-rose-400'}`} />
             {connected ? 'online' : 'connecting…'}
           </span>
@@ -84,6 +85,7 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
           <button
             onClick={() => setSettingsOpen(true)}
             title="Settings"
+            aria-label="Settings"
             className="rounded bg-neutral-800 px-2 py-1 text-sm text-neutral-300 hover:bg-neutral-700"
           >
             ⚙
@@ -125,8 +127,14 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-emerald-700 focus:px-3 focus:py-1.5 focus:text-sm focus:text-white"
+      >
+        Skip to content
+      </a>
       <Header view={view} setView={setView} />
-      <main className="flex-1 p-4">
+      <main id="main" className="flex-1 p-4">
         {view === 'play' && <PlayPage />}
         {/* Kept mounted so a live human-vs-human game survives tab switches. */}
         <div className={view === 'friends' ? undefined : 'hidden'}>

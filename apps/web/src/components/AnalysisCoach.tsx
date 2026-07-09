@@ -69,6 +69,7 @@ export function AnalysisCoach() {
           <button
             onClick={() => useGame.getState().stopCoach()}
             title="Exit walkthrough"
+            aria-label="Exit walkthrough"
             className="rounded px-1.5 py-0.5 text-xs text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
           >
             ✕
@@ -118,10 +119,10 @@ export function AnalysisCoach() {
 
       {/* transport controls */}
       <div className="mt-3 flex items-center justify-center gap-1">
-        <button onClick={() => nav((s) => s.goToPly(0))} disabled={atStart} className={ctrl} title="Start">
+        <button onClick={() => nav((s) => s.goToPly(0))} disabled={atStart} className={ctrl} title="Start" aria-label="Go to start">
           ⏮
         </button>
-        <button onClick={() => nav((s) => s.stepView(-1))} disabled={atStart} className={ctrl} title="Previous">
+        <button onClick={() => nav((s) => s.stepView(-1))} disabled={atStart} className={ctrl} title="Previous" aria-label="Previous move">
           ◀
         </button>
         <button
@@ -129,13 +130,14 @@ export function AnalysisCoach() {
           disabled={atEnd && !coachPlaying}
           className={ctrlPrimary}
           title={coachPlaying ? 'Pause' : 'Play'}
+          aria-label={coachPlaying ? 'Pause' : 'Play'}
         >
           {coachPlaying ? '⏸' : '▶'}
         </button>
-        <button onClick={() => nav((s) => s.stepView(1))} disabled={atEnd} className={ctrl} title="Next">
+        <button onClick={() => nav((s) => s.stepView(1))} disabled={atEnd} className={ctrl} title="Next" aria-label="Next move">
           ▶
         </button>
-        <button onClick={() => nav((s) => s.goToPly(len))} disabled={atEnd} className={ctrl} title="End">
+        <button onClick={() => nav((s) => s.goToPly(len))} disabled={atEnd} className={ctrl} title="End" aria-label="Go to end">
           ⏭
         </button>
       </div>

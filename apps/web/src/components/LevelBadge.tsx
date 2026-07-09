@@ -10,6 +10,7 @@ export function LevelBadge({ onClick }: { onClick: () => void }) {
     <button
       onClick={onClick}
       title="Your profile — level, ratings & badges"
+      aria-label={`Your profile — level ${level}${streak > 0 ? `, ${streak}-day streak` : ''}`}
       className="flex items-center gap-2 rounded bg-neutral-800 px-2 py-1 text-xs text-neutral-200 hover:bg-neutral-700"
     >
       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">

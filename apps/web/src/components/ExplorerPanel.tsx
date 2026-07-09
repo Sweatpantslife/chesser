@@ -141,6 +141,7 @@ export function ExplorerPanel() {
                   <button
                     onClick={() => saveMove(m)}
                     title="Save this line to your repertoire"
+                    aria-label={`Save line with ${m.san} to your repertoire`}
                     className={`shrink-0 rounded px-1.5 py-1 text-xs ${added === m.uci ? 'text-emerald-400' : 'text-neutral-500 hover:bg-neutral-700 hover:text-emerald-300'}`}
                   >
                     {added === m.uci ? '✓' : '＋'}

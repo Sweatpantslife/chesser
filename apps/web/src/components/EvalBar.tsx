@@ -11,6 +11,8 @@ export function EvalBar({ score, orientation }: { score: Score | null; orientati
   return (
     <div
       className="relative w-6 shrink-0 overflow-hidden rounded bg-neutral-900"
+      role="img"
+      aria-label={score ? `Evaluation: ${label} (White's view)` : 'No evaluation'}
       title={score ? `Evaluation: ${label} (White's view)` : 'No evaluation'}
     >
       {/* white share of the bar */}

@@ -4,6 +4,7 @@ import { mainlineOf, useGame, type Color } from '../store/game';
 import { detectOpening, type OpeningInfo } from '../lib/openings';
 import { CLASSIFICATION_META, type Classification } from '../lib/coach';
 import { BotAvatar } from './BotAvatar';
+import { Modal } from './Modal';
 
 const opposite = (c: Color): Color => (c === 'white' ? 'black' : 'white');
 
@@ -90,15 +91,17 @@ export function GameOverModal() {
   const close = () => useGame.getState().dismissModal();
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4" onClick={close}>
-      <div
-        className="scroll-thin max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-panel p-5 shadow-2xl ring-1 ring-white/5"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Modal
+      onClose={close}
+      role="alertdialog"
+      labelledBy="game-over-title"
+      overlayClassName="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4"
+      className="scroll-thin max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-panel p-5 shadow-2xl ring-1 ring-white/5"
+    >
         {/* headline */}
         <div className="mb-4 text-center">
-          <div className="text-3xl">{headEmoji}</div>
-          <h2 className={`mt-1 text-2xl font-bold ${headTone}`}>{headline}</h2>
+          <div className="text-3xl" aria-hidden="true">{headEmoji}</div>
+          <h2 id="game-over-title" className={`mt-1 text-2xl font-bold ${headTone}`}>{headline}</h2>
           <p className="mt-0.5 text-sm text-neutral-400">{summary.statusText}</p>
         </div>
 
@@ -194,7 +197,6 @@ export function GameOverModal() {
             </button>
           </div>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

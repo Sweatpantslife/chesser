@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { STARTING_FEN } from '@chesser/shared';
 import { useGame } from '../store/game';
 import { useRepertoire } from '../store/repertoire';
+import { Modal } from './Modal';
 
 export function SaveLineDialog({ onClose }: { onClose: () => void }) {
   const history = useGame((s) => s.history);
@@ -33,9 +34,8 @@ export function SaveLineDialog({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
-      <div className="w-full max-w-sm rounded-xl bg-panel p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <h3 className="mb-2 text-sm font-semibold text-ink">Save line to repertoire</h3>
+    <Modal onClose={onClose} labelledBy="save-line-title" className="w-full max-w-sm rounded-xl bg-panel p-4 shadow-2xl">
+        <h3 id="save-line-title" className="mb-2 text-sm font-semibold text-ink">Save line to repertoire</h3>
 
         {sans.length === 0 ? (
           <p className="text-sm text-neutral-400">Make some moves on the board first, then save the line.</p>
@@ -46,8 +46,11 @@ export function SaveLineDialog({ onClose }: { onClose: () => void }) {
             <div className="rounded bg-panelmute p-2 font-mono text-xs text-neutral-300">{defaultName}</div>
 
             <div>
-              <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Repertoire</div>
+              <label htmlFor="save-line-repertoire" className="mb-1 block text-xs uppercase tracking-wide text-neutral-500">
+                Repertoire
+              </label>
               <select
+                id="save-line-repertoire"
                 value={target}
                 onChange={(e) => setTarget(e.target.value)}
                 className="w-full rounded bg-neutral-800 px-2 py-1.5 text-sm text-ink outline-none"
@@ -64,14 +67,18 @@ export function SaveLineDialog({ onClose }: { onClose: () => void }) {
                   value={newRepName}
                   onChange={(e) => setNewRepName(e.target.value)}
                   placeholder="repertoire name"
+                  aria-label="New repertoire name"
                   className="mt-1 w-full rounded bg-neutral-800 px-2 py-1.5 text-sm text-ink outline-none"
                 />
               )}
             </div>
 
             <div>
-              <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Line name</div>
+              <label htmlFor="save-line-name" className="mb-1 block text-xs uppercase tracking-wide text-neutral-500">
+                Line name
+              </label>
               <input
+                id="save-line-name"
                 value={lineName}
                 onChange={(e) => setLineName(e.target.value)}
                 className="w-full rounded bg-neutral-800 px-2 py-1.5 text-sm text-ink outline-none"
@@ -85,6 +92,7 @@ export function SaveLineDialog({ onClose }: { onClose: () => void }) {
                   <button
                     key={c}
                     onClick={() => setSide(c)}
+                    aria-pressed={side === c}
                     className={`flex-1 rounded px-2 py-1 text-sm capitalize ${
                       side === c ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                     }`}
@@ -105,7 +113,6 @@ export function SaveLineDialog({ onClose }: { onClose: () => void }) {
             </div>
           </div>
         )}
-      </div>
-    </div>
+    </Modal>
   );
 }

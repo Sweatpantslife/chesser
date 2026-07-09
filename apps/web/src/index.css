@@ -12,6 +12,18 @@
   color-scheme: dark;
 }
 
+/* Visible focus ring on keyboard focus only. Uses box-shadow (not outline) so
+   the many `outline-none` utilities in the codebase can't suppress it; element
+   ring utilities (e.g. focus:ring-1) still win where they're declared. */
+@layer base {
+  :focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px #0d1017,
+      0 0 0 4px theme('colors.emerald.400');
+  }
+}
+
 html,
 body,
 #root {

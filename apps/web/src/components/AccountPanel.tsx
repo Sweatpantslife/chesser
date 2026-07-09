@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useAuth } from '../store/auth';
 import type { SyncState } from '../lib/sync';
+import { Modal } from './Modal';
 
 const SYNC_LABEL: Record<SyncState, { dot: string; text: string }> = {
   off: { dot: 'bg-neutral-500', text: 'not syncing' },
@@ -29,6 +30,7 @@ function AuthForm({ onClose }: { onClose: () => void }) {
             key={m}
             type="button"
             onClick={() => setMode(m)}
+            aria-pressed={mode === m}
             className={`flex-1 rounded px-2 py-1 capitalize ${mode === m ? 'bg-emerald-600 text-white' : 'text-neutral-300'}`}
           >
             {m === 'login' ? 'Sign in' : 'Create account'}
@@ -36,22 +38,38 @@ function AuthForm({ onClose }: { onClose: () => void }) {
         ))}
       </div>
       <p className="text-xs text-neutral-400">Sync your opening and tactics progress across devices.</p>
-      <input
-        className="w-full rounded bg-neutral-800 px-2 py-1.5 text-sm text-ink outline-none focus:ring-1 focus:ring-emerald-500"
-        placeholder="username"
-        autoComplete="username"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-      />
-      <input
-        type="password"
-        className="w-full rounded bg-neutral-800 px-2 py-1.5 text-sm text-ink outline-none focus:ring-1 focus:ring-emerald-500"
-        placeholder="password"
-        autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      {error && <p className="text-xs text-rose-300">{error}</p>}
+      <div>
+        <label htmlFor="auth-username" className="sr-only">
+          Username
+        </label>
+        <input
+          id="auth-username"
+          className="w-full rounded bg-neutral-800 px-2 py-1.5 text-sm text-ink outline-none focus:ring-1 focus:ring-emerald-500"
+          placeholder="username"
+          autoComplete="username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+      </div>
+      <div>
+        <label htmlFor="auth-password" className="sr-only">
+          Password
+        </label>
+        <input
+          id="auth-password"
+          type="password"
+          className="w-full rounded bg-neutral-800 px-2 py-1.5 text-sm text-ink outline-none focus:ring-1 focus:ring-emerald-500"
+          placeholder="password"
+          autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+      </div>
+      {error && (
+        <p role="alert" className="text-xs text-rose-300">
+          {error}
+        </p>
+      )}
       <button
         type="submit"
         disabled={busy}
@@ -110,11 +128,9 @@ export function AccountButton() {
         )}
       </button>
       {open && (
-        <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 p-4" onClick={() => setOpen(false)}>
-          <div className="w-full max-w-xs rounded-xl bg-panel p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            {username ? <AccountInfo onClose={() => setOpen(false)} /> : <AuthForm onClose={() => setOpen(false)} />}
-          </div>
-        </div>
+        <Modal onClose={() => setOpen(false)} label={username ? 'Account' : 'Sign in'} className="w-full max-w-xs rounded-xl bg-panel p-4 shadow-2xl">
+          {username ? <AccountInfo onClose={() => setOpen(false)} /> : <AuthForm onClose={() => setOpen(false)} />}
+        </Modal>
       )}
     </>
   );

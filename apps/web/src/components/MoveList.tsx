@@ -46,6 +46,7 @@ export function MoveList() {
     return (
       <button
         data-current={current}
+        aria-current={current ? 'step' : undefined}
         onClick={() => goToNode(node.id)}
         className={`rounded px-1 py-0.5 font-mono text-sm ${
           current ? 'bg-emerald-600 text-white' : 'text-neutral-200 hover:bg-neutral-700'
@@ -83,7 +84,7 @@ export function MoveList() {
     const v = tree[startId];
     if (!v) return null;
     return (
-      <span className="my-0.5 block rounded border-l-2 border-neutral-700 pl-2 text-neutral-400">
+      <span role="group" aria-label="Variation" className="my-0.5 block rounded border-l-2 border-neutral-700 pl-2 text-neutral-400">
         <span className="text-neutral-600">(</span>
         <Move node={v} withNumber />
         <Continuation from={v} />
@@ -115,7 +116,7 @@ export function MoveList() {
           </button>
         </div>
       )}
-      <div ref={scrollRef} className="scroll-thin max-h-56 overflow-y-auto px-1 leading-7">
+      <div ref={scrollRef} role="region" aria-label="Moves" className="scroll-thin max-h-56 overflow-y-auto px-1 leading-7">
         {!hasMoves ? (
           <p className="p-2 text-xs text-neutral-500">No moves yet. Make moves on the board to build lines.</p>
         ) : (

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { apiDeleteGame, apiImport, apiListGames, type ImportedGame, type SavedGame } from '../lib/api';
 import { useAuth } from '../store/auth';
 import { useGame } from '../store/game';
+import { Modal } from './Modal';
 
 type Tab = 'saved' | 'import' | 'pgn' | 'fen';
 
@@ -46,6 +47,7 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
   const tabBtn = (id: Tab, label: string) => (
     <button
       onClick={() => setTab(id)}
+      aria-pressed={tab === id}
       className={`flex-1 rounded px-2 py-1 text-sm ${tab === id ? 'bg-emerald-600 text-white' : 'text-neutral-300 hover:bg-neutral-700'}`}
     >
       {label}
@@ -53,8 +55,7 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
   );
 
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
-      <div className="flex max-h-[80vh] w-full max-w-lg flex-col rounded-xl bg-panel p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={onClose} label="Game library" className="flex max-h-[80vh] w-full max-w-lg flex-col rounded-xl bg-panel p-4 shadow-2xl">
         <div className="mb-3 flex gap-1 rounded bg-panelmute p-1">
           {tabBtn('saved', 'My games')}
           {tabBtn('import', 'Import')}
@@ -62,7 +63,11 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
           {tabBtn('fen', 'FEN')}
         </div>
 
-        {msg && <p className="mb-2 text-xs text-amber-300">{msg}</p>}
+        {msg && (
+          <p role="status" className="mb-2 text-xs text-amber-300">
+            {msg}
+          </p>
+        )}
 
         {tab === 'saved' && (
           <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">
@@ -81,6 +86,7 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
                     </button>
                     <button
                       onClick={() => token && apiDeleteGame(token, g.id).then(() => setSaved((s) => s.filter((x) => x.id !== g.id)))}
+                      aria-label={`Delete game ${g.white} vs ${g.black}`}
                       className="rounded px-1.5 py-1 text-xs text-neutral-500 hover:text-rose-300"
                     >
                       ×
@@ -100,6 +106,7 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
                   <button
                     key={s}
                     onClick={() => setSite(s)}
+                    aria-pressed={site === s}
                     className={`rounded px-2 py-1 text-xs ${site === s ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-300'}`}
                   >
                     {s === 'chesscom' ? 'Chess.com' : 'Lichess'}
@@ -111,6 +118,7 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
                 onChange={(e) => setUser(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && user.trim() && runImport()}
                 placeholder="username"
+                aria-label={`${site === 'chesscom' ? 'Chess.com' : 'Lichess'} username`}
                 className="min-w-0 flex-1 rounded bg-neutral-800 px-2 py-1 text-sm text-ink outline-none"
               />
               <button onClick={runImport} disabled={busy || !user.trim()} className="rounded bg-emerald-600 px-3 py-1 text-sm font-semibold text-white disabled:opacity-50">
@@ -148,6 +156,7 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
               }}
               rows={8}
               placeholder={'[Event "..."]\n\n1. e4 e5 2. Nf3 Nc6 ...'}
+              aria-label="PGN text"
               className="w-full rounded bg-neutral-900 p-2 font-mono text-xs text-ink outline-none"
             />
             <div className="mt-3 flex justify-end">
@@ -172,6 +181,7 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
                 setMsg(null);
               }}
               placeholder="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+              aria-label="FEN position"
               className="w-full rounded bg-neutral-900 px-2 py-1.5 font-mono text-xs text-ink outline-none"
             />
             <div className="mt-3 flex justify-end">
@@ -189,7 +199,6 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
         <button onClick={onClose} className="mt-3 self-end text-xs text-neutral-500 hover:text-neutral-300">
           close
         </button>
-      </div>
-    </div>
+    </Modal>
   );
 }

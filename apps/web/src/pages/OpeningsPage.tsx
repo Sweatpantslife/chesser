@@ -266,6 +266,7 @@ export function OpeningsPage() {
                                 }
                               }}
                               title="Delete line"
+                              aria-label="Delete line"
                               className="shrink-0 rounded px-1.5 py-1 text-xs text-neutral-500 hover:bg-neutral-700 hover:text-rose-300"
                             >
                               ×

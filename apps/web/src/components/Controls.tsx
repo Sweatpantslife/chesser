@@ -61,16 +61,16 @@ export function Controls() {
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <button className={btn} onClick={() => goToPly(0)} disabled={atStart} title="First">
+      <button className={btn} onClick={() => goToPly(0)} disabled={atStart} title="First" aria-label="First move">
         ⏮
       </button>
-      <button className={btn} onClick={() => stepView(-1)} disabled={atStart} title="Previous">
+      <button className={btn} onClick={() => stepView(-1)} disabled={atStart} title="Previous" aria-label="Previous move">
         ◀
       </button>
-      <button className={btn} onClick={() => stepView(1)} disabled={atEnd} title="Next">
+      <button className={btn} onClick={() => stepView(1)} disabled={atEnd} title="Next" aria-label="Next move">
         ▶
       </button>
-      <button className={btn} onClick={() => goToPly(history.length)} disabled={atEnd} title="Last">
+      <button className={btn} onClick={() => goToPly(history.length)} disabled={atEnd} title="Last" aria-label="Last move">
         ⏭
       </button>
       <div className="mx-1 h-5 w-px bg-neutral-700" />

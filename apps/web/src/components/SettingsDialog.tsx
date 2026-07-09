@@ -1,6 +1,7 @@
 import { createElement, useEffect } from 'react';
 import { useSettings, PIECE_SETS, type BoardTheme, type PieceSet } from '../store/settings';
 import { loadAllPieceSets } from '../styles/pieceSets';
+import { Modal } from './Modal';
 
 const THEMES: { id: BoardTheme; swatch: string }[] = [
   { id: 'brown', swatch: '#b58863' },
@@ -14,6 +15,9 @@ function Toggle({ on, onChange, label }: { on: boolean; onChange: (b: boolean) =
     <label className="flex cursor-pointer items-center justify-between py-1.5 text-sm text-neutral-200">
       {label}
       <button
+        role="switch"
+        aria-checked={on}
+        aria-label={label}
         onClick={() => onChange(!on)}
         className={`relative h-5 w-9 rounded-full transition-colors ${on ? 'bg-emerald-600' : 'bg-neutral-600'}`}
       >
@@ -42,12 +46,12 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
   useEffect(() => loadAllPieceSets(), []);
 
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
-      <div
-        className="scroll-thin max-h-[85vh] w-full max-w-xs overflow-y-auto rounded-xl bg-panel p-4 shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h3 className="mb-2 text-sm font-semibold text-ink">Settings</h3>
+    <Modal
+      onClose={onClose}
+      labelledBy="settings-title"
+      className="scroll-thin max-h-[85vh] w-full max-w-xs overflow-y-auto rounded-xl bg-panel p-4 shadow-2xl"
+    >
+        <h3 id="settings-title" className="mb-2 text-sm font-semibold text-ink">Settings</h3>
         <Toggle on={sound} onChange={setSound} label="Move sounds" />
         <Toggle on={premove} onChange={setPremove} label="Premoves (vs bot)" />
         <Toggle on={arrows} onChange={setArrows} label="Engine arrows (analysis)" />
@@ -62,6 +66,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
               <button
                 key={m.id}
                 onClick={() => setRatingMeter(m.id)}
+                aria-pressed={ratingMeter === m.id}
                 className={`flex-1 rounded px-2 py-1 text-xs ${
                   ratingMeter === m.id ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                 }`}
@@ -80,6 +85,8 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
               <button
                 key={t.id}
                 onClick={() => setBoardTheme(t.id)}
+                aria-label={`${t.id} board theme`}
+                aria-pressed={boardTheme === t.id}
                 className={`h-8 w-8 rounded ring-2 ${boardTheme === t.id ? 'ring-emerald-400' : 'ring-transparent'}`}
                 style={{ background: t.swatch }}
                 title={t.id}
@@ -96,6 +103,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
                 key={p.id}
                 onClick={() => setPieceSet(p.id)}
                 title={p.label}
+                aria-pressed={pieceSet === p.id}
                 className={`flex flex-col items-center gap-1 rounded p-1.5 ring-2 ${
                   pieceSet === p.id ? 'bg-neutral-700 ring-emerald-400' : 'ring-transparent hover:bg-neutral-800'
                 }`}
@@ -110,7 +118,6 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
         <button onClick={onClose} className="mt-4 w-full rounded bg-neutral-700 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600">
           Done
         </button>
-      </div>
-    </div>
+    </Modal>
   );
 }
