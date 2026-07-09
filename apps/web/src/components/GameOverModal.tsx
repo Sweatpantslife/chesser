@@ -117,7 +117,11 @@ export function GameOverModal() {
             <div className="text-[11px] uppercase tracking-wide text-neutral-500">{summary.category === 'blitz' ? 'Blitz' : 'Bots'} rating</div>
             <div className="flex items-baseline justify-end gap-1.5">
               <span className="text-lg font-bold text-ink">{summary.ratingAfter}</span>
-              <span className={`text-sm font-semibold ${deltaTone}`}>{deltaStr}</span>
+              {summary.rated ? (
+                <span className={`text-sm font-semibold ${deltaTone}`}>{deltaStr}</span>
+              ) : (
+                <span className="text-xs font-semibold text-neutral-500">unrated</span>
+              )}
             </div>
           </div>
         </div>
