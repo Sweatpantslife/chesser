@@ -34,6 +34,7 @@ export function OpeningsPage() {
   const [lastMove, setLastMove] = useState<[string, string] | undefined>();
   const [feedback, setFeedback] = useState<{ kind: 'ok' | 'bad' | 'info'; text: string } | null>(null);
   const [stats, setStats] = useState({ correct: 0, wrong: 0 });
+  const [syncKey, setSyncKey] = useState(0);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
 
@@ -127,6 +128,11 @@ export function OpeningsPage() {
       setStats((s) => ({ ...s, wrong: s.wrong + 1 }));
       setFeedback({ kind: 'bad', text: 'Not the line — try again, or reveal.' });
       sync();
+      // Snap the board back. chessground has already rendered the rejected
+      // move; on the first ply sync() leaves every Board prop identical
+      // (same fen, lastMove still undefined), so without this bump the board
+      // stays desynced and no further input registers.
+      setSyncKey((k) => k + 1);
     }
   };
 
@@ -306,6 +312,7 @@ export function OpeningsPage() {
             lastMove={lastMove}
             inCheck={game.current.inCheck()}
             onMove={onMove}
+            syncKey={syncKey}
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
