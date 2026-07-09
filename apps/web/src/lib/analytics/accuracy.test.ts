@@ -39,48 +39,51 @@ describe('winPercent', () => {
     expect(winPercent(null)).toBe(50);
   });
 
-  it('maps mate scores to the extremes with White perspective', () => {
-    expect(winPercent({ mate: 1 })).toBe(100);
-    expect(winPercent({ mate: 12 })).toBe(100);
-    expect(winPercent({ mate: -1 })).toBe(0);
-    expect(winPercent({ mate: -12 })).toBe(0);
+  it('maps mate scores to the ±1000cp ceiling (lila WinPercent.fromMate), not 100/0', () => {
+    const ceiling = winPercent({ cp: 1000 });
+    expect(ceiling).toBeCloseTo(97.545, 1);
+    expect(winPercent({ mate: 1 })).toBe(ceiling);
+    expect(winPercent({ mate: 12 })).toBe(ceiling);
+    expect(winPercent({ mate: -1 })).toBe(winPercent({ cp: -1000 }));
+    expect(winPercent({ mate: -12 })).toBeCloseTo(2.455, 1);
   });
 
-  it('approaches 100 for a large White advantage', () => {
-    expect(winPercent({ cp: 1500 })).toBeGreaterThan(99);
-    expect(winPercent({ cp: 1500 })).toBeLessThanOrEqual(100);
+  it('approaches (but never reaches) 100 for a large White advantage', () => {
+    expect(winPercent({ cp: 1000 })).toBeGreaterThan(97);
+    expect(winPercent({ cp: 1000 })).toBeLessThan(100);
   });
 
   it('is symmetric: winPercent(-cp) = 100 - winPercent(cp)', () => {
-    for (const cp of [10, 100, 250, 700, 1500]) {
+    for (const cp of [10, 100, 250, 700, 1000]) {
       expect(winPercent({ cp: -cp })).toBeCloseTo(100 - winPercent({ cp }), 10);
     }
   });
 
   it('is monotonic in centipawns', () => {
-    const cps = [-1500, -400, -50, 0, 50, 400, 1500];
+    const cps = [-1000, -400, -50, 0, 50, 400, 1000];
     for (let i = 1; i < cps.length; i++) {
       expect(winPercent({ cp: cps[i]! })).toBeGreaterThan(winPercent({ cp: cps[i - 1]! }));
     }
   });
 
-  it('clamps beyond ±1500 cp (same curve as whiteWinPercent)', () => {
-    expect(winPercent({ cp: 5000 })).toBe(winPercent({ cp: 1500 }));
-    expect(winPercent({ cp: -5000 })).toBe(winPercent({ cp: -1500 }));
+  it('ceils beyond ±1000 cp (lila Cp.CEILING)', () => {
+    expect(winPercent({ cp: 5000 })).toBe(winPercent({ cp: 1000 }));
+    expect(winPercent({ cp: 1200 })).toBe(winPercent({ cp: 1000 }));
+    expect(winPercent({ cp: -5000 })).toBe(winPercent({ cp: -1000 }));
   });
 });
 
 describe('cpValue', () => {
-  it('passes centipawns through, clamped to ±1500', () => {
+  it('passes centipawns through, ceiled to ±1000', () => {
     expect(cpValue({ cp: 123 })).toBe(123);
     expect(cpValue({ cp: -321 })).toBe(-321);
-    expect(cpValue({ cp: 4000 })).toBe(1500);
-    expect(cpValue({ cp: -4000 })).toBe(-1500);
+    expect(cpValue({ cp: 4000 })).toBe(1000);
+    expect(cpValue({ cp: -4000 })).toBe(-1000);
   });
 
-  it('clamps mate scores to ±1500 with White perspective', () => {
-    expect(cpValue({ mate: 2 })).toBe(1500);
-    expect(cpValue({ mate: -2 })).toBe(-1500);
+  it('caps mate scores at ±1000 with White perspective', () => {
+    expect(cpValue({ mate: 2 })).toBe(1000);
+    expect(cpValue({ mate: -2 })).toBe(-1000);
   });
 
   it('treats a missing eval as 0', () => {
@@ -216,9 +219,9 @@ describe('acpl', () => {
     expect(acpl(rows, 'black')).toBe(50);
   });
 
-  it('caps mate scores at ±1500 like cpValue', () => {
+  it('caps mate scores at ±1000 like cpValue (lila AccuracyCP ceiling)', () => {
     const rows = [row({ ply: 1, evalBefore: { cp: 500 }, evalAfter: { mate: -3 } })];
-    expect(acpl(rows, 'white')).toBe(2000); // 500 − (−1500), not infinity
+    expect(acpl(rows, 'white')).toBe(1500); // 500 − (−1000), not infinity
   });
 
   it('counts a delivered mate as zero loss but keeps it in the divisor', () => {

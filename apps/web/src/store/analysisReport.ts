@@ -68,6 +68,50 @@ function toSideReview(p: PlayerSummary): SideReview {
   return { accuracy: Math.round(p.accuracy), acpl: p.acpl, moves: p.moves };
 }
 
+/**
+ * Push a report's grades/stats back over the game store's legacy review
+ * fields (moveReviews, annotations, evalGraph, reviewStats) — the same
+ * derivations as reviewGame's aggregation, via useGame.setState only.
+ *
+ * Runs on BOTH paths (fresh review and cache hit) so MoveList, AnalysisCoach,
+ * GameOverModal and ReviewPanel's table can never disagree with the report
+ * cards: the report grades a delivered mate best-tier (never a "missed win")
+ * and its accuracy is the lichess weighted/harmonic blend.
+ * Seam: consolidate with checkmateWinner() from lib/coach.ts once
+ * fix/coach-trainers lands (the legacy fresh-path grades then match natively).
+ *
+ * Every move must already carry the CURRENT tree's nodeId.
+ */
+function hydrateLegacyReviewFields(report: AnalysisReport, gameNo: number): void {
+  const moves = report.moves;
+  if (moves.length === 0) return;
+
+  const moveReviews: Record<string, MoveReview> = {};
+  const annotations: Record<string, Annotation> = {};
+  for (const m of moves) {
+    if (!m.nodeId) continue;
+    moveReviews[m.nodeId] = toMoveReview(m, m.nodeId);
+    if (m.classification === 'blunder') annotations[m.nodeId] = 'blunder';
+    else if (m.classification === 'mistake' || m.classification === 'miss') annotations[m.nodeId] = 'mistake';
+    else if (m.classification === 'inaccuracy') annotations[m.nodeId] = 'inaccuracy';
+  }
+
+  const evalGraph = [moves[0]!.winBefore, ...moves.map((m) => m.winAfter)];
+  // A delivered mate ends the curve at the mover's edge, whatever the (often
+  // {mate: 0} → 50%) terminal eval says — matches EvalGraphPro's pinning.
+  const last = moves[moves.length - 1]!;
+  if (last.isMate) evalGraph[evalGraph.length - 1] = last.side === 'white' ? 100 : 0;
+
+  useGame.setState({
+    moveReviews,
+    annotations,
+    evalGraph,
+    reviewStats: { white: toSideReview(report.white), black: toSideReview(report.black) },
+    reviewGameNo: gameNo,
+    reviewProgress: 100,
+  });
+}
+
 export const useAnalysisReport = create<AnalysisReportState>((set) => ({
   report: null,
   gameNo: 0,
@@ -89,20 +133,29 @@ export const useAnalysisReport = create<AnalysisReportState>((set) => ({
       // The report still builds without a named opening.
     }
     if (useGame.getState().gameNo !== input.gameNo) return; // stale review
-    const rows = buildRows(input);
-    const report = buildAnalysisReport(
-      rows,
-      {
-        gameNo: input.gameNo,
-        startFen: input.startFen,
-        result: input.result,
-        playerColor: input.playerColor,
-        engine: REVIEW_ENGINE_SETTINGS,
-      },
-      { eco, name, leftTheoryAtPly: input.bookPly },
-    );
-    set({ report, gameNo: input.gameNo });
-    saveCachedReport(report);
+    try {
+      const rows = buildRows(input);
+      const report = buildAnalysisReport(
+        rows,
+        {
+          gameNo: input.gameNo,
+          startFen: input.startFen,
+          result: input.result,
+          playerColor: input.playerColor,
+          engine: REVIEW_ENGINE_SETTINGS,
+        },
+        { eco, name, leftTheoryAtPly: input.bookPly },
+      );
+      set({ report, gameNo: input.gameNo });
+      // Fresh path: overwrite the store's just-computed legacy fields with the
+      // report's canonical grades, exactly like the cache path does.
+      hydrateLegacyReviewFields(report, input.gameNo);
+      saveCachedReport(report);
+    } catch (e) {
+      // Degrade to "no report" — a bad row after a ~30 s engine review must
+      // not surface as an unhandled rejection while the legacy review stands.
+      console.error('[report] failed to assemble the analysis report', e);
+    }
   },
 
   tryHydrateFromCache() {
@@ -118,29 +171,11 @@ export const useAnalysisReport = create<AnalysisReportState>((set) => ({
     if (!cached || cached.moves.length !== mainline.length) return false;
 
     // Cached rows come back with nodeId null — re-map by ply onto the current
-    // mainline, then hydrate the game store's legacy review fields (same
-    // derivations as reviewGame's aggregation, via useGame.setState only).
+    // mainline, then hydrate the game store's legacy review fields.
     const moves = cached.moves.map((m, i) => ({ ...m, nodeId: mainline[i]!.id }));
     const report: AnalysisReport = { ...cached, moves, meta: { ...cached.meta, gameNo: g.gameNo } };
 
-    const moveReviews: Record<string, MoveReview> = {};
-    const annotations: Record<string, Annotation> = {};
-    for (const m of moves) {
-      const id = m.nodeId!;
-      moveReviews[id] = toMoveReview(m, id);
-      if (m.classification === 'blunder') annotations[id] = 'blunder';
-      else if (m.classification === 'mistake' || m.classification === 'miss') annotations[id] = 'mistake';
-      else if (m.classification === 'inaccuracy') annotations[id] = 'inaccuracy';
-    }
-
-    useGame.setState({
-      moveReviews,
-      annotations,
-      evalGraph: [moves[0]!.winBefore, ...moves.map((m) => m.winAfter)],
-      reviewStats: { white: toSideReview(report.white), black: toSideReview(report.black) },
-      reviewGameNo: g.gameNo,
-      reviewProgress: 100,
-    });
+    hydrateLegacyReviewFields(report, g.gameNo);
     set({ report, gameNo: g.gameNo });
     return true;
   },

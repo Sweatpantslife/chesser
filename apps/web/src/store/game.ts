@@ -607,7 +607,11 @@ export const useGame = create<GameStore>((set, get) => ({
         set({ thinking: false });
         get()._applyMove({ from, to, promotion });
       } catch (e) {
-        if (gameId === myGame) set({ thinking: false });
+        // Surface the failure instead of leaving the board silently frozen
+        // (e.g. a bot style whose engine isn't installed on this server).
+        if (gameId === myGame) {
+          set({ thinking: false, status: 'Bot failed to move — try a different bot style.' });
+        }
         console.error('[bot]', e);
       }
     }, 300);

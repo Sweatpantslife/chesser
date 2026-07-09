@@ -4,6 +4,7 @@ import { useAnalysisReport } from '../store/analysisReport';
 import { useMistakes, type NewMistake } from '../store/mistakes';
 import { useCustomPuzzles } from '../store/customPuzzles';
 import { generatePuzzles } from '../lib/puzzleGen';
+import { goToMainlinePly } from '../lib/mainlineNav';
 import { EvalGraph } from './EvalGraph';
 import { EvalGraphPro } from './analysis/EvalGraphPro';
 
@@ -141,7 +142,7 @@ export function ReviewPanel() {
               phases={activeReport.phases}
               criticalMoments={activeReport.criticalMoments}
               viewPly={viewPly}
-              onSelectPly={(ply) => useGame.getState().goToPly(ply)}
+              onSelectPly={goToMainlinePly}
             />
           ) : (
             <EvalGraph />

@@ -60,6 +60,26 @@ describe('useAnalysisReport', () => {
     expect(localStorage.getItem(`chesser-report:${st.report!.gameKey}`)).toBeTruthy();
   });
 
+  it('hydrates the legacy review fields on the FRESH path too (grades cannot disagree)', async () => {
+    await useAnalysisReport.getState().buildFromReview(reviewInput());
+    const report = useAnalysisReport.getState().report!;
+    const g = useGame.getState();
+    const mainline = mainlineOf(g.tree, g.rootId);
+
+    // The legacy fields now carry the report's canonical numbers/grades.
+    expect(g.reviewGameNo).toBe(g.gameNo);
+    expect(g.reviewStats!.white.accuracy).toBe(Math.round(report.white.accuracy));
+    expect(g.reviewStats!.black.acpl).toBe(report.black.acpl);
+    for (let i = 0; i < mainline.length; i++) {
+      expect(g.moveReviews[mainline[i]!.id]!.classification).toBe(report.moves[i]!.classification);
+    }
+    // The mating move is never annotated as a mistake to drill.
+    expect(g.annotations[mainline[6]!.id]).toBeUndefined();
+    // The {mate: 0} terminal eval pins the graph to the mover's edge, not 50%.
+    expect(g.evalGraph).toHaveLength(mainline.length + 1);
+    expect(g.evalGraph[mainline.length]).toBe(100);
+  });
+
   it('aborts silently when a new game starts mid-build', async () => {
     const input = { ...reviewInput(), gameNo: useGame.getState().gameNo - 1 };
     await useAnalysisReport.getState().buildFromReview(input);

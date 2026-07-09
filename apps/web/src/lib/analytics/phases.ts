@@ -1,12 +1,14 @@
 /**
  * Game-phase division and critical moments for the analysis report.
  *
- * Phase boundaries follow the spirit of lila's chess Divider, simplified:
- * the middlegame starts once the game leaves book AND the armies have
- * unwound (few majors/minors left OR both back ranks emptied out); the
- * endgame starts once most of the material has come off. Everything is a
- * PURE function over {@link MoveRow}s — board queries are plain string maths
- * on the rows' FENs, aggregation delegates to accuracy.ts.
+ * Phase boundaries port scalachess's Divider (core/src/main/scala/Divider.scala):
+ * the middlegame starts at the first position with ≤ 10 majors/minors, OR a
+ * sparse back rank on EITHER side (< 4 pieces, king included), OR a mixedness
+ * score > 150 (piece entanglement over 2×2 windows); the endgame starts at
+ * ≤ 6 majors/minors. One product addition on top of the Divider rules: book
+ * moves always count as opening. Everything is a PURE function over
+ * {@link MoveRow}s — board queries are plain string maths on the rows' FENs,
+ * aggregation delegates to accuracy.ts.
  */
 import { acpl, gameAccuracy } from './accuracy';
 import type {
@@ -40,24 +42,105 @@ function majorsAndMinors(fen: string): number {
   return count;
 }
 
-/** Both players have unwound their back rank: < 4 non-king pieces each. */
-function backRanksSparse(fen: string): boolean {
+/**
+ * EITHER player's back rank has thinned to < 4 pieces, KING INCLUDED —
+ * scalachess Divider.backrankSparse ("sparse back-rank indicates that pieces
+ * have been developed").
+ */
+function backrankSparse(fen: string): boolean {
   const ranks = (fen.split(' ')[0] ?? '').split('/');
   const rank8 = ranks[0] ?? '';
   const rank1 = ranks[ranks.length - 1] ?? '';
   let white = 0;
-  for (const ch of rank1) if (ch >= 'A' && ch <= 'Z' && ch !== 'K') white++;
+  for (const ch of rank1) if (ch >= 'A' && ch <= 'Z') white++;
   let black = 0;
-  for (const ch of rank8) if (ch >= 'a' && ch <= 'z' && ch !== 'k') black++;
-  return white < 4 && black < 4;
+  for (const ch of rank8) if (ch >= 'a' && ch <= 'z') black++;
+  return white < 4 || black < 4;
+}
+
+/** FEN board → per-square occupancy, index = rank·8 + file (a1 = 0): 0 empty, 1 white, 2 black. */
+function boardSquares(fen: string): Int8Array {
+  const out = new Int8Array(64);
+  const board = fen.split(' ')[0] ?? '';
+  let rank = 7;
+  let file = 0;
+  for (const ch of board) {
+    if (ch === '/') {
+      rank -= 1;
+      file = 0;
+    } else if (ch >= '1' && ch <= '8') {
+      file += Number(ch);
+    } else {
+      if (rank >= 0 && rank <= 7 && file <= 7) out[rank * 8 + file] = ch === ch.toUpperCase() ? 1 : 2;
+      file += 1;
+    }
+  }
+  return out;
+}
+
+/** scalachess Divider.score(y)(white, black) for one 2×2 window, y = 1..7 (bottom row of the window). */
+function regionScore(white: number, black: number, y: number): number {
+  if (black === 0) {
+    if (white === 1) return 1 + (8 - y);
+    if (white === 2) return y > 2 ? 2 + (y - 2) : 0;
+    if (white === 3 || white === 4) return y > 1 ? 3 + (y - 1) : 0; // group of 4 on the homerow = 0
+    return 0;
+  }
+  if (black === 1) {
+    if (white === 0) return 1 + y;
+    if (white === 1) return 5 + Math.abs(4 - y);
+    if (white === 2) return 4 + (y - 1);
+    if (white === 3) return 5 + (y - 1);
+    return 0;
+  }
+  if (black === 2) {
+    if (white === 0) return y < 6 ? 2 + (6 - y) : 0;
+    if (white === 1) return 4 + (7 - y);
+    if (white === 2) return 7;
+    return 0;
+  }
+  if (black === 3) {
+    if (white === 0) return y < 7 ? 3 + (7 - y) : 0;
+    if (white === 1) return 5 + (7 - y);
+    return 0;
+  }
+  if (black === 4) return white === 0 && y < 7 ? 3 + (7 - y) : 0;
+  return 0;
 }
 
 /**
- * Lichess-divider-style phase boundaries, computed from the rows' FENs:
+ * scalachess Divider.mixedness: how entangled the two armies are, summed over
+ * every 2×2 window of the board (windows anchored on files a–g, ranks 1–7).
+ * Locked/closed positions score high; > 150 starts the middlegame.
+ */
+export function mixedness(fen: string): number {
+  const sq = boardSquares(fen);
+  let total = 0;
+  for (let y = 0; y < 7; y++) {
+    for (let x = 0; x < 7; x++) {
+      let white = 0;
+      let black = 0;
+      for (const dy of [0, 1]) {
+        for (const dx of [0, 1]) {
+          const v = sq[(y + dy) * 8 + (x + dx)];
+          if (v === 1) white += 1;
+          else if (v === 2) black += 1;
+        }
+      }
+      total += regionScore(white, black, y + 1);
+    }
+  }
+  return total;
+}
+
+/**
+ * Phase boundaries, porting scalachess Divider exactly, computed from the
+ * rows' FENs:
  *  • the middlegame starts at the FIRST ply whose fenAfter has ≤ 10 majors
- *    and minors (N/B/R/Q, both colours) OR both back ranks sparse; book moves
- *    always count as opening even past that structural boundary
- *    (openingEndPly = max(boundary − 1, leftTheoryAtPly));
+ *    and minors (N/B/R/Q, both colours) OR a sparse back rank on either side
+ *    (< 4 pieces incl. king) OR mixedness > 150; book moves always count as
+ *    opening even past that structural boundary
+ *    (openingEndPly = max(boundary − 1, leftTheoryAtPly) — product addition);
  *  • the endgame starts at the FIRST ply whose fenAfter has ≤ 6 majors and
  *    minors, clamped so endgameStartPly ≥ openingEndPly + 1.
  */
@@ -66,7 +149,10 @@ export function detectPhases(rows: MoveRow[], leftTheoryAtPly: number): PhaseBou
   let endgamePly = Infinity;
   for (const row of rows) {
     const pieces = majorsAndMinors(row.fenAfter);
-    if (middlegamePly === Infinity && (pieces <= 10 || backRanksSparse(row.fenAfter))) {
+    if (
+      middlegamePly === Infinity &&
+      (pieces <= 10 || backrankSparse(row.fenAfter) || mixedness(row.fenAfter) > 150)
+    ) {
       middlegamePly = row.ply;
     }
     if (pieces <= 6) {

@@ -8,6 +8,7 @@ import { BotAvatar } from './BotAvatar';
 import { Modal } from './Modal';
 import { fireConfetti } from './Celebration';
 import cheerUrl from '../assets/img/mascot-cheer.svg';
+import { EvalGraphPro } from './analysis/EvalGraphPro';
 
 const opposite = (c: Color): Color => (c === 'white' ? 'black' : 'white');
 
@@ -38,6 +39,8 @@ export function GameOverModal() {
   const tree = useGame((s) => s.tree);
   const rootId = useGame((s) => s.rootId);
   const startFen = useGame((s) => s.startFen);
+  const report = useAnalysisReport((s) => s.report);
+  const reportGameNo = useAnalysisReport((s) => s.gameNo);
 
   const show = !!summary && !dismissed && summary.gameNo === gameNo;
 
@@ -167,6 +170,18 @@ export function GameOverModal() {
               </div>
             );
           })}
+          {report && reportGameNo === gameNo && report.moves.length >= 2 && (
+            // Compact win-chance sparkline of the whole game, from the report.
+            <div className="pt-1">
+              <EvalGraphPro
+                moves={report.moves}
+                phases={report.phases}
+                viewPly={report.moves.length}
+                onSelectPly={() => undefined}
+                sparkline
+              />
+            </div>
+          )}
           {chips.length > 0 && (
             <div className="flex flex-wrap gap-1.5 pt-1">
               {chips.map(({ cls, n }) => {

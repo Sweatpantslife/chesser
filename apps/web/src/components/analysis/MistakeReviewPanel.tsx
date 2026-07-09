@@ -247,8 +247,9 @@ export function MistakeReviewPanel({ moves, viewPly, onSelectPly, onPractice }: 
                       <p className="mt-0.5 truncate pl-8 text-[11px] leading-tight text-neutral-500">
                         Best <span className="font-mono text-emerald-300">{line || m.bestMoveSan}</span>
                         {m.bestReplySan && (
+                          // The reply refutes the PLAYED move, not the best line — name the move.
                           <>
-                            {' '}· punished by <span className="font-mono text-rose-300">{m.bestReplySan}</span>
+                            {' '}· {m.san} is punished by <span className="font-mono text-rose-300">{m.bestReplySan}</span>
                           </>
                         )}
                       </p>

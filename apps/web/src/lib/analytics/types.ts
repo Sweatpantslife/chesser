@@ -13,9 +13,14 @@
  *    negative = Black mates. Exactly one of cp/mate is set on an EvalPoint.
  *  • Win percentages are 0–100 from WHITE's perspective (same as the store's
  *    `evalGraph`). Mover-POV values are derived: side === 'white' ? w : 100 - w.
- *  • The win% curve is `whiteWinPercent` (lib/format.ts): cp clamped to ±1500,
- *    logistic 50 + 50·(2/(1+e^(−0.00368208·cp)) − 1); mate → 0/100.
- *  • Centipawn maths (ACPL etc.) clamps mate to ±1500 like `cpOf` (lib/coach.ts).
+ *  • The win% logistic is `whiteWinPercent` (lib/format.ts):
+ *    50 + 50·(2/(1+e^(−0.00368208·cp)) − 1). The REPORT layer feeds it lila's
+ *    eval capping (accuracy.winPercent): cp ceiled to ±1000 (Cp.CEILING) and
+ *    mate mapped to the ceiling (≈97.5/2.5), never 100/0. The legacy surfaces
+ *    (eval bar, store review loop, lib/coach) still clamp at ±1500 with
+ *    mate → 100/0 — consolidation is planned after fix/coach-trainers lands.
+ *  • Centipawn maths (ACPL etc.) uses accuracy.cpValue: ceiled ±1000, mate
+ *    at the ceiling (lila AccuracyCP).
  *  • `ply` is 1-based over the mainline; odd ply = White moved. An eval array of
  *    a reviewed game has plies+1 entries: index i = position BEFORE ply i+1.
  */

@@ -14,19 +14,12 @@
  * (the SAN suffix '#', surfaced as row.isMate).
  */
 import { Chess } from 'chess.js';
-import { whiteWinPercent } from '../format';
-import type { Classification, EvalPoint, MoveRow, Side } from './types';
+import { winPercent } from './accuracy';
+import type { Classification, MoveRow, Side } from './types';
 
 const PIECE_VALUE: Record<string, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
 
 const povWin = (whiteWin: number, side: Side) => (side === 'white' ? whiteWin : 100 - whiteWin);
-
-/** EvalPoint → White win% via the shared curve (whiteWinPercent, lib/format). */
-function evalWinPercent(ev: EvalPoint | null): number {
-  if (!ev) return 50;
-  if (ev.mate !== undefined) return whiteWinPercent({ kind: 'mate', value: ev.mate });
-  return whiteWinPercent({ kind: 'cp', value: ev.cp ?? 0 });
-}
 
 /** Net material on the board (White − Black), in pawns. */
 function material(fen: string): number {
@@ -67,7 +60,12 @@ function deriveGrade(row: MoveRow): Classification {
   const drop = Math.max(0, moverWinBefore - moverWinAfter);
   const playedIsBest = !!row.bestMoveUci && row.uci === row.bestMoveUci;
 
-  // — Base grade from the mover-POV win% swing (Lichess thresholds) —
+  // — Base grade from the mover-POV win% swing. HOUSE thresholds (30/20/10
+  // win% points), shared with lib/coach.ts so both layers agree. NOTE: these
+  // are 2× more lenient than lichess's actual judgements — lila's
+  // Advice.scala fires blunder/mistake/inaccuracy at 15/10/5 win% points.
+  // Tightening must happen in BOTH layers at once; planned after
+  // fix/coach-trainers lands (coach.ts is currently hands-off). —
   let cls: Classification;
   if (drop >= 30) cls = 'blunder';
   else if (drop >= 20) cls = 'mistake';
@@ -90,7 +88,7 @@ function deriveGrade(row: MoveRow): Classification {
       return 'brilliant';
     }
     const turnaround = moverWinBefore < 50 && moverWinAfter >= 52;
-    const onlyMoveGap = row.secondEvalBefore ? moverWinBefore - povWin(evalWinPercent(row.secondEvalBefore), row.side) : 0;
+    const onlyMoveGap = row.secondEvalBefore ? moverWinBefore - povWin(winPercent(row.secondEvalBefore), row.side) : 0;
     const onlyGood = onlyMoveGap >= 18 && moverWinAfter >= 45 && moverWinBefore <= 90;
     if ((playedIsBest || drop < 4) && (turnaround || onlyGood)) return 'great';
   }

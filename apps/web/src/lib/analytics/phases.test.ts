@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { Chess } from 'chess.js';
 import { acpl, gameAccuracy } from './accuracy';
-import { detectPhases, findCriticalMoments, phaseBreakdown, phaseOfPly } from './phases';
+import { detectPhases, findCriticalMoments, mixedness, phaseBreakdown, phaseOfPly } from './phases';
 import type { Classification, MoveDetail, MoveRow, Side } from './types';
 import { CLASSIFICATION_GLYPH } from './types';
 
@@ -18,10 +19,14 @@ const FEN_MM_7 = '1nbqkb2/pppppppp/8/8/8/8/PPPPPPPP/1NBQK3 w - - 0 1';
 const FEN_MM_6 = '1nbqk3/pppppppp/8/8/8/8/PPPPPPPP/1NBQK3 w - - 0 1';
 /** 2 majors/minors — deep endgame (rook ending). */
 const FEN_MM_2 = '4r3/5pk1/8/8/8/8/5PK1/4R3 w - - 0 40';
-/** Full material (14) but BOTH back ranks sparse (2 non-king pieces each). */
+/** Full material (14) but BOTH back ranks sparse (3 pieces each, king included). */
 const FEN_SPARSE_BOTH = 'r4rk1/pppq1ppp/2npbn2/2b1p3/2B1P3/2NPBN2/PPPQ1PPP/R4RK1 w - - 0 10';
-/** 13 majors/minors, only White's back rank sparse — NOT a middlegame trigger. */
+/** 13 majors/minors, only White's back rank sparse (R+Q+K = 3 < 4) — a Divider trigger. */
 const FEN_SPARSE_WHITE_ONLY = 'rnbqkbnr/pppppppp/8/8/2B1N3/2N1B3/PPPPPPPP/R2QK3 w kq - 0 1';
+/** White back rank K+Q+R+R = 4 pieces (king included) — NOT sparse under Divider. */
+const FEN_BACKRANK_FOUR = 'rnbqkbnr/pppppppp/8/8/2B1N3/2N1B3/PPPPPPPP/R2QK2R w KQkq - 0 1';
+/** Full material, full back ranks, but the armies are interlocked mid-board (mixedness > 150). */
+const FEN_MIXED = 'rnbqkbnr/8/pPpPpPpP/PpPpPpPp/pPpPpPpP/8/8/RNBQKBNR w - - 0 20';
 
 /** MoveRow with sensible defaults; side derives from ply unless overridden. */
 function row(over: Partial<MoveRow> & { ply: number }): MoveRow {
@@ -96,9 +101,20 @@ describe('detectPhases', () => {
     expect(detectPhases(rows, 0).openingEndPly).toBe(2);
   });
 
-  it('requires BOTH back ranks to be sparse', () => {
+  it('triggers on EITHER sparse back rank, like the Divider', () => {
     const rows = rowsFromFens([FEN_OPENING, FEN_SPARSE_WHITE_ONLY, FEN_SPARSE_WHITE_ONLY]);
+    expect(detectPhases(rows, 0).openingEndPly).toBe(1);
+  });
+
+  it('counts the king toward the back-rank threshold (4 incl. king is not sparse)', () => {
+    const rows = rowsFromFens([FEN_OPENING, FEN_BACKRANK_FOUR, FEN_BACKRANK_FOUR]);
     expect(detectPhases(rows, 0).openingEndPly).toBe(3);
+  });
+
+  it('starts the middlegame on high mixedness (locked, interlocked armies)', () => {
+    const rows = rowsFromFens([FEN_OPENING, FEN_MIXED, FEN_MIXED]);
+    expect(mixedness(FEN_MIXED)).toBeGreaterThan(150);
+    expect(detectPhases(rows, 0).openingEndPly).toBe(1);
   });
 
   it('keeps book moves in the opening past the structural boundary', () => {
@@ -132,6 +148,41 @@ describe('detectPhases', () => {
 
   it('handles no rows', () => {
     expect(detectPhases([], 0)).toEqual({ openingEndPly: 0, endgameStartPly: Infinity });
+  });
+});
+
+describe('detectPhases — scalachess DividerTest parity', () => {
+  /** Real-game rows: play the moves and take each position's FEN as fenAfter. */
+  function rowsFromPgn(moves: string): MoveRow[] {
+    const c = new Chess();
+    c.loadPgn(moves);
+    return c.history({ verbose: true }).map((mv, i) => row({ ply: i + 1, fenAfter: mv.after }));
+  }
+
+  // The fixtures and ply bounds are lifted from scalachess
+  // test-kit/src/test/scala/DividerTest.scala (lila's index i = position after
+  // i plies = our fenAfter of ply i, so the bounds carry over directly).
+  it('divides DividerTest game 1 inside lila’s asserted bounds', () => {
+    const rows = rowsFromPgn(
+      '1. e3 g6 2. d4 Bg7 3. Nf3 Nf6 4. Bd3 O-O 5. O-O b6 6. c4 Bb7 7. Nbd2 d5 8. b3 Nbd7 9. Bb2 Re8 10. Qc2 dxc4 11. bxc4 c5 12. d5 e5 13. e4 h5 14. a4 Nf8 15. h3 Qd6 16. Nxe5 Rxe5 17. Nf3 N6d7 18. Nxe5 Bxe5 19. Bxe5 Nxe5 20. Be2 Bc8 21. f4 Ned7 22. e5 Qe7 23. Bf3 Rb8 24. Rae1 f5 25. d6 Qh4 26. e6 Nxe6 27. Rxe6 Nf6 28. Ree1 Qxf4 29. Bd5+ Nxd5 30. Rxf4 Nxf4 31. Qd2 g5 32. d7 Bb7 33. d8=Q+ Rxd8 34. Qxd8+ Kh7 35. Qc7+ Kh6 36. Qxb7 g4 37. Qc6+ Ng6 38. Re6 gxh3 39. Rxg6+ Kh7 40. Rh6+ Kg7 41. Qf6+ Kg8 42. Rh8#',
+    );
+    const b = detectPhases(rows, 0);
+    const middlegameStart = b.openingEndPly + 1;
+    expect(middlegameStart).toBeGreaterThanOrEqual(18);
+    expect(middlegameStart).toBeLessThanOrEqual(40);
+    expect(b.endgameStartPly).toBeGreaterThanOrEqual(50);
+    expect(b.endgameStartPly).toBeLessThanOrEqual(65);
+  });
+
+  it('divides DividerTest game 7 inside lila’s bounds, with no endgame', () => {
+    const rows = rowsFromPgn(
+      '1. e4 e5 2. f4 d6 3. Nf3 exf4 4. Bc4 h6 5. O-O Bg4 6. d4 Nc6 7. Bxf4 Nf6 8. Nc3 Be7 9. e5 dxe5 10. dxe5 Nh5 11. Be3 O-O 12. h3 Bxf3 13. Qxf3 Nxe5 14. Bxf7+ Rxf7 15. Qxh5 Qf8',
+    );
+    const b = detectPhases(rows, 0);
+    const middlegameStart = b.openingEndPly + 1;
+    expect(middlegameStart).toBeGreaterThanOrEqual(19);
+    expect(middlegameStart).toBeLessThanOrEqual(25);
+    expect(b.endgameStartPly).toBe(Infinity);
   });
 });
 

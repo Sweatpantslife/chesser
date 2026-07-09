@@ -124,7 +124,7 @@ describe('buildRows', () => {
     expect(row.evalBefore).toEqual({ cp: 35 });
     expect(row.evalAfter).toEqual({ mate: -2 });
     expect(row.secondEvalBefore).toEqual({ cp: -15 });
-    expect(row.winAfter).toBe(0); // Black mates → 0% for White
+    expect(row.winAfter).toBeCloseTo(2.455, 2); // Black mates → the −1000cp ceiling, not 0%
   });
 
   it('treats missing evals as null with a neutral 50% win chance', () => {
@@ -220,6 +220,16 @@ describe('buildRows', () => {
     const withoutLines = buildRows(input({ nodes, evals }));
     expect(withoutLines[0]!.pv).toEqual(['e4']);
     expect(withoutLines[1]!.pv).toEqual([]);
+  });
+
+  it('derives the mover from the FEN, so Black-to-move start positions work', () => {
+    // "Practice this position"-style game: Black moves first from a custom FEN.
+    const startFen = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
+    const c = new Chess(startFen);
+    const mv = c.move('e5');
+    const nodes = [{ id: 'n1', san: mv.san, uci: `${mv.from}${mv.to}`, fen: mv.after, ply: 1 }];
+    const rows = buildRows(input({ startFen, nodes, evals: [ev(), ev()] }));
+    expect(rows[0]!.side).toBe('black'); // ply parity alone would say 'white'
   });
 
   it('marks book plies and node ids', () => {
@@ -344,6 +354,18 @@ describe('serialization', () => {
     expect(deserializeReport('null')).toBeNull();
     expect(deserializeReport('42')).toBeNull();
     expect(deserializeReport('{"version":1}')).toBeNull();
+  });
+
+  it('rejects version-1 entries whose move rows are malformed (corrupt cache)', () => {
+    const original = report();
+    // A hand-edited / partially written entry: right version, wrong row shape.
+    const corrupt = {
+      ...original,
+      moves: original.moves.map((m, i) => (i === 1 ? { ...m, winAfter: 'NaN-ish', san: undefined } : m)),
+    };
+    expect(deserializeReport(JSON.stringify(corrupt))).toBeNull();
+    const junkMoves = { ...original, moves: [{}, 42, null] };
+    expect(deserializeReport(JSON.stringify(junkMoves))).toBeNull();
   });
 });
 

@@ -20,6 +20,7 @@ import { MistakeReviewPanel } from '../components/analysis/MistakeReviewPanel';
 import { MoveDetailPanel } from '../components/analysis/MoveDetailPanel';
 import { engine } from '../lib/engine';
 import { CLASSIFICATION_META } from '../lib/coach';
+import { goToMainlinePly } from '../lib/mainlineNav';
 import { annotatedPgn } from '../lib/analytics/pgnExport';
 import { useGame, mainlineOf, type Color } from '../store/game';
 import { useAnalysisReport } from '../store/analysisReport';
@@ -161,8 +162,9 @@ function ReportSection() {
   const reviewing = useGame((s) => s.reviewing);
   if (mode !== 'analysis' || !report || reportGameNo !== gameNo) return null;
 
-  // Store actions are stable references — safe as effect deps downstream.
-  const goToPly = useGame.getState().goToPly;
+  // Stable references — safe as effect deps downstream. Ply jumps resolve via
+  // mainline node ids (goToMainlinePly) so they land right even while a PV
+  // variation is being explored.
   const setArrow = useAnalysisReport.getState().setArrow;
 
   // The move that led to the viewed position (null on the root / a variation).
@@ -170,7 +172,7 @@ function ReportSection() {
 
   // Play the engine PV as an explorable variation from the move's position.
   const playVariation = (sans: string[], fromPly: number) => {
-    useGame.getState().goToPly(fromPly - 1);
+    goToMainlinePly(fromPly - 1);
     for (const san of sans) {
       const st = useGame.getState();
       let mv;
@@ -188,10 +190,18 @@ function ReportSection() {
   const practice = (ply: number) => {
     const row = report.moves[ply - 1];
     if (!row) return;
-    useGame.getState().newGame({
+    const st = useGame.getState();
+    // The last-used bot may need an engine that isn't installed (e.g. Maia's
+    // 'human' style on a Stockfish-only server) — the bot would then silently
+    // never move. Fall back to an installed style from the server's catalogue.
+    let bot = st.botConfig;
+    if (st.styles.length > 0 && !st.styles.some((s) => s.id === bot.style)) {
+      bot = { ...bot, style: st.styles.some((s) => s.id === 'balanced') ? 'balanced' : st.styles[0]!.id };
+    }
+    st.newGame({
       mode: 'play',
       playerColor: row.side,
-      bot: useGame.getState().botConfig,
+      bot,
       startFen: row.fenBefore,
       opponent: null,
     });
@@ -220,14 +230,14 @@ function ReportSection() {
 
   return (
     <>
-      <ReviewSummary report={report} reviewing={reviewing} onSelectPly={goToPly} onExportPgn={exportPgn} />
-      <MistakeReviewPanel moves={report.moves} viewPly={viewPly} onSelectPly={goToPly} onPractice={practice} />
+      <ReviewSummary report={report} reviewing={reviewing} onSelectPly={goToMainlinePly} onExportPgn={exportPgn} />
+      <MistakeReviewPanel moves={report.moves} viewPly={viewPly} onSelectPly={goToMainlinePly} onPractice={practice} />
       <MoveDetailPanel
         move={currentMove}
         onShowArrow={setArrow}
         onPlayVariation={playVariation}
         onPractice={practice}
-        onSelectPly={goToPly}
+        onSelectPly={goToMainlinePly}
         maxPly={report.moves.length}
       />
     </>

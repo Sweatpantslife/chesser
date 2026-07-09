@@ -70,7 +70,12 @@ export function buildRows(input: ReviewRowsInput): MoveRow[] {
 
   for (let k = 0; k < nodes.length; k++) {
     const node = nodes[k]!;
-    const side: Side = node.ply % 2 === 1 ? 'white' : 'black';
+    const fenBefore = k === 0 ? startFen : nodes[k - 1]!.fen;
+    // The mover comes from the FEN's side-to-move field, not ply parity —
+    // games starting from an arbitrary position (e.g. "Practice this
+    // position") can have Black move first. Identical for standard games.
+    const fenTurn = fenBefore.split(' ')[1];
+    const side: Side = fenTurn === 'b' || fenTurn === 'w' ? (fenTurn === 'b' ? 'black' : 'white') : node.ply % 2 === 1 ? 'white' : 'black';
     const pre = evals[k] ?? null;
     const post = evals[k + 1] ?? null;
 
@@ -89,7 +94,7 @@ export function buildRows(input: ReviewRowsInput): MoveRow[] {
       side,
       san: node.san,
       uci: node.uci,
-      fenBefore: k === 0 ? startFen : nodes[k - 1]!.fen,
+      fenBefore,
       fenAfter: node.fen,
       evalBefore,
       evalAfter,
@@ -196,9 +201,29 @@ export function serializeReport(report: AnalysisReport): string {
 }
 
 /**
- * Parse a serialized report. Returns null on parse errors or a version
- * mismatch. Node ids are runtime-only, so cached rows come back with
- * `nodeId: null` — callers must re-map moves by ply.
+ * A serialized move row plausibly is a MoveDetail — guards the fields the
+ * hydration path dereferences, so a hand-edited / partially written cache
+ * entry behaves as a miss instead of hydrating NaNs into the review UI.
+ */
+function isPlausibleMove(m: unknown): boolean {
+  if (typeof m !== 'object' || m === null) return false;
+  const move = m as Record<string, unknown>;
+  return (
+    typeof move.ply === 'number' &&
+    typeof move.san === 'string' &&
+    typeof move.uci === 'string' &&
+    (move.side === 'white' || move.side === 'black') &&
+    typeof move.winBefore === 'number' &&
+    typeof move.winAfter === 'number' &&
+    typeof move.classification === 'string' &&
+    typeof move.explanation === 'string'
+  );
+}
+
+/**
+ * Parse a serialized report. Returns null on parse errors, a version
+ * mismatch or malformed move rows. Node ids are runtime-only, so cached rows
+ * come back with `nodeId: null` — callers must re-map moves by ply.
  */
 export function deserializeReport(json: string): AnalysisReport | null {
   try {
@@ -208,6 +233,7 @@ export function deserializeReport(json: string): AnalysisReport | null {
     if (report.version !== REPORT_VERSION || typeof report.gameKey !== 'string' || !Array.isArray(report.moves)) {
       return null;
     }
+    if (!report.moves.every(isPlausibleMove)) return null;
     return { ...report, moves: report.moves.map((m) => ({ ...m, nodeId: null })) };
   } catch {
     return null;

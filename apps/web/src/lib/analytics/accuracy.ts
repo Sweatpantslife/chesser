@@ -13,18 +13,33 @@ import type { EvalPoint, MoveRow, Side } from './types';
 const povWin = (whiteWin: number, side: Side) => (side === 'white' ? whiteWin : 100 - whiteWin);
 const povCp = (whiteCp: number, side: Side) => (side === 'white' ? whiteCp : -whiteCp);
 
-/** EvalPoint → White win% (0–100). Delegates to whiteWinPercent (lib/format). */
+/**
+ * lila's Cp.CEILING: the report layer caps centipawns at ±1000 before they
+ * enter the win% curve and ACPL, and maps mate-in-N to the same ceiling
+ * (scalachess WinPercent.fromMate) rather than to 100/0. The legacy surfaces
+ * (lib/format whiteWinPercent, lib/coach cpOf) still clamp at ±1500 — see
+ * SPEC amendments; consolidation is planned after fix/coach-trainers lands.
+ */
+const CP_CEILING = 1000;
+
+const ceilCp = (cp: number) => Math.max(-CP_CEILING, Math.min(CP_CEILING, cp));
+
+/**
+ * EvalPoint → White win% (0–100) on the shared logistic curve
+ * (whiteWinPercent, lib/format), with lila's eval capping: cp ceiled to
+ * ±1000 and mate mapped to the ceiling (≈97.5/2.5), not to 100/0.
+ */
 export function winPercent(ev: EvalPoint | null): number {
   if (!ev) return whiteWinPercent(null);
-  if (ev.mate !== undefined) return whiteWinPercent({ kind: 'mate', value: ev.mate });
-  return whiteWinPercent({ kind: 'cp', value: ev.cp ?? 0 });
+  const cp = ev.mate !== undefined ? Math.sign(ev.mate) * CP_CEILING : ceilCp(ev.cp ?? 0);
+  return whiteWinPercent({ kind: 'cp', value: cp });
 }
 
-/** EvalPoint → White-POV centipawns, mate clamped to ±1500 (mirrors cpOf in lib/coach). */
+/** EvalPoint → White-POV centipawns, ceiled to ±1000 (lila Cp.CEILING); mate sits at the ceiling. */
 export function cpValue(ev: EvalPoint | null): number {
   if (!ev) return 0;
-  if (ev.mate !== undefined) return ev.mate > 0 ? 1500 : ev.mate < 0 ? -1500 : 0;
-  return Math.max(-1500, Math.min(1500, ev.cp ?? 0));
+  if (ev.mate !== undefined) return Math.sign(ev.mate) * CP_CEILING;
+  return ceilCp(ev.cp ?? 0);
 }
 
 /**
@@ -80,8 +95,9 @@ export function gameAccuracy(rows: MoveRow[], side: Side): number {
 
 /**
  * Average centipawn loss for one side: mean over own rows of the mover-POV cp
- * lost per move (cpValue clamps mate to ±1500). Delivered-mate rows contribute
- * 0 loss. Rounded to an integer; empty input → 0.
+ * lost per move (cpValue ceils evals to ±1000, mate included, like lila's
+ * AccuracyCP). Delivered-mate rows contribute 0 loss. Rounded to an integer;
+ * empty input → 0.
  */
 export function acpl(rows: MoveRow[], side: Side): number {
   const own = rows.filter((r) => r.side === side);
