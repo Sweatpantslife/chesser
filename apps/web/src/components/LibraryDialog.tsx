@@ -88,7 +88,12 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
                       <span className="ml-2 text-xs text-neutral-400">{g.result}</span>
                     </button>
                     <button
-                      onClick={() => token && apiDeleteGame(token, g.id).then(() => setSaved((s) => s.filter((x) => x.id !== g.id)))}
+                      onClick={() =>
+                        token &&
+                        apiDeleteGame(token, g.id)
+                          .then(() => setSaved((s) => s.filter((x) => x.id !== g.id)))
+                          .catch(() => setMsg('Could not delete game.'))
+                      }
                       aria-label={`Delete game ${g.white} vs ${g.black}`}
                       className="min-h-11 min-w-11 rounded px-1.5 py-1 text-xs text-neutral-400 hover:text-rose-300 sm:min-h-0 sm:min-w-0"
                     >

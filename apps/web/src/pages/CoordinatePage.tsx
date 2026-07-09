@@ -314,6 +314,7 @@ export function CoordinatePage() {
                 key={m}
                 disabled={running}
                 onClick={() => setMode(m)}
+                aria-pressed={mode === m}
                 className={`rounded px-2 py-1 text-xs disabled:opacity-50 ${
                   mode === m ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                 }`}

@@ -106,7 +106,7 @@ export function BotPanel() {
       <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Style</div>
       <div className="mb-2 flex flex-wrap gap-1">
         {styles.map((s) => (
-          <button key={s.id} onClick={() => setStyle(s.id)} className={tab(style === s.id)}>
+          <button key={s.id} onClick={() => setStyle(s.id)} aria-pressed={style === s.id} className={tab(style === s.id)}>
             {s.name}
           </button>
         ))}

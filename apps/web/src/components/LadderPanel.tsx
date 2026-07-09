@@ -63,6 +63,7 @@ export function LadderPanel() {
             <button
               key={c}
               onClick={() => setColor(c)}
+              aria-pressed={color === c}
               className={`flex-1 rounded px-2 py-1 text-xs capitalize ${
                 color === c ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
               }`}
