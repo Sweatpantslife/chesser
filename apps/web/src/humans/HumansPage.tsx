@@ -48,8 +48,8 @@ function TimeControlPicker({ value, onChange }: { value: TimeControl | null; onC
           <button
             key={tc?.label ?? 'unlimited'}
             onClick={() => onChange(tc)}
-            className={`flex-1 rounded px-2 py-1 text-xs font-medium ${
-              selected ? 'bg-emerald-700 text-white' : 'text-neutral-300 hover:bg-neutral-800'
+            className={`btn-press flex-1 rounded-full px-2 py-1 text-xs font-semibold ${
+              selected ? 'bg-brand-600 text-white' : 'text-neutral-300 hover:bg-neutral-800'
             }`}
           >
             {tc?.label ?? '∞'}
@@ -61,7 +61,7 @@ function TimeControlPicker({ value, onChange }: { value: TimeControl | null; onC
 }
 
 const inputCls =
-  'w-full rounded bg-panelmute px-2 py-1.5 text-sm text-ink placeholder-neutral-600 outline-none focus:ring-1 focus:ring-emerald-600';
+  'w-full rounded-lg bg-panelmute px-2.5 py-1.5 text-sm text-ink placeholder-neutral-500 outline-none focus:ring-2 focus:ring-brand-500';
 const labelCls = 'text-xs font-medium uppercase tracking-wide text-neutral-400';
 
 export function HumansPage() {
@@ -154,14 +154,28 @@ function Menu({ start }: { start: (s: Screen) => void }) {
 
   return (
     <div className="mx-auto w-full max-w-[900px] space-y-4">
-      <div>
-        <h2 className="text-lg font-bold text-ink">Play a human</h2>
-        <p className="text-sm text-neutral-400">Casual, unrated games — on this device or online with a friend.</p>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="font-display text-xl font-bold text-ink">Play a human</h2>
+          <p className="text-sm text-neutral-400">Casual, unrated games — on this device or online with a friend.</p>
+        </div>
+        {/* Generated avatar crew (docs/design-refresh/README.md) — pure vibes. */}
+        <div className="hidden items-center sm:flex" aria-hidden="true">
+          {['owl', 'fox', 'robot', 'dragon', 'royal', 'panda'].map((a, i) => (
+            <img
+              key={a}
+              src={`/img/avatars/${a}.svg`}
+              alt=""
+              loading="lazy"
+              className={`h-9 w-9 rounded-full ring-2 ring-page ${i > 0 ? '-ml-2' : ''}`}
+            />
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {/* Pass & play */}
-        <section className="space-y-3 rounded-lg bg-panel p-4" data-testid="card-local">
+        <section className="space-y-3 rounded-2xl bg-panel p-4 shadow-soft" data-testid="card-local">
           <div>
             <h3 className="font-semibold text-ink">🤝 Pass &amp; play</h3>
             <p className="text-xs text-neutral-400">Two players, one device. Hand it over between moves.</p>
@@ -181,7 +195,7 @@ function Menu({ start }: { start: (s: Screen) => void }) {
             <TimeControlPicker value={localTc} onChange={setLocalTc} />
           </div>
           <label className="flex items-center gap-2 text-sm text-neutral-300">
-            <input type="checkbox" checked={autoFlip} onChange={(e) => setAutoFlip(e.target.checked)} className="accent-emerald-600" />
+            <input type="checkbox" checked={autoFlip} onChange={(e) => setAutoFlip(e.target.checked)} className="accent-brand-500" />
             Auto-flip the board to face the player to move
           </label>
           <button className={`${primaryBtn} w-full`} onClick={startLocal} data-testid="start-local">
@@ -190,7 +204,7 @@ function Menu({ start }: { start: (s: Screen) => void }) {
         </section>
 
         {/* Friend link */}
-        <section className="space-y-3 rounded-lg bg-panel p-4" data-testid="card-online">
+        <section className="space-y-3 rounded-2xl bg-panel p-4 shadow-soft" data-testid="card-online">
           <div>
             <h3 className="font-semibold text-ink">🔗 Play a friend online</h3>
             <p className="text-xs text-neutral-400">Create a game and share the link — no account needed.</p>
@@ -217,8 +231,8 @@ function Menu({ start }: { start: (s: Screen) => void }) {
                   key={c}
                   onClick={() => setMyColor(c)}
                   data-testid={`color-${c}`}
-                  className={`flex-1 rounded px-2 py-1 text-xs font-medium capitalize ${
-                    myColor === c ? 'bg-emerald-700 text-white' : 'text-neutral-300 hover:bg-neutral-800'
+                  className={`btn-press flex-1 rounded-full px-2 py-1 text-xs font-semibold capitalize ${
+                    myColor === c ? 'bg-brand-600 text-white' : 'text-neutral-300 hover:bg-neutral-800'
                   }`}
                 >
                   {c === 'random' ? '⚄ Random' : c === 'white' ? '□ White' : '■ Black'}
@@ -246,8 +260,8 @@ function Menu({ start }: { start: (s: Screen) => void }) {
       </div>
 
       {recent.length > 0 && (
-        <section className="rounded-lg bg-panel p-4">
-          <h3 className="mb-2 text-sm font-semibold text-ink">Recent casual games</h3>
+        <section className="rounded-2xl bg-panel p-4 shadow-soft">
+          <h3 className="mb-2 font-display text-sm font-semibold text-ink">Recent casual games</h3>
           <ul className="space-y-1 text-sm text-neutral-400">
             {recent.map((g, i) => (
               <li key={`${g.at}-${i}`} className="flex flex-wrap items-center gap-x-2">

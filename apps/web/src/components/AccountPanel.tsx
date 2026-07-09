@@ -32,7 +32,7 @@ function AuthForm({ onClose }: { onClose: () => void }) {
             type="button"
             onClick={() => setMode(m)}
             aria-pressed={mode === m}
-            className={`flex-1 rounded px-2 py-1 capitalize ${mode === m ? 'bg-emerald-700 text-white' : 'text-neutral-300'}`}
+            className={`flex-1 rounded px-2 py-1 capitalize ${mode === m ? 'bg-brand-600 text-white' : 'text-neutral-300'}`}
           >
             {m === 'login' ? 'Sign in' : 'Create account'}
           </button>

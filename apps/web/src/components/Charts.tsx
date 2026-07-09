@@ -2,8 +2,8 @@ import type { ReactNode } from 'react';
 
 export function StatCard({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
   return (
-    <div className="rounded-lg bg-panel p-3 text-center">
-      <div className="text-2xl font-bold text-ink">{value}</div>
+    <div className="card-lift rounded-2xl bg-panel p-3 text-center shadow-soft">
+      <div className="font-display text-2xl font-bold text-ink">{value}</div>
       <div className="mt-0.5 text-xs uppercase tracking-wide text-neutral-400">{label}</div>
       {hint && <div className="mt-0.5 text-xs text-neutral-400">{hint}</div>}
     </div>
@@ -22,20 +22,20 @@ export function ProgressBar({ label, seen, total, due }: { label: string; seen: 
         </span>
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-800">
-        <div className="h-full rounded-full bg-emerald-500" style={{ width: `${pct}%` }} />
+        <div className="h-full rounded-full bg-gradient-to-r from-brand-500 to-accent-500 transition-[width] duration-500" style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
 }
 
-const HEAT_COLORS = ['#1b2029', '#14532d', '#166534', '#16a34a', '#34d399'];
+const HEAT_COLORS = ['#282345', '#4c3a8f', '#6d4fd0', '#9a7bf0', '#c4b5fd'];
 const heatLevel = (v: number) => (v === 0 ? 0 : v <= 3 ? 1 : v <= 9 ? 2 : v <= 19 ? 3 : 4);
 
 /** GitHub-style activity calendar. `days` are chronological, starting on a Sunday. */
 export function Heatmap({ days }: { days: { date: string; value: number }[] }) {
   if (days.every((d) => d.value === 0)) {
     return (
-      <p className="rounded border border-dashed border-neutral-700 px-3 py-2 text-sm text-neutral-400">
+      <p className="rounded-xl border border-dashed border-neutral-700 px-3 py-2 text-sm text-neutral-400">
         No activity yet — solved puzzles and drills will light up this calendar.
       </p>
     );
@@ -69,10 +69,10 @@ export function RatingSparkline({ data }: { data: number[] }) {
   return (
     <div className="flex items-center gap-3">
       <svg viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" className="h-12 flex-1">
-        <polyline points={pts} fill="none" stroke="#34d399" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+        <polyline points={pts} fill="none" stroke="#a78bfa" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
       </svg>
       <div className="text-right text-xs text-neutral-400">
-        <div className="text-emerald-300">{max}</div>
+        <div className="text-brand-300">{max}</div>
         <div>{min}</div>
       </div>
     </div>
@@ -89,7 +89,7 @@ export interface DayPoint {
 export function ActivityChart({ data }: { data: DayPoint[] }) {
   if (data.every((d) => d.reviews === 0)) {
     return (
-      <div className="flex h-28 w-full items-center justify-center rounded border border-dashed border-neutral-700 px-3 text-center text-sm text-neutral-400">
+      <div className="flex h-28 w-full items-center justify-center rounded-xl border border-dashed border-neutral-700 px-3 text-center text-sm text-neutral-400">
         No activity yet — play a game or solve a puzzle to start the chart.
       </div>
     );
@@ -104,10 +104,10 @@ export function ActivityChart({ data }: { data: DayPoint[] }) {
   return (
     <svg viewBox={`0 0 ${n} ${H}`} preserveAspectRatio="none" className="h-28 w-full">
       {/* accuracy gridlines at 50% and 100% */}
-      <line x1={0} y1={H / 2} x2={n} y2={H / 2} stroke="#3a4150" strokeWidth={0.5} vectorEffect="non-scaling-stroke" />
+      <line x1={0} y1={H / 2} x2={n} y2={H / 2} stroke="#3a3560" strokeWidth={0.5} vectorEffect="non-scaling-stroke" />
       {data.map((d, i) => {
         const h = (d.reviews / maxReviews) * (H - 4);
-        return <rect key={d.date} x={i + 0.12} y={H - h} width={0.76} height={h} fill="#34d39966" rx={0.15} />;
+        return <rect key={d.date} x={i + 0.12} y={H - h} width={0.76} height={h} fill="#8b5cf699" rx={0.15} />;
       })}
       {accPoints.length > 1 && (
         <polyline points={accPoints.join(' ')} fill="none" stroke="#fbbf24" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />

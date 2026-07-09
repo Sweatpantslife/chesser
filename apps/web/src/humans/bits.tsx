@@ -4,9 +4,9 @@ import { Clock } from '../components/Clock';
 import type { Color } from '../store/game';
 import { cap } from './chessUtil';
 
-export const btn = 'rounded px-3 py-1.5 text-sm font-medium disabled:opacity-50';
+export const btn = 'btn-press rounded-full px-3 py-1.5 text-sm font-semibold disabled:opacity-50';
 export const neutralBtn = `${btn} bg-neutral-700 text-neutral-200 hover:bg-neutral-600`;
-export const primaryBtn = `${btn} bg-emerald-700 text-white hover:bg-emerald-800`;
+export const primaryBtn = `${btn} bg-brand-600 text-white hover:bg-brand-700`;
 export const dangerBtn = `${btn} bg-rose-600 text-white hover:bg-rose-500`;
 
 /** One player's row above/below the board: name, optional presence, clock. */

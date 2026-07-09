@@ -44,9 +44,9 @@ export function LadderPanel() {
   };
 
   return (
-    <div className="rounded-lg bg-panel p-3">
+    <div className="rounded-2xl bg-panel p-3 shadow-soft">
       <div className="mb-2 flex items-baseline justify-between">
-        <h3 className="text-sm font-semibold text-ink">The ladder</h3>
+        <h3 className="font-display text-sm font-semibold text-ink">The ladder</h3>
         <span className="text-xs text-neutral-400">
           {cleared}/{BOT_ROSTER.length} cleared
         </span>
@@ -64,8 +64,8 @@ export function LadderPanel() {
               key={c}
               onClick={() => setColor(c)}
               aria-pressed={color === c}
-              className={`flex-1 rounded px-2 py-1 text-xs capitalize ${
-                color === c ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
+              className={`btn-press flex-1 rounded-full px-2 py-1 text-xs font-semibold capitalize ${
+                color === c ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
               }`}
             >
               {c}
@@ -84,8 +84,8 @@ export function LadderPanel() {
               <button
                 key={tc?.label ?? 'unlimited'}
                 onClick={() => setTimeControl(tc)}
-                className={`flex-1 rounded px-1.5 py-1 text-xs ${
-                  selected ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
+                className={`btn-press flex-1 rounded-full px-1.5 py-1 text-xs font-semibold ${
+                  selected ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                 }`}
               >
                 {tc?.label ?? '∞'}
@@ -108,11 +108,11 @@ export function LadderPanel() {
           return (
             <div
               key={bot.id}
-              className={`rounded-lg border p-2 ${
+              className={`card-lift rounded-xl border p-2 ${
                 isActive
-                  ? 'border-emerald-500 bg-neutral-800'
+                  ? 'border-brand-400 bg-neutral-800'
                   : isNext
-                    ? 'border-emerald-700/60 bg-neutral-800/60'
+                    ? 'border-brand-500/60 bg-neutral-800/60'
                     : 'border-neutral-800 bg-neutral-800/30'
               }`}
             >
@@ -139,9 +139,9 @@ export function LadderPanel() {
                 ) : (
                   <button
                     onClick={() => start(bot)}
-                    className={`rounded px-3 py-1 text-xs font-semibold ${
+                    className={`btn-press rounded-full px-3 py-1 text-xs font-bold ${
                       isNext && !botCleared
-                        ? 'bg-emerald-700 text-white hover:bg-emerald-800'
+                        ? 'bg-brand-600 text-white shadow-glow hover:bg-brand-700'
                         : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                     }`}
                   >

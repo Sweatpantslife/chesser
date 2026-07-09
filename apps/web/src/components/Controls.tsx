@@ -68,7 +68,7 @@ export function Controls() {
 
   // min-h/min-w give 44px touch targets on phones; desktop keeps the compact size.
   const btn =
-    'min-h-11 min-w-11 rounded bg-neutral-700 px-2.5 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600 disabled:opacity-50 sm:min-h-0 sm:min-w-0';
+    'btn-press min-h-11 min-w-11 rounded-full bg-neutral-800 px-3 py-1.5 text-sm font-semibold text-neutral-200 hover:bg-neutral-700 disabled:opacity-50 sm:min-h-0 sm:min-w-0';
   const atStart = viewPly === 0;
   const atEnd = viewPly === history.length;
 

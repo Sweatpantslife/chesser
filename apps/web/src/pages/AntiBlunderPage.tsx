@@ -190,7 +190,7 @@ export function AntiBlunderPage() {
     <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
       {/* sidebar */}
       <div className="order-2 space-y-3 lg:order-1">
-        <div className="rounded-lg bg-panel p-3">
+        <div className="rounded-2xl bg-panel shadow-soft p-3">
           <h3 className="mb-1 text-sm font-semibold text-ink">Anti-blunder</h3>
           <p className="mb-2 text-xs text-neutral-400">
             Find the strong move — but watch for the tempting one. Before you commit, the trainer asks:{' '}
@@ -204,7 +204,7 @@ export function AntiBlunderPage() {
             Review due
           </button>
         </div>
-        <div className="rounded-lg bg-panel p-3">
+        <div className="rounded-2xl bg-panel shadow-soft p-3">
           <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Positions</div>
           <div className="flex flex-wrap gap-1">
             {BLUNDER_POSITIONS.map((b, i) => {
@@ -215,7 +215,7 @@ export function AntiBlunderPage() {
                   key={b.id}
                   onClick={() => load(i)}
                   className={`rounded px-2 py-1 text-xs ${
-                    i === idx ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
+                    i === idx ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                   }`}
                 >
                   {i + 1}
@@ -282,7 +282,7 @@ export function AntiBlunderPage() {
             </div>
           </div>
         ) : (
-          <div className="rounded-lg bg-panel p-3">
+          <div className="rounded-2xl bg-panel shadow-soft p-3">
             <div className="mb-2 flex items-center justify-between text-sm">
               <span className="text-neutral-300">
                 Position {idx + 1}/{BLUNDER_POSITIONS.length}

@@ -288,7 +288,7 @@ export function CoordinatePage() {
       </div>
 
       <div className="space-y-3">
-        <div className="rounded-lg bg-panel p-4 text-center">
+        <div className="rounded-2xl bg-panel shadow-soft p-4 text-center">
           <div className="text-xs uppercase tracking-wide text-neutral-400">Time</div>
           <div className={`font-mono text-3xl ${timeLeft <= 5 && running ? 'text-rose-400' : 'text-ink'}`}>
             0:{String(timeLeft).padStart(2, '0')}
@@ -306,7 +306,7 @@ export function CoordinatePage() {
           <div className="mt-1 text-xs text-neutral-400">best for “{MODE_LABEL[mode]}”</div>
         </div>
 
-        <div className="rounded-lg bg-panel p-3 text-sm">
+        <div className="rounded-2xl bg-panel shadow-soft p-3 text-sm">
           <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Mode</div>
           <div className="mb-3 grid grid-cols-2 gap-1">
             {(['find', 'name', 'color', 'knight'] as const).map((m) => (
@@ -316,7 +316,7 @@ export function CoordinatePage() {
                 onClick={() => setMode(m)}
                 aria-pressed={mode === m}
                 className={`rounded px-2 py-1 text-xs disabled:opacity-50 ${
-                  mode === m ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                  mode === m ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                 }`}
               >
                 {MODE_LABEL[m]}
@@ -332,7 +332,7 @@ export function CoordinatePage() {
                 disabled={running}
                 onClick={() => setSideOpt(sv)}
                 className={`flex-1 rounded px-2 py-1 text-xs capitalize disabled:opacity-50 ${
-                  sideOpt === sv ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                  sideOpt === sv ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                 }`}
               >
                 {sv}

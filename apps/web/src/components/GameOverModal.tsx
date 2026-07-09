@@ -5,6 +5,8 @@ import { detectOpening, type OpeningInfo } from '../lib/openings';
 import { CLASSIFICATION_META, type Classification } from '../lib/coach';
 import { BotAvatar } from './BotAvatar';
 import { Modal } from './Modal';
+import { fireConfetti } from './Celebration';
+import cheerUrl from '../assets/img/mascot-cheer.svg';
 
 const opposite = (c: Color): Color => (c === 'white' ? 'black' : 'white');
 
@@ -44,6 +46,12 @@ export function GameOverModal() {
     const st = useGame.getState();
     if (connected && st.reviewGameNo !== st.gameNo && !st.reviewing) void st.reviewGame();
   }, [show, connected]);
+
+  // Celebrate a win with a confetti burst (skipped under reduced motion).
+  const isWin = !!summary && summary.outcome === 'win';
+  useEffect(() => {
+    if (show && isWin) fireConfetti(110);
+  }, [show, isWin]);
 
   // Detect the opening for the headline stat.
   const [opening, setOpening] = useState<OpeningInfo | null>(null);
@@ -96,12 +104,15 @@ export function GameOverModal() {
       role="alertdialog"
       labelledBy="game-over-title"
       overlayClassName="fixed inset-0 z-40 flex items-center justify-center bg-black/70 p-4"
-      className="scroll-thin max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-panel p-5 shadow-2xl ring-1 ring-white/5"
+      className="scroll-thin pop-in max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-panel p-5 shadow-soft ring-1 ring-white/5"
     >
         {/* headline */}
-        <div className="mb-4 text-center">
-          <div className="text-3xl" aria-hidden="true">{headEmoji}</div>
-          <h2 id="game-over-title" className={`mt-1 text-2xl font-bold ${headTone}`}>{headline}</h2>
+        <div className="relative mb-4 text-center">
+          {won && (
+            <img src={cheerUrl} alt="" className="float-soft pointer-events-none absolute -top-2 right-0 h-16 w-16" />
+          )}
+          <div className="pop-in text-3xl" aria-hidden="true">{headEmoji}</div>
+          <h2 id="game-over-title" className={`mt-1 font-display text-3xl font-bold ${headTone}`}>{headline}</h2>
           <p className="mt-0.5 text-sm text-neutral-400">{summary.statusText}</p>
         </div>
 
@@ -123,7 +134,7 @@ export function GameOverModal() {
               {summary.rated ? (
                 <span className={`text-sm font-semibold ${deltaTone}`}>{deltaStr}</span>
               ) : (
-                <span className="text-xs font-semibold text-neutral-500">unrated</span>
+                <span className="text-xs font-semibold text-neutral-400">unrated</span>
               )}
             </div>
           </div>
@@ -184,19 +195,19 @@ export function GameOverModal() {
         <div className="space-y-2">
           <button
             onClick={() => void useGame.getState().analyzeFinishedGame()}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700"
+            className="btn-press flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 py-2.5 text-sm font-bold text-white hover:bg-brand-700"
           >
             🔍 Analyze game
-            <span className="text-xs font-normal text-indigo-100">· move-by-move walkthrough</span>
+            <span className="text-xs font-normal text-white/90">· move-by-move walkthrough</span>
           </button>
           <div className="flex gap-2">
             <button
               onClick={() => useGame.getState().rematch()}
-              className="flex-1 rounded-lg bg-emerald-700 py-2.5 text-sm font-semibold text-white hover:bg-emerald-800"
+              className="btn-press flex-1 rounded-full bg-emerald-700 py-2.5 text-sm font-bold text-white hover:bg-emerald-800"
             >
               ↻ Rematch
             </button>
-            <button onClick={close} className="flex-1 rounded-lg bg-neutral-700 py-2.5 text-sm font-semibold text-neutral-200 hover:bg-neutral-600">
+            <button onClick={close} className="btn-press flex-1 rounded-full bg-neutral-700 py-2.5 text-sm font-semibold text-neutral-200 hover:bg-neutral-600">
               Close
             </button>
           </div>

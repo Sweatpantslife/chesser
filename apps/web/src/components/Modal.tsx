@@ -1,4 +1,5 @@
 import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -32,7 +33,7 @@ export function Modal({
   label,
   role = 'dialog',
   closeOnBackdrop = true,
-  overlayClassName = 'fixed inset-0 z-30 flex items-center justify-center bg-black/60 p-4',
+  overlayClassName = 'fixed inset-0 z-30 flex items-center justify-center bg-page/70 p-4 backdrop-blur-sm',
   className = '',
 }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -77,7 +78,10 @@ export function Modal({
     }
   };
 
-  return (
+  // Portal to <body>: ancestors with filters/transforms (e.g. the blurred
+  // sticky header) would otherwise become the containing block for our
+  // `fixed` overlay and clip the dialog.
+  return createPortal(
     <div className={overlayClassName} onClick={closeOnBackdrop && onClose ? onClose : undefined} onKeyDown={onKeyDown}>
       <div
         ref={panelRef}
@@ -91,6 +95,7 @@ export function Modal({
       >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

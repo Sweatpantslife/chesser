@@ -15,6 +15,8 @@ import {
 import { useLessons } from '../store/lessons';
 import { recordLesson } from '../lib/gamify';
 import { playMoveSound } from '../lib/sound';
+import { fireConfetti } from '../components/Celebration';
+import heroUrl from '../assets/img/hero.webp';
 import type { Color } from '../store/game';
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -37,7 +39,7 @@ function Stars({ n, size = 'text-sm' }: { n: number; size?: string }) {
   return (
     <span className={`${size} tracking-tight`} aria-label={`${n} of 3 stars`}>
       {[1, 2, 3].map((i) => (
-        <span key={i} className={i <= n ? 'text-amber-300' : 'text-neutral-600'}>
+        <span key={i} className={i <= n ? 'text-gold-400' : 'text-neutral-600'}>
           ★
         </span>
       ))}
@@ -54,8 +56,8 @@ function LessonCard({ lesson, onOpen }: { lesson: Lesson; onOpen: () => void }) 
     <button
       onClick={onOpen}
       aria-label={`${lesson.title}${done ? ' (completed)' : ''}`}
-      className={`group flex flex-col gap-1 rounded-lg p-3 text-left transition hover:bg-neutral-800 ${
-        done ? 'bg-panel ring-1 ring-emerald-700/60' : 'bg-panel'
+      className={`group card-lift flex flex-col gap-1 rounded-2xl p-3 text-left shadow-soft hover:bg-neutral-800 ${
+        done ? 'bg-panel ring-1 ring-emerald-500/50' : 'bg-panel'
       }`}
     >
       <div className="flex items-center gap-2">
@@ -63,7 +65,7 @@ function LessonCard({ lesson, onOpen }: { lesson: Lesson; onOpen: () => void }) 
           {lesson.icon}
         </span>
         <span className="flex-1 text-sm font-semibold text-ink">{lesson.title}</span>
-        {done ? <Stars n={stars} /> : <span className="text-xs text-neutral-500 group-hover:text-emerald-400">Start →</span>}
+        {done ? <Stars n={stars} /> : <span className="text-xs font-semibold text-neutral-400 group-hover:text-brand-300">Start →</span>}
       </div>
       <p className="text-xs leading-snug text-neutral-400">{lesson.summary}</p>
     </button>
@@ -76,27 +78,41 @@ function Catalogue({ onOpen }: { onOpen: (id: string) => void }) {
   const pct = Math.round((done / ALL_LESSONS.length) * 100);
   return (
     <div className="mx-auto w-full max-w-[1000px] space-y-6">
-      <div className="rounded-lg bg-panel p-4">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-lg font-bold text-ink">Learn chess</h2>
-          <span className="text-xs text-neutral-400">
-            {done}/{ALL_LESSONS.length} lessons complete
-          </span>
-        </div>
-        <p className="mt-1 text-sm text-neutral-400">
-          Short, hands-on lessons — every idea is something you play out on the board. New to chess? Start at the top and
-          you’ll know all the rules in minutes.
-        </p>
-        <div className="mt-3 h-2 overflow-hidden rounded bg-neutral-800" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
-          <div className="h-full bg-emerald-600 transition-all" style={{ width: `${pct}%` }} />
+      <div className="relative overflow-hidden rounded-2xl bg-panel shadow-soft">
+        <img
+          src={heroUrl}
+          alt=""
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover object-right opacity-80"
+        />
+        <div className="relative bg-gradient-to-r from-page/95 via-page/80 to-page/30 p-5 sm:p-6">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-display text-2xl font-bold text-ink">Learn chess, the fun way</h2>
+            <span className="rounded-full bg-neutral-900/80 px-2.5 py-1 text-xs font-semibold text-neutral-200">
+              {done}/{ALL_LESSONS.length} lessons complete
+            </span>
+          </div>
+          <p className="mt-1 max-w-xl text-sm text-neutral-200">
+            Short, hands-on lessons — every idea is something you play out on the board. New to chess? Start at the top and
+            you’ll know all the rules in minutes.
+          </p>
+          <div
+            className="mt-4 h-2.5 max-w-xl overflow-hidden rounded-full bg-neutral-900/80"
+            role="progressbar"
+            aria-label="Lessons completed"
+            aria-valuenow={pct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <div className="h-full rounded-full bg-gradient-to-r from-brand-400 to-accent-400 transition-all" style={{ width: `${pct}%` }} />
+          </div>
         </div>
       </div>
 
       {LESSON_TRACKS.map((track) => (
         <section key={track.id} aria-label={track.title}>
           <div className="mb-2 flex items-baseline gap-2">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-neutral-400">{track.title}</h3>
-            <span className="text-xs text-neutral-500">{track.blurb}</span>
+            <h3 className="font-display text-sm font-semibold uppercase tracking-wide text-brand-300">{track.title}</h3>
+            <span className="text-xs text-neutral-400">{track.blurb}</span>
           </div>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {track.lessons.map((l) => (
@@ -177,6 +193,7 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
     const stars = wrongCount === 0 ? 3 : wrongCount <= 2 ? 2 : 1;
     const { firstTime } = complete(lesson.id, stars);
     recordLesson({ firstTime, stars });
+    fireConfetti(stars * 30);
     setEarnedStars(stars);
     setWasFirstTime(firstTime);
     setPhase('lessonDone');
@@ -276,7 +293,7 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <button
             onClick={onExit}
-            className="rounded bg-neutral-800 px-2.5 py-1 text-xs text-neutral-300 hover:bg-neutral-700"
+            className="btn-press rounded-full bg-neutral-800 px-3 py-1 text-xs font-semibold text-neutral-300 hover:bg-neutral-700"
             aria-label="Back to all lessons"
           >
             ← Lessons
@@ -288,7 +305,7 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
               <span
                 key={i}
                 className={`h-1.5 rounded-full transition-all ${
-                  i < stepIdx ? 'w-3 bg-emerald-600' : i === stepIdx ? 'w-5 bg-emerald-400' : 'w-3 bg-neutral-700'
+                  i < stepIdx ? 'w-3 bg-brand-500' : i === stepIdx ? 'w-5 bg-brand-300' : 'w-3 bg-neutral-700'
                 }`}
               />
             ))}
@@ -309,7 +326,7 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
         </div>
         {phase === 'solving' && !replyPending && (
           <div className="flex h-5 items-center gap-2 text-xs text-neutral-400">
-            <span className="animate-pulse text-emerald-400">● your move</span>
+            <span className="animate-pulse-soft text-emerald-400">● your move</span>
             {lineProgress && lineProgress.n > 1 && (
               <span>
                 move {lineProgress.i} of {lineProgress.n}
@@ -321,11 +338,11 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
 
       <div className="space-y-3">
         {phase === 'lessonDone' ? (
-          <div className="rounded-lg bg-panel p-4 text-center">
-            <div className="text-3xl" aria-hidden>
+          <div className="pop-in rounded-2xl bg-panel p-4 text-center shadow-soft">
+            <div className="pop-in text-4xl" aria-hidden>
               🎉
             </div>
-            <h3 className="mt-1 text-base font-bold text-ink">Lesson complete!</h3>
+            <h3 className="mt-1 font-display text-lg font-bold text-ink">Lesson complete!</h3>
             <div className="mt-1">
               <Stars n={earnedStars} size="text-xl" />
             </div>
@@ -342,21 +359,21 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
                 <button
                   autoFocus
                   onClick={() => onOpen(nextLessonId(lesson.id)!)}
-                  className="w-full rounded bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                  className="btn-press w-full rounded-full bg-brand-600 py-2 text-sm font-bold text-white hover:bg-brand-700"
                 >
                   Next lesson →
                 </button>
               )}
               <button
                 onClick={onExit}
-                className="w-full rounded bg-neutral-700 py-2 text-sm text-neutral-200 hover:bg-neutral-600"
+                className="btn-press w-full rounded-full bg-neutral-700 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-600"
               >
                 Back to lessons
               </button>
             </div>
           </div>
         ) : (
-          <div className="rounded-lg bg-panel p-4">
+          <div className="rounded-2xl bg-panel p-4 shadow-soft">
             {step.kind === 'info' ? (
               <>
                 {step.title && <h3 className="mb-1 text-sm font-bold text-ink">{step.title}</h3>}
@@ -364,7 +381,7 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
                 <button
                   autoFocus
                   onClick={advance}
-                  className="mt-4 w-full rounded bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                  className="btn-press mt-4 w-full rounded-full bg-brand-600 py-2 text-sm font-bold text-white hover:bg-brand-700"
                 >
                   Got it →
                 </button>
@@ -372,7 +389,7 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
             ) : (
               <>
                 {exerciseNo && (
-                  <div className="mb-1 text-[11px] uppercase tracking-wide text-neutral-500">
+                  <div className="mb-1 text-[11px] uppercase tracking-wide text-neutral-400">
                     Exercise {exerciseNo.i} of {exerciseNo.n}
                   </div>
                 )}
@@ -393,7 +410,7 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
                     <button
                       autoFocus
                       onClick={retry}
-                      className="w-full rounded bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                      className="btn-press w-full rounded-full bg-brand-600 py-2 text-sm font-bold text-white hover:bg-brand-700"
                     >
                       Try again
                     </button>
@@ -402,7 +419,7 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
                     <button
                       autoFocus
                       onClick={advance}
-                      className="w-full rounded bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                      className="btn-press w-full rounded-full bg-emerald-700 py-2 text-sm font-bold text-white hover:bg-emerald-600"
                     >
                       Continue →
                     </button>
@@ -410,7 +427,7 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
                   {(phase === 'solving' || phase === 'wrong') && wrongCount >= 2 && (
                     <button
                       onClick={reveal}
-                      className="w-full rounded bg-neutral-700 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600"
+                      className="btn-press w-full rounded-full bg-neutral-700 py-1.5 text-sm font-semibold text-neutral-200 hover:bg-neutral-600"
                     >
                       Show me
                     </button>
@@ -420,7 +437,7 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
             )}
           </div>
         )}
-        <div className="rounded-lg bg-panelmute p-3 text-xs leading-snug text-neutral-500">
+        <div className="rounded-2xl bg-panelmute p-3 text-xs leading-snug text-neutral-400">
           Make a mistake? No stress — you can retry every exercise, and replay any lesson from the Learn page.
         </div>
       </div>

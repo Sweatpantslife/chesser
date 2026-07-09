@@ -51,7 +51,7 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
     <button
       onClick={() => setTab(id)}
       aria-pressed={tab === id}
-      className={`flex-1 rounded px-2 py-1 text-sm ${tab === id ? 'bg-emerald-700 text-white' : 'text-neutral-300 hover:bg-neutral-700'}`}
+      className={`flex-1 rounded px-2 py-1 text-sm ${tab === id ? 'bg-brand-600 text-white' : 'text-neutral-300 hover:bg-neutral-700'}`}
     >
       {label}
     </button>
@@ -115,7 +115,7 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
                     key={s}
                     onClick={() => setSite(s)}
                     aria-pressed={site === s}
-                    className={`rounded px-2 py-1 text-xs ${site === s ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-300'}`}
+                    className={`rounded px-2 py-1 text-xs ${site === s ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300'}`}
                   >
                     {s === 'chesscom' ? 'Chess.com' : 'Lichess'}
                   </button>

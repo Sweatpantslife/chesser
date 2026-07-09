@@ -10,6 +10,7 @@ import { ReviewSummary } from '../components/ReviewSummary';
 import { RatingMeter } from '../components/RatingMeter';
 import { DECK_META, useReviewSummary, type DeckTarget } from '../lib/decks';
 import { ActivityChart, Heatmap, ProgressBar, StatCard, type DayPoint } from '../components/Charts';
+import { EmptyStatsArt } from '../components/icons';
 
 const HEATMAP_WEEKS = 18;
 
@@ -41,9 +42,9 @@ function heatmapDays(weeks: number): string[] {
 
 function Section({ title, children, aside }: { title: string; children: ReactNode; aside?: ReactNode }) {
   return (
-    <div className="rounded-lg bg-panel p-4">
+    <div className="rounded-2xl bg-panel p-4 shadow-soft">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-ink">{title}</h3>
+        <h3 className="font-display text-sm font-semibold text-ink">{title}</h3>
         {aside}
       </div>
       {children}
@@ -107,9 +108,13 @@ export function StatsPage({ goto }: { goto: (target: DeckTarget) => void }) {
   return (
     <div className="mx-auto w-full max-w-[1000px] space-y-4">
       {empty && (
-        <div className="rounded-lg border border-dashed border-neutral-700 bg-panel/60 p-4 text-sm text-neutral-400">
-          No training history yet. Solve tactics, drill openings, learn checkmate patterns or run the coordinate trainer — your
-          accuracy and volume will show up here.
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-neutral-700 bg-panel/60 p-6 text-center text-sm text-neutral-400 sm:flex-row sm:text-left">
+          <EmptyStatsArt width={150} height={112} className="shrink-0" />
+          <div>
+            <div className="mb-1 font-display text-base font-semibold text-ink">Your story starts here</div>
+            No training history yet. Solve tactics, drill openings, learn checkmate patterns or run the coordinate trainer — your
+            accuracy and volume will show up here.
+          </div>
         </div>
       )}
 
@@ -147,7 +152,7 @@ export function StatsPage({ goto }: { goto: (target: DeckTarget) => void }) {
         {heat.some((d) => d.value > 0) && (
           <div className="mt-2 flex items-center justify-end gap-1.5 text-xs text-neutral-400">
             less
-            {['#1b2029', '#14532d', '#166534', '#16a34a', '#34d399'].map((c) => (
+            {['#282345', '#4c3a8f', '#6d4fd0', '#9a7bf0', '#c4b5fd'].map((c) => (
               <span key={c} className="h-2.5 w-2.5 rounded-[2px]" style={{ background: c }} />
             ))}
             more
@@ -178,7 +183,7 @@ export function StatsPage({ goto }: { goto: (target: DeckTarget) => void }) {
               { label: "Knight's tour", value: coordByMode.knight },
             ].map((b) => (
               <div key={b.label}>
-                <div className="text-2xl font-bold text-emerald-400">{b.value}</div>
+                <div className="font-display text-2xl font-bold text-brand-300">{b.value}</div>
                 <div className="text-xs uppercase tracking-wide text-neutral-400">{b.label}</div>
               </div>
             ))}
