@@ -14,12 +14,20 @@ const MAX_STRIKES = 3;
 
 type Phase = 'idle' | 'running' | 'over';
 
+function shuffleInPlace<T>(arr: T[]): void {
+  // Fisher-Yates shuffle (unbiased, unlike sort with a random comparator)
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j]!, arr[i]!];
+  }
+}
+
 function shuffleRamp(): Puzzle[] {
   // ramp difficulty: easy → hard, shuffled within each band for variety
   // (pool = embedded core + any rating bands the service has already fetched)
   const byBand: { easy: Puzzle[]; medium: Puzzle[]; hard: Puzzle[] } = { easy: [], medium: [], hard: [] };
   for (const p of getLoadedPuzzles()) byBand[p.difficulty].push(p);
-  for (const band of [byBand.easy, byBand.medium, byBand.hard]) band.sort(() => Math.random() - 0.5);
+  for (const band of [byBand.easy, byBand.medium, byBand.hard]) shuffleInPlace(band);
   return [...byBand.easy, ...byBand.medium, ...byBand.hard];
 }
 
