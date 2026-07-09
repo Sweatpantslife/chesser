@@ -233,6 +233,13 @@ describe('buildRows', () => {
     expect(rows[0]!.side).toBe('black'); // ply parity alone would say 'white'
   });
 
+  it('flags a delivered mate even when the SAN lacks the # suffix (checkmateWinner cross-check)', () => {
+    const nodes = playNodes(['f3', 'e5', 'g4', 'Qh4#']).map((n) => (n.san === 'Qh4#' ? { ...n, san: 'Qh4' } : n));
+    const rows = buildRows(input({ nodes, evals: [] }));
+    expect(rows[3]!.isMate).toBe(true);
+    expect(rows[0]!.isMate).toBe(false);
+  });
+
   it('marks book plies and node ids', () => {
     const nodes = playNodes(['e4', 'e5', 'Nf3']);
     const evals = [ev(), ev(), ev(), ev()];
@@ -327,16 +334,31 @@ describe('reportCacheKey', () => {
     expect(reportCacheKey(START_FEN, ['e2e4', 'e7e5'], { multipv: 3, movetimeMs: 300, depth: 22 })).not.toBe(key);
   });
 
-  it('stays in sync with the options reviewGame actually passes to analyzeManyOnce', () => {
-    // The constant is the settings half of the cache key; if the store's
-    // (hands-off) review loop changes its engine options without this
-    // constant, stale cached reports would keep hitting under a lying key.
+  it('is pinned to the deterministic fixed-depth review budget', () => {
+    // movetimeMs 0 = no wall-clock cap → the server issues `go depth N`; a
+    // fixed-depth search from a fresh engine state gives identical evals (and
+    // therefore identical grades/accuracy) on every review of the same game.
+    expect(REVIEW_ENGINE_SETTINGS).toEqual({ multipv: 2, movetimeMs: 0, depth: 18 });
+  });
+
+  it('flow-through: the store review loop runs, and reports back, THIS object (no drift possible)', () => {
+    // reviewGame no longer mirrors a literal: the eval loop spreads
+    // REVIEW_ENGINE_SETTINGS into analyzeManyOnce and passes the same object
+    // through ReviewRowsInput.engine, so the cache key always describes the
+    // options the evals actually came from.
     const src = readFileSync(new URL('../../store/game.ts', import.meta.url), 'utf8');
-    const m = src.match(/analyzeManyOnce\([^,]+,\s*\{\s*multipv:\s*(\d+),\s*movetimeMs:\s*(\d+),\s*depth:\s*(\d+)\s*\}\s*\)/);
-    expect(m).not.toBeNull();
-    expect({ multipv: Number(m![1]), movetimeMs: Number(m![2]), depth: Number(m![3]) }).toEqual(
-      REVIEW_ENGINE_SETTINGS,
-    );
+    expect(src).toMatch(/analyzeManyOnce\(\s*fens\[i\]!,\s*\{\s*\.\.\.REVIEW_ENGINE_SETTINGS,\s*fresh:\s*true\s*\}\s*\)/);
+    expect(src).toMatch(/engine:\s*REVIEW_ENGINE_SETTINGS/);
+  });
+
+  it('flow-through: the cache key derives from meta.engine, not from the constant', () => {
+    const rows = buildRows(scholarsInput());
+    const custom = { multipv: 3, movetimeMs: 0, depth: 24 };
+    const report = buildAnalysisReport(rows, meta({ engine: custom }), { eco: null, name: null, leftTheoryAtPly: 2 });
+    const ucis = rows.map((r) => r.uci);
+    expect(report.meta.engine).toEqual(custom);
+    expect(report.gameKey).toBe(reportCacheKey(START_FEN, ucis, custom));
+    expect(report.gameKey).not.toBe(reportCacheKey(START_FEN, ucis, REVIEW_ENGINE_SETTINGS));
   });
 });
 
@@ -388,6 +410,12 @@ describe('serialization', () => {
     expect(deserializeReport(JSON.stringify(badSummary))).toBeNull();
     const badRating = { ...original, estimatedPerformanceRating: { white: 1500 } };
     expect(deserializeReport(JSON.stringify(badRating))).toBeNull();
+    // theoryText renders from opening.leftTheoryAtPly — a non-numeric value
+    // must read as a miss, not hydrate NaN into the opening card.
+    const badTheory = { ...original, opening: { ...original.opening, leftTheoryAtPly: 'six' } };
+    expect(deserializeReport(JSON.stringify(badTheory))).toBeNull();
+    const missingTheory = { ...original, opening: { eco: null, name: null } };
+    expect(deserializeReport(JSON.stringify(missingTheory))).toBeNull();
   });
 });
 

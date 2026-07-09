@@ -13,9 +13,13 @@
  * disagree with anything on screen. Rows without a coach grade
  * (cached/imported games) are derived from scratch at the same thresholds.
  *
- * Two overrides apply on both paths: a move that delivers checkmate is always
- * best-tier for the mover, never a mistake/miss — detected purely from data
- * (the SAN suffix '#', surfaced as row.isMate) — and a move that throws away
+ * Three overrides apply on both paths: a move that delivers checkmate is
+ * always best-tier for the mover, never a mistake/miss — detected purely from
+ * data (row.isMate, see buildRows) —; a move identical to the engine's own
+ * first choice is floored at 'best' and can NEVER be an error, whatever the
+ * coach grade or win% delta says (two independent searches produce eval noise,
+ * and "there was a better move" is refuted by the app's own data — mirrors
+ * lila's best-move-is-never-an-error behaviour); and a move that throws away
  * a forced mate is always at least an error (lila's MateLost judgement),
  * since the win%-drop thresholds cannot see a mate-for → still-winning swing
  * under the ±1000 eval ceiling.
@@ -27,6 +31,17 @@ import type { Classification, EvalPoint, MoveRow, Side } from './types';
 const PIECE_VALUE: Record<string, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
 
 const povWin = (whiteWin: number, side: Side) => (side === 'white' ? whiteWin : 100 - whiteWin);
+
+/**
+ * The mover played the engine's own first choice. Matched by UCI or by SAN so
+ * a missing / differently-encoded UCI (e.g. castling variants) cannot defeat
+ * the best-move floor in {@link classifyMove}.
+ */
+export function isEngineBestMove(
+  row: Pick<MoveRow, 'uci' | 'san' | 'bestMoveUci' | 'bestMoveSan'>,
+): boolean {
+  return (!!row.bestMoveUci && row.uci === row.bestMoveUci) || (!!row.bestMoveSan && row.san === row.bestMoveSan);
+}
 
 /** True when the eval says the MOVER has a forced mate. */
 const mateFor = (ev: EvalPoint | null, side: Side): boolean =>
@@ -96,8 +111,7 @@ const isMissedWin = (moverWinBefore: number, moverWinAfter: number) =>
  */
 function escalateCoachGrade(row: MoveRow, grade: Classification): Classification {
   if (grade === 'brilliant' || grade === 'great' || grade === 'miss') return grade;
-  const playedIsBest = !!row.bestMoveUci && row.uci === row.bestMoveUci;
-  if (playedIsBest) return grade;
+  if (isEngineBestMove(row)) return grade;
   const moverWinBefore = povWin(row.winBefore, row.side);
   const moverWinAfter = povWin(row.winAfter, row.side);
   const tier = dropTier(Math.max(0, moverWinBefore - moverWinAfter));
@@ -113,7 +127,7 @@ function deriveGrade(row: MoveRow): Classification {
   const moverWinBefore = povWin(row.winBefore, row.side);
   const moverWinAfter = povWin(row.winAfter, row.side);
   const drop = Math.max(0, moverWinBefore - moverWinAfter);
-  const playedIsBest = !!row.bestMoveUci && row.uci === row.bestMoveUci;
+  const playedIsBest = isEngineBestMove(row);
 
   // Base grade from the mover-POV win% swing; the engine's own first choice
   // is never an error (see escalateCoachGrade).
@@ -144,7 +158,6 @@ function deriveGrade(row: MoveRow): Classification {
 }
 
 /**
-/**
  * lila MateAdvice's MateLost ladder: how bad throwing away a forced mate is,
  * by the mover-POV eval the game is left at (still totally winning →
  * inaccuracy, winning → mistake, anything less → blunder). Needed because the
@@ -162,26 +175,35 @@ function lostMateTier(row: MoveRow): Classification {
  * Final report-layer grade for a row. Precedence (first match wins):
  *  1. delivered checkmate → best-tier (an existing brilliant/great sticks,
  *     anything else becomes 'best') — never a bad grade;
- *  2. losing a forced mate is always at least an error (lila MateAdvice's
+ *  2. the engine's own first choice (matched by UCI or SAN) is floored at
+ *     'best': brilliant/great upgrades stick and book rows keep their theory
+ *     label, but the grade can NEVER be inaccuracy/mistake/blunder/miss —
+ *     whatever the coach grade or the win% delta between the two independent
+ *     searches claims. A "drop" on the move the engine itself wanted is eval
+ *     noise, and prose like "there was a more precise move" would be refuted
+ *     by the app's own data (lila: the best move is never an error);
+ *  3. losing a forced mate is always at least an error (lila MateAdvice's
  *     MateLost, cp-laddered): the explanation template ("You had mate in N…")
  *     fires on exactly this condition, so the badge must agree with the
  *     prose. The house 'miss' grade survives where it applies; a DELAYED mate
- *     (still mate-for after) is not an error, and the engine's own first
- *     choice is exempt as always;
- *  3. a coach grade passes through, escalated to the lichess error tier its
- *     win% drop lands in (brilliant/great/miss and the engine's own first
- *     choice are exempt; never downgraded);
- *  4. otherwise derive from the row (drop thresholds, then book / miss /
+ *     (still mate-for after) is not an error;
+ *  4. a coach grade passes through, escalated to the lichess error tier its
+ *     win% drop lands in (brilliant/great/miss are exempt; never downgraded);
+ *  5. otherwise derive from the row (drop thresholds, then book / miss /
  *     brilliant / great refinements).
  */
 export function classifyMove(row: MoveRow): Classification {
   if (row.isMate) {
-    // Seam: consolidate with checkmateWinner() from lib/coach.ts once fix/coach-trainers lands.
+    // row.isMate is data-derived in buildRows (SAN '#' fast path, cross-checked
+    // with checkmateWinner from lib/coach).
     return row.coachGrade === 'brilliant' || row.coachGrade === 'great' ? row.coachGrade : 'best';
   }
   const base = row.coachGrade ? escalateCoachGrade(row, row.coachGrade) : deriveGrade(row);
-  const playedIsBest = !!row.bestMoveUci && row.uci === row.bestMoveUci;
-  if (!playedIsBest && mateFor(row.evalBefore, row.side) && !mateFor(row.evalAfter, row.side)) {
+  if (isEngineBestMove(row)) {
+    // Best-move floor: keep upgrades and the theory label, erase everything else.
+    return base === 'brilliant' || base === 'great' || base === 'book' ? base : 'best';
+  }
+  if (mateFor(row.evalBefore, row.side) && !mateFor(row.evalAfter, row.side)) {
     if (base === 'miss') return 'miss'; // "missed win" is exactly what happened
     const tier = lostMateTier(row);
     return (ERROR_RANK[base] ?? 0) >= (ERROR_RANK[tier] ?? 0) ? base : tier;

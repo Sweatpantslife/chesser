@@ -125,6 +125,53 @@ describe('classifyMove — losing a forced mate (lila MateLost ladder)', () => {
   });
 });
 
+describe('classifyMove — best-move floor (played move == engine best is NEVER an error)', () => {
+  // Eval noise between the two independent searches around a ply can fabricate
+  // a win% drop on the very move the engine wanted (observed on 15.Bxd7+ /
+  // 15...Nxd7: uci === bestMoveUci graded inaccuracy/mistake with "there was a
+  // more precise move" prose). Mirrors lila: the best move is never an error.
+  it('floors a bad COACH grade to best when uci === bestMoveUci', () => {
+    for (const g of ['inaccuracy', 'mistake', 'blunder', 'miss'] as const) {
+      expect(classifyMove(row({ uci: 'e2e4', bestMoveUci: 'e2e4', coachGrade: g }))).toBe('best');
+    }
+  });
+
+  it('stays best with uci === bestMoveUci despite a large fabricated win% drop', () => {
+    const r = row({ uci: 'e2e4', bestMoveUci: 'e2e4', winBefore: 95.7, winAfter: 40 });
+    expect(classifyMove(r)).toBe('best');
+  });
+
+  it('stays best when a bad coach grade AND a huge drop agree the move was an error', () => {
+    const r = row({ uci: 'e2e4', bestMoveUci: 'e2e4', coachGrade: 'blunder', winBefore: 90, winAfter: 10 });
+    expect(classifyMove(r)).toBe('best');
+  });
+
+  it('floors by SAN too, so a missing/differently-encoded UCI cannot defeat it', () => {
+    const r = row({ san: 'Bxd7+', uci: 'b5d7', bestMoveUci: null, bestMoveSan: 'Bxd7+', coachGrade: 'mistake', winBefore: 95, winAfter: 77 });
+    expect(classifyMove(r)).toBe('best');
+    const derived = row({ san: 'Bxd7+', uci: 'b5d7', bestMoveUci: null, bestMoveSan: 'Bxd7+', winBefore: 95, winAfter: 40 });
+    expect(classifyMove(derived)).toBe('best');
+  });
+
+  it('floors a coach "good" to best (the played move IS the engine line)', () => {
+    expect(classifyMove(row({ uci: 'e2e4', bestMoveUci: 'e2e4', coachGrade: 'good' }))).toBe('best');
+  });
+
+  it('keeps brilliant/great upgrades above the floor', () => {
+    expect(classifyMove(row({ uci: 'e2e4', bestMoveUci: 'e2e4', coachGrade: 'brilliant', winBefore: 60, winAfter: 30 }))).toBe('brilliant');
+    expect(classifyMove(row({ uci: 'e2e4', bestMoveUci: 'e2e4', coachGrade: 'great', winBefore: 60, winAfter: 30 }))).toBe('great');
+  });
+
+  it('keeps the book label for a theory move that is also the engine move', () => {
+    expect(classifyMove(row({ uci: 'e2e4', bestMoveUci: 'e2e4', isBook: true, coachGrade: 'book' }))).toBe('book');
+  });
+
+  it('beats the lost-forced-mate override (noise on the engine move is not an error)', () => {
+    const r = row({ uci: 'e2e4', bestMoveUci: 'e2e4', evalBefore: { mate: 3 }, evalAfter: { cp: 500 }, winBefore: 97.5, winAfter: 92, coachGrade: 'good' });
+    expect(classifyMove(r)).toBe('best');
+  });
+});
+
 describe('classifyMove — coach grade passthrough and escalation', () => {
   it('passes every non-mate coach grade through when the drop is small', () => {
     const grades = ['brilliant', 'great', 'best', 'good', 'book', 'inaccuracy', 'mistake', 'blunder', 'miss'] as const;

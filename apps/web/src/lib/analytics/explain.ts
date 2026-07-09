@@ -13,6 +13,7 @@
 import { Chess } from 'chess.js';
 import type { Square } from 'chess.js';
 import { cpValue } from './accuracy';
+import { isEngineBestMove } from './classify';
 import type { Classification, EvalPoint, MoveRow, Side } from './types';
 
 const PIECE_VALUE: Record<string, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
@@ -208,17 +209,20 @@ export function explainMove(row: MoveRow, classification: Classification): strin
   if (row.coachExplanation && row.coachGrade === classification) return row.coachExplanation;
 
   if (row.isMate) {
-    // Seam: consolidate with checkmateWinner() from lib/coach.ts once fix/coach-trainers lands.
+    // row.isMate is data-derived in buildRows (SAN '#' fast path, cross-checked
+    // with checkmateWinner from lib/coach).
     return 'Checkmate — the game ends here.';
   }
 
   const { side } = row;
-  const playedIsBest = !!row.bestMoveUci && row.uci === row.bestMoveUci;
+  const playedIsBest = isEngineBestMove(row);
   const bad = BAD_GRADES.has(classification);
   const drop = Math.max(0, povWin(row.winBefore, side) - povWin(row.winAfter, side));
   const moverCpBefore = povCp(cpValue(row.evalBefore), side);
   const moverCpAfter = povCp(cpValue(row.evalAfter), side);
-  const best = row.bestMoveSan && row.bestMoveSan !== row.san ? row.bestMoveSan : null;
+  // Never claim a better move existed when the played move IS the engine's
+  // first choice — the app's own data would contradict the prose (fix A).
+  const best = !playedIsBest && row.bestMoveSan && row.bestMoveSan !== row.san ? row.bestMoveSan : null;
 
   // — Missed mate: the mover had a forced mate and the played move lost it —
   const hadMate = mateFor(row.evalBefore, side);

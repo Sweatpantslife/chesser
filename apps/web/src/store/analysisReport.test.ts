@@ -60,6 +60,16 @@ describe('useAnalysisReport', () => {
     expect(localStorage.getItem(`chesser-report:${st.report!.gameKey}`)).toBeTruthy();
   });
 
+  it('stamps meta.engine (and the cache key) from the opts the review actually ran with', async () => {
+    const custom = { multipv: 3, movetimeMs: 0, depth: 24 };
+    await useAnalysisReport.getState().buildFromReview({ ...reviewInput(), engine: custom });
+    const report = useAnalysisReport.getState().report!;
+    expect(report.meta.engine).toEqual(custom);
+    // A different budget = a different key: a re-review after a budget change
+    // can never hit the stale entry.
+    expect(localStorage.getItem(`chesser-report:${report.gameKey}`)).toBeTruthy();
+  });
+
   it('hydrates the legacy review fields on the FRESH path too (grades cannot disagree)', async () => {
     await useAnalysisReport.getState().buildFromReview(reviewInput());
     const report = useAnalysisReport.getState().report!;

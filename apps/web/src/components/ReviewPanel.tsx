@@ -165,8 +165,13 @@ export function ReviewPanel() {
               {(['white', 'black'] as const).map((side) => (
                 <tr key={side}>
                   <td className="capitalize text-neutral-400">{side}</td>
-                  <td className="text-center font-semibold text-emerald-300">{stats ? `${stats[side].accuracy}%` : '—'}</td>
-                  <td className="text-center">{stats ? stats[side].acpl : '—'}</td>
+                  {/* When a report exists it is the single source of accuracy/ACPL —
+                      the same figures as the Game report card, on the fresh AND the
+                      cached path — so one game never shows two different accuracies. */}
+                  <td className="text-center font-semibold text-emerald-300">
+                    {activeReport ? `${activeReport[side].accuracy}%` : stats ? `${stats[side].accuracy}%` : '—'}
+                  </td>
+                  <td className="text-center">{activeReport ? activeReport[side].acpl : stats ? stats[side].acpl : '—'}</td>
                   <td className="text-center">{counts[side].blunder}</td>
                   <td className="text-center">{counts[side].mistake}</td>
                   <td className="text-center">{counts[side].inaccuracy}</td>

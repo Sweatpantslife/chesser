@@ -142,9 +142,13 @@ class EngineClient {
 
   /**
    * One-shot multi-PV analysis: resolves with the final lines once the search
-   * hits its movetime/depth cap. Used to generate tactics from a game.
+   * hits its movetime/depth cap. Used by the game review (fixed-depth, `fresh`
+   * engine state for deterministic evals) and to generate tactics from a game.
    */
-  analyzeManyOnce(fen: string, opts: { multipv?: number; depth?: number; movetimeMs?: number } = {}): Promise<AnalysisLine[]> {
+  analyzeManyOnce(
+    fen: string,
+    opts: { multipv?: number; depth?: number; movetimeMs?: number; fresh?: boolean } = {},
+  ): Promise<AnalysisLine[]> {
     return new Promise((resolve) => {
       const reqId = nextId();
       this.analysisReqId = reqId;
@@ -164,7 +168,10 @@ class EngineClient {
         if (msg.final) finish(msg.lines);
       };
       this.send({ t: 'analyze', reqId, fen, multipv: opts.multipv ?? 2, ...opts } as AnalyzeRequest);
-      setTimeout(() => finish(last), 12000); // safety
+      // Safety net: resolve with the deepest lines seen so far. Pure
+      // fixed-depth searches (no movetime) get a longer leash — cutting one
+      // short would also cut determinism short.
+      setTimeout(() => finish(last), opts.movetimeMs ? 12000 : 30000);
     });
   }
 

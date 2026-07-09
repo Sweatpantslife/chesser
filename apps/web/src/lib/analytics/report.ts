@@ -10,6 +10,7 @@
  * DOM) and behave as cache misses.
  */
 import type { AnalysisLine, Score } from '@chesser/shared';
+import { checkmateWinner } from '../coach';
 import type { MoveReview, PositionEval } from '../coach';
 import { acpl, gameAccuracy, moveAccuracy, winPercent } from './accuracy';
 import { classificationCounts, classifyAll } from './classify';
@@ -32,14 +33,17 @@ import type {
 export const REPORT_VERSION = 1;
 
 /**
- * The engine settings reviewGame currently runs with (store/game.ts
- * `analyzeManyOnce(fen, {...})`) — the settings half of the cache key.
- * Keep in sync with the store; a change invalidates every cached report.
- * report.test.ts greps the store literal, so a drift fails the suite
- * (the loop itself is hands-off until fix/coach-trainers lands; afterwards,
- * pass the actual options through ReviewRowsInput and delete this constant).
+ * The review budget — the single source of truth for the engine options
+ * reviewGame runs with (store/game.ts imports this constant and spreads it
+ * into `analyzeManyOnce`, then passes it back through {@link ReviewRowsInput}
+ * so `report.meta.engine` and the cache key describe the settings the evals
+ * actually came from; changing the budget auto-invalidates every cached
+ * report). movetimeMs 0 means NO wall-clock cap: the server then issues
+ * `go depth N` — a fixed-depth search on a fresh hash table is deterministic
+ * (identical grades/accuracy run to run) and device-independent, unlike the
+ * previous 300 ms wall-clock budget.
  */
-export const REVIEW_ENGINE_SETTINGS: EngineReviewSettings = { multipv: 2, movetimeMs: 300, depth: 22 };
+export const REVIEW_ENGINE_SETTINGS: EngineReviewSettings = { multipv: 2, movetimeMs: 0, depth: 18 };
 
 /** Everything the existing review pipeline produced, straight from the store. */
 export interface ReviewRowsInput {
@@ -54,6 +58,12 @@ export interface ReviewRowsInput {
   moveReviews: Readonly<Record<string, MoveReview>>;
   /** Leading plies still in theory (reviewGame's bookPly). */
   bookPly: number;
+  /**
+   * The engine options the review's eval loop ACTUALLY ran with (stamped into
+   * report.meta.engine → the cache key, so a budget change self-invalidates
+   * cached reports). Defaults to {@link REVIEW_ENGINE_SETTINGS} when absent.
+   */
+  engine?: EngineReviewSettings;
 }
 
 /** Score (White POV, from the server) → EvalPoint. Exactly one field set. */
@@ -90,7 +100,10 @@ export function buildRows(input: ReviewRowsInput): MoveRow[] {
     const review = moveReviews[node.id] ?? null;
     const bestMoveSan = pre?.bestSan ?? null;
     const pvSan = rawLines?.[k]?.[0]?.pvSan;
-    const isMate = node.san.endsWith('#');
+    // Delivered mate, from data: the SAN '#' suffix is the fast path (SANs come
+    // from chess.js), cross-checked with checkmateWinner (lib/coach) so a
+    // malformed/imported SAN cannot hide a mate from the grading overrides.
+    const isMate = node.san.endsWith('#') || checkmateWinner(node.fen) === side;
 
     rows.push({
       ply: node.ply,
@@ -105,7 +118,6 @@ export function buildRows(input: ReviewRowsInput): MoveRow[] {
       winAfter,
       // A delivered mate is a perfect move whatever the (often missing) final
       // eval says.
-      // Seam: consolidate with checkmateWinner() from lib/coach.ts once fix/coach-trainers lands.
       moveAccuracy: isMate ? 100 : moveAccuracy(winBefore, winAfter, side),
       coachGrade: review?.classification ?? null,
       coachExplanation: review?.explanation ?? null,
@@ -260,6 +272,9 @@ export function deserializeReport(json: string): AnalysisReport | null {
       report.meta === null ||
       typeof report.opening !== 'object' ||
       report.opening === null ||
+      // theoryText renders "left theory at move N" from this — a corrupt entry
+      // must not hydrate NaN into the opening card.
+      typeof report.opening.leftTheoryAtPly !== 'number' ||
       !Array.isArray(report.phases) ||
       !Array.isArray(report.criticalMoments) ||
       !isPlausibleSummary(report.white) ||

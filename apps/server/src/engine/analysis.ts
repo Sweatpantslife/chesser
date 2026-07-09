@@ -35,6 +35,9 @@ export class AnalysisService {
 
     const multipv = Math.min(Math.max(req.multipv ?? 1, 1), MAX_MULTIPV);
     this.engine.setOption('MultiPV', multipv);
+    // ucinewgame clears the hash table: a fixed-depth search from a fresh
+    // state is deterministic run to run (the game review relies on this).
+    if (req.fresh) this.engine.newGame();
     await this.engine.ready();
 
     const white = whiteToMove(req.fen);

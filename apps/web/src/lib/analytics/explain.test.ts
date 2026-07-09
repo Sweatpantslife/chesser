@@ -51,6 +51,33 @@ describe('explainMove — coach prose passthrough', () => {
   });
 });
 
+describe('explainMove — played move == engine best never claims a better move existed (fix A)', () => {
+  const CLAIMS = /more precise|slightly preferred|was best|was stronger|was needed|was the move|was the way|You missed|had mate in|tougher defence/i;
+
+  it('never claims a better move on a best-graded engine move, whatever the eval noise says', () => {
+    // Fabricated 55-point drop between the two independent searches.
+    const r = row({ uci: 'e2e4', bestMoveUci: 'e2e4', bestMoveSan: 'e4', winBefore: 95, winAfter: 40, evalBefore: { cp: 845 }, evalAfter: { cp: -50 } });
+    const text = explainMove(r, 'best');
+    expect(text).not.toMatch(CLAIMS);
+    expect(text).toMatch(/^Best move/);
+  });
+
+  it('matches by SAN as well as UCI', () => {
+    const r = row({ san: 'Bxd7+', uci: 'b5d7', bestMoveUci: null, bestMoveSan: 'Bxd7+', isCheck: true, winBefore: 95, winAfter: 77 });
+    expect(explainMove(r, 'best')).not.toMatch(CLAIMS);
+  });
+
+  it('does not voice "you had mate in N" for the move the engine itself chose', () => {
+    const r = row({ uci: 'e2e4', bestMoveUci: 'e2e4', bestMoveSan: 'e4', evalBefore: { mate: 3 }, evalAfter: { cp: 900 }, winBefore: 97.5, winAfter: 97 });
+    expect(explainMove(r, 'best')).not.toMatch(/mate in/i);
+  });
+
+  it('still names the better move for a genuinely different played move', () => {
+    const r = row({ uci: 'g1f3', san: 'Nf3', bestMoveUci: 'e2e4', bestMoveSan: 'e4', winBefore: 60, winAfter: 52 });
+    expect(explainMove(r, 'inaccuracy')).toContain('e4');
+  });
+});
+
 describe('explainMove — delivered checkmate', () => {
   // Seam note: mate is detected from row.isMate (SAN '#'); consolidates with
   // coach.ts checkmateWinner() once fix/coach-trainers lands.

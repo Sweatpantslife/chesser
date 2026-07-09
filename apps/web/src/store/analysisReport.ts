@@ -153,7 +153,10 @@ export const useAnalysisReport = create<AnalysisReportState>((set) => ({
           startFen: input.startFen,
           result: input.result,
           playerColor: input.playerColor,
-          engine: REVIEW_ENGINE_SETTINGS,
+          // The opts the review's eval loop ACTUALLY ran with (flowed through
+          // the reviewGame hook) — meta.engine and the cache key describe the
+          // real settings, so a budget change self-invalidates cached reports.
+          engine: input.engine ?? REVIEW_ENGINE_SETTINGS,
         },
         { eco, name, leftTheoryAtPly: input.bookPly },
       );

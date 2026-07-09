@@ -13,6 +13,7 @@ import { recordGameResult } from '../lib/gamify';
 import { useLadder } from './ladder';
 import { useRatings, type GameOutcome } from './ratings';
 import { useAnalysisReport } from './analysisReport';
+import { REVIEW_ENGINE_SETTINGS } from '../lib/analytics/report';
 
 export type Color = 'white' | 'black';
 export type Mode = 'play' | 'analysis';
@@ -972,11 +973,19 @@ export const useGame = create<GameStore>((set, get) => ({
 
     // Evaluate every position with 2 lines, so we get the best move (and the
     // runner-up, for "only move" detection) at each step — not just the score.
+    // REVIEW_ENGINE_SETTINGS (lib/analytics/report) is the single source of the
+    // review budget: a FIXED-DEPTH search (movetimeMs 0 = no wall-clock cap) on
+    // a fresh engine state (`fresh` sends ucinewgame, clearing the hash table),
+    // so evals — and therefore grades and accuracy — are identical run to run
+    // and device-independent, where the old 300 ms wall-clock budget produced
+    // different (and shallower) evals on every review. The same object flows
+    // into buildFromReview below, so the report cache key self-invalidates
+    // whenever this budget changes.
     const fens = [s0.startFen, ...mainline.map((n) => n.fen)];
     const evals: PositionEval[] = [];
     const rawLines: AnalysisLine[][] = []; // full multipv lines, for the report layer's PVs
     for (let i = 0; i < fens.length; i++) {
-      const lines = await engine.analyzeManyOnce(fens[i]!, { multipv: 2, movetimeMs: 300, depth: 22 });
+      const lines = await engine.analyzeManyOnce(fens[i]!, { ...REVIEW_ENGINE_SETTINGS, fresh: true });
       if (gameId !== myGame) {
         set({ reviewing: false });
         return; // game changed under us
@@ -1074,6 +1083,7 @@ export const useGame = create<GameStore>((set, get) => ({
       rawLines,
       moveReviews,
       bookPly,
+      engine: REVIEW_ENGINE_SETTINGS, // the opts the eval loop above actually ran with
       gameNo: myGameNo,
       result: null,
       playerColor: s0.playerColor,
