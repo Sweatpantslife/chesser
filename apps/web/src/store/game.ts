@@ -1229,9 +1229,15 @@ export const useGame = create<GameStore>((set, get) => ({
       s.opponent?.rating ?? (s.botConfig.style === 'human' ? s.botConfig.maiaRating : s.botConfig.elo) ?? 1500;
     const timed = s.clock !== null;
 
-    // Very early agreed draws are rating-neutral (no Elo/XP), so a quick
-    // handshake can never farm rating points.
-    const isRated = !(outcome === 'draw' && s.endReason === 'Draw agreed' && !agreedDrawIsRated(plies));
+    // Only proper games count for rating: a roster (ladder) opponent playing
+    // from the standard initial position. Custom games — hand-picked bots,
+    // pasted-FEN starts, pre-played openings — are casual (no Elo/XP): an
+    // arbitrary start position vs a mismatched bot was a trivial rating farm.
+    const casual = !s.opponent?.id || s.tree[s.rootId]!.fen !== STARTING_FEN;
+    // Very early agreed draws are rating-neutral even in proper games, so a
+    // quick handshake can never farm rating points.
+    const earlyAgreedDraw = outcome === 'draw' && s.endReason === 'Draw agreed' && !agreedDrawIsRated(plies);
+    const isRated = !casual && !earlyAgreedDraw;
     let rated: { category: 'bots' | 'blitz' | 'puzzles'; ratingBefore: number; ratingAfter: number; ratingDelta: number };
     if (isRated) {
       rated = recordGameResult({ opponentRating, outcome, timed });

@@ -35,7 +35,8 @@ engine.evalOnce = async () => {
 };
 
 const bots = () => useRatings.getState().categories.bots;
-const OPPONENT = { name: 'Testbot', rating: 1600 };
+// A roster/ladder-style opponent (has an id) — its standard-start games are rated.
+const OPPONENT = { id: 'test-bot', name: 'Testbot', rating: 1600 };
 
 /** 1.e4 e5 2.Bc4 Nc6 3.Qh5 Nf6 — White (the player) mates next with Qxf7#. */
 const MATE_SETUP = ['e4', 'e5', 'Bc4', 'Nc6', 'Qh5', 'Nf6'];
@@ -146,6 +147,33 @@ test('bot accepts a played-out equal draw, recorded as a rated draw', async () =
   assert.equal(bots().drawn, 1);
   assert.ok(s.gameSummary);
   assert.equal(s.gameSummary!.rated, true);
+});
+
+test('custom games (hand-picked opponent) are casual — wins never move the rating', () => {
+  useRatings.getState().reset();
+  useGame.getState().newGame({ mode: 'play', playerColor: 'white', setupSan: MATE_SETUP, opponent: { name: 'Custom 2600', rating: 2600 } });
+  useGame.getState().userMove('h5', 'f7'); // Qxf7#
+
+  const s = useGame.getState();
+  assert.equal(s.isGameOver, true);
+  assert.equal(s.winner, 'white');
+  assert.equal(bots().played, 0, 'casual game — nothing recorded');
+  assert.ok(s.gameSummary);
+  assert.equal(s.gameSummary!.rated, false);
+  assert.equal(s.gameSummary!.ratingDelta, 0);
+});
+
+test('games from a pasted FEN are casual even against a roster opponent', () => {
+  useRatings.getState().reset();
+  useGame.getState().newGame({ mode: 'play', playerColor: 'white', startFen: 'k7/8/1K6/8/8/8/8/7R w - - 0 1', opponent: OPPONENT });
+  useGame.getState().userMove('h1', 'h8'); // Rh8#
+
+  const s = useGame.getState();
+  assert.equal(s.isGameOver, true);
+  assert.equal(s.winner, 'white');
+  assert.equal(bots().played, 0, 'non-standard start — nothing recorded');
+  assert.ok(s.gameSummary);
+  assert.equal(s.gameSummary!.rated, false);
 });
 
 test('a very early agreed draw is rating-neutral (defence in depth)', () => {
