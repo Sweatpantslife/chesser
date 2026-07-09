@@ -41,3 +41,7 @@ pnpm-debug.log*
 # Test / coverage
 coverage/
 .cache/
+
+# Playwright
+test-results/
+playwright-report/

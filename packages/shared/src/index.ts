@@ -1,3 +1,5 @@
+export * from './friend.js';
+
 /**
  * @chesser/shared — types shared between the web client and the engine server.
  *

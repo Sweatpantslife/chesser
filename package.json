@@ -20,10 +20,12 @@
     "dev:web": "pnpm --filter @chesser/web dev",
     "build": "pnpm --filter @chesser/shared build && pnpm --filter @chesser/server build && pnpm --filter @chesser/web build",
     "test": "pnpm --filter @chesser/shared build && pnpm --filter @chesser/server test && pnpm validate:trainers",
+    "test:e2e": "playwright test",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "typescript": "^5.6.3"
   },
   "pnpm": {
