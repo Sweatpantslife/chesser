@@ -12,7 +12,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Score } from '@chesser/shared';
 import { engine } from '../lib/engine';
+import { deriveGameResult } from '../lib/gameResult';
 import { useGame } from './game';
+import { useLadder } from './ladder';
 import { useRatings } from './ratings';
 
 // The store schedules UI timers via `window.*`; point it at globalThis.
@@ -35,6 +37,7 @@ engine.evalOnce = async () => {
 };
 
 const bots = () => useRatings.getState().categories.bots;
+const blitz = () => useRatings.getState().categories.blitz;
 // A roster/ladder-style opponent (has an id) — its standard-start games are rated.
 const OPPONENT = { id: 'test-bot', name: 'Testbot', rating: 1600 };
 
@@ -178,7 +181,10 @@ test('games from a pasted FEN are casual even against a roster opponent', () => 
 
 test('a very early agreed draw is rating-neutral (defence in depth)', () => {
   useRatings.getState().reset();
-  useGame.getState().newGame({ mode: 'play', playerColor: 'white', setupSan: ['e4', 'e5'], opponent: { name: 'GM Bot', rating: 2800 } });
+  // Deliberately an otherwise-RATED setup (roster opponent, standard start,
+  // no takebacks), so the unrated verdict can only come from the
+  // early-agreed-draw branch itself.
+  useGame.getState().newGame({ mode: 'play', playerColor: 'white', setupSan: ['e4', 'e5'], opponent: OPPONENT });
   const eloBefore = bots().elo;
 
   // Force the "agreed draw" ending directly — even if some path ever produces
@@ -194,4 +200,97 @@ test('a very early agreed draw is rating-neutral (defence in depth)', () => {
   assert.ok(s.gameSummary);
   assert.equal(s.gameSummary!.rated, false);
   assert.equal(s.gameSummary!.ratingDelta, 0);
+});
+
+test('analysis board: threefold repetition annotates but never ends the game or blocks moves', () => {
+  useGame.getState().newGame({ mode: 'analysis' });
+  const shuffleUci = ['g1f3', 'g8f6', 'f3g1', 'f6g8', 'g1f3', 'g8f6', 'f3g1', 'f6g8'];
+  for (const uci of shuffleUci) useGame.getState().userMove(uci.slice(0, 2), uci.slice(2, 4));
+
+  const s = useGame.getState();
+  assert.equal(s.isGameOver, false, 'exploration must never auto-end on repetition');
+  assert.equal(s.winner, null);
+  assert.match(s.status, /threefold repetition/i, 'still annotated in the status line');
+
+  useGame.getState().userMove('e2', 'e4'); // moving on must still work
+  assert.equal(useGame.getState().history.length, 9, 'move accepted after the third occurrence');
+  assert.doesNotMatch(useGame.getState().status, /repetition/i);
+});
+
+test('a decisive PGN passing through a repetition exports 1-0 at every ply', () => {
+  const pgn = '1. Nf3 Nf6 2. Ng1 Ng8 3. Nf3 Nf6 4. Ng1 Ng8 5. e4 e5 6. Qh5 Nc6 7. Bc4 Nf6 8. Qxf7# 1-0';
+  assert.equal(useGame.getState().loadPgn(pgn), true);
+  const plies = useGame.getState().history.length;
+  assert.equal(plies, 15);
+  for (let ply = 0; ply <= plies; ply++) {
+    useGame.getState().goToPly(ply);
+    assert.equal(deriveGameResult(useGame.getState()), '1-0', `wrong result when viewing ply ${ply}`);
+  }
+});
+
+test('takeback makes the game unrated: a retried win records no Elo/XP/ladder credit', async () => {
+  useRatings.getState().reset();
+  const opp = { id: 'takeback-bot', name: 'Takeback Bot', rating: 1600 };
+  useGame.getState().newGame({ mode: 'play', playerColor: 'white', setupSan: MATE_SETUP, opponent: opp });
+
+  useGame.getState().takeback(); // undoes 3...Nf6 and 3.Qh5 — the "retry" move
+  assert.equal(useGame.getState().takebackUsed, true);
+  assert.equal(useGame.getState().history.length, 4);
+
+  // Retry the winning attempt: replay Qh5, scripted bot reply Nf6, then mate.
+  const originalBotMove = engine.botMove;
+  engine.botMove = (async () => ({ uci: 'g8f6' })) as unknown as typeof engine.botMove;
+  useGame.getState().userMove('d1', 'h5');
+  await new Promise((r) => setTimeout(r, 800)); // bot reply fires on a 300ms timer
+  engine.botMove = originalBotMove;
+  assert.equal(useGame.getState().history.length, 6, 'bot replied');
+
+  useGame.getState().userMove('h5', 'f7'); // Qxf7#
+  const s = useGame.getState();
+  assert.equal(s.isGameOver, true);
+  assert.equal(s.winner, 'white');
+  assert.equal(bots().played, 0, 'takeback game must not touch ratings');
+  assert.ok(s.gameSummary);
+  assert.equal(s.gameSummary!.rated, false);
+  assert.equal('takeback-bot' in useLadder.getState().defeated, false, 'no ladder credit');
+});
+
+test('flagging on time records the loss once and resumes the analysis stream', () => {
+  useRatings.getState().reset();
+  useGame.getState().setTimeControl({ initialMs: 1000, incrementMs: 0, label: 'test 1+0' });
+  useGame.getState().newGame({ mode: 'play', playerColor: 'white', setupSan: ['e4', 'e5'], opponent: OPPONENT });
+  analyzeCalls.length = 0;
+
+  useGame.getState()._tick(5000); // the player (white, to move) flags
+
+  const s = useGame.getState();
+  assert.equal(s.isGameOver, true);
+  assert.equal(s.winner, 'black');
+  assert.equal(s.endReason, 'on time');
+  assert.equal(blitz().played, 1, 'timed game recorded under blitz');
+  assert.equal(blitz().lost, 1);
+  assert.ok(analyzeCalls.length > 0, 'post-game analysis stream resumes after a flag');
+  useGame.getState().setTimeControl(null); // don't leak the clock into later tests
+});
+
+test('casual endgame practice: the bot answers early draw offers on the merits', async () => {
+  useRatings.getState().reset();
+  evalCp = 0;
+  evalCalls = 0;
+  useGame.getState().newGame({
+    mode: 'play',
+    playerColor: 'white',
+    startFen: 'r3k3/8/8/8/8/8/8/R3K3 w - - 0 1', // dead-equal R+K vs R+K
+    setupSan: ['Rb1', 'Rb8'],
+    opponent: { name: 'Endgame Sparring', rating: 1600 },
+  });
+  await useGame.getState().offerDraw();
+
+  const s = useGame.getState();
+  assert.equal(s.drawOffer, 'accepted', 'no 20-move stonewall in casual games');
+  assert.equal(s.winner, 'draw');
+  assert.ok(evalCalls > 0, 'decided on the evaluation, not the ply floor');
+  assert.equal(bots().played, 0, 'casual game — the draw is unrated');
+  assert.ok(s.gameSummary);
+  assert.equal(s.gameSummary!.rated, false);
 });

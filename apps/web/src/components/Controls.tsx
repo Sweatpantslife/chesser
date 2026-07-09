@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Chess } from 'chess.js';
 import { useGame } from '../store/game';
 import { useAuth } from '../store/auth';
 import { toPgn } from '../lib/pgn';
+import { deriveGameResult } from '../lib/gameResult';
 import { apiSaveGame } from '../lib/api';
 import { LibraryDialog } from './LibraryDialog';
 import { SaveLineDialog } from './SaveLineDialog';
@@ -35,30 +35,7 @@ export function Controls() {
   };
 
   /** PGN result of the current game — '*' only when it's genuinely unfinished. */
-  const gameResult = (): string => {
-    // A finished bot game's summary is authoritative (it survives switching to
-    // the analysis board and covers resignations, flags and agreed draws).
-    if (gameSummary && gameSummary.gameNo === gameNo) {
-      if (gameSummary.outcome === 'draw') return '1/2-1/2';
-      const winColor = gameSummary.outcome === 'win' ? gameSummary.playerColor : gameSummary.playerColor === 'white' ? 'black' : 'white';
-      return winColor === 'white' ? '1-0' : '0-1';
-    }
-    // Live store outcome (play mode, or a terminal viewed position).
-    if (isGameOver && winner) return winner === 'draw' ? '1/2-1/2' : winner === 'white' ? '1-0' : '0-1';
-    // Otherwise inspect the end of the line being exported (the user may be
-    // viewing an earlier ply of a line that ends in mate/stalemate).
-    const endFen = history[history.length - 1]?.fen;
-    if (endFen) {
-      try {
-        const c = new Chess(endFen);
-        if (c.isCheckmate()) return c.turn() === 'w' ? '0-1' : '1-0';
-        if (c.isStalemate() || c.isInsufficientMaterial()) return '1/2-1/2';
-      } catch {
-        /* fall through to unfinished */
-      }
-    }
-    return '*';
-  };
+  const gameResult = (): string => deriveGameResult({ gameSummary, gameNo, isGameOver, winner, history });
 
   const copyPgn = async () => {
     const { white, black } = names();

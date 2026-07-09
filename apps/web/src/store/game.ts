@@ -229,6 +229,12 @@ export interface GameStore {
    * Guards the exactly-once recording in {@link _recordFinishedGame}.
    */
   scoredGameNo: number;
+  /**
+   * The player used takeback in this play-mode game. Takebacks are a training
+   * aid, so the game still finishes normally — but it records as unrated
+   * (retrying blunders until a win would otherwise farm Elo/XP/ladder rungs).
+   */
+  takebackUsed: boolean;
   /** Set when a game ends by resignation / agreed draw / claimed draw. */
   manualResult: ManualResult | null;
   /** Transient state of a pending draw offer to the bot. */
@@ -367,6 +373,7 @@ export const useGame = create<GameStore>((set, get) => ({
   opponent: null,
   gameNo: 0,
   scoredGameNo: 0,
+  takebackUsed: false,
   manualResult: null,
   drawOffer: 'idle',
   playSetup: null,
@@ -455,6 +462,7 @@ export const useGame = create<GameStore>((set, get) => ({
       botConfig,
       opponent,
       gameNo: get().gameNo + 1,
+      takebackUsed: false,
       playSetup,
       manualResult: null,
       drawOffer: 'idle',
@@ -657,6 +665,10 @@ export const useGame = create<GameStore>((set, get) => ({
       coachPlaying: false,
       manualResult: null, // taking back un-ends a resigned / drawn game
       drawOffer: 'idle',
+      // Taking back in a game makes it a training game: it still plays out
+      // normally but records as unrated (no Elo/XP/ladder), otherwise
+      // blunder → takeback → retry would farm rated wins.
+      ...(s.mode === 'play' ? { takebackUsed: true } : {}),
     });
     get()._sync();
     get()._refreshAnalysis();
@@ -751,9 +763,15 @@ export const useGame = create<GameStore>((set, get) => ({
       }, 2600);
     };
     const plies = mainlineOf(s.tree, s.rootId).length;
+    // The anti-farming ply floor only matters for rated games. Casual games
+    // (custom opponents, pasted-FEN starts, post-takeback) can't move ratings,
+    // so a drawn endgame being practised from a FEN deserves an honest answer:
+    // treat them as played-out and decide on the evaluation alone.
+    const casual = !s.opponent?.id || s.tree[s.rootId]!.fen !== STARTING_FEN || s.takebackUsed;
+    const effPlies = casual ? Math.max(plies, MIN_DRAW_ACCEPT_PLIES) : plies;
     // Far too early for the bot to even consider it — decline without an eval.
     // (Accepting move-2 draws was an infinite rating-farming exploit.)
-    if (plies < MIN_DRAW_ACCEPT_PLIES) {
+    if (effPlies < MIN_DRAW_ACCEPT_PLIES) {
       decline();
       return;
     }
@@ -767,7 +785,7 @@ export const useGame = create<GameStore>((set, get) => ({
       const whiteCp = !score ? null : score.kind === 'mate' ? (score.value > 0 ? 10_000 : score.value < 0 ? -10_000 : 0) : score.value;
       const botCp = whiteCp === null ? null : botColor === 'white' ? whiteCp : -whiteCp;
       // The bot agrees only in genuinely drawish, sufficiently played-out spots.
-      if (botAcceptsDraw({ plies, botCp, fen })) {
+      if (botAcceptsDraw({ plies: effPlies, botCp, fen })) {
         set({ drawOffer: 'accepted', manualResult: { winner: 'draw', reason: 'Draw agreed' }, thinking: false });
         gameId++;
         get()._sync();
@@ -864,6 +882,7 @@ export const useGame = create<GameStore>((set, get) => ({
       endReason: '',
       drawClaimable: false,
       gameNo: get().gameNo + 1,
+      takebackUsed: false,
       tree,
       rootId,
       currentId: rootId,
@@ -908,6 +927,7 @@ export const useGame = create<GameStore>((set, get) => ({
       manualResult: null,
       drawOffer: 'idle',
       gameNo: get().gameNo + 1,
+      takebackUsed: false,
       orientation: c.turn() === 'b' ? 'black' : 'white',
       tree,
       rootId,
@@ -1089,6 +1109,9 @@ export const useGame = create<GameStore>((set, get) => ({
     if (left <= 0) {
       set({ clock, flagged: turn });
       get()._sync();
+      // The game just ended on time — restart the (in-play suppressed)
+      // analysis stream, like every other terminal path does.
+      get()._refreshAnalysis();
     } else {
       set({ clock });
     }
@@ -1160,16 +1183,25 @@ export const useGame = create<GameStore>((set, get) => ({
       // side to move + castling + en-passant rights) along the played line.
       const threefold = countRepetitions(positionsTo(s.tree, s.mode === 'play' ? tipId : s.currentId), outcomeFen) >= 3;
       const fiftyMove = Number(outcomeFen.split(' ')[4] ?? '0') >= 100;
+      const moveStatus = `${cap(liveColor)} to move${outcome.inCheck() ? ' — check' : ''}`;
       if ((threefold || fiftyMove) && s.mode === 'play') {
         drawClaimable = true;
         status = threefold ? 'Threefold repetition — you can claim a draw' : 'Fifty-move rule — you can claim a draw';
-      } else if (threefold || fiftyMove) {
+      } else if (fiftyMove && s.mode !== 'play') {
+        // The 50-move rule is derivable from the FEN alone, matching what the
+        // board itself refuses to play past — terminal on the analysis board.
         isGameOver = true;
         winner = 'draw';
-        endReason = threefold ? 'threefold repetition' : 'fifty-move rule';
-        status = `Draw — ${endReason}`;
+        endReason = 'fifty-move rule';
+        status = 'Draw — fifty-move rule';
+      } else if (threefold && s.mode !== 'play') {
+        // NEVER terminal on the analysis board: positions recur constantly
+        // while exploring lines, and ending the "game" here would silently
+        // block every further move (and mislabel decisive games as draws
+        // when exported at the repeated ply). Annotate the status only.
+        status = `${moveStatus} · threefold repetition`;
       } else {
-        status = `${cap(liveColor)} to move${outcome.inCheck() ? ' — check' : ''}`;
+        status = moveStatus;
       }
     }
 
@@ -1229,11 +1261,13 @@ export const useGame = create<GameStore>((set, get) => ({
       s.opponent?.rating ?? (s.botConfig.style === 'human' ? s.botConfig.maiaRating : s.botConfig.elo) ?? 1500;
     const timed = s.clock !== null;
 
-    // Only proper games count for rating: a roster (ladder) opponent playing
-    // from the standard initial position. Custom games — hand-picked bots,
-    // pasted-FEN starts, pre-played openings — are casual (no Elo/XP): an
-    // arbitrary start position vs a mismatched bot was a trivial rating farm.
-    const casual = !s.opponent?.id || s.tree[s.rootId]!.fen !== STARTING_FEN;
+    // Only proper games count for rating: a roster (ladder) opponent, playing
+    // from the standard initial position, with no takebacks. Custom-tab games
+    // (hand-picked bots, which never carry a roster id) and pasted-FEN starts
+    // are casual (no Elo/XP): an arbitrary start position vs a mismatched bot
+    // was a trivial rating farm. Takebacks turn the game into a training game:
+    // blunder → takeback → retry must not farm rated wins.
+    const casual = !s.opponent?.id || s.tree[s.rootId]!.fen !== STARTING_FEN || s.takebackUsed;
     // Very early agreed draws are rating-neutral even in proper games, so a
     // quick handshake can never farm rating points.
     const earlyAgreedDraw = outcome === 'draw' && s.endReason === 'Draw agreed' && !agreedDrawIsRated(plies);
