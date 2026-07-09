@@ -197,7 +197,7 @@ export function playSound(cue: SoundCue): void {
 
 /** Play a sound appropriate to a move's SAN (mate/check/capture/castle/promotion/quiet). */
 export function playMoveSound(san: string): void {
-  if (!enabled()) return;
+  if (!enabled() || !san) return;
   try {
     if (san.includes('#')) checkmate();
     else if (san.includes('+')) check();
