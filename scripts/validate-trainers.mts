@@ -173,6 +173,9 @@ for (const s of ENDGAMES) {
   if (game.isGameOver()) fail(s.id, `study starts in a finished position (${s.fen})`);
   const sideToMove = game.turn() === 'w' ? 'white' : 'black';
   if (sideToMove !== s.youPlay) fail(s.id, `it must be your move at the start: FEN says ${sideToMove}, youPlay is ${s.youPlay}`);
+  // Curated studies start from a quiet position — never with the trainee in
+  // check (the old rook-draw FEN began in check with the checking rook en prise).
+  if (game.inCheck()) fail(s.id, `study starts with ${sideToMove} in check (${s.fen})`);
 }
 
 console.log(`\nOpening lines (${OPENING_LINES.length})`);

@@ -81,7 +81,9 @@ export const ENDGAMES: EndgameStudy[] = [
     name: 'Queen vs Rook',
     youPlay: 'white',
     goal: 'win',
-    fen: '4k3/8/8/8/8/8/4r3/3QK3 w - - 0 1',
+    // Rook defended by its king (the old FEN started with White in check and
+    // the rook en prise to Kxe2 — the drill was over on move one).
+    fen: '6k1/5r2/8/3Q4/8/8/8/6K1 w - - 0 1',
     technique: 'Win the rook or mate by forcing the defender into checks and forks (the Philidor technique).',
   },
   {
@@ -97,9 +99,11 @@ export const ENDGAMES: EndgameStudy[] = [
     name: 'Rook Endgame — Defensive Draw',
     youPlay: 'black',
     goal: 'draw',
-    fen: '8/8/8/3PK3/8/8/r7/4Rk2 b - - 0 1',
+    // Textbook Philidor position (the old FEN started with Black in check,
+    // able to simply take the hanging rook — the advertised defence never arose).
+    fen: '4k3/8/r7/4K3/4P3/8/8/7R b - - 0 1',
     technique:
-      'A rook down a pawn can still draw: keep the rook active and check from a distance so the enemy king never shelters. Hold it.',
+      'The Philidor defence: keep your rook on your third rank so the king can never come forward; the moment the pawn advances, drop the rook behind for endless checks. Hold it.',
   },
   {
     id: 'two-knights',
