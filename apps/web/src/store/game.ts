@@ -4,7 +4,7 @@ import type { AnalysisLine, BotConfig, BotStyle, EngineAvailability, Score } fro
 import { STARTING_FEN } from '@chesser/shared';
 import { engine } from '../lib/engine';
 import { whiteWinPercent } from '../lib/format';
-import { playMoveSound } from '../lib/sound';
+import { playMoveSound, playSound } from '../lib/sound';
 import { buildMoveReviews, checkmateWinner, cpOf, type MoveReview, type PositionEval } from '../lib/coach';
 import { detectOpening } from '../lib/openings';
 import { countRepetitions } from '../lib/repetition';
@@ -490,6 +490,7 @@ export const useGame = create<GameStore>((set, get) => ({
       coachActive: false,
       coachPlaying: false,
     });
+    if (cfg.mode === 'play') playSound('gameStart');
     get()._sync();
     get()._refreshAnalysis();
     get()._maybeTriggerBot();

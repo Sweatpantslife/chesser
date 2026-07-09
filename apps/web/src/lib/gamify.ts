@@ -18,6 +18,7 @@ import { useLadder } from '../store/ladder';
 import { useLessons } from '../store/lessons';
 import { ROSTER_BY_ID } from '../data/botRoster';
 import { ACHIEVEMENTS_BY_ID, evaluateAchievements, type AchievementCtx } from './achievements';
+import { playSound } from './sound';
 
 // — Event bus (toasts subscribe to this) —
 export type GamifyEvent =
@@ -38,8 +39,14 @@ function emit(e: GamifyEvent): void {
 /** Award XP and surface any level-up / daily-goal-met as toast events. */
 function applyAward(amount: number, countsAsActivity = true): AwardResult {
   const res = useGamify.getState().award(amount, countsAsActivity);
-  if (res.leveledUp) emit({ kind: 'level', level: res.level });
-  if (res.goalJustMet) emit({ kind: 'goal', streak: res.streak });
+  if (res.leveledUp) {
+    playSound('levelUp');
+    emit({ kind: 'level', level: res.level });
+  }
+  if (res.goalJustMet) {
+    playSound('streak');
+    emit({ kind: 'goal', streak: res.streak });
+  }
   return res;
 }
 
@@ -114,6 +121,7 @@ function runAchievements(opts: { silent?: boolean } = {}): void {
       const a = ACHIEVEMENTS_BY_ID[id];
       if (!a) continue;
       if (a.xp > 0) applyAward(a.xp, false);
+      playSound('achievement');
       emit({ kind: 'achievement', id: a.id, name: a.name, icon: a.icon, xp: a.xp });
     }
   }
@@ -124,6 +132,7 @@ function runAchievements(opts: { silent?: boolean } = {}): void {
 /** A rated tactics puzzle was attempted. Updates the puzzles rating + XP. */
 export function recordPuzzle(puzzleRating: number, success: boolean): { eloDelta: number; elo: number; glickoDelta: number; glicko: number } {
   const res = useRatings.getState().record('puzzles', puzzleRating, success ? 'win' : 'loss');
+  playSound(success ? 'puzzleSolved' : 'wrongMove');
   applyAward(success ? 8 : 3);
   runAchievements();
   return res;
@@ -131,6 +140,7 @@ export function recordPuzzle(puzzleRating: number, success: boolean): { eloDelta
 
 /** A spaced-repetition card (openings / mates / anti-blunder) was graded. */
 export function recordReview(correct: boolean): void {
+  playSound(correct ? 'xpGain' : 'wrongMove');
   applyAward(correct ? 6 : 2);
   runAchievements();
 }
@@ -148,6 +158,7 @@ export function recordGameResult(opts: { opponentRating: number; outcome: GameOu
   const category: RatingCategory = opts.timed ? 'blitz' : 'bots';
   const before = useRatings.getState().categories[category].elo;
   const rec = useRatings.getState().record(category, opts.opponentRating, opts.outcome);
+  playSound(opts.outcome === 'win' ? 'gameWin' : opts.outcome === 'draw' ? 'gameDraw' : 'gameLoss');
   // Base XP by result, with an upset bonus for beating a stronger opponent.
   let xp = opts.outcome === 'win' ? 25 : opts.outcome === 'draw' ? 12 : 6;
   if (opts.outcome === 'win' && opts.opponentRating > before) xp += Math.min(25, Math.round((opts.opponentRating - before) / 25));
@@ -158,6 +169,7 @@ export function recordGameResult(opts: { opponentRating: number; outcome: GameOu
 
 /** A lesson was finished. First completions pay full XP; replays a token amount. */
 export function recordLesson(opts: { firstTime: boolean; stars: number }): void {
+  playSound('lessonComplete');
   applyAward(opts.firstTime ? 15 + opts.stars * 5 : 5);
   runAchievements();
 }
