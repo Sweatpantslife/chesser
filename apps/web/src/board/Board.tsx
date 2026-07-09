@@ -20,6 +20,13 @@ export interface BoardProps {
   premove?: boolean;
   /** Auto-drawn shapes (e.g. engine best-move arrows). */
   shapes?: DrawShape[];
+  /**
+   * Bump to force a re-sync with chessground even when no other prop changed.
+   * Needed to snap back a rejected move: chessground has already moved the
+   * piece internally, but the rejecting page's state (fen/lastMove/dests) is
+   * unchanged, so no other dependency of the sync effect fires.
+   */
+  syncKey?: number;
 }
 
 const NO_SHAPES: DrawShape[] = [];
@@ -138,7 +145,7 @@ export const Board = memo(function Board(props: BoardProps) {
     // After the position updates to our turn, fire a queued premove if legal.
     if (premoveOn) apiRef.current?.playPremove();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.fen, props.orientation, props.turnColor, props.movableColor, props.lastMove, props.inCheck, props.dests, premoveOn]);
+  }, [props.fen, props.orientation, props.turnColor, props.movableColor, props.lastMove, props.inCheck, props.dests, premoveOn, props.syncKey]);
 
   // engine/auto arrows update independently of position changes
   useEffect(() => {

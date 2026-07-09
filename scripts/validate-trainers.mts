@@ -1,11 +1,14 @@
-// Validate the curated trainer datasets (mate patterns, anti-blunder positions
-// and calculation puzzles) with chess.js: every FEN must be legal, every mating
-// line must actually mate, every blunder refutation must be a forced mate, and
-// every calculation line must be legal. Run with the workspace's tsx:
+// Validate the bundled trainer datasets (mate patterns, anti-blunder positions,
+// calculation puzzles, tactics puzzles, endgame studies and opening lines) with
+// chess.js: every FEN must be legal, every mating line must actually mate,
+// every blunder refutation must be a forced mate, every solution/opening line
+// must be legal move by move. Run with the workspace's tsx:
 //
 //   pnpm validate:trainers
 //
-// This keeps the hand-authored chess data honest.
+// This keeps the hand-authored and generated chess data honest — a puzzle whose
+// solution can't be replayed from its FEN is unsolvable as served (the tactics
+// set is also what the blindfold trainer draws its 'easy' puzzles from).
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -16,9 +19,13 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(path.join(ROOT, 'apps/server/package.json'));
 const { Chess } = require('chess.js');
 
+import { mateInOneUci } from '../apps/web/src/lib/threats.ts';
 import { MATE_DRILLS } from '../apps/web/src/trainers/mates.ts';
 import { BLUNDER_POSITIONS } from '../apps/web/src/trainers/blunders.ts';
 import { CALC_PUZZLES } from '../apps/web/src/trainers/calc.ts';
+import { PUZZLES } from '../apps/web/src/trainers/tactics.ts';
+import { ENDGAMES } from '../apps/web/src/trainers/endgames.ts';
+import { OPENING_LINES } from '../apps/web/src/trainers/openings.ts';
 
 let failures = 0;
 const fail = (id: string, msg: string) => {
@@ -87,6 +94,13 @@ for (const b of BLUNDER_POSITIONS) {
     }
   }
   if (ok && !rg.isCheckmate()) fail(b.id, `refutation does not end in checkmate (final ${rg.fen()})`);
+  // The trainer busts any move that leaves the opponent a mate-in-one, so the
+  // model move must genuinely survive that check (and the tempting one fail it).
+  const bg = new Chess(b.fen);
+  if (b.best[0] && tryMove(bg, uci(b.best[0]))) {
+    const hangs = mateInOneUci(bg.fen());
+    if (hangs) fail(b.id, `best move ${b.best[0]} still allows mate-in-one (${hangs})`);
+  }
 }
 
 console.log(`\nCalculation puzzles (${CALC_PUZZLES.length})`);
@@ -114,6 +128,64 @@ for (const c of CALC_PUZZLES) {
     console.log(
       `  · ${c.id}: last=${last?.san} to=${last?.to} check=${game.isCheck()} mate=${game.isCheckmate()} → answer="${c.choices[c.answer]}"`,
     );
+  }
+}
+
+console.log(`\nTactics puzzles (${PUZZLES.length}) — also serves the blindfold trainer ('easy' subset)`);
+for (const p of PUZZLES) {
+  let game: any;
+  try {
+    game = new Chess(p.fen);
+  } catch (e) {
+    fail(p.id, `illegal FEN: ${(e as Error).message}`);
+    continue;
+  }
+  const sideToMove = game.turn() === 'w' ? 'white' : 'black';
+  if (sideToMove !== p.turn) fail(p.id, `turn mismatch: FEN says ${sideToMove}, puzzle says ${p.turn}`);
+  if (!p.solution.length) {
+    fail(p.id, 'empty solution');
+    continue;
+  }
+  // The whole solution line must replay legally from the FEN (the key move is
+  // what the tactics/rush/blindfold trainers accept; the rest is animated).
+  for (const mv of p.solution) {
+    if (!tryMove(game, uci(mv))) {
+      fail(p.id, `illegal solution move ${mv} (after ${game.history().join(' ') || 'start'})`);
+      break;
+    }
+  }
+  // "Mate in 1" puzzles must actually mate with the key move.
+  if (p.theme === 'Mate in 1') {
+    const g1 = new Chess(p.fen);
+    if (!tryMove(g1, uci(p.solution[0]!)) || !g1.isCheckmate()) fail(p.id, `theme "Mate in 1" but the key move does not mate`);
+  }
+}
+
+console.log(`\nEndgame studies (${ENDGAMES.length})`);
+for (const s of ENDGAMES) {
+  let game: any;
+  try {
+    game = new Chess(s.fen);
+  } catch (e) {
+    fail(s.id, `illegal FEN: ${(e as Error).message}`);
+    continue;
+  }
+  if (game.isGameOver()) fail(s.id, `study starts in a finished position (${s.fen})`);
+  const sideToMove = game.turn() === 'w' ? 'white' : 'black';
+  if (sideToMove !== s.youPlay) fail(s.id, `it must be your move at the start: FEN says ${sideToMove}, youPlay is ${s.youPlay}`);
+  // Curated studies start from a quiet position — never with the trainee in
+  // check (the old rook-draw FEN began in check with the checking rook en prise).
+  if (game.inCheck()) fail(s.id, `study starts with ${sideToMove} in check (${s.fen})`);
+}
+
+console.log(`\nOpening lines (${OPENING_LINES.length})`);
+for (const l of OPENING_LINES) {
+  const game = new Chess();
+  for (const san of l.moves) {
+    if (!tryMove(game, san)) {
+      fail(l.id, `illegal line move ${san} (after ${game.history().join(' ') || 'start'})`);
+      break;
+    }
   }
 }
 

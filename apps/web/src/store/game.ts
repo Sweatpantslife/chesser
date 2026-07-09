@@ -5,7 +5,7 @@ import { STARTING_FEN } from '@chesser/shared';
 import { engine } from '../lib/engine';
 import { whiteWinPercent } from '../lib/format';
 import { playMoveSound } from '../lib/sound';
-import { buildMoveReviews, cpOf, type MoveReview, type PositionEval } from '../lib/coach';
+import { buildMoveReviews, checkmateWinner, cpOf, type MoveReview, type PositionEval } from '../lib/coach';
 import { detectOpening } from '../lib/openings';
 import { countRepetitions } from '../lib/repetition';
 import { agreedDrawIsRated, botAcceptsDraw, MIN_DRAW_ACCEPT_PLIES } from '../lib/drawPolicy';
@@ -1006,8 +1006,17 @@ export const useGame = create<GameStore>((set, get) => ({
 
     // Per-move accuracy (Lichess curve) + centipawn loss; annotations are derived
     // from the rich grades so the move list, eval graph and counts agree.
-    const winWhite = evals.map((e) => whiteWinPercent(e.score));
-    const cpWhite = evals.map((e) => cpOf(e.score));
+    // Terminal positions have no engine eval (score null → 50/50), so score a
+    // checkmate from its FEN — otherwise the mating move reads as a huge drop.
+    const mateWinner = fens.map((f) => checkmateWinner(f));
+    const winWhite = evals.map((e, i) => {
+      const w = mateWinner[i];
+      return w ? (w === 'white' ? 100 : 0) : whiteWinPercent(e.score);
+    });
+    const cpWhite = evals.map((e, i) => {
+      const w = mateWinner[i];
+      return w ? (w === 'white' ? 1500 : -1500) : cpOf(e.score);
+    });
     const moveReviews: Record<string, MoveReview> = {};
     const ann: Record<string, Annotation> = {};
     const agg = { white: { accSum: 0, cpl: 0, moves: 0 }, black: { accSum: 0, cpl: 0, moves: 0 } };

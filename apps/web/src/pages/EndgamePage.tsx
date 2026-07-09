@@ -15,9 +15,17 @@ type Phase = 'playing' | 'won' | 'drawn' | 'lost';
 
 const HOLD_PLIES = 20; // plies to survive before a draw study counts as held
 
+/** Men on the board — positions with more than 7 are outside tablebase coverage. */
+const pieceCount = (fen: string) => fen.split(' ')[0]!.replace(/[^a-zA-Z]/g, '').length;
+
 export function EndgamePage() {
   const game = useRef(new Chess());
   const gameId = useRef(0);
+  // Tablebase data tagged with the position it belongs to. `tb` (state) drives
+  // the status line; judging a played move must only ever use data for the
+  // exact position moved from, never a stale snapshot.
+  const tbFor = useRef<{ fen: string; res: TablebaseResult } | null>(null);
+  const moveSeq = useRef(0);
   const [study, setStudy] = useState<EndgameStudy>(ENDGAMES[0]!);
   const [phase, setPhase] = useState<Phase>('playing');
   const [fen, setFen] = useState(game.current.fen());
@@ -52,12 +60,15 @@ export function EndgamePage() {
   // Keep tablebase data in sync with the position (best-effort; may be unavailable).
   useEffect(() => {
     let cancelled = false;
-    const pieces = fen.split(' ')[0]!.replace(/[^a-zA-Z]/g, '').length;
-    if (pieces > 7) {
+    if (pieceCount(fen) > 7) {
       setTb(null);
       return;
     }
-    fetchTablebase(fen).then((r) => !cancelled && setTb(r.available ? r : null));
+    fetchTablebase(fen).then((r) => {
+      if (cancelled) return;
+      setTb(r.available ? r : null);
+      tbFor.current = r.available ? { fen, res: r } : null;
+    });
     return () => {
       cancelled = true;
     };
@@ -96,16 +107,21 @@ export function EndgamePage() {
   };
 
   const load = (s: EndgameStudy) => {
-    gameId.current++;
+    const id = ++gameId.current;
     game.current = new Chess(s.fen);
     setStudy(s);
     setPhase('playing');
     setThinking(false);
     setMoveNote(null);
     setTb(null);
+    tbFor.current = null;
     setFen(game.current.fen());
     setLastMove(undefined);
     setTimeout(() => {
+      // Only kick the defender for the load that scheduled this: switching
+      // studies within 300ms would otherwise run a stale askDefender closure
+      // (old study's side) against the new position.
+      if (gameId.current !== id) return;
       if (game.current.turn() !== (s.youPlay === 'white' ? 'w' : 'b')) askDefender();
     }, 300);
   };
@@ -141,8 +157,8 @@ export function EndgamePage() {
 
   const onMove = (from: string, to: string) => {
     if (!yourTurn) return;
+    const preFen = game.current.fen();
     const uci = from + to + (game.current.get(from as any)?.type === 'p' && (to[1] === '8' || to[1] === '1') ? 'q' : '');
-    const before = tb; // tablebase snapshot of the position we're moving from
     let mv;
     try {
       mv = game.current.move({ from, to, promotion: 'q' });
@@ -150,7 +166,25 @@ export function EndgamePage() {
       return;
     }
     if (mv) playMoveSound(mv.san);
-    setMoveNote(before ? judgeMove(before, uci, study.goal) : null);
+    // Judge the move against tablebase data for the exact position it was
+    // played from. The old `tb` snapshot could be null or two plies stale
+    // (fast play), mis-annotating optimal moves.
+    const before = tbFor.current?.fen === preFen ? tbFor.current.res : null;
+    const seq = ++moveSeq.current;
+    if (before) {
+      setMoveNote(judgeMove(before, uci, study.goal));
+    } else {
+      setMoveNote(null);
+      // Data for the pre-move position may still be in flight — judge when it
+      // arrives, unless the study reloaded or the player has moved again.
+      const id = gameId.current;
+      if (pieceCount(preFen) <= 7) {
+        fetchTablebase(preFen).then((r) => {
+          if (gameId.current !== id || moveSeq.current !== seq || !r.available) return;
+          setMoveNote(judgeMove(r, uci, study.goal));
+        });
+      }
+    }
     sync();
     const o = outcomeAfterMove();
     if (o !== 'playing') {

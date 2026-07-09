@@ -11,6 +11,7 @@ import { puzzleRatingOf } from '../lib/puzzleRating';
 import { recordPuzzle } from '../lib/gamify';
 import { classifyMotifs, MOTIF_LABELS, MOTIF_ORDER, type Motif } from '../lib/motifs';
 import { playMoveSound } from '../lib/sound';
+import { useTimeoutRef } from '../lib/useTimeoutRef';
 import { RushMode } from './RushMode';
 import { MistakesMode } from './MistakesMode';
 import { useMistakes } from '../store/mistakes';
@@ -70,6 +71,7 @@ function PracticeTactics() {
   const game = useRef(new Chess());
   const attempt = useRef({ failed: false, revealed: false, rated: false });
   const sessionSeen = useRef(new Set<string>());
+  const demoTimer = useTimeoutRef();
 
   const [source, setSource] = useState<Source>('builtin');
   const [diffFilter, setDiffFilter] = useState<DiffFilter>('all');
@@ -118,6 +120,10 @@ function PracticeTactics() {
   const load = (i: number, q = queue) => {
     const p = q[i];
     if (!p) return;
+    // Stop any in-flight solution animation: its pending ticks belong to the
+    // previous puzzle and would play illegal moves on the new position.
+    if (demoTimer.current) clearTimeout(demoTimer.current);
+    demoTimer.current = null;
     game.current = new Chess(p.fen);
     attempt.current = { failed: false, revealed: false, rated: false };
     setPos(i);
@@ -166,6 +172,7 @@ function PracticeTactics() {
   };
 
   const demoRest = (fromStep: number) => {
+    if (demoTimer.current) clearTimeout(demoTimer.current);
     let step = fromStep;
     const tick = () => {
       const uci = puzzle?.solution[step];
@@ -173,9 +180,9 @@ function PracticeTactics() {
       game.current.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] });
       sync();
       step++;
-      if (puzzle && step < puzzle.solution.length) setTimeout(tick, 600);
+      demoTimer.current = puzzle && step < puzzle.solution.length ? setTimeout(tick, 600) : null;
     };
-    setTimeout(tick, 500);
+    demoTimer.current = setTimeout(tick, 500);
   };
 
   const onMove = (from: string, to: string) => {

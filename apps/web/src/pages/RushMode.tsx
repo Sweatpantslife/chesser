@@ -5,6 +5,7 @@ import { PUZZLES, type Puzzle } from '../trainers/tactics';
 import { useRepertoire } from '../store/repertoire';
 import { playMoveSound } from '../lib/sound';
 import { recordRush } from '../lib/gamify';
+import { useTimeoutRef } from '../lib/useTimeoutRef';
 import type { Color } from '../store/game';
 
 const RUSH_SECONDS = 300;
@@ -29,6 +30,7 @@ export function RushMode() {
   const game = useRef(new Chess());
   const pool = useRef<Puzzle[]>([]);
   const busy = useRef(false);
+  const advanceTimer = useTimeoutRef();
   const [phase, setPhase] = useState<Phase>('idle');
   const [idx, setIdx] = useState(0);
   const [score, setScore] = useState(0);
@@ -55,6 +57,7 @@ export function RushMode() {
   };
 
   const start = () => {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current); // no stale advance into the new run
     pool.current = shuffleRamp();
     setScore(0);
     setStrikes(0);
@@ -64,6 +67,7 @@ export function RushMode() {
   };
 
   const finish = (finalScore: number) => {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
     setPhase('over');
     setHighScore(finalScore);
     recordRush(finalScore);
@@ -108,12 +112,12 @@ export function RushMode() {
       setFlash('ok');
       const next = score + 1;
       setScore(next);
-      setTimeout(() => loadAt(idx + 1), 300);
+      advanceTimer.current = setTimeout(() => loadAt(idx + 1), 300);
     } else {
       setFlash('bad');
       const s = strikes + 1;
       setStrikes(s);
-      setTimeout(() => {
+      advanceTimer.current = setTimeout(() => {
         if (s >= MAX_STRIKES) finish(score);
         else loadAt(idx + 1);
       }, 450);

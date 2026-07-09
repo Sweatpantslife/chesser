@@ -3,6 +3,7 @@ import { Chess } from 'chess.js';
 import { Board } from '../board/Board';
 import { ReviewStats } from '../components/ReviewStats';
 import { BLUNDER_POSITIONS, BLUNDER_IDS } from '../trainers/blunders';
+import { mateInOneUci } from '../lib/threats';
 import { useProgress } from '../store/progress';
 import { recordReview } from '../lib/gamify';
 import { playMoveSound } from '../lib/sound';
@@ -110,6 +111,20 @@ export function AntiBlunderPage() {
     const mv = game.current.move({ from, to });
     playMoveSound(mv.san);
     sync();
+    // Dodging the scripted move isn't enough — the move must actually survive
+    // the threat. Every drill's trap is an immediate mate, so a different move
+    // that still allows mate-in-one (e.g. Rd5 in the back-rank drill) is just
+    // as busted as the tempting one.
+    const mateUci = mateInOneUci(game.current.fen());
+    if (mateUci) {
+      const mateSan = sanOf(game.current.fen(), mateUci);
+      setPhase('busted');
+      grade('blunders', pos.id, 'again');
+      recordReview(false);
+      setFeedback({ kind: 'bad', text: `${mv.san}?? still loses — it allows ${mateSan}. ${pos.explanation}` });
+      playLine([mateUci], 0);
+      return;
+    }
     succeed(uci === pos.best[0]);
   };
 
@@ -131,7 +146,9 @@ export function AntiBlunderPage() {
     setPhase('busted');
     grade('blunders', pos.id, 'again');
     recordReview(false);
-    setFeedback({ kind: 'bad', text: `${temptingSan}?? ${pos.explanation}` });
+    // The explanations already open with the annotated move ("Rxd7?? …") —
+    // don't prepend it a second time.
+    setFeedback({ kind: 'bad', text: pos.explanation });
     // Replay the full refutation from the original position.
     game.current = new Chess(pos.fen);
     setFen(game.current.fen());
