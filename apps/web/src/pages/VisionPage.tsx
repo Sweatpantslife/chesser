@@ -220,7 +220,10 @@ function pieceList(fen: string): { white: string; black: string } {
 const EASY = PUZZLES.filter((p) => p.difficulty === 'easy');
 
 function Blindfold() {
-  const game = useRef(new Chess());
+  // Start from the first puzzle's position — with a bare `new Chess()` the
+  // first puzzle was unsolvable: clicking the correct answer tried to play it
+  // on the STARTING position (wrong side to move) and chess.js threw.
+  const game = useRef(new Chess(EASY[0]?.fen));
   const [idx, setIdx] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [solved, setSolved] = useState(false);
