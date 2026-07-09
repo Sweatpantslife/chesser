@@ -19,6 +19,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(path.join(ROOT, 'apps/server/package.json'));
 const { Chess } = require('chess.js');
 
+import { mateInOneUci } from '../apps/web/src/lib/threats.ts';
 import { MATE_DRILLS } from '../apps/web/src/trainers/mates.ts';
 import { BLUNDER_POSITIONS } from '../apps/web/src/trainers/blunders.ts';
 import { CALC_PUZZLES } from '../apps/web/src/trainers/calc.ts';
@@ -93,6 +94,13 @@ for (const b of BLUNDER_POSITIONS) {
     }
   }
   if (ok && !rg.isCheckmate()) fail(b.id, `refutation does not end in checkmate (final ${rg.fen()})`);
+  // The trainer busts any move that leaves the opponent a mate-in-one, so the
+  // model move must genuinely survive that check (and the tempting one fail it).
+  const bg = new Chess(b.fen);
+  if (b.best[0] && tryMove(bg, uci(b.best[0]))) {
+    const hangs = mateInOneUci(bg.fen());
+    if (hangs) fail(b.id, `best move ${b.best[0]} still allows mate-in-one (${hangs})`);
+  }
 }
 
 console.log(`\nCalculation puzzles (${CALC_PUZZLES.length})`);
