@@ -116,7 +116,7 @@ export function MistakesMode() {
           >
             {card.severity}
           </span>
-          <span className="capitalize text-neutral-400">{card.side} to move</span>
+          <span className="text-neutral-400">{card.side === 'white' ? 'White' : 'Black'} to move</span>
         </div>
         <div className="mx-auto w-full max-w-[520px]">
           <Board

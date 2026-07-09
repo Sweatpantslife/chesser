@@ -143,13 +143,16 @@ export function StatsPage({ goto }: { goto: (target: DeckTarget) => void }) {
 
       <Section title="Activity" aside={<span className="text-xs text-neutral-400">last {HEATMAP_WEEKS} weeks</span>}>
         <Heatmap days={heat} />
-        <div className="mt-2 flex items-center justify-end gap-1.5 text-xs text-neutral-400">
-          less
-          {['#1b2029', '#14532d', '#166534', '#16a34a', '#34d399'].map((c) => (
-            <span key={c} className="h-2.5 w-2.5 rounded-[2px]" style={{ background: c }} />
-          ))}
-          more
-        </div>
+        {/* colour legend only makes sense once the calendar has data */}
+        {heat.some((d) => d.value > 0) && (
+          <div className="mt-2 flex items-center justify-end gap-1.5 text-xs text-neutral-400">
+            less
+            {['#1b2029', '#14532d', '#166534', '#16a34a', '#34d399'].map((c) => (
+              <span key={c} className="h-2.5 w-2.5 rounded-[2px]" style={{ background: c }} />
+            ))}
+            more
+          </div>
+        )}
       </Section>
 
       <Section title="Last 30 days" aside={<span className="text-xs text-neutral-400">reviews ▮ · accuracy ▬</span>}>

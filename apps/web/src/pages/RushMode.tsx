@@ -128,7 +128,7 @@ export function RushMode() {
         <div className="flex h-7 items-center gap-3 text-sm">
           {phase === 'running' && puzzle && (
             <>
-              <span className="capitalize text-neutral-400">{puzzle.turn} to move — find the win</span>
+              <span className="text-neutral-400">{puzzle.turn === 'white' ? 'White' : 'Black'} to move — find the win</span>
               {flash === 'ok' && <span className="text-emerald-400">✓</span>}
               {flash === 'bad' && <span className="text-rose-400">✗ strike!</span>}
             </>

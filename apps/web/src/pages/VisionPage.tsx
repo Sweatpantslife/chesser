@@ -295,7 +295,7 @@ function Blindfold() {
       <div className="space-y-3">
         <div className="flex h-7 items-center gap-2 text-sm text-neutral-400">
           <span className="rounded bg-neutral-700 px-2 py-0.5 text-xs text-neutral-200">Blindfold</span>
-          <span className="capitalize">{puzzle.turn} to play and win</span>
+          <span>{puzzle.turn === 'white' ? 'White' : 'Black'} to play and win</span>
         </div>
         <div className="mx-auto w-full max-w-[480px]">
           <CoordinateBoard

@@ -140,7 +140,11 @@ export function OpeningsPage() {
     setPly((p) => p + 1);
   };
 
-  const moveNo = Math.floor(ply / 2) + 1;
+  // For display, clamp to the line's last half-move: once the drill is done,
+  // ply === line.moves.length and the raw calc would show one move too many
+  // (e.g. "Move 9" after an 8-move line).
+  const displayPly = line && line.moves.length > 0 ? Math.min(ply, line.moves.length - 1) : ply;
+  const moveNo = Math.floor(displayPly / 2) + 1;
   const orientation: Color = side;
   const playedSan = game.current.history();
   const editable = !rep.builtin;

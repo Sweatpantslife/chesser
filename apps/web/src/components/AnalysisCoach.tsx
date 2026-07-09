@@ -61,7 +61,9 @@ export function AnalysisCoach() {
   return (
     <div className="rounded-lg bg-panel p-3">
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-ink">Game review</h3>
+        {/* ReviewPanel is also titled "Game review" and can be stacked with this
+            panel during a walkthrough — keep the two titles distinct. */}
+        <h3 className="text-sm font-semibold text-ink">Coach</h3>
         <div className="flex items-center gap-2">
           <span className="text-xs text-neutral-400">
             {Math.min(viewPly, len)} / {len}

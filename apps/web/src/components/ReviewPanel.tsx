@@ -181,7 +181,7 @@ export function ReviewPanel() {
           {genResult !== null && !gen && (
             <p className="mt-1.5 text-xs text-emerald-300">
               {genResult > 0
-                ? `✓ Added ${genResult} puzzle${genResult === 1 ? '' : 's'} — find them under Middlegame → My games.`
+                ? `✓ Added ${genResult} puzzle${genResult === 1 ? '' : 's'} — find them under Tactics → My games.`
                 : 'No new tactics found in this game.'}
             </p>
           )}

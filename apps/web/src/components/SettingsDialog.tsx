@@ -34,7 +34,7 @@ function Toggle({ on, onChange, label }: { on: boolean; onChange: (b: boolean) =
  *  so the swatch must be a real <piece> element — a class on a span never matches. */
 function PieceSwatch({ set }: { set: PieceSet }) {
   return (
-    <span className={`pieces-${set} block h-7 w-7`}>
+    <span className={`pieces-${set} block h-7 w-7`} aria-hidden="true">
       {createElement('piece', { className: 'king white piece-preview block h-full w-full' })}
     </span>
   );

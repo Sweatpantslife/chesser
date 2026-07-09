@@ -75,7 +75,7 @@ function AuthForm({ onClose }: { onClose: () => void }) {
         disabled={busy}
         className="w-full rounded bg-emerald-700 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
       >
-        {busy ? '…' : mode === 'login' ? 'Sign in' : 'Create account'}
+        {busy ? (mode === 'login' ? 'Signing in…' : 'Creating account…') : mode === 'login' ? 'Sign in' : 'Create account'}
       </button>
     </form>
   );
@@ -128,8 +128,19 @@ export function AccountButton() {
         )}
       </button>
       {open && (
-        <Modal onClose={() => setOpen(false)} label={username ? 'Account' : 'Sign in'} className="w-full max-w-xs rounded-xl bg-panel p-4 shadow-2xl">
+        <Modal
+          onClose={() => setOpen(false)}
+          label={username ? 'Account' : 'Sign in'}
+          className="relative w-full max-w-xs rounded-xl bg-panel p-4 shadow-2xl"
+        >
           {username ? <AccountInfo onClose={() => setOpen(false)} /> : <AuthForm onClose={() => setOpen(false)} />}
+          <button
+            onClick={() => setOpen(false)}
+            aria-label="Close"
+            className="absolute right-1.5 top-1.5 min-h-11 min-w-11 rounded px-1.5 py-1 text-sm text-neutral-400 hover:text-neutral-200 sm:min-h-0 sm:min-w-0"
+          >
+            ×
+          </button>
         </Modal>
       )}
     </>

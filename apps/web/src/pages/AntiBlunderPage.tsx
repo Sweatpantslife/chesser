@@ -214,7 +214,7 @@ export function AntiBlunderPage() {
       <div className="order-1 space-y-3 lg:order-2">
         <div className="flex h-7 items-center gap-2 text-sm">
           <span className="rounded bg-neutral-700 px-2 py-0.5 text-xs text-neutral-200">{pos.theme}</span>
-          <span className="capitalize text-neutral-400">{pos.turn} to move</span>
+          <span className="text-neutral-400">{pos.turn === 'white' ? 'White' : 'Black'} to move</span>
           {toMove && <span className="animate-pulse text-emerald-400">· your move</span>}
         </div>
         <div className="mx-auto w-full max-w-[540px]">

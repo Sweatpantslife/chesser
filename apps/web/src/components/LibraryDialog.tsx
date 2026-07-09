@@ -22,7 +22,10 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
   const [pgn, setPgn] = useState('');
 
   useEffect(() => {
-    if (tab === 'saved' && token) apiListGames(token).then((r) => setSaved(r.games)).catch(() => {});
+    if (tab === 'saved' && token)
+      apiListGames(token)
+        .then((r) => setSaved(r.games))
+        .catch(() => setMsg('Could not load your saved games — check your connection and reopen the library.'));
   }, [tab, token]);
 
   const open = (pgn: string) => {
@@ -122,7 +125,7 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
                 className="min-w-0 flex-1 rounded bg-neutral-800 px-2 py-1 text-sm text-ink outline-none"
               />
               <button onClick={runImport} disabled={busy || !user.trim()} className="rounded bg-emerald-700 px-3 py-1 text-sm font-semibold text-white disabled:opacity-50">
-                {busy ? '…' : 'Fetch'}
+                {busy ? 'Fetching…' : 'Fetch'}
               </button>
             </div>
             <div className="scroll-thin min-h-0 flex-1 overflow-y-auto">
@@ -196,8 +199,11 @@ export function LibraryDialog({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
-        <button onClick={onClose} className="mt-2 min-h-11 self-end rounded px-2 py-1 text-xs text-neutral-400 hover:text-neutral-300 sm:min-h-0">
-          close
+        <button
+          onClick={onClose}
+          className="mt-3 min-h-11 self-end rounded bg-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600 sm:min-h-0"
+        >
+          Close
         </button>
     </Modal>
   );

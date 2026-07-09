@@ -24,7 +24,7 @@ const TABS: { id: View; label: string; hint: string }[] = [
   { id: 'play', label: 'Play', hint: 'vs bots & analysis' },
   { id: 'friends', label: 'Friends', hint: 'pass & play · online friend games' },
   { id: 'openings', label: 'Openings', hint: 'repertoire drills' },
-  { id: 'tactics', label: 'Middlegame', hint: 'tactics puzzles' },
+  { id: 'tactics', label: 'Tactics', hint: 'tactics puzzles' },
   { id: 'endgame', label: 'Endgame', hint: 'theory & technique' },
   { id: 'train', label: 'Train', hint: 'vision · mates · anti-blunder' },
   { id: 'coordinates', label: 'Coords', hint: 'board-vision trainer' },
@@ -81,7 +81,15 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
               )}
             </span>
           )}
-          <span role="status" className={`flex items-center gap-1.5 ${connected ? 'text-emerald-400' : 'text-rose-400'}`}>
+          <span
+            role="status"
+            title={
+              connected
+                ? 'Connected to the engine server'
+                : 'Trying to reach the engine server — bot play and analysis resume once connected'
+            }
+            className={`flex items-center gap-1.5 ${connected ? 'text-emerald-400' : 'text-rose-400'}`}
+          >
             <span className={`h-2 w-2 rounded-full ${connected ? 'bg-emerald-400' : 'bg-rose-400'}`} />
             {connected ? 'online' : 'connecting…'}
           </span>
@@ -139,7 +147,9 @@ export default function App() {
         Skip to content
       </a>
       <Header view={view} setView={setView} />
-      <main id="main" className="flex-1 p-4">
+      {/* key={view} remounts the content on tab switch so .page-fade replays
+          its 150ms fade (disabled under prefers-reduced-motion in index.css). */}
+      <main key={view} id="main" className="page-fade flex-1 p-4">
         {view === 'play' && <PlayPage />}
         {/* Kept mounted so a live human-vs-human game survives tab switches. */}
         <div className={view === 'friends' ? undefined : 'hidden'}>

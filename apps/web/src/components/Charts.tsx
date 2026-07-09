@@ -33,6 +33,13 @@ const heatLevel = (v: number) => (v === 0 ? 0 : v <= 3 ? 1 : v <= 9 ? 2 : v <= 1
 
 /** GitHub-style activity calendar. `days` are chronological, starting on a Sunday. */
 export function Heatmap({ days }: { days: { date: string; value: number }[] }) {
+  if (days.every((d) => d.value === 0)) {
+    return (
+      <p className="rounded border border-dashed border-neutral-700 px-3 py-2 text-sm text-neutral-400">
+        No activity yet — solved puzzles and drills will light up this calendar.
+      </p>
+    );
+  }
   return (
     <div
       className="grid w-full gap-[3px]"
@@ -80,6 +87,13 @@ export interface DayPoint {
 
 /** Reviews-per-day bars with an accuracy-% line overlaid. */
 export function ActivityChart({ data }: { data: DayPoint[] }) {
+  if (data.every((d) => d.reviews === 0)) {
+    return (
+      <div className="flex h-28 w-full items-center justify-center rounded border border-dashed border-neutral-700 px-3 text-center text-sm text-neutral-400">
+        No activity yet — play a game or solve a puzzle to start the chart.
+      </div>
+    );
+  }
   const n = data.length;
   const maxReviews = Math.max(1, ...data.map((d) => d.reviews));
   const H = 100;
