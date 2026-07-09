@@ -111,6 +111,25 @@ export function cpOf(s: Score | null): number {
   return Math.max(-1500, Math.min(1500, s.value));
 }
 
+/**
+ * The side that delivered checkmate if `fen` is a mated position, else null.
+ *
+ * Engines return no evaluation for terminal positions (a mated position has no
+ * PV), so the review's eval for the position AFTER a mating move is `null` —
+ * which reads as 50/50 and used to grade the checkmating move as a "missed
+ * win". Detecting mate from the FEN lets the grading path treat it as the
+ * decisive result it is.
+ */
+export function checkmateWinner(fen: string): Side | null {
+  try {
+    const c = new Chess(fen);
+    if (!c.isCheckmate()) return null;
+    return c.turn() === 'w' ? 'black' : 'white';
+  } catch {
+    return null;
+  }
+}
+
 /** Net material on the board (White − Black), in pawns. */
 function material(fen: string): number {
   const board = fen.split(' ')[0] ?? '';
@@ -189,9 +208,12 @@ interface Ctx {
   moverWinBefore: number;
   moverWinAfter: number;
   lost: number; // material the mover is down after the best reply
+  /** The played move delivered checkmate. */
+  mates: boolean;
 }
 
 function explain(c: Ctx): string {
+  if (c.mates) return 'Checkmate — the game is over. No move is stronger than that.';
   const cap = c.mctx?.captured ? PIECE_NAME[c.mctx.captured] : null;
   const dropped = c.octx?.captured ? PIECE_NAME[c.octx.captured] : null;
   const hung = !!dropped && c.lost >= 1.5;
@@ -243,14 +265,19 @@ export function buildMoveReviews(input: BuildInput): MoveReview[] {
     const side: Side = node.ply % 2 === 1 ? 'white' : 'black';
     const fenBefore = k === 0 ? startFen : nodes[k - 1]!.fen;
 
+    // Terminal positions get no engine eval (score null → 50/50), so score a
+    // delivered checkmate from the FEN: it's a 100% win for the mover.
+    const mateWinner = checkmateWinner(node.fen);
+    const mates = mateWinner === side;
+
     const winWhiteBefore = whiteWinPercent(pre.score);
-    const winWhiteAfter = whiteWinPercent(post.score);
+    const winWhiteAfter = mateWinner ? (mateWinner === 'white' ? 100 : 0) : whiteWinPercent(post.score);
     const moverWinBefore = povWin(winWhiteBefore, side);
     const moverWinAfter = povWin(winWhiteAfter, side);
     const drop = Math.max(0, moverWinBefore - moverWinAfter);
 
     const moverCpBefore = povCp(cpOf(pre.score), side);
-    const moverCpAfter = povCp(cpOf(post.score), side);
+    const moverCpAfter = mateWinner ? povCp(mateWinner === 'white' ? 1500 : -1500, side) : povCp(cpOf(post.score), side);
 
     const playedIsBest = !!pre.bestUci && node.uci === pre.bestUci;
     const secondMoverWin = pre.secondScore ? povWin(whiteWinPercent(pre.secondScore), side) : moverWinBefore;
@@ -272,8 +299,9 @@ export function buildMoveReviews(input: BuildInput): MoveReview[] {
       cls = 'miss';
     }
 
-    // Theory moves that didn't lose anything are just "book".
-    if (isBook && drop < 10) cls = 'book';
+    // Theory moves that didn't lose anything are just "book" (a mate is never
+    // demoted to book — it deserves its grade).
+    if (isBook && drop < 10 && !mates) cls = 'book';
 
     // Upgrades for strong moves: a sound sacrifice is brilliant; the single
     // move that holds or swings the game is great.
@@ -302,6 +330,7 @@ export function buildMoveReviews(input: BuildInput): MoveReview[] {
       moverWinBefore,
       moverWinAfter,
       lost,
+      mates,
     });
 
     out.push({
@@ -311,7 +340,7 @@ export function buildMoveReviews(input: BuildInput): MoveReview[] {
       san: node.san,
       uci: node.uci,
       classification: cls,
-      evalText: formatScore(post.score ?? { kind: 'cp', value: 0 }),
+      evalText: mateWinner ? '#' : formatScore(post.score ?? { kind: 'cp', value: 0 }),
       winWhiteAfter,
       bestSan: pre.bestSan,
       bestUci: pre.bestUci,

@@ -14,6 +14,7 @@ export function MistakesMode() {
   const remove = useMistakes((s) => s.remove);
   const game = useRef(new Chess());
   const busy = useRef(false);
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [idx, setIdx] = useState(0);
   const [phase, setPhase] = useState<Phase>('solving');
   const [fen, setFen] = useState(game.current.fen());
@@ -28,6 +29,9 @@ export function MistakesMode() {
 
   useEffect(() => {
     if (!card) return;
+    // A pending "try another" reset belongs to the previous card — drop it so
+    // it can't fire into this one and put the old position back on the board.
+    if (resetTimer.current) clearTimeout(resetTimer.current);
     game.current = new Chess(card.fen);
     busy.current = false;
     setPhase('solving');
@@ -36,6 +40,12 @@ export function MistakesMode() {
     setFeedback(`You played ${card.playedSan} here — find a stronger move.`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [card?.id]);
+
+  useEffect(() => {
+    return () => {
+      if (resetTimer.current) clearTimeout(resetTimer.current);
+    };
+  }, []);
 
   const solving = phase === 'solving' && !!card && !busy.current;
 
@@ -66,6 +76,14 @@ export function MistakesMode() {
     const last = hist[hist.length - 1];
     setFen(game.current.fen());
     setLastMove(last ? [last.from, last.to] : undefined);
+    // Checkmate needs no engine check — and terminal positions get no eval
+    // (which used to read as 50/50 and reject a mating answer as "still drops").
+    if (game.current.isCheckmate()) {
+      setPhase('good');
+      setFeedback(`✓ ${mv.san} — checkmate! Far better than ${card.playedSan}.`);
+      busy.current = false;
+      return;
+    }
     setPhase('checking');
     setFeedback('checking…');
 
@@ -79,7 +97,9 @@ export function MistakesMode() {
     } else {
       setPhase('bad');
       setFeedback(`✗ ${mv.san} still drops ~${Math.round(loss)}%. Try another.`);
-      setTimeout(() => {
+      if (resetTimer.current) clearTimeout(resetTimer.current);
+      resetTimer.current = setTimeout(() => {
+        resetTimer.current = null;
         game.current = new Chess(card.fen);
         setFen(card.fen);
         setLastMove(undefined);
