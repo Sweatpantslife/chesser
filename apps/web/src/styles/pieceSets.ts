@@ -11,7 +11,7 @@ let loaders: Record<string, () => Promise<unknown>> = {};
 try {
   loaders = import.meta.glob('./pieces/*.css');
 } catch {
-  /* not running under Vite */
+  // Not running under Vite (e.g. node-based unit tests) — no lazy CSS to load.
 }
 
 // Keyed by glob path. cburnett is already loaded eagerly via index.css.

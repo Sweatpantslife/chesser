@@ -7,6 +7,11 @@ import { whiteWinPercent } from '../lib/format';
 import { playMoveSound } from '../lib/sound';
 import { buildMoveReviews, cpOf, type MoveReview, type PositionEval } from '../lib/coach';
 import { detectOpening } from '../lib/openings';
+import { countRepetitions } from '../lib/repetition';
+import { agreedDrawIsRated, botAcceptsDraw, MIN_DRAW_ACCEPT_PLIES } from '../lib/drawPolicy';
+import { recordGameResult } from '../lib/gamify';
+import { useLadder } from './ladder';
+import { useRatings, type GameOutcome } from './ratings';
 
 export type Color = 'white' | 'black';
 export type Mode = 'play' | 'analysis';
@@ -59,6 +64,17 @@ const uid = () => `n${(nodeCounter++).toString(36)}`;
 function newTree(fen: string): { tree: Record<string, MoveNode>; rootId: string } {
   const rootId = uid();
   return { tree: { [rootId]: { id: rootId, parentId: null, san: '', uci: '', fen, ply: 0, children: [] } }, rootId };
+}
+
+/** FENs of every position from the root down to `id` (root's position first). */
+function positionsTo(tree: Record<string, MoveNode>, id: string): string[] {
+  const fens: string[] = [];
+  let n: MoveNode | undefined = tree[id];
+  while (n) {
+    fens.push(n.fen);
+    n = n.parentId ? tree[n.parentId] : undefined;
+  }
+  return fens.reverse();
 }
 
 /** Follow `children[0]` from the root to the end of the main line (excludes root). */
@@ -137,6 +153,8 @@ export interface GameSummary {
   statusText: string;
   timed: boolean;
   category: 'bots' | 'blitz';
+  /** False for games that didn't count for rating (e.g. very early agreed draws). */
+  rated: boolean;
   ratingBefore: number;
   ratingAfter: number;
   ratingDelta: number;
@@ -206,6 +224,17 @@ export interface GameStore {
   opponent: Opponent | null;
   /** Increments on every new game — a stable token for per-game effects. */
   gameNo: number;
+  /**
+   * gameNo of the last finished game whose result was recorded (ratings/XP).
+   * Guards the exactly-once recording in {@link _recordFinishedGame}.
+   */
+  scoredGameNo: number;
+  /**
+   * The player used takeback in this play-mode game. Takebacks are a training
+   * aid, so the game still finishes normally — but it records as unrated
+   * (retrying blunders until a win would otherwise farm Elo/XP/ladder rungs).
+   */
+  takebackUsed: boolean;
   /** Set when a game ends by resignation / agreed draw / claimed draw. */
   manualResult: ManualResult | null;
   /** Transient state of a pending draw offer to the bot. */
@@ -294,6 +323,7 @@ export interface GameStore {
 
   // internals
   _sync(): void;
+  _recordFinishedGame(): void;
   _refreshAnalysis(): void;
   _maybeTriggerBot(): void;
   _applyMove(move: { from: string; to: string; promotion?: string }): void;
@@ -342,6 +372,8 @@ export const useGame = create<GameStore>((set, get) => ({
   thinking: false,
   opponent: null,
   gameNo: 0,
+  scoredGameNo: 0,
+  takebackUsed: false,
   manualResult: null,
   drawOffer: 'idle',
   playSetup: null,
@@ -430,6 +462,7 @@ export const useGame = create<GameStore>((set, get) => ({
       botConfig,
       opponent,
       gameNo: get().gameNo + 1,
+      takebackUsed: false,
       playSetup,
       manualResult: null,
       drawOffer: 'idle',
@@ -632,6 +665,10 @@ export const useGame = create<GameStore>((set, get) => ({
       coachPlaying: false,
       manualResult: null, // taking back un-ends a resigned / drawn game
       drawOffer: 'idle',
+      // Taking back in a game makes it a training game: it still plays out
+      // normally but records as unrated (no Elo/XP/ladder), otherwise
+      // blunder → takeback → retry would farm rated wins.
+      ...(s.mode === 'play' ? { takebackUsed: true } : {}),
     });
     get()._sync();
     get()._refreshAnalysis();
@@ -719,6 +756,25 @@ export const useGame = create<GameStore>((set, get) => ({
     const s = get();
     if (s.mode !== 'play' || s.isGameOver || s.thinking || s.drawOffer === 'pending') return;
     if (s.viewPly !== s.history.length || s.history.length < 2 || !s.botColor) return;
+    const decline = () => {
+      set({ drawOffer: 'declined' });
+      window.setTimeout(() => {
+        if (get().drawOffer === 'declined') set({ drawOffer: 'idle' });
+      }, 2600);
+    };
+    const plies = mainlineOf(s.tree, s.rootId).length;
+    // The anti-farming ply floor only matters for rated games. Casual games
+    // (custom opponents, pasted-FEN starts, post-takeback) can't move ratings,
+    // so a drawn endgame being practised from a FEN deserves an honest answer:
+    // treat them as played-out and decide on the evaluation alone.
+    const casual = !s.opponent?.id || s.tree[s.rootId]!.fen !== STARTING_FEN || s.takebackUsed;
+    const effPlies = casual ? Math.max(plies, MIN_DRAW_ACCEPT_PLIES) : plies;
+    // Far too early for the bot to even consider it — decline without an eval.
+    // (Accepting move-2 draws was an infinite rating-farming exploit.)
+    if (effPlies < MIN_DRAW_ACCEPT_PLIES) {
+      decline();
+      return;
+    }
     const myGame = gameId;
     set({ drawOffer: 'pending' });
     const fen = s.tree[tipOf(s.tree, s.rootId)]!.fen;
@@ -726,18 +782,15 @@ export const useGame = create<GameStore>((set, get) => ({
     try {
       const score = await engine.evalOnce(fen, { movetimeMs: 600 });
       if (gameId !== myGame) return; // game changed under us
-      // Bot accepts only if it isn't better than ~+0.6 pawns from its own POV.
-      const whiteCp = !score ? 0 : score.kind === 'mate' ? (score.value > 0 ? 10_000 : score.value < 0 ? -10_000 : 0) : score.value;
-      const botCp = botColor === 'white' ? whiteCp : -whiteCp;
-      if (botCp <= 60) {
+      const whiteCp = !score ? null : score.kind === 'mate' ? (score.value > 0 ? 10_000 : score.value < 0 ? -10_000 : 0) : score.value;
+      const botCp = whiteCp === null ? null : botColor === 'white' ? whiteCp : -whiteCp;
+      // The bot agrees only in genuinely drawish, sufficiently played-out spots.
+      if (botAcceptsDraw({ plies: effPlies, botCp, fen })) {
         set({ drawOffer: 'accepted', manualResult: { winner: 'draw', reason: 'Draw agreed' }, thinking: false });
         gameId++;
         get()._sync();
       } else {
-        set({ drawOffer: 'declined' });
-        window.setTimeout(() => {
-          if (get().drawOffer === 'declined') set({ drawOffer: 'idle' });
-        }, 2600);
+        decline();
       }
       get()._refreshAnalysis(); // evalOnce hijacked the analysis stream; resume it
     } catch {
@@ -749,9 +802,9 @@ export const useGame = create<GameStore>((set, get) => ({
   claimDraw() {
     const s = get();
     if (s.mode !== 'play' || s.isGameOver || !s.drawClaimable) return;
-    const reason = new Chess(s.tree[tipOf(s.tree, s.rootId)]!.fen).isThreefoldRepetition()
-      ? 'Threefold repetition'
-      : 'Fifty-move rule';
+    const tipId = tipOf(s.tree, s.rootId);
+    const reason =
+      countRepetitions(positionsTo(s.tree, tipId), s.tree[tipId]!.fen) >= 3 ? 'Threefold repetition' : 'Fifty-move rule';
     set({ manualResult: { winner: 'draw', reason }, thinking: false, drawOffer: 'idle' });
     gameId++;
     get()._sync();
@@ -829,6 +882,7 @@ export const useGame = create<GameStore>((set, get) => ({
       endReason: '',
       drawClaimable: false,
       gameNo: get().gameNo + 1,
+      takebackUsed: false,
       tree,
       rootId,
       currentId: rootId,
@@ -873,6 +927,7 @@ export const useGame = create<GameStore>((set, get) => ({
       manualResult: null,
       drawOffer: 'idle',
       gameNo: get().gameNo + 1,
+      takebackUsed: false,
       orientation: c.turn() === 'b' ? 'black' : 'white',
       tree,
       rootId,
@@ -1054,6 +1109,9 @@ export const useGame = create<GameStore>((set, get) => ({
     if (left <= 0) {
       set({ clock, flagged: turn });
       get()._sync();
+      // The game just ended on time — restart the (in-play suppressed)
+      // analysis stream, like every other terminal path does.
+      get()._refreshAnalysis();
     } else {
       set({ clock });
     }
@@ -1119,18 +1177,31 @@ export const useGame = create<GameStore>((set, get) => ({
       status = 'Draw — insufficient material';
     } else {
       // Threefold repetition and the 50-move rule are *claimable*, not automatic.
-      const threefold = outcome.isThreefoldRepetition();
+      // Repetition needs the whole line's positions — a Chess instance built
+      // from a single FEN has no history, so isThreefoldRepetition() on
+      // `outcome` would never fire. Count identical positions (placement +
+      // side to move + castling + en-passant rights) along the played line.
+      const threefold = countRepetitions(positionsTo(s.tree, s.mode === 'play' ? tipId : s.currentId), outcomeFen) >= 3;
       const fiftyMove = Number(outcomeFen.split(' ')[4] ?? '0') >= 100;
+      const moveStatus = `${cap(liveColor)} to move${outcome.inCheck() ? ' — check' : ''}`;
       if ((threefold || fiftyMove) && s.mode === 'play') {
         drawClaimable = true;
         status = threefold ? 'Threefold repetition — you can claim a draw' : 'Fifty-move rule — you can claim a draw';
-      } else if (threefold || fiftyMove) {
+      } else if (fiftyMove && s.mode !== 'play') {
+        // The 50-move rule is derivable from the FEN alone, matching what the
+        // board itself refuses to play past — terminal on the analysis board.
         isGameOver = true;
         winner = 'draw';
-        endReason = threefold ? 'threefold repetition' : 'fifty-move rule';
-        status = `Draw — ${endReason}`;
+        endReason = 'fifty-move rule';
+        status = 'Draw — fifty-move rule';
+      } else if (threefold && s.mode !== 'play') {
+        // NEVER terminal on the analysis board: positions recur constantly
+        // while exploring lines, and ending the "game" here would silently
+        // block every further move (and mislabel decisive games as draws
+        // when exported at the repeated ply). Annotate the status only.
+        status = `${moveStatus} · threefold repetition`;
       } else {
-        status = `${cap(liveColor)} to move${outcome.inCheck() ? ' — check' : ''}`;
+        status = moveStatus;
       }
     }
 
@@ -1176,6 +1247,66 @@ export const useGame = create<GameStore>((set, get) => ({
       movableColor,
       dests,
     });
+    get()._recordFinishedGame();
+  },
+
+  /**
+   * Score a finished vs-bot game (ratings + XP + achievements + ladder) and
+   * snapshot the results modal. Idempotent: `scoredGameNo` is claimed before
+   * recording, so no matter how many times `_sync` runs after the game ends
+   * (navigation, page remounts, analysis updates), each game records once.
+   */
+  _recordFinishedGame() {
+    const s = get();
+    if (!s.isGameOver || s.mode !== 'play' || !s.playerColor || !s.botColor || s.winner === null) return;
+    if (s.gameNo === s.scoredGameNo) return; // already recorded
+    const plies = mainlineOf(s.tree, s.rootId).length;
+    if (plies < 1) return; // ignore empty games
+    set({ scoredGameNo: s.gameNo }); // claim first — recording must be exactly-once
+
+    const outcome: GameOutcome = s.winner === 'draw' ? 'draw' : s.winner === s.playerColor ? 'win' : 'loss';
+    const opponentRating =
+      s.opponent?.rating ?? (s.botConfig.style === 'human' ? s.botConfig.maiaRating : s.botConfig.elo) ?? 1500;
+    const timed = s.clock !== null;
+
+    // Only proper games count for rating: a roster (ladder) opponent, playing
+    // from the standard initial position, with no takebacks. Custom-tab games
+    // (hand-picked bots, which never carry a roster id) and pasted-FEN starts
+    // are casual (no Elo/XP): an arbitrary start position vs a mismatched bot
+    // was a trivial rating farm. Takebacks turn the game into a training game:
+    // blunder → takeback → retry must not farm rated wins.
+    const casual = !s.opponent?.id || s.tree[s.rootId]!.fen !== STARTING_FEN || s.takebackUsed;
+    // Very early agreed draws are rating-neutral even in proper games, so a
+    // quick handshake can never farm rating points.
+    const earlyAgreedDraw = outcome === 'draw' && s.endReason === 'Draw agreed' && !agreedDrawIsRated(plies);
+    const isRated = !casual && !earlyAgreedDraw;
+    let rated: { category: 'bots' | 'blitz' | 'puzzles'; ratingBefore: number; ratingAfter: number; ratingDelta: number };
+    if (isRated) {
+      rated = recordGameResult({ opponentRating, outcome, timed });
+      if (s.opponent?.id && outcome === 'win') useLadder.getState().markDefeated(s.opponent.id);
+    } else {
+      const category = timed ? ('blitz' as const) : ('bots' as const);
+      const elo = Math.round(useRatings.getState().categories[category].elo);
+      rated = { category, ratingBefore: elo, ratingAfter: elo, ratingDelta: 0 };
+    }
+
+    // Capture a snapshot for the results modal (rating delta + headline stats).
+    get().setGameSummary({
+      gameNo: s.gameNo,
+      outcome,
+      playerColor: s.playerColor,
+      opponent: s.opponent,
+      endReason: s.endReason,
+      statusText: s.status,
+      timed,
+      category: rated.category === 'blitz' ? 'blitz' : 'bots',
+      rated: isRated,
+      ratingBefore: rated.ratingBefore,
+      ratingAfter: rated.ratingAfter,
+      ratingDelta: rated.ratingDelta,
+      plies,
+      moves: Math.ceil(plies / 2),
+    });
   },
 
   _refreshAnalysis() {
@@ -1184,6 +1315,16 @@ export const useGame = create<GameStore>((set, get) => ({
     // search while a one-shot batch (game review) owns the stream, or its
     // reqId gets clobbered and the review hangs on the safety timeout.
     if (!s.analysisOn || s.reviewing) return;
+    // No engine assistance while a vs-bot game is in progress: live eval and
+    // best lines would be built-in cheating. Analysis comes back the moment
+    // the game ends, and is always available on the analysis board.
+    if (s.mode === 'play' && !s.isGameOver) {
+      engine.stopAnalysis();
+      if (s.analysisLines.length > 0 || s.evalScore !== null || s.analysisDepth !== 0) {
+        set({ analysisLines: [], evalScore: null, analysisDepth: 0 });
+      }
+      return;
+    }
     const fen = s.fen;
     engine.analyze(fen, { multipv: s.multipv, depth: ANALYSIS_DEPTH_CAP }, (msg) => {
       if (get().fen !== msg.fen) return; // viewed position moved on

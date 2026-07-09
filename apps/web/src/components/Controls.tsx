@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useGame } from '../store/game';
 import { useAuth } from '../store/auth';
 import { toPgn } from '../lib/pgn';
+import { deriveGameResult } from '../lib/gameResult';
 import { apiSaveGame } from '../lib/api';
 import { LibraryDialog } from './LibraryDialog';
 import { SaveLineDialog } from './SaveLineDialog';
@@ -14,22 +15,31 @@ function botLabel(style: string, elo?: number, maia?: number): string {
 
 export function Controls() {
   const { history, viewPly, mode, playerColor, botConfig, opponent, stepView, goToPly, flip, takeback, newGame } = useGame();
+  const winner = useGame((s) => s.winner);
+  const isGameOver = useGame((s) => s.isGameOver);
+  const gameSummary = useGame((s) => s.gameSummary);
+  const gameNo = useGame((s) => s.gameNo);
   const token = useAuth((s) => s.token);
   const [copied, setCopied] = useState(false);
   const [libOpen, setLibOpen] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
   const [savedGame, setSavedGame] = useState(false);
 
+  // Keyed on playerColor (not mode), so a finished bot game handed to the
+  // analysis board still exports the real participants, not "White"/"Black".
   const names = () => {
     const opp = opponent?.name ?? botLabel(botConfig.style, botConfig.elo, botConfig.maiaRating);
-    const white = mode === 'play' ? (playerColor === 'white' ? 'You' : opp) : 'White';
-    const black = mode === 'play' ? (playerColor === 'black' ? 'You' : opp) : 'Black';
+    const white = playerColor ? (playerColor === 'white' ? 'You' : opp) : 'White';
+    const black = playerColor ? (playerColor === 'black' ? 'You' : opp) : 'Black';
     return { white, black };
   };
 
+  /** PGN result of the current game — '*' only when it's genuinely unfinished. */
+  const gameResult = (): string => deriveGameResult({ gameSummary, gameNo, isGameOver, winner, history });
+
   const copyPgn = async () => {
     const { white, black } = names();
-    const pgn = toPgn(history.map((h) => h.san), { white, black, result: '*' });
+    const pgn = toPgn(history.map((h) => h.san), { white, black, result: gameResult() });
     try {
       await navigator.clipboard.writeText(pgn);
       setCopied(true);
@@ -45,9 +55,10 @@ export function Controls() {
       return;
     }
     const { white, black } = names();
-    const pgn = toPgn(history.map((h) => h.san), { white, black, result: '*' });
+    const result = gameResult();
+    const pgn = toPgn(history.map((h) => h.san), { white, black, result });
     try {
-      await apiSaveGame(token, { pgn, white, black, result: '*', source: mode });
+      await apiSaveGame(token, { pgn, white, black, result, source: mode });
       setSavedGame(true);
       setTimeout(() => setSavedGame(false), 1400);
     } catch {

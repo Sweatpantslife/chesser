@@ -16,11 +16,8 @@ import { GameOverModal } from '../components/GameOverModal';
 import { AnalysisCoach } from '../components/AnalysisCoach';
 import { engine } from '../lib/engine';
 import { CLASSIFICATION_META } from '../lib/coach';
-import { useGame, mainlineOf, type Color } from '../store/game';
+import { useGame, type Color } from '../store/game';
 import { useSettings } from '../store/settings';
-import { useLadder } from '../store/ladder';
-import { recordGameResult } from '../lib/gamify';
-import type { GameOutcome } from '../store/ratings';
 
 // Brushes for the top engine lines, best → worst.
 const ARROW_BRUSHES = ['green', 'blue', 'yellow', 'red'];
@@ -62,6 +59,7 @@ function BoardArea() {
   const analysisLines = useGame((s) => s.analysisLines);
   const userMove = useGame((s) => s.userMove);
   const mode = useGame((s) => s.mode);
+  const isGameOver = useGame((s) => s.isGameOver);
   const coachActive = useGame((s) => s.coachActive);
   const moveReviews = useGame((s) => s.moveReviews);
   const currentId = useGame((s) => s.currentId);
@@ -101,7 +99,8 @@ function BoardArea() {
         <ClockRow side={topSide} />
       </div>
       <div className="flex gap-2">
-        {analysisOn && <EvalBar score={evalScore} orientation={orientation} />}
+        {/* Never show a live eval while a game is being played — that's cheating. */}
+        {analysisOn && (mode === 'analysis' || isGameOver) && <EvalBar score={evalScore} orientation={orientation} />}
         <div className="relative flex-1">
           <Board
             fen={fen}
@@ -132,42 +131,9 @@ export function PlayPage() {
     return () => engine.stopAnalysis();
   }, []);
 
-  // Score finished vs-bot games (ratings + XP + achievements) and advance the
-  // ladder on a win against a roster opponent. Exactly once per game.
-  useEffect(() => {
-    let handled = -1;
-    return useGame.subscribe((s) => {
-      if (!s.isGameOver || handled === s.gameNo) return;
-      if (s.mode !== 'play' || !s.playerColor || !s.botColor || s.winner === null) return;
-      if (mainlineOf(s.tree, s.rootId).length < 1) return; // ignore empty games
-      handled = s.gameNo;
-
-      const outcome: GameOutcome = s.winner === 'draw' ? 'draw' : s.winner === s.playerColor ? 'win' : 'loss';
-      const opponentRating =
-        s.opponent?.rating ?? (s.botConfig.style === 'human' ? s.botConfig.maiaRating : s.botConfig.elo) ?? 1500;
-      const rated = recordGameResult({ opponentRating, outcome, timed: s.clock !== null });
-
-      if (s.opponent?.id && outcome === 'win') useLadder.getState().markDefeated(s.opponent.id);
-
-      // Capture a snapshot for the results modal (rating delta + headline stats).
-      const plies = mainlineOf(s.tree, s.rootId).length;
-      useGame.getState().setGameSummary({
-        gameNo: s.gameNo,
-        outcome,
-        playerColor: s.playerColor,
-        opponent: s.opponent,
-        endReason: s.endReason,
-        statusText: s.status,
-        timed: s.clock !== null,
-        category: rated.category === 'blitz' ? 'blitz' : 'bots',
-        ratingBefore: rated.ratingBefore,
-        ratingAfter: rated.ratingAfter,
-        ratingDelta: rated.ratingDelta,
-        plies,
-        moves: Math.ceil(plies / 2),
-      });
-    });
-  }, []);
+  // NOTE: finished games are scored by the store itself (_recordFinishedGame,
+  // guarded by scoredGameNo) — never from page effects, which re-ran on every
+  // remount and double-recorded ratings/XP when revisiting this tab.
 
   // Drive the chess clocks in real time (no-op unless a timed game is live).
   useEffect(() => {
