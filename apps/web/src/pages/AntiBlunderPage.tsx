@@ -3,6 +3,7 @@ import { Chess } from 'chess.js';
 import { Board } from '../board/Board';
 import { ReviewStats } from '../components/ReviewStats';
 import { BLUNDER_POSITIONS, BLUNDER_IDS } from '../trainers/blunders';
+import { mateInOneUci } from '../lib/threats';
 import { useProgress } from '../store/progress';
 import { recordReview } from '../lib/gamify';
 import { playMoveSound } from '../lib/sound';
@@ -110,6 +111,20 @@ export function AntiBlunderPage() {
     const mv = game.current.move({ from, to });
     playMoveSound(mv.san);
     sync();
+    // Dodging the scripted move isn't enough — the move must actually survive
+    // the threat. Every drill's trap is an immediate mate, so a different move
+    // that still allows mate-in-one (e.g. Rd5 in the back-rank drill) is just
+    // as busted as the tempting one.
+    const mateUci = mateInOneUci(game.current.fen());
+    if (mateUci) {
+      const mateSan = sanOf(game.current.fen(), mateUci);
+      setPhase('busted');
+      grade('blunders', pos.id, 'again');
+      recordReview(false);
+      setFeedback({ kind: 'bad', text: `${mv.san}?? still loses — it allows ${mateSan}. ${pos.explanation}` });
+      playLine([mateUci], 0);
+      return;
+    }
     succeed(uci === pos.best[0]);
   };
 
@@ -131,7 +146,9 @@ export function AntiBlunderPage() {
     setPhase('busted');
     grade('blunders', pos.id, 'again');
     recordReview(false);
-    setFeedback({ kind: 'bad', text: `${temptingSan}?? ${pos.explanation}` });
+    // The explanations already open with the annotated move ("Rxd7?? …") —
+    // don't prepend it a second time.
+    setFeedback({ kind: 'bad', text: pos.explanation });
     // Replay the full refutation from the original position.
     game.current = new Chess(pos.fen);
     setFen(game.current.fen());
@@ -182,13 +199,13 @@ export function AntiBlunderPage() {
           <ReviewStats deck="blunders" ids={BLUNDER_IDS} />
           <button
             onClick={reviewDue}
-            className="mt-3 w-full rounded bg-emerald-600 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500"
+            className="mt-3 w-full rounded bg-emerald-700 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800"
           >
             Review due
           </button>
         </div>
         <div className="rounded-lg bg-panel p-3">
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">Positions</div>
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Positions</div>
           <div className="flex flex-wrap gap-1">
             {BLUNDER_POSITIONS.map((b, i) => {
               const cd = cards[`blunders:${b.id}`];
@@ -198,7 +215,7 @@ export function AntiBlunderPage() {
                   key={b.id}
                   onClick={() => load(i)}
                   className={`rounded px-2 py-1 text-xs ${
-                    i === idx ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
+                    i === idx ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                   }`}
                 >
                   {i + 1}
@@ -214,8 +231,8 @@ export function AntiBlunderPage() {
       <div className="order-1 space-y-3 lg:order-2">
         <div className="flex h-7 items-center gap-2 text-sm">
           <span className="rounded bg-neutral-700 px-2 py-0.5 text-xs text-neutral-200">{pos.theme}</span>
-          <span className="capitalize text-neutral-400">{pos.turn} to move</span>
-          {toMove && <span className="animate-pulse text-emerald-400">· your move</span>}
+          <span className="text-neutral-400">{pos.turn === 'white' ? 'White' : 'Black'} to move</span>
+          {toMove && <span className="animate-pulse-soft text-emerald-400">· your move</span>}
         </div>
         <div className="mx-auto w-full max-w-[540px]">
           <Board
@@ -252,7 +269,7 @@ export function AntiBlunderPage() {
             <div className="flex gap-2">
               <button
                 onClick={takeBack}
-                className="flex-1 rounded bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                className="flex-1 rounded bg-emerald-700 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
               >
                 Take it back
               </button>
@@ -290,7 +307,7 @@ export function AntiBlunderPage() {
             {(phase === 'solved' || phase === 'busted') && (
               <button
                 onClick={next}
-                className="mt-3 w-full rounded bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+                className="mt-3 w-full rounded bg-emerald-700 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
               >
                 Next position
               </button>

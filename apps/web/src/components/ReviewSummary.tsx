@@ -12,7 +12,7 @@ export function ReviewSummary({ goto }: { goto: (target: DeckTarget) => void }) 
     <div className="rounded-lg bg-panel p-4">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-ink">Review queue</h3>
-        <span className="text-xs text-neutral-500">
+        <span className="text-xs text-neutral-400">
           {totalSeen}/{totalCards} learned
         </span>
       </div>
@@ -41,9 +41,9 @@ export function ReviewSummary({ goto }: { goto: (target: DeckTarget) => void }) 
               <div className={`text-xs font-semibold ${meta.accent}`}>{meta.label}</div>
               <div className="mt-1 flex items-baseline gap-1">
                 <span className={`text-lg font-bold ${hasDue ? 'text-amber-300' : 'text-neutral-400'}`}>{d.due}</span>
-                <span className="text-[11px] text-neutral-500">due</span>
+                <span className="text-xs text-neutral-400">due</span>
               </div>
-              <div className="text-[11px] text-neutral-500">
+              <div className="text-xs text-neutral-400">
                 {d.seen}/{d.total} learned
               </div>
             </button>

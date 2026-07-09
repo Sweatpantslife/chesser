@@ -10,16 +10,22 @@ export function EvalBar({ score, orientation }: { score: Score | null; orientati
 
   return (
     <div
-      className="relative w-6 shrink-0 overflow-hidden rounded bg-neutral-900"
+      className="relative w-6 shrink-0 rounded bg-neutral-900"
+      role="img"
+      aria-label={score ? `Evaluation: ${label} (White's view)` : 'No evaluation'}
       title={score ? `Evaluation: ${label} (White's view)` : 'No evaluation'}
     >
-      {/* white share of the bar */}
-      <div
-        className="absolute inset-x-0 bg-neutral-100 transition-[height] duration-300 ease-out"
-        style={whiteAtBottom ? { bottom: 0, height: `${whitePct}%` } : { top: 0, height: `${whitePct}%` }}
-      />
+      {/* clip only the fill — the numeric label ("+0.42") is wider than the
+          24px bar and must overflow visibly instead of being cut off */}
+      <div className="absolute inset-0 overflow-hidden rounded">
+        {/* white share of the bar */}
+        <div
+          className="absolute inset-x-0 bg-neutral-100 transition-[height] duration-300 ease-out"
+          style={whiteAtBottom ? { bottom: 0, height: `${whitePct}%` } : { top: 0, height: `${whitePct}%` }}
+        />
+      </div>
       <span
-        className={`absolute inset-x-0 text-center text-[10px] font-semibold tabular-nums ${
+        className={`absolute inset-x-0 whitespace-nowrap text-center text-[10px] font-semibold tabular-nums ${
           whiteIsBetter ? 'text-neutral-900' : 'text-neutral-100'
         }`}
         style={whiteIsBetter === whiteAtBottom ? { bottom: 2 } : { top: 2 }}

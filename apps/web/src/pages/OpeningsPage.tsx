@@ -34,6 +34,7 @@ export function OpeningsPage() {
   const [lastMove, setLastMove] = useState<[string, string] | undefined>();
   const [feedback, setFeedback] = useState<{ kind: 'ok' | 'bad' | 'info'; text: string } | null>(null);
   const [stats, setStats] = useState({ correct: 0, wrong: 0 });
+  const [syncKey, setSyncKey] = useState(0);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
 
@@ -127,6 +128,11 @@ export function OpeningsPage() {
       setStats((s) => ({ ...s, wrong: s.wrong + 1 }));
       setFeedback({ kind: 'bad', text: 'Not the line — try again, or reveal.' });
       sync();
+      // Snap the board back. chessground has already rendered the rejected
+      // move; on the first ply sync() leaves every Board prop identical
+      // (same fen, lastMove still undefined), so without this bump the board
+      // stays desynced and no further input registers.
+      setSyncKey((k) => k + 1);
     }
   };
 
@@ -140,7 +146,11 @@ export function OpeningsPage() {
     setPly((p) => p + 1);
   };
 
-  const moveNo = Math.floor(ply / 2) + 1;
+  // For display, clamp to the line's last half-move: once the drill is done,
+  // ply === line.moves.length and the raw calc would show one move too many
+  // (e.g. "Move 9" after an 8-move line).
+  const displayPly = line && line.moves.length > 0 ? Math.min(ply, line.moves.length - 1) : ply;
+  const moveNo = Math.floor(displayPly / 2) + 1;
   const orientation: Color = side;
   const playedSan = game.current.history();
   const editable = !rep.builtin;
@@ -154,6 +164,7 @@ export function OpeningsPage() {
           <select
             value={repId}
             onChange={(e) => setRepId(e.target.value)}
+            aria-label="Repertoire"
             className="w-full rounded bg-neutral-800 px-2 py-1.5 text-sm text-ink outline-none"
           >
             {reps.map((r) => (
@@ -180,7 +191,7 @@ export function OpeningsPage() {
                     setCreating(false);
                     setRepId(id);
                   }}
-                  className="rounded bg-emerald-600 px-2 py-1 text-xs text-white"
+                  className="rounded bg-emerald-700 px-2 py-1 text-xs text-white"
                 >
                   Create
                 </button>
@@ -224,7 +235,7 @@ export function OpeningsPage() {
           <button
             onClick={reviewNext}
             disabled={lineIds.length === 0}
-            className="mt-2 w-full rounded bg-emerald-600 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-40"
+            className="mt-2 w-full rounded bg-emerald-700 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
           >
             Review due lines
           </button>
@@ -232,7 +243,7 @@ export function OpeningsPage() {
 
         <div className="scroll-thin max-h-[55vh] overflow-y-auto rounded-lg bg-panel p-3">
           {lines.length === 0 ? (
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-neutral-400">
               No lines yet. Build one on the <b className="text-neutral-300">Play</b> board, then “★ Save line”.
             </p>
           ) : (
@@ -241,20 +252,33 @@ export function OpeningsPage() {
               if (group.length === 0) return null;
               return (
                 <div key={c} className="mb-2">
-                  <div className="mb-1 text-xs uppercase tracking-wide text-neutral-500">As {c}</div>
+                  <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">As {c}</div>
                   <div className="space-y-1">
                     {group.map((l) => {
                       const cd = dueLabel((cards[`openings:${l.id}`] ?? { last: 0, due: 0 }) as any);
+                      const selected = line?.id === l.id;
                       return (
                         <div key={l.id} className="flex items-center gap-1">
                           <button
                             onClick={() => start(l)}
                             className={`flex min-w-0 flex-1 items-center justify-between gap-2 rounded px-2 py-1.5 text-left text-xs ${
-                              line?.id === l.id ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
+                              selected ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                             }`}
                           >
                             <span className="truncate">{l.name}</span>
-                            <span className={`shrink-0 text-[10px] ${cd === 'due' ? 'text-amber-300' : 'opacity-60'}`}>{cd}</span>
+                            <span
+                              className={`shrink-0 text-xs ${
+                                cd === 'due'
+                                  ? selected
+                                    ? 'text-amber-100'
+                                    : 'text-amber-300'
+                                  : selected
+                                    ? 'text-emerald-100'
+                                    : 'text-neutral-300'
+                              }`}
+                            >
+                              {cd}
+                            </span>
                           </button>
                           {editable && (
                             <button
@@ -266,7 +290,8 @@ export function OpeningsPage() {
                                 }
                               }}
                               title="Delete line"
-                              className="shrink-0 rounded px-1.5 py-1 text-xs text-neutral-500 hover:bg-neutral-700 hover:text-rose-300"
+                              aria-label="Delete line"
+                              className="shrink-0 rounded px-1.5 py-1 text-xs text-neutral-400 hover:bg-neutral-700 hover:text-rose-300"
                             >
                               ×
                             </button>
@@ -288,13 +313,13 @@ export function OpeningsPage() {
           <span className="text-neutral-300">{line?.name ?? 'Pick a line'}</span>
           {line && (
             <>
-              <span className="text-neutral-600">·</span>
+              <span className="text-neutral-400">·</span>
               <span className="text-neutral-400">
                 you play <b className="text-neutral-200">{side}</b>
               </span>
             </>
           )}
-          {traineeToMove && <span className="animate-pulse text-emerald-400">· your move</span>}
+          {traineeToMove && <span className="animate-pulse-soft text-emerald-400">· your move</span>}
         </div>
         <div className="mx-auto w-full max-w-[540px]">
           <Board
@@ -306,11 +331,12 @@ export function OpeningsPage() {
             lastMove={lastMove}
             inCheck={game.current.inCheck()}
             onMove={onMove}
+            syncKey={syncKey}
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {phase !== 'playing' && line && (
-            <button onClick={() => start(line)} className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500">
+            <button onClick={() => start(line)} className="rounded bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800">
               {phase === 'done' ? 'Repeat line' : 'Start drill'}
             </button>
           )}
@@ -343,14 +369,14 @@ export function OpeningsPage() {
           {line?.idea && <p className="text-xs leading-snug text-neutral-400">{line.idea}</p>}
         </div>
         <div className="rounded-lg bg-panelmute p-2">
-          <div className="mb-1 px-1 text-xs uppercase tracking-wide text-neutral-500">Moves</div>
+          <div className="mb-1 px-1 text-xs uppercase tracking-wide text-neutral-400">Moves</div>
           <div className="px-1 font-mono text-sm text-neutral-200">
             {playedSan.length === 0 ? (
-              <span className="text-neutral-600">—</span>
+              <span className="text-neutral-400">—</span>
             ) : (
               playedSan.map((san, i) => (
                 <span key={i}>
-                  {i % 2 === 0 && <span className="text-neutral-500">{i / 2 + 1}.</span>} {san}{' '}
+                  {i % 2 === 0 && <span className="text-neutral-400">{i / 2 + 1}.</span>} {san}{' '}
                 </span>
               ))
             )}

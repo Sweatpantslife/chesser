@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useAuth } from '../store/auth';
 import type { SyncState } from '../lib/sync';
+import { Modal } from './Modal';
 
 const SYNC_LABEL: Record<SyncState, { dot: string; text: string }> = {
   off: { dot: 'bg-neutral-500', text: 'not syncing' },
@@ -23,41 +24,59 @@ function AuthForm({ onClose }: { onClose: () => void }) {
 
   return (
     <form onSubmit={submit} className="space-y-3">
-      <div className="flex gap-1 rounded bg-panelmute p-1 text-sm">
+      {/* mr-9 keeps the switcher clear of the dialog's absolute 44px close target on phones */}
+      <div className="mr-9 flex gap-1 rounded bg-panelmute p-1 text-sm sm:mr-0">
         {(['login', 'register'] as const).map((m) => (
           <button
             key={m}
             type="button"
             onClick={() => setMode(m)}
-            className={`flex-1 rounded px-2 py-1 capitalize ${mode === m ? 'bg-emerald-600 text-white' : 'text-neutral-300'}`}
+            aria-pressed={mode === m}
+            className={`flex-1 rounded px-2 py-1 capitalize ${mode === m ? 'bg-emerald-700 text-white' : 'text-neutral-300'}`}
           >
             {m === 'login' ? 'Sign in' : 'Create account'}
           </button>
         ))}
       </div>
       <p className="text-xs text-neutral-400">Sync your opening and tactics progress across devices.</p>
-      <input
-        className="w-full rounded bg-neutral-800 px-2 py-1.5 text-sm text-ink outline-none focus:ring-1 focus:ring-emerald-500"
-        placeholder="username"
-        autoComplete="username"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-      />
-      <input
-        type="password"
-        className="w-full rounded bg-neutral-800 px-2 py-1.5 text-sm text-ink outline-none focus:ring-1 focus:ring-emerald-500"
-        placeholder="password"
-        autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      {error && <p className="text-xs text-rose-300">{error}</p>}
+      <div>
+        <label htmlFor="auth-username" className="sr-only">
+          Username
+        </label>
+        <input
+          id="auth-username"
+          className="w-full rounded bg-neutral-800 px-2 py-1.5 text-sm text-ink outline-none focus:ring-1 focus:ring-emerald-500"
+          placeholder="username"
+          autoComplete="username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+      </div>
+      <div>
+        <label htmlFor="auth-password" className="sr-only">
+          Password
+        </label>
+        <input
+          id="auth-password"
+          type="password"
+          className="w-full rounded bg-neutral-800 px-2 py-1.5 text-sm text-ink outline-none focus:ring-1 focus:ring-emerald-500"
+          placeholder="password"
+          autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+      </div>
+      {error && (
+        <p role="alert" className="text-xs text-rose-300">
+          {error}
+        </p>
+      )}
       <button
         type="submit"
         disabled={busy}
-        className="w-full rounded bg-emerald-600 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+        className="w-full rounded bg-emerald-700 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
       >
-        {busy ? '…' : mode === 'login' ? 'Sign in' : 'Create account'}
+        {busy ? (mode === 'login' ? 'Signing in…' : 'Creating account…') : mode === 'login' ? 'Sign in' : 'Create account'}
       </button>
     </form>
   );
@@ -69,7 +88,7 @@ function AccountInfo({ onClose }: { onClose: () => void }) {
   return (
     <div className="space-y-3">
       <div>
-        <div className="text-xs uppercase tracking-wide text-neutral-500">Signed in as</div>
+        <div className="text-xs uppercase tracking-wide text-neutral-400">Signed in as</div>
         <div className="text-lg font-semibold text-ink">{username}</div>
       </div>
       <div className="flex items-center gap-2 text-sm text-neutral-300">
@@ -98,7 +117,7 @@ export function AccountButton() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 rounded bg-neutral-800 px-2.5 py-1 text-xs text-neutral-200 hover:bg-neutral-700"
+        className="flex min-h-11 items-center gap-1.5 rounded bg-neutral-800 px-2.5 py-1 text-xs text-neutral-200 hover:bg-neutral-700 sm:min-h-0"
       >
         {username ? (
           <>
@@ -110,11 +129,20 @@ export function AccountButton() {
         )}
       </button>
       {open && (
-        <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/60 p-4" onClick={() => setOpen(false)}>
-          <div className="w-full max-w-xs rounded-xl bg-panel p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            {username ? <AccountInfo onClose={() => setOpen(false)} /> : <AuthForm onClose={() => setOpen(false)} />}
-          </div>
-        </div>
+        <Modal
+          onClose={() => setOpen(false)}
+          label={username ? 'Account' : 'Sign in'}
+          className="relative w-full max-w-xs rounded-xl bg-panel p-4 shadow-2xl"
+        >
+          {username ? <AccountInfo onClose={() => setOpen(false)} /> : <AuthForm onClose={() => setOpen(false)} />}
+          <button
+            onClick={() => setOpen(false)}
+            aria-label="Close"
+            className="absolute right-1.5 top-1.5 min-h-11 min-w-11 rounded px-1.5 py-1 text-sm text-neutral-400 hover:text-neutral-200 sm:min-h-0 sm:min-w-0"
+          >
+            ×
+          </button>
+        </Modal>
       )}
     </>
   );

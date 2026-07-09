@@ -5,6 +5,7 @@ import { engine } from '../lib/engine';
 import { whiteWinPercent } from '../lib/format';
 import { useMistakes } from '../store/mistakes';
 import { playMoveSound } from '../lib/sound';
+import { useTimeoutRef } from '../lib/useTimeoutRef';
 import type { Color } from '../store/game';
 
 type Phase = 'solving' | 'checking' | 'good' | 'bad';
@@ -14,6 +15,7 @@ export function MistakesMode() {
   const remove = useMistakes((s) => s.remove);
   const game = useRef(new Chess());
   const busy = useRef(false);
+  const resetTimer = useTimeoutRef();
   const [idx, setIdx] = useState(0);
   const [phase, setPhase] = useState<Phase>('solving');
   const [fen, setFen] = useState(game.current.fen());
@@ -28,6 +30,9 @@ export function MistakesMode() {
 
   useEffect(() => {
     if (!card) return;
+    // A pending "try another" reset belongs to the previous card — drop it so
+    // it can't fire into this one and put the old position back on the board.
+    if (resetTimer.current) clearTimeout(resetTimer.current);
     game.current = new Chess(card.fen);
     busy.current = false;
     setPhase('solving');
@@ -66,6 +71,14 @@ export function MistakesMode() {
     const last = hist[hist.length - 1];
     setFen(game.current.fen());
     setLastMove(last ? [last.from, last.to] : undefined);
+    // Checkmate needs no engine check — and terminal positions get no eval
+    // (which used to read as 50/50 and reject a mating answer as "still drops").
+    if (game.current.isCheckmate()) {
+      setPhase('good');
+      setFeedback(`✓ ${mv.san} — checkmate! Far better than ${card.playedSan}.`);
+      busy.current = false;
+      return;
+    }
     setPhase('checking');
     setFeedback('checking…');
 
@@ -79,7 +92,9 @@ export function MistakesMode() {
     } else {
       setPhase('bad');
       setFeedback(`✗ ${mv.san} still drops ~${Math.round(loss)}%. Try another.`);
-      setTimeout(() => {
+      if (resetTimer.current) clearTimeout(resetTimer.current);
+      resetTimer.current = setTimeout(() => {
+        resetTimer.current = null;
         game.current = new Chess(card.fen);
         setFen(card.fen);
         setLastMove(undefined);
@@ -116,7 +131,7 @@ export function MistakesMode() {
           >
             {card.severity}
           </span>
-          <span className="capitalize text-neutral-400">{card.side} to move</span>
+          <span className="text-neutral-400">{card.side === 'white' ? 'White' : 'Black'} to move</span>
         </div>
         <div className="mx-auto w-full max-w-[520px]">
           <Board
@@ -145,7 +160,7 @@ export function MistakesMode() {
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {phase === 'good' && (
-              <button onClick={learned} className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-500">
+              <button onClick={learned} className="rounded bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800">
                 Got it ✓
               </button>
             )}

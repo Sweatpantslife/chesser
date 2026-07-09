@@ -76,11 +76,11 @@ export function OpeningName() {
       <div className="mt-1 min-h-[2.25rem]">
         {info ? (
           <div className="flex items-baseline gap-2">
-            <span className="rounded bg-neutral-700 px-1.5 py-0.5 font-mono text-[11px] text-neutral-200">{info.eco}</span>
+            <span className="rounded bg-neutral-700 px-1.5 py-0.5 font-mono text-xs text-neutral-200">{info.eco}</span>
             <span className="text-sm leading-tight text-neutral-200">{info.name}</span>
           </div>
         ) : (
-          <p className="text-xs text-neutral-500">
+          <p className="text-xs text-neutral-400">
             {fromStart ? 'No named opening yet — play a few moves.' : 'Opening names are shown from the standard start position.'}
           </p>
         )}
@@ -93,7 +93,7 @@ export function OpeningName() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search openings (e.g. Najdorf, C50)…"
-            className="w-full rounded bg-neutral-800 px-2 py-1.5 text-sm text-ink outline-none placeholder:text-neutral-500"
+            className="w-full rounded bg-neutral-800 px-2 py-1.5 text-sm text-ink outline-none placeholder:text-neutral-400"
           />
           {results.length > 0 && (
             <div className="scroll-thin mt-2 max-h-56 space-y-1 overflow-y-auto">
@@ -104,15 +104,15 @@ export function OpeningName() {
                   title={toPgn(e.san)}
                   className="flex w-full items-center gap-2 rounded px-1.5 py-1 text-left hover:bg-neutral-700"
                 >
-                  <span className="w-9 shrink-0 font-mono text-[11px] text-neutral-400">{e.eco}</span>
+                  <span className="w-9 shrink-0 font-mono text-xs text-neutral-400">{e.eco}</span>
                   <span className="min-w-0 flex-1 truncate text-xs text-neutral-200">{e.name}</span>
                 </button>
               ))}
             </div>
           )}
-          {query.trim() && results.length === 0 && <p className="mt-2 text-xs text-neutral-500">No matches.</p>}
+          {query.trim() && results.length === 0 && <p className="mt-2 text-xs text-neutral-400">No matches.</p>}
           {!query.trim() && (
-            <p className="mt-2 text-xs text-neutral-500">Find any opening by name or ECO code, then load it onto the board.</p>
+            <p className="mt-2 text-xs text-neutral-400">Find any opening by name or ECO code, then load it onto the board.</p>
           )}
         </div>
       )}

@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+import { Chess } from 'chess.js';
 import type { AnalysisLine } from '@chesser/shared';
 import { formatScore } from '../lib/format';
 import { useGame } from '../store/game';
@@ -10,7 +12,38 @@ function scoreClass(line: AnalysisLine): string {
 }
 
 export function AnalysisPanel() {
-  const { analysisOn, analysisLines, analysisDepth, multipv, setMultipv, setAnalysisOn } = useGame();
+  const { analysisOn, analysisLines, analysisDepth, multipv, setMultipv, setAnalysisOn, tree, currentId } = useGame();
+  const mode = useGame((s) => s.mode);
+  const isGameOver = useGame((s) => s.isGameOver);
+
+  // At checkmate/stalemate the engine has no lines to send, so the empty-lines
+  // placeholder would read "thinking…" forever.
+  const viewFen = tree[currentId]?.fen;
+  const gameOver = useMemo(() => {
+    if (!viewFen) return false;
+    try {
+      return new Chess(viewFen).isGameOver();
+    } catch {
+      return false;
+    }
+  }, [viewFen]);
+
+  // Engine assistance is never available while a game is being played — the
+  // store also refuses to stream (see _refreshAnalysis), this is just the UI.
+  const playing = mode === 'play' && !isGameOver;
+  if (playing) {
+    return (
+      <div className="rounded-lg bg-panel p-3">
+        <div className="mb-2 flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-ink">Engine</h3>
+          <span className="rounded bg-neutral-700 px-1.5 py-0.5 text-[10px] text-neutral-300">off during games</span>
+        </div>
+        <p className="text-xs text-neutral-500">
+          Engine analysis is disabled while you play — it unlocks the moment the game ends.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-lg bg-panel p-3">
@@ -18,7 +51,7 @@ export function AnalysisPanel() {
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-ink">Engine</h3>
           {analysisOn && (
-            <span className="rounded bg-neutral-700 px-1.5 py-0.5 text-[10px] text-neutral-300">
+            <span className="rounded bg-neutral-700 px-1.5 py-0.5 text-xs text-neutral-300">
               Stockfish · depth {analysisDepth}
             </span>
           )}
@@ -37,8 +70,8 @@ export function AnalysisPanel() {
               <button
                 key={n}
                 onClick={() => setMultipv(n)}
-                className={`h-5 w-5 rounded text-[11px] ${
-                  multipv === n ? 'bg-emerald-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                className={`h-5 w-5 rounded text-xs ${
+                  multipv === n ? 'bg-emerald-700 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                 }`}
               >
                 {n}
@@ -46,7 +79,9 @@ export function AnalysisPanel() {
             ))}
           </div>
           <ol className="space-y-1">
-            {analysisLines.length === 0 && <li className="text-xs text-neutral-500">thinking…</li>}
+            {analysisLines.length === 0 && (
+              <li className="text-xs text-neutral-400">{gameOver ? 'game over — no moves to analyse' : 'thinking…'}</li>
+            )}
             {analysisLines.map((line) => (
               <li key={line.multipv} className="flex items-baseline gap-2 text-sm">
                 <span className={`w-12 shrink-0 font-mono font-semibold tabular-nums ${scoreClass(line)}`}>
@@ -60,7 +95,7 @@ export function AnalysisPanel() {
           </ol>
         </>
       ) : (
-        <p className="text-xs text-neutral-500">Analysis is off.</p>
+        <p className="text-xs text-neutral-400">Analysis is off.</p>
       )}
     </div>
   );

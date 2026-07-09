@@ -38,18 +38,18 @@ export function RatingMeter({ category }: { category: RatingCategory }) {
           <span className="text-lg">{ICONS[category]}</span>
           <span className="text-sm font-semibold text-ink">{CATEGORY_LABELS[category]}</span>
         </div>
-        <span className="text-[11px] uppercase tracking-wide text-neutral-500">peak {peak}</span>
+        <span className="text-xs uppercase tracking-wide text-neutral-400">peak {peak}</span>
       </div>
 
       <div className="flex items-end justify-between">
         <div>
           <div className="font-mono text-3xl font-bold text-emerald-300">{primary}</div>
-          <div className="mt-0.5 text-xs text-neutral-500">
+          <div className="mt-0.5 text-xs text-neutral-400">
             {secondaryLabel} {secondary}
             {meter === 'glicko' ? '' : ` ± ${band}`}
           </div>
         </div>
-        <div className="text-right text-[11px] text-neutral-400">{record}</div>
+        <div className="text-right text-xs text-neutral-400">{record}</div>
       </div>
 
       {series.length >= 2 ? (
@@ -57,7 +57,7 @@ export function RatingMeter({ category }: { category: RatingCategory }) {
           <RatingSparkline data={series} />
         </div>
       ) : (
-        <p className="mt-3 text-xs text-neutral-600">{c.played === 0 ? 'No games yet.' : 'Play more to chart a trend.'}</p>
+        <p className="mt-3 text-xs text-neutral-400">{c.played === 0 ? 'No games yet.' : 'Play more to chart a trend.'}</p>
       )}
     </div>
   );

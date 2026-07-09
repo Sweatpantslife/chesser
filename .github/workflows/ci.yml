@@ -51,6 +51,11 @@ jobs:
       - name: Validate puzzle data
         run: pnpm validate:puzzles
 
+      # Web unit tests: lesson step engine + machine-validation of the lesson
+      # content (legal FENs, solvable exercises, playable scripted lines).
+      - name: Unit tests (web)
+        run: pnpm --filter @chesser/web test
+
       # No package defines "lint" yet; pnpm exits 0 in that case, so this is a
       # future-proof no-op that activates automatically once ESLint is added.
       - name: Lint

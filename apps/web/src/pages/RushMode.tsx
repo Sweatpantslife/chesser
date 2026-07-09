@@ -6,6 +6,7 @@ import { checkKeyMove, getLoadedPuzzles } from '../lib/puzzleService';
 import { useRepertoire } from '../store/repertoire';
 import { playMoveSound } from '../lib/sound';
 import { recordRush } from '../lib/gamify';
+import { useTimeoutRef } from '../lib/useTimeoutRef';
 import type { Color } from '../store/game';
 
 const RUSH_SECONDS = 300;
@@ -31,6 +32,7 @@ export function RushMode() {
   const game = useRef(new Chess());
   const pool = useRef<Puzzle[]>([]);
   const busy = useRef(false);
+  const advanceTimer = useTimeoutRef();
   const [phase, setPhase] = useState<Phase>('idle');
   const [idx, setIdx] = useState(0);
   const [score, setScore] = useState(0);
@@ -57,6 +59,7 @@ export function RushMode() {
   };
 
   const start = () => {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current); // no stale advance into the new run
     pool.current = shuffleRamp();
     setScore(0);
     setStrikes(0);
@@ -66,6 +69,7 @@ export function RushMode() {
   };
 
   const finish = (finalScore: number) => {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
     setPhase('over');
     setHighScore(finalScore);
     recordRush(finalScore);
@@ -112,12 +116,12 @@ export function RushMode() {
       setFlash('ok');
       const next = score + 1;
       setScore(next);
-      setTimeout(() => loadAt(idx + 1), 300);
+      advanceTimer.current = setTimeout(() => loadAt(idx + 1), 300);
     } else {
       setFlash('bad');
       const s = strikes + 1;
       setStrikes(s);
-      setTimeout(() => {
+      advanceTimer.current = setTimeout(() => {
         if (s >= MAX_STRIKES) finish(score);
         else loadAt(idx + 1);
       }, 450);
@@ -132,7 +136,7 @@ export function RushMode() {
         <div className="flex h-7 items-center gap-3 text-sm">
           {phase === 'running' && puzzle && (
             <>
-              <span className="capitalize text-neutral-400">{puzzle.turn} to move — find the win</span>
+              <span className="text-neutral-400">{puzzle.turn === 'white' ? 'White' : 'Black'} to move — find the win</span>
               {flash === 'ok' && <span className="text-emerald-400">✓</span>}
               {flash === 'bad' && <span className="text-rose-400">✗ strike!</span>}
             </>
@@ -158,17 +162,17 @@ export function RushMode() {
 
       <div className="space-y-3">
         <div className="rounded-lg bg-panel p-4 text-center">
-          <div className="text-xs uppercase tracking-wide text-neutral-500">Time</div>
+          <div className="text-xs uppercase tracking-wide text-neutral-400">Time</div>
           <div className={`font-mono text-3xl ${timeLeft <= 30 && phase === 'running' ? 'text-rose-400' : 'text-ink'}`}>
             {fmtTime(timeLeft)}
           </div>
           <div className="mt-3 flex items-center justify-center gap-6">
             <div>
-              <div className="text-xs uppercase tracking-wide text-neutral-500">Score</div>
+              <div className="text-xs uppercase tracking-wide text-neutral-400">Score</div>
               <div className="text-2xl font-bold text-emerald-400">{score}</div>
             </div>
             <div>
-              <div className="text-xs uppercase tracking-wide text-neutral-500">Strikes</div>
+              <div className="text-xs uppercase tracking-wide text-neutral-400">Strikes</div>
               <div className="text-2xl">
                 {Array.from({ length: MAX_STRIKES }).map((_, i) => (
                   <span key={i} className={i < strikes ? 'text-rose-500' : 'text-neutral-700'}>
@@ -184,7 +188,7 @@ export function RushMode() {
         {phase === 'idle' && (
           <div className="rounded-lg bg-panel p-4 text-sm text-neutral-300">
             <p className="mb-3">Solve as many as you can in 5 minutes. Three wrong moves and you’re out — difficulty ramps up as you go.</p>
-            <button onClick={start} className="w-full rounded bg-emerald-600 py-2 font-semibold text-white hover:bg-emerald-500">
+            <button onClick={start} className="w-full rounded bg-emerald-700 py-2 font-semibold text-white hover:bg-emerald-800">
               Start rush
             </button>
           </div>
@@ -194,7 +198,7 @@ export function RushMode() {
             <div className="text-sm text-neutral-400">Run over</div>
             <div className="my-1 text-4xl font-bold text-emerald-400">{score}</div>
             {score >= highScore && score > 0 && <div className="mb-2 text-xs text-amber-300">🏆 New best!</div>}
-            <button onClick={start} className="mt-2 w-full rounded bg-emerald-600 py-2 font-semibold text-white hover:bg-emerald-500">
+            <button onClick={start} className="mt-2 w-full rounded bg-emerald-700 py-2 font-semibold text-white hover:bg-emerald-800">
               Play again
             </button>
           </div>
