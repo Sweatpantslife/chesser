@@ -34,6 +34,14 @@ const NO_SHAPES: DrawShape[] = [];
 export const Board = memo(function Board(props: BoardProps) {
   const elRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<Api | null>(null);
+  // chessground only receives a new `after` callback when the sync effect
+  // below re-sets the config, and that effect deliberately doesn't depend on
+  // props.onMove — so route the event through a ref to always call the latest
+  // closure (pages capture state like tablebase data in onMove).
+  const onMoveRef = useRef(props.onMove);
+  useEffect(() => {
+    onMoveRef.current = props.onMove;
+  });
   const boardTheme = useSettings((s) => s.boardTheme);
   const pieceSet = useSettings((s) => s.pieceSet);
   const premoveSetting = useSettings((s) => s.premove);
@@ -59,7 +67,7 @@ export const Board = memo(function Board(props: BoardProps) {
       dests: props.dests as Map<Key, Key[]>,
       showDests: true,
       events: {
-        after: (orig: Key, dest: Key) => props.onMove(orig, dest),
+        after: (orig: Key, dest: Key) => onMoveRef.current(orig, dest),
       },
     },
   });
