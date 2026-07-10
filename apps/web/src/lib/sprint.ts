@@ -110,8 +110,10 @@ export const STORM_MIN_TARGET = 600;
 export const STORM_MAX_TARGET = 2800;
 
 /** Adaptive steps: fast/normal solves push the target up, misses pull it down. */
-export const STORM_STEP_FAST = 60; // solved in ≤ 5s
-export const STORM_STEP_NORMAL = 30; // solved in ≤ 12s
+export const STORM_STEP_FAST_MS = 5_000;
+export const STORM_STEP_NORMAL_MS = 12_000;
+export const STORM_STEP_FAST = 60; // solved in ≤ STORM_STEP_FAST_MS
+export const STORM_STEP_NORMAL = 30; // solved in ≤ STORM_STEP_NORMAL_MS
 export const STORM_STEP_SLOW = 10; // solved, but slowly
 export const STORM_STEP_MISS = 120; // wrong move
 
@@ -158,7 +160,7 @@ export function stormSolve(s: StormState, solveMs: number): StormSolveResult {
   const combo = s.combo + 1;
   const multiplier = stormMultiplier(combo);
   const points = Math.round(STORM_BASE_POINTS * multiplier) + (solveMs <= STORM_FAST_SOLVE_MS ? STORM_FAST_BONUS : 0);
-  const step = solveMs <= 5_000 ? STORM_STEP_FAST : solveMs <= 12_000 ? STORM_STEP_NORMAL : STORM_STEP_SLOW;
+  const step = solveMs <= STORM_STEP_FAST_MS ? STORM_STEP_FAST : solveMs <= STORM_STEP_NORMAL_MS ? STORM_STEP_NORMAL : STORM_STEP_SLOW;
   const state: StormState = {
     ...s,
     score: s.score + points,
