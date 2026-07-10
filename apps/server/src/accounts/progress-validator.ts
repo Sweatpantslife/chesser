@@ -116,6 +116,10 @@ export const LIMITS = {
   futureDaySlack: 1,
   ladderBotsCap: 200,
   lessonsCap: 2_000,
+  /** Puzzle Rush (timed 3-min / survival) best-score plausibility ceiling. */
+  rushScoreCap: 200,
+  /** Puzzle Storm is faster-scoring than rush; still nothing legit gets here. */
+  stormScoreCap: 400,
 } as const;
 
 /** Streak milestones the client can have paid out (lib/streak.ts). */
@@ -1247,6 +1251,88 @@ function mapSize(section: unknown, key: string): number | undefined {
 }
 
 // ---------------------------------------------------------------------------
+// Sprints (Puzzle Rush / Puzzle Storm best scores)
+// ---------------------------------------------------------------------------
+
+/** One sprint personal best: `{ score, bestStreak, at }` (see store/sprints). */
+interface SprintBest {
+  score: number;
+  bestStreak: number;
+  at: number;
+}
+
+function parseStoredSprintBest(raw: unknown): SprintBest | null {
+  if (!isObj(raw) || !isNum(raw.score) || raw.score < 0) return null;
+  return {
+    score: raw.score,
+    bestStreak: isNum(raw.bestStreak) && raw.bestStreak >= 0 ? raw.bestStreak : 0,
+    at: isNum(raw.at) ? raw.at : 0,
+  };
+}
+
+function validateSprintBest(raw: unknown, cap: number, nowMs: number, what: string): SprintBest {
+  if (!isObj(raw)) reject(`${what} is malformed.`);
+  const score = countOf(raw.score, cap, `${what} score`);
+  const bestStreak = countOf(raw.bestStreak, cap, `${what} streak`);
+  // A solve streak within a run can't beat the best run's solve count.
+  if (bestStreak > score) reject(`${what} streak of ${Math.round(bestStreak)} exceeds its best score of ${Math.round(score)}.`);
+  let at = 0;
+  if (raw.at !== undefined) {
+    if (!isNum(raw.at) || raw.at < 0) reject(`${what} timestamp is malformed.`);
+    if (raw.at > nowMs + LIMITS.futureDaySlack * 86_400_000) reject(`${what} is future-dated.`);
+    if (raw.at > 0 && raw.at < Date.parse(LIMITS.earliestDay)) reject(`${what} predates the app.`);
+    at = raw.at;
+  }
+  return { score, bestStreak, at };
+}
+
+/** Higher score wins, mirroring the client's sprint merge. */
+function mergeSprintBest(stored: SprintBest | null, incoming: SprintBest): SprintBest {
+  return stored && stored.score > incoming.score ? stored : incoming;
+}
+
+const RUSH_MODES = ['timed3', 'survival'] as const;
+
+/**
+ * Validate + merge the `sprints` section (Puzzle Rush / Storm personal bests,
+ * apps/web/src/store/sprints.ts). Best-score claims feed the rush leaderboard
+ * and the shared profile, so they get the same treatment as every other score:
+ * absolute bounds, internal consistency (streak ≤ score, no future dates) and
+ * a monotonic higher-score-wins merge against the stored copy. Unknown keys
+ * pass through untouched for forward compatibility.
+ */
+function validateSprints(raw: unknown, storedRaw: unknown, nowMs: number, notes: Notes): Record<string, unknown> {
+  if (!isObj(raw)) reject('Sprints section is malformed.');
+  const stored = isObj(storedRaw) ? storedRaw : {};
+  const out: Record<string, unknown> = { ...stored, ...raw };
+
+  if (raw.puzzleRushBest !== undefined) {
+    if (!isObj(raw.puzzleRushBest)) reject('Puzzle Rush bests are malformed.');
+    const storedRush = isObj(stored.puzzleRushBest) ? stored.puzzleRushBest : {};
+    const rush: Record<string, unknown> = { ...storedRush, ...raw.puzzleRushBest };
+    for (const mode of RUSH_MODES) {
+      if (raw.puzzleRushBest[mode] === undefined) continue;
+      const next = validateSprintBest(raw.puzzleRushBest[mode], LIMITS.rushScoreCap, nowMs, `Puzzle Rush (${mode}) best`);
+      const prev = parseStoredSprintBest(storedRush[mode]);
+      const merged = mergeSprintBest(prev, next);
+      if (merged !== next) notes.add(`sprints: kept the stored ${mode} rush best of ${Math.round(merged.score)}.`);
+      rush[mode] = merged;
+    }
+    out.puzzleRushBest = rush;
+  }
+
+  if (raw.puzzleStormBest !== undefined) {
+    const next = validateSprintBest(raw.puzzleStormBest, LIMITS.stormScoreCap, nowMs, 'Puzzle Storm best');
+    const prev = parseStoredSprintBest(stored.puzzleStormBest);
+    const merged = mergeSprintBest(prev, next);
+    if (merged !== next) notes.add(`sprints: kept the stored storm best of ${Math.round(merged.score)}.`);
+    out.puzzleStormBest = merged;
+  }
+
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // Entry point
 // ---------------------------------------------------------------------------
 
@@ -1256,7 +1342,18 @@ function mapSize(section: unknown, key: string): number | undefined {
  * of these is a legacy bare SRS-progress blob (whose top-level `streak` etc.
  * are SRS fields, not the gamification sections).
  */
-const SECTION_MARKERS = ['progress', 'repertoires', 'mistakes', 'coordinate', 'customPuzzles', 'ratings', 'puzzleRating', 'ladder', 'lessons'];
+const SECTION_MARKERS = [
+  'progress',
+  'repertoires',
+  'mistakes',
+  'coordinate',
+  'customPuzzles',
+  'ratings',
+  'puzzleRating',
+  'ladder',
+  'lessons',
+  'sprints',
+];
 
 /**
  * Gamified sections that are validated here but are not payload-type markers
@@ -1338,6 +1435,7 @@ export function validateProgress(incoming: unknown, stored: unknown, nowMs: numb
     if (inc.ladder !== undefined) out.ladder = validateLadder(inc.ladder, prev.ladder, notes);
     if (inc.lessons !== undefined) out.lessons = validateLessons(inc.lessons, prev.lessons, notes);
     if (inc.puzzleRating !== undefined) out.puzzleRating = validateLegacyPuzzle(inc.puzzleRating, prev.puzzleRating, maxDay, notes);
+    if (inc.sprints !== undefined) out.sprints = validateSprints(inc.sprints, prev.sprints, nowMs, notes);
 
     if (inc.achievements !== undefined) {
       // Achievement claims are checked against the merged stats: stored stats
