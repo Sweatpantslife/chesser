@@ -29,7 +29,7 @@ export function PlayerBar({
   return (
     <div className="flex items-center justify-between gap-2" data-testid={`player-${side}`}>
       <div className="flex min-w-0 items-center gap-2">
-        <span className={`h-3 w-3 shrink-0 rounded-sm border border-neutral-600 ${side === 'white' ? 'bg-neutral-100' : 'bg-neutral-900'}`} />
+        <span className={`h-3 w-3 shrink-0 rounded-sm border border-neutral-600 ${side === 'white' ? 'bg-chess-white' : 'bg-chess-black'}`} />
         <span className={`truncate text-sm ${active ? 'font-semibold text-ink' : 'text-neutral-400'}`}>{name}</span>
         {connected !== undefined && (
           <span
@@ -117,7 +117,7 @@ export function HumanMoveList({ sans, replay }: { sans: string[]; replay?: Repla
     ) : (
       <button
         onClick={() => replay?.goTo(ply)}
-        className={`rounded px-1 text-left ${ply === selected ? 'bg-emerald-700/60 text-white' : 'text-neutral-200 hover:bg-neutral-800'}`}
+        className={`rounded px-1 text-left ${ply === selected ? 'bg-emerald-700 text-white' : 'text-neutral-200 hover:bg-neutral-800'}`}
       >
         {san}
       </button>

@@ -10,7 +10,7 @@ import { useSettings } from '../store/settings';
 import { ReviewSummary } from '../components/ReviewSummary';
 import { RatingMeter } from '../components/RatingMeter';
 import { DECK_META, useReviewSummary, type DeckTarget } from '../lib/decks';
-import { ActivityChart, Heatmap, ProgressBar, StatCard, type DayPoint } from '../components/Charts';
+import { ActivityChart, HEAT_COLORS, Heatmap, ProgressBar, StatCard, type DayPoint } from '../components/Charts';
 import { EmptyStatsArt } from '../components/icons';
 
 const HEATMAP_WEEKS = 18;
@@ -153,7 +153,7 @@ export function StatsPage({ goto }: { goto: (target: DeckTarget) => void }) {
         {heat.some((d) => d.value > 0) && (
           <div className="mt-2 flex items-center justify-end gap-1.5 text-xs text-neutral-400">
             less
-            {['#282345', '#4c3a8f', '#6d4fd0', '#9a7bf0', '#c4b5fd'].map((c) => (
+            {HEAT_COLORS.map((c) => (
               <span key={c} className="h-2.5 w-2.5 rounded-[2px]" style={{ background: c }} />
             ))}
             more

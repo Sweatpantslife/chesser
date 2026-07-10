@@ -101,7 +101,9 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
                     : 'text-neutral-300 hover:bg-neutral-800 hover:text-ink'
                 }`}
               >
-                <Icon size={16} className={active ? 'text-brand-300' : 'text-neutral-400'} />
+                {/* white/85, not brand-300: the active pill's gradient stays dark in
+                    both themes, while brand-300 flips dark in light mode. */}
+                <Icon size={16} className={active ? 'text-white/85' : 'text-neutral-400'} />
                 {t.label}
               </button>
             );

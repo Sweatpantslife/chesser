@@ -77,7 +77,7 @@ function PlayerCard({ side, summary, rating, isYou }: { side: Side; summary: Pla
     <div className="rounded-xl bg-neutral-800/60 p-2">
       <div className="flex items-center gap-1.5">
         <span
-          className={`h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-neutral-600 ${side === 'white' ? 'bg-neutral-100' : 'bg-neutral-900'}`}
+          className={`h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-neutral-600 ${side === 'white' ? 'bg-chess-white' : 'bg-chess-black'}`}
         />
         <span className="text-xs font-semibold capitalize text-neutral-300">{side}</span>
         {isYou && <span className="rounded-full bg-brand-500/20 px-1.5 text-[10px] font-semibold text-brand-300">you</span>}

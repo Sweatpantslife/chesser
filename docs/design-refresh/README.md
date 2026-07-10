@@ -27,7 +27,13 @@ WCAG-AA accessibility baseline.
   complete, game start/win/loss/draw and a subtle UI tick. All cues are gated
   on the "Sounds" setting and kept at low gain.
 
-### AA contrast (checked pairs, dark theme — the app ships dark-only)
+### AA contrast (checked pairs, dark theme)
+
+> Since the `feat/harden-ux` branch the app also ships a light theme
+> ("playful day"): tokens resolve through `--t-*` CSS variables in
+> `apps/web/src/index.css` (`:root` = dark, `:root[data-theme="light"]` =
+> light), toggled in Settings (light / dark / system). The light-theme AA
+> pairs are documented in `apps/web/tailwind.config.js`.
 
 | Pair | Ratio |
 | --- | --- |

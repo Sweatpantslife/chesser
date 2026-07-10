@@ -263,7 +263,7 @@ export function AntiBlunderPage() {
         {phase === 'confirm' ? (
           <div className="rounded-lg border border-amber-500/50 bg-amber-950/40 p-3">
             <div className="mb-1 text-sm font-semibold text-amber-300">⚠️ Are you sure?</div>
-            <p className="mb-3 text-sm text-amber-100/90">
+            <p className="mb-3 text-sm text-amber-200">
               You’re about to play <b>{temptingSan}</b>. {pos.warning}
             </p>
             <div className="flex gap-2">

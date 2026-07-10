@@ -13,17 +13,17 @@ function GoalRing({ value, goal, streak }: { value: number; goal: number; streak
       <svg viewBox="0 0 80 80" className="h-24 w-24 -rotate-90">
         <defs>
           <linearGradient id="goal-ring-g" x1="0" y1="0" x2="80" y2="80" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#a78bfa" />
-            <stop offset="1" stopColor="#f472b6" />
+            <stop stopColor="var(--c-brand-400)" />
+            <stop offset="1" stopColor="var(--c-accent-400)" />
           </linearGradient>
         </defs>
-        <circle cx={40} cy={40} r={R} fill="none" stroke="#3a3560" strokeWidth={7} />
+        <circle cx={40} cy={40} r={R} fill="none" stroke="var(--c-line)" strokeWidth={7} />
         <circle
           cx={40}
           cy={40}
           r={R}
           fill="none"
-          stroke={met ? '#34d399' : 'url(#goal-ring-g)'}
+          stroke={met ? 'var(--c-mint-400)' : 'url(#goal-ring-g)'}
           strokeWidth={7}
           strokeLinecap="round"
           strokeDasharray={C}

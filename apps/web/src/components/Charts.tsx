@@ -28,7 +28,8 @@ export function ProgressBar({ label, seen, total, due }: { label: string; seen: 
   );
 }
 
-const HEAT_COLORS = ['#282345', '#4c3a8f', '#6d4fd0', '#9a7bf0', '#c4b5fd'];
+/** Theme-aware heat ramp (level 0-4) — values live in index.css per theme. */
+export const HEAT_COLORS = ['var(--c-heat-0)', 'var(--c-heat-1)', 'var(--c-heat-2)', 'var(--c-heat-3)', 'var(--c-heat-4)'];
 const heatLevel = (v: number) => (v === 0 ? 0 : v <= 3 ? 1 : v <= 9 ? 2 : v <= 19 ? 3 : 4);
 
 /** GitHub-style activity calendar. `days` are chronological, starting on a Sunday. */
@@ -69,7 +70,7 @@ export function RatingSparkline({ data }: { data: number[] }) {
   return (
     <div className="flex items-center gap-3">
       <svg viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" className="h-12 flex-1">
-        <polyline points={pts} fill="none" stroke="#a78bfa" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+        <polyline points={pts} fill="none" stroke="var(--c-brand-400)" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
       </svg>
       <div className="text-right text-xs text-neutral-400">
         <div className="text-brand-300">{max}</div>
@@ -104,17 +105,17 @@ export function ActivityChart({ data }: { data: DayPoint[] }) {
   return (
     <svg viewBox={`0 0 ${n} ${H}`} preserveAspectRatio="none" className="h-28 w-full">
       {/* accuracy gridlines at 50% and 100% */}
-      <line x1={0} y1={H / 2} x2={n} y2={H / 2} stroke="#3a3560" strokeWidth={0.5} vectorEffect="non-scaling-stroke" />
+      <line x1={0} y1={H / 2} x2={n} y2={H / 2} stroke="var(--c-line)" strokeWidth={0.5} vectorEffect="non-scaling-stroke" />
       {data.map((d, i) => {
         const h = (d.reviews / maxReviews) * (H - 4);
-        return <rect key={d.date} x={i + 0.12} y={H - h} width={0.76} height={h} fill="#8b5cf699" rx={0.15} />;
+        return <rect key={d.date} x={i + 0.12} y={H - h} width={0.76} height={h} fill="var(--c-brand-500)" fillOpacity={0.6} rx={0.15} />;
       })}
       {accPoints.length > 1 && (
-        <polyline points={accPoints.join(' ')} fill="none" stroke="#fbbf24" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
+        <polyline points={accPoints.join(' ')} fill="none" stroke="var(--c-gold-400)" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
       )}
       {data.map((d, i) =>
         d.acc == null ? null : (
-          <circle key={`c-${d.date}`} cx={i + 0.5} cy={H - (d.acc / 100) * H} r={1.1} fill="#fbbf24" vectorEffect="non-scaling-stroke" />
+          <circle key={`c-${d.date}`} cx={i + 0.5} cy={H - (d.acc / 100) * H} r={1.1} fill="var(--c-gold-400)" vectorEffect="non-scaling-stroke" />
         ),
       )}
     </svg>

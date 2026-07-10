@@ -10,7 +10,7 @@ export function EvalBar({ score, orientation }: { score: Score | null; orientati
 
   return (
     <div
-      className="relative w-6 shrink-0 rounded bg-neutral-900"
+      className="relative w-6 shrink-0 rounded bg-chess-black"
       role="img"
       aria-label={score ? `Evaluation: ${label} (White's view)` : 'No evaluation'}
       title={score ? `Evaluation: ${label} (White's view)` : 'No evaluation'}
@@ -20,13 +20,13 @@ export function EvalBar({ score, orientation }: { score: Score | null; orientati
       <div className="absolute inset-0 overflow-hidden rounded">
         {/* white share of the bar */}
         <div
-          className="absolute inset-x-0 bg-neutral-100 transition-[height] duration-300 ease-out"
+          className="absolute inset-x-0 bg-chess-white transition-[height] duration-300 ease-out"
           style={whiteAtBottom ? { bottom: 0, height: `${whitePct}%` } : { top: 0, height: `${whitePct}%` }}
         />
       </div>
       <span
         className={`absolute inset-x-0 whitespace-nowrap text-center text-[10px] font-semibold tabular-nums ${
-          whiteIsBetter ? 'text-neutral-900' : 'text-neutral-100'
+          whiteIsBetter ? 'text-chess-black' : 'text-chess-white'
         }`}
         style={whiteIsBetter === whiteAtBottom ? { bottom: 2 } : { top: 2 }}
       >
