@@ -33,6 +33,10 @@ export const BUILTIN_REPERTOIRE: Repertoire = {
 interface RepState {
   user: Repertoire[];
   rushHighScore: number;
+  /** Catalog line ids picked into "My repertoire" (see trainers/openingCatalog). */
+  picked: string[];
+  /** Last time `picked` changed — lets sync merge picks newest-wins. */
+  pickedAt: number;
 
   createRepertoire(name: string): string;
   renameRepertoire(id: string, name: string): void;
@@ -40,9 +44,13 @@ interface RepState {
   addLine(repId: string, line: Omit<RepLine, 'id'>): void;
   deleteLine(repId: string, lineId: string): void;
   setRushHighScore(n: number): void;
+  togglePicked(lineId: string): void;
+  setPicked(lineIds: string[]): void;
 
   exportRepertoires(): Repertoire[];
+  exportPicks(): { ids: string[]; updatedAt: number };
   importMerge(remote: unknown): void;
+  importPicks(remote: unknown): void;
 }
 
 export const useRepertoire = create<RepState>()(
@@ -50,6 +58,8 @@ export const useRepertoire = create<RepState>()(
     (set, get) => ({
       user: [],
       rushHighScore: 0,
+      picked: [],
+      pickedAt: 0,
 
       createRepertoire(name) {
         const id = uid('rep');
@@ -76,9 +86,20 @@ export const useRepertoire = create<RepState>()(
       setRushHighScore(n) {
         if (n > get().rushHighScore) set({ rushHighScore: n });
       },
+      togglePicked(lineId) {
+        const cur = get().picked;
+        const picked = cur.includes(lineId) ? cur.filter((x) => x !== lineId) : [...cur, lineId];
+        set({ picked, pickedAt: Date.now() });
+      },
+      setPicked(lineIds) {
+        set({ picked: [...new Set(lineIds)], pickedAt: Date.now() });
+      },
 
       exportRepertoires() {
         return get().user;
+      },
+      exportPicks() {
+        return { ids: get().picked, updatedAt: get().pickedAt };
       },
       // Merge synced repertoires (newer updatedAt wins per repertoire id).
       importMerge(remote) {
@@ -91,7 +112,21 @@ export const useRepertoire = create<RepState>()(
         }
         set({ user: [...byId.values()] });
       },
+      // Merge synced catalog picks (newer updatedAt wins wholesale, matching
+      // the per-repertoire semantics above).
+      importPicks(remote) {
+        if (!remote || typeof remote !== 'object') return;
+        const r = remote as { ids?: unknown; updatedAt?: unknown };
+        if (!Array.isArray(r.ids)) return;
+        const updatedAt = typeof r.updatedAt === 'number' ? r.updatedAt : 0;
+        if (updatedAt > get().pickedAt) {
+          set({ picked: r.ids.filter((x): x is string => typeof x === 'string'), pickedAt: updatedAt });
+        }
+      },
     }),
-    { name: 'chesser-repertoire', partialize: (s) => ({ user: s.user, rushHighScore: s.rushHighScore }) },
+    {
+      name: 'chesser-repertoire',
+      partialize: (s) => ({ user: s.user, rushHighScore: s.rushHighScore, picked: s.picked, pickedAt: s.pickedAt }),
+    },
   ),
 );
