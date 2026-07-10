@@ -392,7 +392,11 @@ export function recordLesson(opts: { firstTime: boolean; stars: number }): void 
   runAchievements();
 }
 
-/** A puzzle-rush run ended with `score` solved. */
+/**
+ * A puzzle-rush run ended with `score` solved. Call AFTER the run is in the
+ * high-score stores (useSprints / legacy) so the badge re-check sees the
+ * fresh best.
+ */
 export function recordRush(score: number): void {
   awardXP('rush', Math.min(XP_AWARDS.rushCap, XP_AWARDS.rushBase + score * XP_AWARDS.rushPerSolve));
   advanceQuests({ type: 'rush', score });

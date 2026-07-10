@@ -94,9 +94,9 @@ export function RushMode() {
     endAt.current = null;
     setRun(state);
     setPhase('over');
-    recordRush(state.solved); // XP + daily quests + achievements
     setLegacyHighScore(state.solved); // keeps the legacy rush badges/stat alive
     const record = recordRushRun(variant, state.solved, state.bestStreak);
+    recordRush(state.solved); // XP + daily quests + achievements
     setIsRecord(record);
     if (record && state.solved > 0) {
       playSound('achievement');
