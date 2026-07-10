@@ -8,9 +8,9 @@ import { isDue, newCard, review, type Grade, type SrsCard } from '../lib/srs';
  * Adding a deck here is the only change needed — storage, sync and merge are
  * all deck-agnostic.
  */
-export type Deck = 'openings' | 'tactics' | 'mates' | 'blunders';
+export type Deck = 'openings' | 'tactics' | 'mates' | 'blunders' | 'endgames';
 
-export const DECKS: Deck[] = ['openings', 'tactics', 'mates', 'blunders'];
+export const DECKS: Deck[] = ['openings', 'tactics', 'mates', 'blunders', 'endgames'];
 
 interface Tally {
   reviews: number;

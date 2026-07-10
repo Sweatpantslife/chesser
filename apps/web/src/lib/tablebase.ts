@@ -9,7 +9,10 @@ export async function fetchTablebase(fen: string): Promise<TablebaseResult> {
   try {
     const res = await fetch(`/api/tablebase?fen=${encodeURIComponent(fen)}`);
     const data = (await res.json()) as TablebaseResult;
-    cache.set(fen, data);
+    // Only cache successful probes — a transient failure must not pin this
+    // position to "offline" for the rest of the session (drills revisit the
+    // same FENs on every restart/review).
+    if (data.available) cache.set(fen, data);
     return data;
   } catch {
     return { available: false, reason: 'fetch-failed' };
@@ -36,7 +39,9 @@ export function categoryLabel(cat: TablebaseCategory | undefined, dtm: number | 
 }
 
 const WIN_CATS: TablebaseCategory[] = ['win', 'cursed-win'];
-const DRAW_CATS: TablebaseCategory[] = ['draw', 'cursed-win', 'blessed-loss'];
+// When the goal is only a draw, winning moves obviously keep it too — without
+// 'win' here a defender who punishes a blunder would be told the draw is gone.
+const DRAW_CATS: TablebaseCategory[] = ['win', 'draw', 'cursed-win', 'blessed-loss'];
 
 /** Rate a played move against the pre-move tablebase data (mover POV). */
 export function judgeMove(
