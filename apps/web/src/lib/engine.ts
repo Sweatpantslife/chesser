@@ -176,11 +176,11 @@ class EngineClient {
   }
 
   /** Request a single bot move. Resolves with the move or rejects on error. */
-  botMove(fen: string, bot: BotConfig): Promise<BotMoveMessage> {
+  botMove(fen: string, bot: BotConfig, recentFens?: string[]): Promise<BotMoveMessage> {
     const reqId = nextId();
     return new Promise((resolve, reject) => {
       this.botWaiters.set(reqId, { resolve, reject });
-      this.send({ t: 'botMove', reqId, fen, bot });
+      this.send({ t: 'botMove', reqId, fen, bot, ...(recentFens?.length ? { recentFens } : {}) });
       setTimeout(() => {
         if (this.botWaiters.has(reqId)) {
           this.botWaiters.delete(reqId);

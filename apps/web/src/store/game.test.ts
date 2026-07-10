@@ -241,7 +241,11 @@ test('takeback makes the game unrated: a retried win records no Elo/XP/ladder cr
   const originalBotMove = engine.botMove;
   engine.botMove = (async () => ({ uci: 'g8f6' })) as unknown as typeof engine.botMove;
   useGame.getState().userMove('d1', 'h5');
-  await new Promise((r) => setTimeout(r, 800)); // bot reply fires on a 300ms timer
+  // The bot reply lands after a simulated (jittered) think time — poll for it.
+  const deadline = Date.now() + 10_000;
+  while (useGame.getState().history.length < 6 && Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 25));
+  }
   engine.botMove = originalBotMove;
   assert.equal(useGame.getState().history.length, 6, 'bot replied');
 
