@@ -11,6 +11,7 @@ import { useQuests } from '../store/quests';
 import { useAchievements } from '../store/achievements';
 import { useLadder } from '../store/ladder';
 import { useLessons } from '../store/lessons';
+import { useSprints } from '../store/sprints';
 
 export type SyncState = 'off' | 'syncing' | 'synced' | 'error';
 
@@ -33,6 +34,7 @@ function gather() {
     achievements: useAchievements.getState().exportState(),
     ladder: useLadder.getState().exportState(),
     lessons: useLessons.getState().exportState(),
+    sprints: useSprints.getState().exportState(),
     // Back-compat: keep emitting the old single puzzle rating so an older client
     // syncing the same account still gets a usable value.
     puzzleRating: useRatings.getState().legacyPuzzleExport(),
@@ -67,6 +69,7 @@ function apply(remote: unknown): void {
     useAchievements.getState().importMerge(r.achievements);
     useLadder.getState().importMerge(r.ladder);
     useLessons.getState().importMerge(r.lessons);
+    useSprints.getState().importMerge(r.sprints);
   } else {
     useProgress.getState().importMerge(r); // legacy: bare progress blob
   }
@@ -106,6 +109,7 @@ export function startSync(token: string, onState: (s: SyncState) => void): void 
   unsubs.push(useAchievements.subscribe(schedule));
   unsubs.push(useLadder.subscribe(schedule));
   unsubs.push(useLessons.subscribe(schedule));
+  unsubs.push(useSprints.subscribe(schedule));
 }
 
 export function stopSync(): void {

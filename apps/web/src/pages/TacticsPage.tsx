@@ -23,6 +23,7 @@ import { playMoveSound } from '../lib/sound';
 import { todayStr } from '../lib/clock';
 import { useTimeoutRef } from '../lib/useTimeoutRef';
 import { RushMode } from './RushMode';
+import { StormMode } from './StormMode';
 import { MistakesMode } from './MistakesMode';
 import { useMistakes } from '../store/mistakes';
 import type { Color } from '../store/game';
@@ -42,14 +43,30 @@ const DIFF_COLOR: Record<Difficulty, string> = {
   hard: 'text-rose-300',
 };
 
-export function TacticsPage({ openDaily = false, onDailyOpened }: { openDaily?: boolean; onDailyOpened?: () => void }) {
-  const [mode, setMode] = useState<'practice' | 'rush' | 'mistakes'>('practice');
+export type TacticsMode = 'practice' | 'rush' | 'storm' | 'mistakes';
+
+export function TacticsPage({
+  openDaily = false,
+  onDailyOpened,
+  openMode,
+}: {
+  openDaily?: boolean;
+  onDailyOpened?: () => void;
+  /** Deep link from the Today page: land straight on a sprint mode. */
+  openMode?: TacticsMode | null;
+}) {
+  const [mode, setMode] = useState<TacticsMode>(openMode ?? 'practice');
   const mistakeCount = useMistakes((s) => s.cards.length);
-  const labels = { practice: 'Practice', rush: 'Puzzle rush', mistakes: `My mistakes${mistakeCount ? ` (${mistakeCount})` : ''}` };
+  const labels = {
+    practice: 'Practice',
+    rush: 'Puzzle rush',
+    storm: 'Puzzle storm',
+    mistakes: `My mistakes${mistakeCount ? ` (${mistakeCount})` : ''}`,
+  };
   return (
     <div className="space-y-4">
       <div className="mx-auto flex w-full max-w-[1200px] gap-1">
-        {(['practice', 'rush', 'mistakes'] as const).map((m) => (
+        {(['practice', 'rush', 'storm', 'mistakes'] as const).map((m) => (
           <button
             key={m}
             onClick={() => setMode(m)}
@@ -61,7 +78,15 @@ export function TacticsPage({ openDaily = false, onDailyOpened }: { openDaily?: 
           </button>
         ))}
       </div>
-      {mode === 'practice' ? <PracticeTactics openDaily={openDaily} onDailyOpened={onDailyOpened} /> : mode === 'rush' ? <RushMode /> : <MistakesMode />}
+      {mode === 'practice' ? (
+        <PracticeTactics openDaily={openDaily} onDailyOpened={onDailyOpened} />
+      ) : mode === 'rush' ? (
+        <RushMode />
+      ) : mode === 'storm' ? (
+        <StormMode />
+      ) : (
+        <MistakesMode />
+      )}
     </div>
   );
 }

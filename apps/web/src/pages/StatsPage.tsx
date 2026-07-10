@@ -6,6 +6,7 @@ import { useCustomPuzzles } from '../store/customPuzzles';
 import { useRatings, ratingValue, ratingPeak, RATING_CATEGORIES } from '../store/ratings';
 import { useGamify, levelProgress } from '../store/gamify';
 import { useStreak } from '../store/streak';
+import { useSprints } from '../store/sprints';
 import { useSettings } from '../store/settings';
 import { ReviewSummary } from '../components/ReviewSummary';
 import { RatingMeter } from '../components/RatingMeter';
@@ -58,7 +59,10 @@ export function StatsPage({ goto }: { goto: (target: DeckTarget) => void }) {
   const streak = useProgress((s) => s.streak);
   const bestStreak = useProgress((s) => s.bestStreak);
 
-  const rushBest = useRepertoire((s) => s.rushHighScore);
+  const legacyRushBest = useRepertoire((s) => s.rushHighScore);
+  const sprintRushBest = useSprints((s) => Math.max(s.puzzleRushBest.timed3.score, s.puzzleRushBest.survival.score));
+  const rushBest = Math.max(legacyRushBest, sprintRushBest);
+  const stormBest = useSprints((s) => s.puzzleStormBest.score);
   const coordBest = useCoordinate((s) => s.bestBySide);
   const coordByMode = useCoordinate((s) => s.bestByMode);
   const customPuzzles = useCustomPuzzles((s) => s.puzzles.length);
@@ -175,9 +179,10 @@ export function StatsPage({ goto }: { goto: (target: DeckTarget) => void }) {
         </Section>
 
         <Section title="Personal bests">
-          <div className="grid grid-cols-3 gap-3 text-center sm:grid-cols-5">
+          <div className="grid grid-cols-3 gap-3 text-center sm:grid-cols-6">
             {[
               { label: 'Puzzle rush', value: rushBest },
+              { label: 'Puzzle storm', value: stormBest },
               { label: 'Coord. white', value: coordBest.white },
               { label: 'Coord. black', value: coordBest.black },
               { label: 'Sq. colour', value: coordByMode.color },

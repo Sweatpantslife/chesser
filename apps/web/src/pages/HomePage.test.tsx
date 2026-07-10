@@ -28,10 +28,13 @@ describe('Today page surfaces (jsdom)', () => {
     expect(screen.getByText(`0 / ${slate.length} done`)).toBeTruthy();
   });
 
-  it('HomePage shows streak, quests, daily puzzle and next-lesson entries', () => {
-    render(<HomePage go={() => {}} onDailyPuzzle={() => {}} />);
+  it('HomePage shows streak, quests, daily puzzle, sprints and next-lesson entries', () => {
+    render(<HomePage go={() => {}} onDailyPuzzle={() => {}} onSprint={() => {}} />);
     expect(screen.getByText('Daily quests')).toBeTruthy();
     expect(screen.getByText('Daily puzzle')).toBeTruthy();
+    expect(screen.getByText('Puzzle sprints')).toBeTruthy();
+    expect(screen.getByText('Rush')).toBeTruthy();
+    expect(screen.getByText('Storm')).toBeTruthy();
     expect(screen.getByText(/Next lesson:/)).toBeTruthy();
     expect(screen.getByText('Play a game')).toBeTruthy();
   });
