@@ -9,7 +9,7 @@
 import type { RatingCategory } from '../store/ratings';
 import { ALL_LESSONS } from '../learn';
 
-export type AchievementCategory = 'learn' | 'tactics' | 'play' | 'ladder' | 'streak' | 'rating' | 'rush' | 'dedication' | 'quests';
+export type AchievementCategory = 'learn' | 'tactics' | 'play' | 'ladder' | 'streak' | 'rating' | 'rush' | 'dedication' | 'quests' | 'coach';
 
 export interface AchievementCtx {
   level: number;
@@ -30,6 +30,8 @@ export interface AchievementCtx {
   lessonsCompleted: number; // distinct lessons finished on the Learn tab
   questsCompleted: number; // lifetime daily quests completed
   questDaysAllDone: number; // days where the whole daily-quest slate was finished
+  weaknessTrainings: number; // rated attempts in the coach's "Train this weakness" drills
+  weaknessesCleared: number; // distinct weaknesses at the cleared bar (lib/gamify WEAKNESS_CLEARED_*)
 }
 
 export interface Achievement {
@@ -174,6 +176,26 @@ export const ACHIEVEMENTS: Achievement[] = [
       { suffix: 'clean-7', name: 'Sweep Week', target: 7, xp: 150 },
     ],
   ),
+  // — Coach —
+  ...tiers(
+    { category: 'coach', icon: '🧑‍🏫', desc: 'Train your diagnosed weaknesses with targeted drills.', value: (c) => c.weaknessTrainings },
+    [
+      { suffix: 'train-1', name: 'Coachable', target: 1, xp: 15 },
+      { suffix: 'train-50', name: 'Star Pupil', target: 50, xp: 100 },
+    ],
+  ),
+  ...tiers(
+    {
+      category: 'coach',
+      icon: '💪',
+      desc: 'Clear a weakness — solve 8 of your last 10 targeted drills (10+ attempts).',
+      value: (c) => c.weaknessesCleared,
+    },
+    [
+      { suffix: 'clear-1', name: 'Weakness No More', target: 1, xp: 50 },
+      { suffix: 'clear-3', name: 'Turnaround Artist', target: 3, xp: 150 },
+    ],
+  ),
   // — Ratings —
   {
     id: 'rating-puzzles-1600',
@@ -257,6 +279,7 @@ export const ACHIEVEMENT_CATEGORY_LABELS: Record<AchievementCategory, string> = 
   rush: 'Puzzle Rush',
   dedication: 'Dedication',
   quests: 'Daily Quests',
+  coach: 'The Coach',
 };
 
 export function achievementProgress(a: Achievement, ctx: AchievementCtx): { value: number; target: number; pct: number; done: boolean } {

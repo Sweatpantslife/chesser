@@ -1,8 +1,9 @@
 /**
  * Gamification core — the single public API for XP, levels, streaks and
  * achievements. The trainer pages and the play page call the `record*`
- * convenience functions on every meaningful event; other features (coach,
- * quests, …) integrate through the primitives:
+ * convenience functions on every meaningful event (the coach flow has its own
+ * pair, recordCoachTraining / recordCoachSession, reached via the adapter in
+ * lib/coachRewards.ts); other features integrate through the primitives:
  *
  *   awardXP(source, amount, opts?)   — ALL XP mutations flow through this
  *   unlockAchievement(id)            — direct unlock of a catalogue badge
@@ -36,6 +37,8 @@ import { useRepertoire } from '../store/repertoire';
 import { useLadder } from '../store/ladder';
 import { useLessons } from '../store/lessons';
 import { useQuests } from '../store/quests';
+import { useCoach, type TrainingAttempt } from '../store/coach';
+import type { WeaknessKind } from './weakness';
 import { ROSTER_BY_ID } from '../data/botRoster';
 import { ACHIEVEMENTS_BY_ID, evaluateAchievements, type AchievementCtx } from './achievements';
 import { STREAK_MILESTONE_XP } from './streak';
@@ -59,7 +62,41 @@ export const XP_AWARDS = {
   rushBase: 5, // + 2 per puzzle solved, capped at 80 total
   rushPerSolve: 2,
   rushCap: 80,
+  // Coach "Train this weakness" flow (extras ON TOP of the base puzzle XP,
+  // which flows through recordPuzzle like any other rated attempt):
+  coachSolveBonus: 4, // solving a weakness-targeted drill
+  coachSessionBase: 5, // finishing a training session (≥ 1 rated attempt)…
+  coachSessionPerSolve: 2, // …+2 per puzzle solved in the session…
+  coachSessionCap: 25, // …capped here
+  coachWeaknessCleared: 40, // a trained weakness reaches the "cleared" bar (see below)
 } as const;
+
+// A weakness counts as CLEARED once you've drilled it enough and now reliably
+// spot the pattern: at least MIN_ATTEMPTS rated attempts, with a solve rate of
+// CLEARED_RATE over the most recent MIN_ATTEMPTS. Derived live from the coach
+// training log, so it's retroactive and needs no extra persisted state.
+export const WEAKNESS_CLEARED_MIN_ATTEMPTS = 10;
+export const WEAKNESS_CLEARED_RATE = 0.8;
+
+/** Is one weakness's attempt list (oldest→newest) at the cleared bar? */
+function weaknessCleared(attempts: readonly TrainingAttempt[]): boolean {
+  if (attempts.length < WEAKNESS_CLEARED_MIN_ATTEMPTS) return false;
+  const recent = attempts.slice(-WEAKNESS_CLEARED_MIN_ATTEMPTS);
+  return recent.filter((t) => t.solved).length / recent.length >= WEAKNESS_CLEARED_RATE;
+}
+
+/** Distinct weakness kinds currently at the cleared bar. */
+function clearedWeaknessCount(log: readonly TrainingAttempt[]): number {
+  const byKind = new Map<WeaknessKind, TrainingAttempt[]>();
+  for (const t of log) {
+    const list = byKind.get(t.kind);
+    if (list) list.push(t);
+    else byKind.set(t.kind, [t]);
+  }
+  let n = 0;
+  for (const list of byKind.values()) if (weaknessCleared(list)) n++;
+  return n;
+}
 
 /** Where a grant came from — extend freely; used for analytics/toasts, not logic. */
 export type XpSource =
@@ -223,6 +260,7 @@ export function buildAchievementCtx(): AchievementCtx {
   const progress = useProgress.getState();
   const ladder = useLadder.getState();
   const quests = useQuests.getState();
+  const coachLog = useCoach.getState().trainingLog;
 
   const ratingSnap = (cat: RatingCategory) => {
     const c = ratings[cat];
@@ -275,6 +313,8 @@ export function buildAchievementCtx(): AchievementCtx {
     lessonsCompleted: Object.keys(useLessons.getState().completed).length,
     questsCompleted: quests.totalCompleted,
     questDaysAllDone: quests.daysAllDone,
+    weaknessTrainings: coachLog.length,
+    weaknessesCleared: clearedWeaknessCount(coachLog),
   };
 }
 
@@ -350,6 +390,40 @@ export function recordLesson(opts: { firstTime: boolean; stars: number }): void 
 export function recordRush(score: number): void {
   awardXP('rush', Math.min(XP_AWARDS.rushCap, XP_AWARDS.rushBase + score * XP_AWARDS.rushPerSolve));
   advanceQuests({ type: 'rush', score });
+  runAchievements();
+}
+
+// — Coach integration (called via lib/coachRewards.ts, the coach's adapter) —
+
+/**
+ * A coach "Train this weakness" attempt was rated. Call AFTER the attempt is
+ * in useCoach.trainingLog (the coach page records it first). The attempt's
+ * base XP / puzzle rating / quest progress already flowed through the normal
+ * recordPuzzle pipeline, so this pays only the coach-specific extras — all
+ * passive (countsAsActivity: false), because the underlying puzzle already
+ * ticked the streak and the day's activity count:
+ *  - a solve bonus (XP_AWARDS.coachSolveBonus) on top of the puzzle XP;
+ *  - the one-off clear bonus (XP_AWARDS.coachWeaknessCleared) when THIS
+ *    attempt lifts the weakness over the cleared bar (re-clearing after a
+ *    genuine regression pays again — you earned it back);
+ * then re-checks the badge catalogue so coach achievements land immediately.
+ */
+export function recordCoachTraining(kind: WeaknessKind, solved: boolean): void {
+  if (solved) awardXP('coach', XP_AWARDS.coachSolveBonus, { countsAsActivity: false });
+  const attempts = useCoach.getState().trainingLog.filter((t) => t.kind === kind);
+  if (weaknessCleared(attempts) && !weaknessCleared(attempts.slice(0, -1))) {
+    awardXP('coach', XP_AWARDS.coachWeaknessCleared, { countsAsActivity: false });
+    playSound('achievement');
+  }
+  runAchievements();
+}
+
+/** A coach training session ended ("Done training" with ≥ 1 rated attempt).
+ *  Pays a small session bonus scaled by solves; passive, like all coach extras. */
+export function recordCoachSession(opts: { solved: number; attempts: number }): void {
+  if (opts.attempts <= 0) return;
+  const xp = Math.min(XP_AWARDS.coachSessionCap, XP_AWARDS.coachSessionBase + opts.solved * XP_AWARDS.coachSessionPerSolve);
+  awardXP('coach', xp, { countsAsActivity: false });
   runAchievements();
 }
 

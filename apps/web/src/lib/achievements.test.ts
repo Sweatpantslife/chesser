@@ -24,6 +24,8 @@ function baseCtx(over: Partial<AchievementCtx> = {}): AchievementCtx {
     lessonsCompleted: 0,
     questsCompleted: 0,
     questDaysAllDone: 0,
+    weaknessTrainings: 0,
+    weaknessesCleared: 0,
     ...over,
   };
 }
@@ -66,6 +68,19 @@ describe('achievement catalogue (pure evaluation)', () => {
     expect(earned.has('streak-goal-7')).toBe(true);
     expect(earned.has('streak-goal-30')).toBe(false);
     expect(earned.has('streak-first-goal')).toBe(true);
+  });
+
+  it('coach badges follow the training counters', () => {
+    const earned = new Set(evaluateAchievements(baseCtx({ weaknessTrainings: 50, weaknessesCleared: 1 })));
+    expect(earned.has('coach-train-1')).toBe(true);
+    expect(earned.has('coach-train-50')).toBe(true);
+    expect(earned.has('coach-clear-1')).toBe(true);
+    expect(earned.has('coach-clear-3')).toBe(false);
+
+    const partial = new Set(evaluateAchievements(baseCtx({ weaknessTrainings: 1 })));
+    expect(partial.has('coach-train-1')).toBe(true);
+    expect(partial.has('coach-train-50')).toBe(false);
+    expect(partial.has('coach-clear-1')).toBe(false);
   });
 
   it('achievementProgress clamps at 100% and reports done', () => {

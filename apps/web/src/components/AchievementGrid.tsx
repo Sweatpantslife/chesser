@@ -14,6 +14,7 @@ import { useLadder } from '../store/ladder';
 import { useRepertoire } from '../store/repertoire';
 import { useProgress } from '../store/progress';
 import { useQuests } from '../store/quests';
+import { useCoach } from '../store/coach';
 
 /**
  * The badge gallery: earned badges in full colour with their earn date,
@@ -77,6 +78,7 @@ export function AchievementGrid() {
   useRepertoire((s) => s.rushHighScore);
   useProgress((s) => s.history);
   useQuests((s) => s.totalCompleted);
+  useCoach((s) => s.trainingLog);
 
   // Cheap to recompute; the store subscriptions above keep it fresh.
   const ctx = buildAchievementCtx();
