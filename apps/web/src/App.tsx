@@ -17,10 +17,14 @@ import { ProfilePage } from './pages/ProfilePage';
 import { TrainPage, type TrainTab } from './pages/TrainPage';
 import { CoachPage } from './pages/CoachPage';
 import { ArchivePage } from './pages/ArchivePage';
+import { LeaderboardsPage } from './pages/LeaderboardsPage';
+import { PublicProfilePage } from './pages/PublicProfilePage';
 import { LevelBadge } from './components/LevelBadge';
 import { GamifyToasts } from './components/GamifyToasts';
 import { Celebration } from './components/Celebration';
 import { initGamify } from './lib/gamify';
+import { parseHashRoute, profileHashUser } from './lib/hashRoute';
+import { initSocial } from './store/social';
 import { playSound } from './lib/sound';
 import type { DeckTarget } from './lib/decks';
 import {
@@ -38,11 +42,27 @@ import {
   IconTactics,
   IconToday,
   IconTrain,
+  IconTrophy,
   LogoMark,
   Wordmark,
 } from './components/icons';
 
-type View = 'home' | 'play' | 'learn' | 'friends' | 'openings' | 'tactics' | 'endgame' | 'train' | 'coach' | 'coordinates' | 'archive' | 'stats' | 'profile';
+type View =
+  | 'home'
+  | 'play'
+  | 'learn'
+  | 'friends'
+  | 'openings'
+  | 'tactics'
+  | 'endgame'
+  | 'train'
+  | 'coach'
+  | 'coordinates'
+  | 'archive'
+  | 'stats'
+  | 'leaders'
+  | 'profile'
+  | 'shared-profile';
 
 const TABS: { id: View; label: string; hint: string; icon: ComponentType<SVGProps<SVGSVGElement> & { size?: number }> }[] = [
   { id: 'home', label: 'Today', hint: 'streak · daily quests · goals', icon: IconToday },
@@ -57,6 +77,7 @@ const TABS: { id: View; label: string; hint: string; icon: ComponentType<SVGProp
   { id: 'coordinates', label: 'Coords', hint: 'board-vision trainer', icon: IconCoords },
   { id: 'archive', label: 'Archive', hint: 'your games · results & trends', icon: IconArchive },
   { id: 'stats', label: 'Stats', hint: 'progress dashboard', icon: IconStats },
+  { id: 'leaders', label: 'Ranks', hint: 'leaderboards · weekly race', icon: IconTrophy },
   { id: 'profile', label: 'Profile', hint: 'level · ratings · badges', icon: IconProfile },
 ];
 
@@ -155,9 +176,14 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
 export default function App() {
   const init = useGame((s) => s.init);
   const authInit = useAuth((s) => s.init);
-  // A shared friend-game link (#/friend/CODE) lands straight on the Friends view;
+  // A shared friend-game link (#/friend/CODE) lands straight on the Friends
+  // view and a shared profile link (#/profile/NAME) on that public profile;
   // everyone else starts the day on the Today page.
-  const [view, setView] = useState<View>(() => (window.location.hash.startsWith('#/friend/') ? 'friends' : 'home'));
+  const [view, setView] = useState<View>(() => {
+    const route = parseHashRoute(window.location.hash);
+    return route.kind === 'friend' ? 'friends' : route.kind === 'profile' ? 'shared-profile' : 'home';
+  });
+  const [profileUser, setProfileUser] = useState<string | null>(() => profileHashUser(window.location.hash));
   const [trainTab, setTrainTab] = useState<TrainTab>('mates');
   // Set when the Today page's "Daily puzzle" entry is used, so the Tactics
   // page opens straight onto today's puzzle (cleared on any manual nav).
@@ -165,11 +191,33 @@ export default function App() {
 
   useEffect(() => {
     const onHash = () => {
-      if (window.location.hash.startsWith('#/friend/')) setView('friends');
+      const route = parseHashRoute(window.location.hash);
+      if (route.kind === 'friend') {
+        setView('friends');
+      } else if (route.kind === 'profile') {
+        setProfileUser(route.user);
+        setView('shared-profile');
+      } else if (route.kind === 'exit-overlay') {
+        // The hash was cleared (Back out of a profile link). Normal tabs
+        // don't live in the hash, but a shared profile exists ONLY via its
+        // hash — so leaving the hash leaves the view too.
+        setView((v) => (v === 'shared-profile' ? 'home' : v));
+      }
+      // 'ignore' (in-page anchors like the #main skip link, foreign hashes):
+      // never navigate — the skip link must move focus, not views.
     };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
+
+  // Open a player's public profile (leaderboard rows, own share preview).
+  // pushState (not location.hash) avoids double-handling via hashchange while
+  // still making Back return to the previous view via the listener above.
+  const openProfile = (username: string) => {
+    window.history.pushState(null, '', `#/profile/${encodeURIComponent(username)}`);
+    setProfileUser(username);
+    setView('shared-profile');
+  };
 
   // Jump to a deck's trainer (used by the unified review summary on Stats).
   const goto = (target: DeckTarget) => {
@@ -180,6 +228,10 @@ export default function App() {
   // All navigation funnels through here so one-shot flags don't go stale.
   const nav = (v: View) => {
     setTacticsDaily(false);
+    // Leaving a shared profile: drop its hash so the URL matches the new view.
+    if (v !== 'shared-profile' && window.location.hash.startsWith('#/profile/')) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
     setView(v);
   };
 
@@ -187,6 +239,7 @@ export default function App() {
     init();
     authInit();
     initGamify();
+    initSocial();
   }, [init, authInit]);
 
   return (
@@ -224,7 +277,9 @@ export default function App() {
         {view === 'coordinates' && <CoordinatePage />}
         {view === 'archive' && <ArchivePage goPlay={() => setView('play')} />}
         {view === 'stats' && <StatsPage goto={goto} />}
-        {view === 'profile' && <ProfilePage goPlay={() => setView('play')} />}
+        {view === 'leaders' && <LeaderboardsPage onViewProfile={openProfile} />}
+        {view === 'profile' && <ProfilePage goPlay={() => setView('play')} onViewPublicProfile={openProfile} />}
+        {view === 'shared-profile' && profileUser && <PublicProfilePage username={profileUser} />}
       </main>
       <GamifyToasts />
       <Celebration />

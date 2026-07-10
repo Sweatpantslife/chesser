@@ -6,6 +6,7 @@ import { BOT_ROSTER, type RosterBot } from '../data/botRoster';
 import { RatingMeter } from '../components/RatingMeter';
 import { DailyGoal } from '../components/DailyGoal';
 import { AchievementGrid } from '../components/AchievementGrid';
+import { ShareProfilePanel } from '../components/ShareProfilePanel';
 import mascotUrl from '../assets/img/mascot.svg';
 
 function LevelHeader() {
@@ -102,7 +103,7 @@ function SuggestedOpponent({ goPlay }: { goPlay: () => void }) {
   );
 }
 
-export function ProfilePage({ goPlay }: { goPlay: () => void }) {
+export function ProfilePage({ goPlay, onViewPublicProfile }: { goPlay: () => void; onViewPublicProfile: (username: string) => void }) {
   return (
     <div className="mx-auto w-full max-w-[1000px] space-y-4">
       <div className="flex items-center justify-between">
@@ -124,7 +125,10 @@ export function ProfilePage({ goPlay }: { goPlay: () => void }) {
         ))}
       </div>
 
-      <SuggestedOpponent goPlay={goPlay} />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <SuggestedOpponent goPlay={goPlay} />
+        <ShareProfilePanel onPreview={onViewPublicProfile} />
+      </div>
 
       <AchievementGrid />
     </div>

@@ -15,6 +15,8 @@ import { probeExplorer } from './explorer.js';
 import { importGames } from './import.js';
 import { registerAccountRoutes } from './accounts/routes.js';
 import { registerCoachRoutes } from './coach/routes.js';
+import { registerSocialRoutes } from './social/routes.js';
+import { socialStore } from './social/store.js';
 import type { ExplorerDb } from '@chesser/shared';
 
 // trustProxy: opt-in via TRUST_PROXY (see config.ts) — required behind a
@@ -45,6 +47,7 @@ app.get('/api/import', async (req) => {
 });
 registerAccountRoutes(app);
 registerCoachRoutes(app);
+registerSocialRoutes(app);
 
 // Serve the built web client (single-origin deployment). Real asset paths are
 // served as files; anything else falls through to the SPA's index.html. The
@@ -95,6 +98,9 @@ async function shutdown(): Promise<void> {
     await engines.shutdown();
     await app.close();
   } finally {
+    // Social-store writes are queued off the request path; let them land
+    // even when engine/tablebase teardown throws above.
+    await socialStore.flush().catch(() => {});
     process.exit(0);
   }
 }
