@@ -15,6 +15,8 @@
  *   'streak-milestone'     3/7/30/100-day streak bonus paid: { days, rewardXp, streak }
  *   'streak-freeze-used'   a banked freeze bridged a missed day: { streak, freezesLeft }
  *   'goal'                 daily XP goal met: { streak } (activity-day streak)
+ *   'quest-complete'       a daily quest finished: { id, name, icon, xp }
+ *   'quests-all-done'      the whole daily slate finished: { bonusXp }
  *
  * On each awardXP this module: 1) adds XP / advances the daily goal,
  * 2) marks today active on the streak (freezes, milestones), 3) celebrates
@@ -33,9 +35,11 @@ import { useProgress } from '../store/progress';
 import { useRepertoire } from '../store/repertoire';
 import { useLadder } from '../store/ladder';
 import { useLessons } from '../store/lessons';
+import { useQuests } from '../store/quests';
 import { ROSTER_BY_ID } from '../data/botRoster';
 import { ACHIEVEMENTS_BY_ID, evaluateAchievements, type AchievementCtx } from './achievements';
 import { STREAK_MILESTONE_XP } from './streak';
+import { ALL_QUESTS_BONUS_XP, type Activity } from './quests';
 import { playSound } from './sound';
 
 // — Per-activity XP amounts (the one table to tune) —
@@ -76,7 +80,9 @@ export type GamifyEvent =
   | { kind: 'achievement-unlocked'; id: string; name: string; icon: string; xp: number }
   | { kind: 'streak-milestone'; days: number; rewardXp: number; streak: number }
   | { kind: 'streak-freeze-used'; streak: number; freezesLeft: number }
-  | { kind: 'goal'; streak: number };
+  | { kind: 'goal'; streak: number }
+  | { kind: 'quest-complete'; id: string; name: string; icon: string; xp: number }
+  | { kind: 'quests-all-done'; bonusXp: number };
 
 const listeners = new Set<(e: GamifyEvent) => void>();
 
@@ -145,6 +151,27 @@ function celebrateUnlock(id: string): void {
   emit({ kind: 'achievement-unlocked', id: a.id, name: a.name, icon: a.icon, xp: a.xp });
 }
 
+/**
+ * Feed one activity to the daily quests, paying reward XP for anything it
+ * completed. Reward XP is passive (countsAsActivity: false) — the underlying
+ * activity already ticked the streak/goal, and passive grants can't recurse
+ * back into quest progress. Called from every record* wrapper *before* the
+ * achievement re-check so quest badges see fresh counts.
+ */
+function advanceQuests(a: Activity): void {
+  const res = useQuests.getState().applyActivity(a);
+  for (const q of res.completed) {
+    if (q.xp > 0) awardXP('quest', q.xp, { countsAsActivity: false });
+    playSound('achievement');
+    emit({ kind: 'quest-complete', id: q.id, name: q.name, icon: q.icon, xp: q.xp });
+  }
+  if (res.allDone) {
+    awardXP('quest', ALL_QUESTS_BONUS_XP, { countsAsActivity: false });
+    playSound('streak');
+    emit({ kind: 'quests-all-done', bonusXp: ALL_QUESTS_BONUS_XP });
+  }
+}
+
 /** Snapshot every store into the flat shape the achievement catalogue reads. */
 export function buildAchievementCtx(): AchievementCtx {
   const ratings = useRatings.getState().categories;
@@ -152,6 +179,7 @@ export function buildAchievementCtx(): AchievementCtx {
   const streakStore = useStreak.getState();
   const progress = useProgress.getState();
   const ladder = useLadder.getState();
+  const quests = useQuests.getState();
 
   const ratingSnap = (cat: RatingCategory) => {
     const c = ratings[cat];
@@ -194,12 +222,16 @@ export function buildAchievementCtx(): AchievementCtx {
     puzzlesSolved: ratings.puzzles.won,
     gamesPlayed: ratings.bots.played + ratings.blitz.played,
     gamesWon: ratings.bots.won + ratings.blitz.won,
+    // ?? 0 guards rating state persisted before win streaks existed.
+    bestWinStreak: Math.max(ratings.bots.bestWinStreak ?? 0, ratings.blitz.bestWinStreak ?? 0),
     botsBeaten: ladder.clearedCount(),
     topBotBeatenRating,
     rushBest: useRepertoire.getState().rushHighScore,
     reviews,
     activeDays: activeDays.size,
     lessonsCompleted: Object.keys(useLessons.getState().completed).length,
+    questsCompleted: quests.totalCompleted,
+    questDaysAllDone: quests.daysAllDone,
   };
 }
 
@@ -226,6 +258,7 @@ export function recordPuzzle(puzzleRating: number, success: boolean): { eloDelta
   const res = useRatings.getState().record('puzzles', puzzleRating, success ? 'win' : 'loss');
   playSound(success ? 'puzzleSolved' : 'wrongMove');
   awardXP('puzzle', success ? XP_AWARDS.puzzleSolved : XP_AWARDS.puzzleFailed);
+  advanceQuests({ type: 'puzzle', success });
   runAchievements();
   return res;
 }
@@ -234,6 +267,7 @@ export function recordPuzzle(puzzleRating: number, success: boolean): { eloDelta
 export function recordReview(correct: boolean): void {
   playSound(correct ? 'xpGain' : 'wrongMove');
   awardXP('review', correct ? XP_AWARDS.reviewCorrect : XP_AWARDS.reviewWrong);
+  advanceQuests({ type: 'review', correct });
   runAchievements();
 }
 
@@ -256,6 +290,7 @@ export function recordGameResult(opts: { opponentRating: number; outcome: GameOu
   if (opts.outcome === 'win' && opts.opponentRating > before)
     xp += Math.min(XP_AWARDS.gameUpsetBonusMax, Math.round((opts.opponentRating - before) / 25));
   awardXP('game', xp);
+  advanceQuests({ type: 'game', outcome: opts.outcome });
   runAchievements();
   return { category, ratingBefore: Math.round(before), ratingAfter: Math.round(rec.elo), ratingDelta: rec.eloDelta };
 }
@@ -264,20 +299,24 @@ export function recordGameResult(opts: { opponentRating: number; outcome: GameOu
 export function recordLesson(opts: { firstTime: boolean; stars: number }): void {
   playSound('lessonComplete');
   awardXP('lesson', opts.firstTime ? XP_AWARDS.lessonFirstBase + opts.stars * XP_AWARDS.lessonStarBonus : XP_AWARDS.lessonReplay);
+  advanceQuests({ type: 'lesson', firstTime: opts.firstTime });
   runAchievements();
 }
 
 /** A puzzle-rush run ended with `score` solved. */
 export function recordRush(score: number): void {
   awardXP('rush', Math.min(XP_AWARDS.rushCap, XP_AWARDS.rushBase + score * XP_AWARDS.rushPerSolve));
+  advanceQuests({ type: 'rush', score });
   runAchievements();
 }
 
 let initialized = false;
-/** Run once on app start: migrate the legacy puzzle rating and back-fill badges. */
+/** Run once on app start: migrate the legacy puzzle rating, refresh the daily
+ *  quest slate, and back-fill badges. */
 export function initGamify(): void {
   if (initialized) return;
   initialized = true;
   useRatings.getState().migrateLegacy();
+  useQuests.getState().rollover();
   runAchievements({ silent: true });
 }

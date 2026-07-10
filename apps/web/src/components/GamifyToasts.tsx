@@ -47,6 +47,22 @@ function toastFor(e: GamifyEvent): Toast | null {
         body: e.streak > 0 ? `${e.streak}-day streak — keep it going!` : 'Nice work — come back tomorrow!',
         accent: 'border-accent-400/70 shadow-glow',
       };
+    case 'quest-complete':
+      return {
+        id: nextId++,
+        icon: e.icon,
+        title: 'Quest complete',
+        body: e.xp > 0 ? `${e.name} · +${e.xp} XP` : e.name,
+        accent: 'border-brand-400/70 shadow-glow',
+      };
+    case 'quests-all-done':
+      return {
+        id: nextId++,
+        icon: '🏅',
+        title: 'All quests done!',
+        body: `Daily slate cleared · +${e.bonusXp} XP bonus`,
+        accent: 'border-gold-400/70 shadow-glow-gold',
+      };
     default:
       return null; // 'xp-awarded' is too chatty for a toast
   }

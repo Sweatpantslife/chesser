@@ -57,6 +57,17 @@ export function Wordmark({ className = '' }: { className?: string }) {
 
 // — Nav icons —
 
+/** "Today" tab: a calendar page with today marked. */
+export function IconToday(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <rect x="3.5" y="5" width="17" height="15.5" rx="3" />
+      <path d="M3.5 9.5h17M8 3v3.5M16 3v3.5" />
+      <circle cx="12" cy="15" r="1.7" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 export function IconPlay(p: IconProps) {
   return (
     <svg {...base(p)}>

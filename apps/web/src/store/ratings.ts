@@ -52,6 +52,10 @@ export interface CategoryRating {
   won: number; // puzzles: solved
   lost: number; // puzzles: missed
   drawn: number;
+  /** Current run of consecutive wins (a draw or loss resets it). */
+  winStreak: number;
+  /** Longest win run ever (drives the win-streak achievements). */
+  bestWinStreak: number;
   history: Record<string, DaySnapshot>; // YYYY-MM-DD → end-of-day snapshot
 }
 
@@ -69,6 +73,8 @@ function freshCategory(cat: RatingCategory): CategoryRating {
     won: 0,
     lost: 0,
     drawn: 0,
+    winStreak: 0,
+    bestWinStreak: 0,
     history: {},
   };
 }
@@ -118,6 +124,8 @@ function applyRecord(c: CategoryRating, opponentRating: number, outcome: GameOut
   const newGlicko = updateGlickoOne(c.glicko, opponentRating, OPP_RD, score);
   const glickoDelta = Math.round(newGlicko.rating - c.glicko.rating);
   const d = today();
+  // ?? 0 guards state persisted before win streaks existed.
+  const winStreak = outcome === 'win' ? (c.winStreak ?? 0) + 1 : 0;
   const next: CategoryRating = {
     elo: newElo,
     eloPeak: Math.max(c.eloPeak, newElo),
@@ -127,6 +135,8 @@ function applyRecord(c: CategoryRating, opponentRating: number, outcome: GameOut
     won: c.won + (outcome === 'win' ? 1 : 0),
     lost: c.lost + (outcome === 'loss' ? 1 : 0),
     drawn: c.drawn + (outcome === 'draw' ? 1 : 0),
+    winStreak,
+    bestWinStreak: Math.max(c.bestWinStreak ?? 0, winStreak),
     history: { ...c.history, [d]: { elo: newElo, glicko: Math.round(newGlicko.rating) } },
   };
   return { next, res: { elo: newElo, eloDelta, glicko: Math.round(newGlicko.rating), glickoDelta } };
@@ -146,6 +156,8 @@ function mergeCategory(local: CategoryRating, remote: Partial<CategoryRating> | 
     won: Math.max(local.won, remote.won ?? 0),
     lost: Math.max(local.lost, remote.lost ?? 0),
     drawn: Math.max(local.drawn, remote.drawn ?? 0),
+    winStreak: remoteWins ? (remote.winStreak ?? 0) : (local.winStreak ?? 0),
+    bestWinStreak: Math.max(local.bestWinStreak ?? 0, remote.bestWinStreak ?? 0),
     history: { ...(remote.history ?? {}), ...local.history },
   };
 }
@@ -187,6 +199,8 @@ function categoryFromLegacy(l: { rating: number; peak: number; played: number; s
     won: l.solved,
     lost: Math.max(0, l.played - l.solved),
     drawn: 0,
+    winStreak: 0,
+    bestWinStreak: 0,
     history,
   };
 }
