@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { store, type GameEntry } from './store.js';
 import { hashPassword, newToken, newUserId, validateCredentials, verifyPassword } from './auth.js';
+import { validateProgress } from './progress-validator.js';
 
 function bearer(req: FastifyRequest): string | null {
   const h = req.headers['authorization'];
@@ -67,8 +68,16 @@ export function registerAccountRoutes(app: FastifyInstance): void {
     const uid = authUserId(req);
     if (!uid) return reply.code(401).send({ error: 'Not authenticated.' });
     const { data } = (req.body ?? {}) as { data?: unknown };
-    store.setProgress(uid, data ?? null);
-    return { ok: true, updatedAt: Date.now() };
+    // Anti-cheat: sanity-check every score-bearing claim against absolute
+    // bounds, internal consistency, and plausible deltas vs the stored copy.
+    // Impossible claims fail the sync; normalizable ones are clamped and the
+    // adjustments reported (see accounts/progress-validator.ts).
+    const verdict = validateProgress(data ?? null, store.getProgress(uid)?.data ?? null);
+    if (!verdict.ok) return reply.code(400).send({ error: verdict.error });
+    store.setProgress(uid, verdict.data);
+    return verdict.adjustments.length > 0
+      ? { ok: true, updatedAt: Date.now(), adjusted: verdict.adjustments }
+      : { ok: true, updatedAt: Date.now() };
   });
 
   // --- game library -------------------------------------------------------

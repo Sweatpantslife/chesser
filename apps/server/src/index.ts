@@ -19,7 +19,10 @@ import type { ExplorerDb } from '@chesser/shared';
 
 // trustProxy: opt-in via TRUST_PROXY (see config.ts) — required behind a
 // reverse proxy so per-IP rate limiting sees real client addresses.
-const app = Fastify({ logger: LOG_ENABLED, trustProxy: TRUST_PROXY });
+// bodyLimit: an explicit cap on request bodies (matches Fastify's default of
+// 1 MiB rather than relying on it) — the largest legitimate payloads are the
+// synced progress blob and saved PGNs, both far under it.
+const app = Fastify({ logger: LOG_ENABLED, trustProxy: TRUST_PROXY, bodyLimit: 1_048_576 });
 await app.register(cors, { origin: true });
 
 app.get('/api/health', async () => ({ ok: true, syzygy: !!engines.availability().syzygy }));
