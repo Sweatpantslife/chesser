@@ -30,6 +30,40 @@ export const LOG_ENABLED = process.env.CHESSER_LOG
   ? /^(1|true|yes|on)$/i.test(process.env.CHESSER_LOG)
   : process.env.NODE_ENV === 'production';
 
+/**
+ * How far to trust X-Forwarded-* headers (Fastify's `trustProxy`).
+ *
+ * OFF by default on purpose: when the server is NOT behind a proxy, trusting
+ * X-Forwarded-For lets any client spoof its IP — which would defeat the
+ * per-IP rate limit on /api/coach/explain.
+ *
+ * This deliberately NEVER produces `true`: Fastify's `trustProxy: true`
+ * trusts the ENTIRE chain, so `req.ip` becomes the LEFTMOST X-Forwarded-For
+ * entry — which is client-controlled even behind a well-behaved appending
+ * proxy (nginx `proxy_add_x_forwarded_for`, Traefik): a client sending a
+ * pre-seeded header arrives as `<forged>, <real-ip>` and the forged entry
+ * wins. A hop count (or explicit address spec) counts from the RIGHT, so
+ * only addresses your own proxies appended are believed.
+ *
+ * Accepted values:
+ *   unset / "" / "0" / "false" / "no" / "off" → false  (default)
+ *   "1" / "true" / "yes" / "on"               → 1      (one reverse proxy —
+ *                                                the common Traefik/Nginx/
+ *                                                Coolify setup)
+ *   any other positive integer                → that hop count
+ *   anything else                             → passed through as a Fastify
+ *                                                address spec (IP, CIDR, or
+ *                                                comma-separated list)
+ */
+function parseTrustProxy(raw: string | undefined): false | number | string {
+  const v = raw?.trim() ?? '';
+  if (v === '' || /^(0|false|no|off)$/i.test(v)) return false;
+  if (/^(1|true|yes|on)$/i.test(v)) return 1;
+  if (/^\d+$/.test(v)) return Number(v);
+  return v;
+}
+export const TRUST_PROXY: false | number | string = parseTrustProxy(process.env.TRUST_PROXY);
+
 /** Resource budget for engines. Kept modest so several can coexist. */
 export const ENGINE_THREADS = Number(process.env.CHESSER_THREADS ?? Math.min(2, Math.max(1, os.cpus().length - 1)));
 export const ENGINE_HASH_MB = Number(process.env.CHESSER_HASH_MB ?? 128);

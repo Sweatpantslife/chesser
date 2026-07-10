@@ -29,6 +29,9 @@ interface SettingsState {
   sound: boolean;
   premove: boolean;
   arrows: boolean; // draw the engine's best-move arrows on the analysis board
+  /** AI Coach prose (LLM-worded engine facts). Degrades gracefully when the
+   *  server has no LLM key, so it defaults on; rule-based text always remains. */
+  aiCoach: boolean;
   boardTheme: BoardTheme;
   pieceSet: PieceSet;
   ratingMeter: RatingMeter;
@@ -37,6 +40,7 @@ interface SettingsState {
   setSound(b: boolean): void;
   setPremove(b: boolean): void;
   setArrows(b: boolean): void;
+  setAiCoach(b: boolean): void;
   setBoardTheme(t: BoardTheme): void;
   setPieceSet(p: PieceSet): void;
   setRatingMeter(m: RatingMeter): void;
@@ -49,6 +53,7 @@ export const useSettings = create<SettingsState>()(
       sound: true,
       premove: true,
       arrows: true,
+      aiCoach: true,
       boardTheme: 'brown',
       pieceSet: 'cburnett',
       ratingMeter: 'elo',
@@ -58,6 +63,7 @@ export const useSettings = create<SettingsState>()(
       setSound: (sound) => set({ sound }),
       setPremove: (premove) => set({ premove }),
       setArrows: (arrows) => set({ arrows }),
+      setAiCoach: (aiCoach) => set({ aiCoach }),
       setBoardTheme: (boardTheme) => set({ boardTheme }),
       setPieceSet: (pieceSet) => {
         loadPieceSet(pieceSet);

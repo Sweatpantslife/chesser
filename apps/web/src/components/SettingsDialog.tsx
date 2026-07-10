@@ -53,7 +53,7 @@ const APP_THEMES: { id: ThemePref; label: string }[] = [
 ];
 
 export function SettingsDialog({ onClose }: { onClose: () => void }) {
-  const { sound, premove, arrows, boardTheme, pieceSet, ratingMeter, theme, setSound, setPremove, setArrows, setBoardTheme, setPieceSet, setRatingMeter, setTheme } =
+  const { sound, premove, arrows, aiCoach, boardTheme, pieceSet, ratingMeter, theme, setSound, setPremove, setArrows, setAiCoach, setBoardTheme, setPieceSet, setRatingMeter, setTheme } =
     useSettings();
 
   // Load every set's CSS so the previews below render.
@@ -91,6 +91,11 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
         <Toggle on={sound} onChange={setSound} label="Sounds" />
         <Toggle on={premove} onChange={setPremove} label="Premoves (vs bot)" />
         <Toggle on={arrows} onChange={setArrows} label="Engine arrows (analysis)" />
+        <Toggle on={aiCoach} onChange={setAiCoach} label="AI Coach explanations" />
+        <p className="-mt-1 mb-1 text-xs text-neutral-400">
+          Natural-language coaching worded by an AI from the engine&apos;s analysis. Falls back to built-in
+          explanations when unavailable.
+        </p>
 
         <div className="mt-3">
           <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Headline rating</div>
