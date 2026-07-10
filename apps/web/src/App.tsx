@@ -16,6 +16,7 @@ import { StatsPage } from './pages/StatsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { TrainPage, type TrainTab } from './pages/TrainPage';
 import { CoachPage } from './pages/CoachPage';
+import { ArchivePage } from './pages/ArchivePage';
 import { LevelBadge } from './components/LevelBadge';
 import { GamifyToasts } from './components/GamifyToasts';
 import { Celebration } from './components/Celebration';
@@ -23,6 +24,7 @@ import { initGamify } from './lib/gamify';
 import { playSound } from './lib/sound';
 import type { DeckTarget } from './lib/decks';
 import {
+  IconArchive,
   IconCoach,
   IconCoords,
   IconEndgame,
@@ -40,7 +42,7 @@ import {
   Wordmark,
 } from './components/icons';
 
-type View = 'home' | 'play' | 'learn' | 'friends' | 'openings' | 'tactics' | 'endgame' | 'train' | 'coach' | 'coordinates' | 'stats' | 'profile';
+type View = 'home' | 'play' | 'learn' | 'friends' | 'openings' | 'tactics' | 'endgame' | 'train' | 'coach' | 'coordinates' | 'archive' | 'stats' | 'profile';
 
 const TABS: { id: View; label: string; hint: string; icon: ComponentType<SVGProps<SVGSVGElement> & { size?: number }> }[] = [
   { id: 'home', label: 'Today', hint: 'streak · daily quests · goals', icon: IconToday },
@@ -53,6 +55,7 @@ const TABS: { id: View; label: string; hint: string; icon: ComponentType<SVGProp
   { id: 'train', label: 'Train', hint: 'vision · mates · anti-blunder', icon: IconTrain },
   { id: 'coach', label: 'Coach', hint: 'your weaknesses · targeted training', icon: IconCoach },
   { id: 'coordinates', label: 'Coords', hint: 'board-vision trainer', icon: IconCoords },
+  { id: 'archive', label: 'Archive', hint: 'your games · results & trends', icon: IconArchive },
   { id: 'stats', label: 'Stats', hint: 'progress dashboard', icon: IconStats },
   { id: 'profile', label: 'Profile', hint: 'level · ratings · badges', icon: IconProfile },
 ];
@@ -101,7 +104,9 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
                     : 'text-neutral-300 hover:bg-neutral-800 hover:text-ink'
                 }`}
               >
-                <Icon size={16} className={active ? 'text-brand-300' : 'text-neutral-400'} />
+                {/* white/85, not brand-300: the active pill's gradient stays dark in
+                    both themes, while brand-300 flips dark in light mode. */}
+                <Icon size={16} className={active ? 'text-white/85' : 'text-neutral-400'} />
                 {t.label}
               </button>
             );
@@ -217,6 +222,7 @@ export default function App() {
         {view === 'train' && <TrainPage tab={trainTab} setTab={setTrainTab} />}
         {view === 'coach' && <CoachPage goPlay={() => setView('play')} />}
         {view === 'coordinates' && <CoordinatePage />}
+        {view === 'archive' && <ArchivePage goPlay={() => setView('play')} />}
         {view === 'stats' && <StatsPage goto={goto} />}
         {view === 'profile' && <ProfilePage goPlay={() => setView('play')} />}
       </main>

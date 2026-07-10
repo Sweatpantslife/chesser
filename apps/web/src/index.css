@@ -29,20 +29,129 @@
     U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
+/* — Theme tokens —
+   `--t-*` are RGB triplets consumed by tailwind.config.js via
+   `rgb(var(--t-…) / <alpha-value>)`. `:root` = dark ("playful night", the
+   default); `:root[data-theme="light"]` = light ("playful day"). The theme
+   attribute is set before first paint by the inline script in index.html and
+   kept in sync by src/lib/theme.ts (settings store). Keep the two blocks and
+   tailwind.config.js in sync. */
 :root {
   color-scheme: dark;
-  /* Core palette as variables for raw-CSS / JS consumers (confetti, canvases).
-     Values mirror tailwind.config.js — keep the two in sync. */
-  --c-page: #141126;
-  --c-panel: #1e1a35;
-  --c-ink: #f2eefe;
-  --c-muted: #a49cc8;
-  --c-brand-400: #a78bfa;
+  --t-page: 20 17 38; /* #141126 */
+  --t-panel: 30 26 53; /* #1e1a35 */
+  --t-panelmute: 24 21 48; /* #181530 */
+  --t-ink: 242 238 254; /* #f2eefe */
+  --t-brand-200: 221 214 254; /* #ddd6fe */
+  --t-brand-300: 196 181 253; /* #c4b5fd */
+  --t-brand-400: 167 139 250; /* #a78bfa */
+  --t-accent-300: 249 168 212; /* #f9a8d4 */
+  --t-accent-400: 244 114 182; /* #f472b6 */
+  --t-gold-300: 252 211 77; /* #fcd34d */
+  --t-gold-400: 251 191 36; /* #fbbf24 */
+  --t-neutral-50: 247 245 253; /* #f7f5fd */
+  --t-neutral-100: 236 233 247; /* #ece9f7 */
+  --t-neutral-200: 221 216 238; /* #ddd8ee */
+  --t-neutral-300: 200 194 224; /* #c8c2e0 */
+  --t-neutral-400: 164 156 200; /* #a49cc8 */
+  --t-neutral-600: 76 70 119; /* #4c4677 */
+  --t-neutral-700: 58 53 96; /* #3a3560 */
+  --t-neutral-800: 40 35 69; /* #282345 */
+  --t-neutral-900: 24 21 48; /* #181530 */
+  --t-neutral-950: 15 13 29; /* #0f0d1d */
+  /* Status hues (stock Tailwind values in dark; darkened for light). */
+  --t-emerald-300: 110 231 183; /* #6ee7b7 */
+  --t-emerald-400: 52 211 153; /* #34d399 */
+  --t-emerald-900: 6 78 59; /* #064e3b */
+  --t-rose-200: 254 205 211; /* #fecdd3 */
+  --t-rose-300: 253 164 175; /* #fda4af */
+  --t-rose-400: 251 113 133; /* #fb7185 */
+  --t-rose-900: 136 19 55; /* #881337 */
+  --t-amber-200: 253 230 138; /* #fde68a */
+  --t-amber-300: 252 211 77; /* #fcd34d */
+  --t-amber-950: 69 26 3; /* #451a03 */
+  --t-orange-300: 253 186 116; /* #fdba74 */
+  --t-orange-400: 251 146 60; /* #fb923c */
+  --t-orange-900: 124 45 18; /* #7c2d12 */
+  --t-sky-300: 125 211 252; /* #7dd3fc */
+  --t-cyan-300: 103 232 249; /* #67e8f9 */
+  --t-blue-300: 147 197 253; /* #93c5fd */
+  --t-lime-300: 190 242 100; /* #bef264 */
+  /* Keyboard-focus ring (needs ≥3:1 vs page in both themes). */
+  --t-focus: 167 139 250; /* brand-400 */
+  /* Activity-heatmap ramp, level 0 (empty) → 4 (busiest). */
+  --c-heat-0: #282345;
+  --c-heat-1: #4c3a8f;
+  --c-heat-2: #6d4fd0;
+  --c-heat-3: #9a7bf0;
+  --c-heat-4: #c4b5fd;
+
+  /* Core palette as variables for raw-CSS / JS consumers (confetti, canvases,
+     SVG illustrations). Resolved through the theme triplets above. */
+  --c-page: rgb(var(--t-page));
+  --c-panel: rgb(var(--t-panel));
+  --c-ink: rgb(var(--t-ink));
+  --c-muted: rgb(var(--t-neutral-400));
+  --c-brand-400: rgb(var(--t-brand-400));
   --c-brand-500: #8b5cf6;
   --c-brand-600: #7c3aed;
-  --c-accent-400: #f472b6;
-  --c-gold-400: #fbbf24;
-  --c-mint-400: #34d399;
+  --c-accent-400: rgb(var(--t-accent-400));
+  --c-gold-400: rgb(var(--t-gold-400));
+  --c-mint-400: rgb(var(--t-emerald-400));
+  /* Hairlines, chart gridlines, ring tracks, panel scrollbars. */
+  --c-line: rgb(var(--t-neutral-700));
+  --c-focus: rgb(var(--t-focus));
+}
+
+/* "Playful day" — light, vibrant, lavender-tinted (never corporate gray).
+   The neutral ramp flips (50↔950 … 400↔600, 500 fixed) so every existing
+   text/surface pairing keeps its designed contrast. */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --t-page: 241 238 250; /* #f1eefa */
+  --t-panel: 255 255 255; /* #ffffff */
+  --t-panelmute: 244 241 251; /* #f4f1fb */
+  --t-ink: 36 30 70; /* #241e46 */
+  --t-brand-200: 91 33 182; /* #5b21b6 */
+  --t-brand-300: 109 40 217; /* #6d28d9 */
+  --t-brand-400: 124 58 237; /* #7c3aed */
+  --t-accent-300: 157 23 77; /* #9d174d */
+  --t-accent-400: 190 24 93; /* #be185d */
+  --t-gold-300: 113 63 18; /* #713f12 */
+  --t-gold-400: 133 77 14; /* #854d0e */
+  --t-neutral-50: 15 13 29; /* #0f0d1d */
+  --t-neutral-100: 24 21 48; /* #181530 */
+  --t-neutral-200: 40 35 69; /* #282345 */
+  --t-neutral-300: 58 53 96; /* #3a3560 */
+  --t-neutral-400: 76 70 119; /* #4c4677 */
+  --t-neutral-600: 164 156 200; /* #a49cc8 */
+  --t-neutral-700: 200 194 224; /* #c8c2e0 */
+  --t-neutral-800: 221 216 238; /* #ddd8ee */
+  --t-neutral-900: 236 233 247; /* #ece9f7 */
+  --t-neutral-950: 247 245 253; /* #f7f5fd */
+  --t-emerald-300: 6 78 59; /* #064e3b */
+  --t-emerald-400: 6 95 70; /* #065f46 */
+  --t-emerald-900: 209 250 229; /* #d1fae5 */
+  --t-rose-200: 136 19 55; /* #881337 */
+  --t-rose-300: 159 18 57; /* #9f1239 */
+  --t-rose-400: 190 18 60; /* #be123c */
+  --t-rose-900: 255 228 230; /* #ffe4e6 */
+  --t-amber-200: 146 64 14; /* #92400e */
+  --t-amber-300: 163 74 11; /* #a34a0b — amber-700/800 mid; #b45309 passed on white but hit 4.41:1 on tinted cards (#f1eff8); this clears 4.5 on every light surface incl. neutral-900 chips (4.96:1) */
+  --t-amber-950: 254 243 199; /* #fef3c7 */
+  --t-orange-300: 154 52 18; /* #9a3412 */
+  --t-orange-400: 194 65 12; /* #c2410c */
+  --t-orange-900: 255 237 213; /* #ffedd5 */
+  --t-sky-300: 3 105 161; /* #0369a1 */
+  --t-cyan-300: 14 116 144; /* #0e7490 */
+  --t-blue-300: 29 78 216; /* #1d4ed8 */
+  --t-lime-300: 63 98 18; /* #3f6212 */
+  --t-focus: 124 58 237; /* brand-600 — 5.0:1 vs light page */
+  --c-heat-0: #ece9f7;
+  --c-heat-1: #c4b5fd;
+  --c-heat-2: #9a7bf0;
+  --c-heat-3: #6d4fd0;
+  --c-heat-4: #4c3a8f;
 }
 
 /* Visible focus ring on keyboard focus only. Uses box-shadow (not outline) so
@@ -53,7 +162,7 @@
     outline: none;
     box-shadow:
       0 0 0 2px var(--c-page),
-      0 0 0 4px var(--c-brand-400);
+      0 0 0 4px var(--c-focus);
   }
 }
 
@@ -74,6 +183,12 @@ body {
   color: theme('colors.ink');
   font-family: theme('fontFamily.sans');
   -webkit-font-smoothing: antialiased;
+}
+
+/* The doodle tile was authored for the night palette; the light theme goes
+   texture-free (clean lavender page) instead of showing a dark tile. */
+:root[data-theme='light'] body {
+  background-image: none;
 }
 
 /* Headings & hero numbers get the rounded display face. */
@@ -173,13 +288,13 @@ body {
 /* Custom scrollbar for panels (scrollbar-width/-color cover Firefox) */
 .scroll-thin {
   scrollbar-width: thin;
-  scrollbar-color: #3a3560 transparent;
+  scrollbar-color: var(--c-line) transparent;
 }
 .scroll-thin::-webkit-scrollbar {
   width: 8px;
 }
 .scroll-thin::-webkit-scrollbar-thumb {
-  background: #3a3560;
+  background: var(--c-line);
   border-radius: 4px;
 }
 
@@ -327,16 +442,29 @@ body {
   animation-delay: 0.3s;
 }
 
-/* Like Tailwind's animate-pulse but with a 0.75 opacity floor: accent text
-   on the page background stays AA at the dimmest point of the cycle, where
-   the stock 0.5 floor dropped it below. */
+/* Like Tailwind's animate-pulse but with an opacity floor high enough that
+   accent text stays AA (4.5:1) at the dimmest point of the cycle, where the
+   stock 0.5 floor dropped it below. The floor is per-theme: the dark tokens
+   have headroom at 0.75 (emerald-400 #34d399 on #141126 = 5.8:1 at the
+   floor), but the light palette needs 0.88 — its worst pulsing pair,
+   rose-400 #be123c on the page #f1eefa, blends to 4.79:1 at 0.88 (emerald
+   5.18:1, neutral-400 5.54:1) and fails at 0.75. Two keyframes (not a
+   var() in one) so a theme switch restarts the animation cleanly. */
 @keyframes pulse-soft {
   50% {
     opacity: 0.75;
   }
 }
+@keyframes pulse-soft-light {
+  50% {
+    opacity: 0.88;
+  }
+}
 .animate-pulse-soft {
   animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+:root[data-theme='light'] .animate-pulse-soft {
+  animation-name: pulse-soft-light;
 }
 
 /* Subtle rise+fade when switching header tabs (content is hard-swapped). */

@@ -16,11 +16,11 @@ function WdlBar({ white, draws, black, total }: { white: number; draws: number; 
   const p = (n: number) => (total ? (n / total) * 100 : 0);
   return (
     <div className="flex h-3.5 w-full overflow-hidden rounded-sm text-[9px] font-medium leading-[14px]">
-      <div className="bg-neutral-200 text-center text-neutral-800" style={{ width: `${p(white)}%` }}>
+      <div className="bg-chess-white text-center text-chess-black" style={{ width: `${p(white)}%` }}>
         {p(white) > 12 ? `${Math.round(p(white))}%` : ''}
       </div>
       <div className="bg-neutral-500" style={{ width: `${p(draws)}%` }} />
-      <div className="bg-neutral-800 text-center text-neutral-200" style={{ width: `${p(black)}%` }}>
+      <div className="bg-chess-black text-center text-chess-white" style={{ width: `${p(black)}%` }}>
         {p(black) > 12 ? `${Math.round(p(black))}%` : ''}
       </div>
     </div>

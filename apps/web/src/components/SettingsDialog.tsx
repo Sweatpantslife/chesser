@@ -1,5 +1,5 @@
 import { createElement, useEffect } from 'react';
-import { useSettings, PIECE_SETS, type BoardTheme, type PieceSet } from '../store/settings';
+import { useSettings, PIECE_SETS, type BoardTheme, type PieceSet, type ThemePref } from '../store/settings';
 import { loadAllPieceSets } from '../styles/pieceSets';
 import { playSound } from '../lib/sound';
 import { Modal } from './Modal';
@@ -27,7 +27,7 @@ function Toggle({ on, onChange, label }: { on: boolean; onChange: (b: boolean) =
           playSound('uiClick');
           onChange(!on);
         }}
-        className={`relative h-5 w-9 rounded-full transition-colors ${on ? 'bg-brand-500' : 'bg-neutral-600'}`}
+        className={`relative h-5 w-9 rounded-full transition-colors ${on ? 'bg-brand-500' : 'bg-neutral-500'}`}
       >
         <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${on ? 'left-4' : 'left-0.5'}`} />
       </button>
@@ -46,8 +46,14 @@ function PieceSwatch({ set }: { set: PieceSet }) {
   );
 }
 
+const APP_THEMES: { id: ThemePref; label: string }[] = [
+  { id: 'light', label: 'Light' },
+  { id: 'dark', label: 'Dark' },
+  { id: 'system', label: 'System' },
+];
+
 export function SettingsDialog({ onClose }: { onClose: () => void }) {
-  const { sound, premove, arrows, aiCoach, boardTheme, pieceSet, ratingMeter, setSound, setPremove, setArrows, setAiCoach, setBoardTheme, setPieceSet, setRatingMeter } =
+  const { sound, premove, arrows, aiCoach, boardTheme, pieceSet, ratingMeter, theme, setSound, setPremove, setArrows, setAiCoach, setBoardTheme, setPieceSet, setRatingMeter, setTheme } =
     useSettings();
 
   // Load every set's CSS so the previews below render.
@@ -60,6 +66,28 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
       className="scroll-thin pop-in max-h-[85vh] w-full max-w-xs overflow-y-auto rounded-2xl bg-panel p-4 shadow-soft"
     >
         <h3 id="settings-title" className="mb-2 font-display text-sm font-semibold text-ink">Settings</h3>
+
+        <div className="mb-3">
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Appearance</div>
+          <div className="flex gap-1" role="group" aria-label="App theme">
+            {APP_THEMES.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => {
+                  playSound('uiClick');
+                  setTheme(t.id);
+                }}
+                aria-pressed={theme === t.id}
+                className={`btn-press flex-1 rounded-full px-2 py-1 text-xs font-semibold ${
+                  theme === t.id ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <Toggle on={sound} onChange={setSound} label="Sounds" />
         <Toggle on={premove} onChange={setPremove} label="Premoves (vs bot)" />
         <Toggle on={arrows} onChange={setArrows} label="Engine arrows (analysis)" />

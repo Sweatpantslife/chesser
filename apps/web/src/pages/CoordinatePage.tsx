@@ -273,7 +273,7 @@ export function CoordinatePage() {
           <div className="mx-auto grid max-w-[360px] grid-cols-2 gap-2">
             <button
               onClick={() => answerColor(true)}
-              className="rounded border border-neutral-600 bg-[#f0d9b5] py-3 text-base font-semibold text-neutral-900 hover:brightness-95"
+              className="rounded border border-neutral-600 bg-[#f0d9b5] py-3 text-base font-semibold text-chess-black hover:brightness-95"
             >
               Light
             </button>
