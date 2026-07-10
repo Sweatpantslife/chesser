@@ -2,14 +2,36 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
 import { Board } from '../board/Board';
 import { ReviewStats } from '../components/ReviewStats';
+import { OpeningCatalogBrowser } from '../components/OpeningCatalogBrowser';
 import { useProgress } from '../store/progress';
-import { useRepertoire, BUILTIN_REPERTOIRE, type RepLine } from '../store/repertoire';
+import { useRepertoire, BUILTIN_REPERTOIRE, type Repertoire, type RepLine } from '../store/repertoire';
+import { catalogLine, catalogOpeningOf } from '../trainers/openingCatalog';
+import { buildBook, classifyMove } from '../lib/lineBook';
 import { recordReview } from '../lib/gamify';
 import { dueLabel } from '../lib/srs';
 import { playMoveSound } from '../lib/sound';
 import type { Color } from '../store/game';
 
 type Phase = 'idle' | 'playing' | 'done';
+
+/** "My repertoire": the user's picks from the curated opening catalog. */
+function usePickedRepertoire(): Repertoire {
+  const picked = useRepertoire((s) => s.picked);
+  return useMemo(
+    () => ({
+      id: 'mine',
+      name: 'My repertoire',
+      builtin: true, // lines are catalog-owned; removal goes through togglePicked
+      updatedAt: 0,
+      lines: picked.flatMap((id) => {
+        const l = catalogLine(id);
+        const o = catalogOpeningOf(id);
+        return l && o ? [{ id: l.id, name: `${o.name} — ${l.name}`, side: l.side, moves: l.moves, eco: l.eco, idea: l.idea }] : [];
+      }),
+    }),
+    [picked],
+  );
+}
 
 export function OpeningsPage() {
   const game = useRef(new Chess());
@@ -20,10 +42,12 @@ export function OpeningsPage() {
   const renameRepertoire = useRepertoire((s) => s.renameRepertoire);
   const deleteRepertoire = useRepertoire((s) => s.deleteRepertoire);
   const deleteLine = useRepertoire((s) => s.deleteLine);
-  const reps = useMemo(() => [BUILTIN_REPERTOIRE, ...user], [user]);
+  const togglePicked = useRepertoire((s) => s.togglePicked);
+  const myRep = usePickedRepertoire();
+  const reps = useMemo(() => [myRep, BUILTIN_REPERTOIRE, ...user], [myRep, user]);
 
-  const [repId, setRepId] = useState('builtin');
-  const rep = reps.find((r) => r.id === repId) ?? BUILTIN_REPERTOIRE;
+  const [repId, setRepId] = useState('mine');
+  const rep = reps.find((r) => r.id === repId) ?? myRep;
   const lines = rep.lines;
   const lineIds = useMemo(() => lines.map((l) => l.id), [lines]);
 
@@ -37,6 +61,7 @@ export function OpeningsPage() {
   const [syncKey, setSyncKey] = useState(0);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
+  const [browsing, setBrowsing] = useState(false);
 
   const grade = useProgress((s) => s.grade);
   const cards = useProgress((s) => s.cards);
@@ -44,6 +69,10 @@ export function OpeningsPage() {
 
   const side = line?.side ?? 'white';
   const traineeToMove = phase === 'playing' && !!line && game.current.turn() === (side === 'white' ? 'w' : 'b');
+
+  // Position book over the repertoire's same-side lines: accepts sibling-line
+  // moves at forks and recognises transpositions between lines.
+  const book = useMemo(() => buildBook(lines, side), [lines, side]);
 
   // Reset when switching repertoire.
   useEffect(() => {
@@ -67,6 +96,7 @@ export function OpeningsPage() {
     setPhase('playing');
     setPly(0);
     setFeedback(null);
+    setStats({ correct: 0, wrong: 0 });
     sync();
   };
 
@@ -115,18 +145,33 @@ export function OpeningsPage() {
 
   const onMove = (from: string, to: string) => {
     if (!traineeToMove || !line) return;
-    const expected = new Chess(game.current.fen()).move(line.moves[ply]!);
-    if (expected.from === from && expected.to === to) {
-      game.current.move(line.moves[ply]!);
-      playMoveSound(expected.san);
+    const verdict = classifyMove(book, line, ply, game.current.fen(), from, to);
+    if (verdict.kind === 'expected') {
+      game.current.move(verdict.san);
+      playMoveSound(verdict.san);
       setStats((s) => ({ ...s, correct: s.correct + 1 }));
-      setFeedback({ kind: 'ok', text: `✓ ${expected.san}` });
+      setFeedback({ kind: 'ok', text: `✓ ${verdict.san}` });
       sync();
       setPly((p) => p + 1);
+    } else if (verdict.kind === 'alternate') {
+      // Also in your repertoire: a fork or transposition into a sibling line.
+      const target = lines.find((l) => l.id === verdict.lineId);
+      game.current.move(verdict.san);
+      playMoveSound(verdict.san);
+      setStats((s) => ({ ...s, correct: s.correct + 1 }));
+      if (target) {
+        setFeedback({ kind: 'ok', text: `✓ ${verdict.san} — continuing as ${target.name}` });
+        setLine(target);
+        setPly(verdict.ply + 1);
+      } else {
+        setFeedback({ kind: 'ok', text: `✓ ${verdict.san}` });
+        setPly((p) => p + 1);
+      }
+      sync();
     } else {
       run.current.errors += 1;
       setStats((s) => ({ ...s, wrong: s.wrong + 1 }));
-      setFeedback({ kind: 'bad', text: 'Not the line — try again, or reveal.' });
+      setFeedback({ kind: 'bad', text: 'Not in your repertoire — try again, or reveal.' });
       sync();
       // Snap the board back. chessground has already rendered the rejected
       // move; on the first ply sync() leaves every Board prop identical
@@ -154,9 +199,21 @@ export function OpeningsPage() {
   const orientation: Color = side;
   const playedSan = game.current.history();
   const editable = !rep.builtin;
+  const removable = editable || rep.id === 'mine';
+
+  const removeLine = (l: RepLine) => {
+    if (rep.id === 'mine') togglePicked(l.id);
+    else deleteLine(rep.id, l.id);
+    if (line?.id === l.id) {
+      setLine(null);
+      setPhase('idle');
+    }
+  };
 
   return (
     <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-4 lg:grid-cols-[280px_minmax(0,1fr)_300px]">
+      {browsing && <OpeningCatalogBrowser onClose={() => setBrowsing(false)} />}
+
       {/* repertoire + lines */}
       <div className="order-2 space-y-3 lg:order-1">
         <div className="rounded-2xl bg-panel shadow-soft p-3">
@@ -169,12 +226,20 @@ export function OpeningsPage() {
           >
             {reps.map((r) => (
               <option key={r.id} value={r.id}>
-                {r.name} {r.builtin ? '' : `(${r.lines.length})`}
+                {r.name} {r.id === 'builtin' ? '' : `(${r.lines.length})`}
               </option>
             ))}
           </select>
 
-          <div className="mt-2 flex items-center gap-2">
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {rep.id === 'mine' && (
+              <button
+                onClick={() => setBrowsing(true)}
+                className="btn-press rounded bg-brand-600 px-2 py-1 text-xs font-semibold text-white hover:bg-brand-700"
+              >
+                📖 Browse openings
+              </button>
+            )}
             {creating ? (
               <>
                 <input
@@ -216,7 +281,7 @@ export function OpeningsPage() {
                       onClick={() => {
                         if (window.confirm(`Delete "${rep.name}"?`)) {
                           deleteRepertoire(rep.id);
-                          setRepId('builtin');
+                          setRepId('mine');
                         }
                       }}
                       className="rounded bg-neutral-700 px-2 py-1 text-xs text-rose-300 hover:bg-neutral-600"
@@ -243,9 +308,21 @@ export function OpeningsPage() {
 
         <div className="scroll-thin max-h-[55vh] overflow-y-auto rounded-2xl bg-panel shadow-soft p-3">
           {lines.length === 0 ? (
-            <p className="text-xs text-neutral-400">
-              No lines yet. Build one on the <b className="text-neutral-300">Play</b> board, then “★ Save line”.
-            </p>
+            rep.id === 'mine' ? (
+              <div className="space-y-2 text-xs text-neutral-400">
+                <p>Your repertoire is empty. Pick openings to learn as White and as Black from the curated catalog.</p>
+                <button
+                  onClick={() => setBrowsing(true)}
+                  className="btn-press w-full rounded bg-brand-600 py-1.5 text-sm font-semibold text-white hover:bg-brand-700"
+                >
+                  Browse openings
+                </button>
+              </div>
+            ) : (
+              <p className="text-xs text-neutral-400">
+                No lines yet. Build one on the <b className="text-neutral-300">Play</b> board, then “★ Save line”.
+              </p>
+            )
           ) : (
             (['white', 'black'] as const).map((c) => {
               const group = lines.filter((l) => l.side === c);
@@ -280,17 +357,11 @@ export function OpeningsPage() {
                               {cd}
                             </span>
                           </button>
-                          {editable && (
+                          {removable && (
                             <button
-                              onClick={() => {
-                                deleteLine(rep.id, l.id);
-                                if (line?.id === l.id) {
-                                  setLine(null);
-                                  setPhase('idle');
-                                }
-                              }}
-                              title="Delete line"
-                              aria-label="Delete line"
+                              onClick={() => removeLine(l)}
+                              title="Remove line"
+                              aria-label="Remove line"
                               className="shrink-0 rounded px-1.5 py-1 text-xs text-neutral-400 hover:bg-neutral-700 hover:text-rose-300"
                             >
                               ×
@@ -310,16 +381,17 @@ export function OpeningsPage() {
       {/* board */}
       <div className="order-1 space-y-3 lg:order-2">
         <div className="flex h-7 items-center gap-3 text-sm">
-          <span className="text-neutral-300">{line?.name ?? 'Pick a line'}</span>
+          <span className="truncate text-neutral-300">{line?.name ?? 'Pick a line'}</span>
+          {line?.eco && <span className="rounded bg-neutral-800 px-1.5 py-0.5 font-mono text-[10px] text-neutral-400">{line.eco}</span>}
           {line && (
             <>
               <span className="text-neutral-400">·</span>
-              <span className="text-neutral-400">
+              <span className="shrink-0 text-neutral-400">
                 you play <b className="text-neutral-200">{side}</b>
               </span>
             </>
           )}
-          {traineeToMove && <span className="animate-pulse-soft text-emerald-400">· your move</span>}
+          {traineeToMove && <span className="animate-pulse-soft shrink-0 text-emerald-400">· your move</span>}
         </div>
         <div className="mx-auto w-full max-w-[540px]">
           <Board

@@ -1,6 +1,9 @@
 import { useGamify, levelProgress } from '../store/gamify';
 import { useStreak } from '../store/streak';
 import { useLessons } from '../store/lessons';
+import { useProgress } from '../store/progress';
+import { useRepertoire } from '../store/repertoire';
+import { isDue } from '../lib/srs';
 import { now } from '../lib/clock';
 import { ALL_LESSONS } from '../learn';
 import { DailyQuests } from '../components/DailyQuests';
@@ -15,7 +18,7 @@ import mascotUrl from '../assets/img/mascot.svg';
  * lesson, and a game.
  */
 
-export type HomeTarget = 'play' | 'learn' | 'tactics' | 'profile';
+export type HomeTarget = 'play' | 'learn' | 'tactics' | 'profile' | 'openings';
 
 function greeting(): string {
   const h = new Date(now()).getHours();
@@ -102,6 +105,12 @@ function ActionCard(props: { icon: string; title: string; body: string; cta: str
 export function HomePage({ go, onDailyPuzzle }: { go: (v: HomeTarget) => void; onDailyPuzzle: () => void }) {
   const completed = useLessons((s) => s.completed);
   const nextLesson = ALL_LESSONS.find((l) => !(l.id in completed));
+  // Opening lines due for spaced-repetition review today (any repertoire).
+  const openingsDue = useProgress((s) => {
+    const t = now();
+    return Object.entries(s.cards).filter(([k, c]) => k.startsWith('openings:') && c.last > 0 && isDue(c, t)).length;
+  });
+  const pickedCount = useRepertoire((s) => s.picked.length);
 
   return (
     <div className="mx-auto w-full max-w-[1000px] space-y-4">
@@ -117,6 +126,25 @@ export function HomePage({ go, onDailyPuzzle }: { go: (v: HomeTarget) => void; o
             body="One hand-picked puzzle — same for everyone, new every day."
             cta="Solve"
             onClick={onDailyPuzzle}
+          />
+          <ActionCard
+            icon="📖"
+            title={
+              openingsDue > 0
+                ? `${openingsDue} opening line${openingsDue === 1 ? '' : 's'} due today`
+                : pickedCount > 0
+                  ? 'Openings: all caught up'
+                  : 'Learn an opening repertoire'
+            }
+            body={
+              openingsDue > 0
+                ? 'Spaced repetition says it’s time — drill them before they fade.'
+                : pickedCount > 0
+                  ? 'Nothing due right now. Learn a new line to grow your repertoire.'
+                  : 'Pick openings for White and Black, drill them move by move.'
+            }
+            cta={openingsDue > 0 ? 'Review' : pickedCount > 0 ? 'Train' : 'Build'}
+            onClick={() => go('openings')}
           />
         </div>
       </div>

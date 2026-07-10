@@ -22,6 +22,7 @@ function gather() {
   return {
     progress: useProgress.getState().exportState(),
     repertoires: useRepertoire.getState().exportRepertoires(),
+    repertoirePicks: useRepertoire.getState().exportPicks(),
     mistakes: useMistakes.getState().exportMistakes(),
     coordinate: useCoordinate.getState().exportState(),
     customPuzzles: useCustomPuzzles.getState().exportPuzzles(),
@@ -54,6 +55,7 @@ function apply(remote: unknown): void {
   ) {
     useProgress.getState().importMerge(r.progress);
     useRepertoire.getState().importMerge(r.repertoires);
+    useRepertoire.getState().importPicks(r.repertoirePicks);
     useMistakes.getState().importMerge(r.mistakes);
     useCoordinate.getState().importMerge(r.coordinate);
     useCustomPuzzles.getState().importMerge(r.customPuzzles);
