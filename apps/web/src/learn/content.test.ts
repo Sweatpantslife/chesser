@@ -21,7 +21,7 @@ describe('lesson catalogue', () => {
   });
 
   it('has a sensible amount of content', () => {
-    expect(LESSON_TRACKS.length).toBe(2);
+    expect(LESSON_TRACKS.length).toBe(5);
     expect(ALL_LESSONS.length).toBeGreaterThanOrEqual(15);
     for (const l of ALL_LESSONS) {
       expect(l.steps.length, `${l.id} has steps`).toBeGreaterThan(0);

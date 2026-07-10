@@ -5,6 +5,9 @@
 import type { Lesson, LessonTrack } from './types';
 import { BASICS_LESSONS } from './lessons/basics';
 import { SKILLS_LESSONS } from './lessons/skills';
+import { TACTICS_ADVANCED_TRACK } from './lessons/tacticsAdvanced';
+import { POSITIONAL_TRACK } from './lessons/positional';
+import { CHECKMATES2_TRACK } from './lessons/checkmates2';
 
 export const LESSON_TRACKS: LessonTrack[] = [
   {
@@ -19,6 +22,9 @@ export const LESSON_TRACKS: LessonTrack[] = [
     blurb: 'Know the rules? Learn the ideas that win games.',
     lessons: SKILLS_LESSONS,
   },
+  TACTICS_ADVANCED_TRACK,
+  POSITIONAL_TRACK,
+  CHECKMATES2_TRACK,
 ];
 
 export const ALL_LESSONS: Lesson[] = LESSON_TRACKS.flatMap((t) => t.lessons);
