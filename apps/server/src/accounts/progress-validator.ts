@@ -118,8 +118,14 @@ export const LIMITS = {
   lessonsCap: 2_000,
   /** Puzzle Rush (timed 3-min / survival) best-score plausibility ceiling. */
   rushScoreCap: 200,
-  /** Puzzle Storm is faster-scoring than rush; still nothing legit gets here. */
-  stormScoreCap: 400,
+  /**
+   * Puzzle Storm scores points, not solves (apps/web/src/lib/sprint.ts).
+   * Theoretical 3-min max: superhuman 2s/solve → 90 solves in 180s, every one
+   * fast-bonused (+5); combo ramp 4×15 + 5×20 + 5×25 then 76 solves at ×3
+   * (10×3+5 = 35) ≈ 2945 (≤ 3150 even with the ramp skipped). Cap sits well
+   * above that with headroom; nothing legit can reach it.
+   */
+  stormScoreCap: 5000,
 } as const;
 
 /** Streak milestones the client can have paid out (lib/streak.ts). */

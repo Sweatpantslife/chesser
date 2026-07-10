@@ -42,6 +42,13 @@ describe('sprints section validation', () => {
     expectReject(sprints({ puzzleStormBest: best(LIMITS.stormScoreCap + 50, 3) }), /implausibly large/i);
   });
 
+  it('accepts an elite storm score just under the cap, rejects an absurd one', () => {
+    // The cap must clear the engine's theoretical 3-min max (~2945 points,
+    // see LIMITS.stormScoreCap) so no legit run is ever rejected.
+    expectOk(sprints({ puzzleStormBest: best(LIMITS.stormScoreCap - 1, 90) }));
+    expectReject(sprints({ puzzleStormBest: best(100_000, 90) }), /implausibly large/i);
+  });
+
   it('rejects self-contradictory and malformed entries', () => {
     expectReject(sprints({ puzzleRushBest: { survival: { score: 10, bestStreak: 15, at: NOW } } }), /streak.*exceeds/i);
     expectReject(sprints({ puzzleRushBest: { timed3: 'yes' } }), /malformed/i);
