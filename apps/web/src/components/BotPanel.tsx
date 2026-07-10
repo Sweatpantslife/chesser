@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Chess } from 'chess.js';
 import type { BotStyleId } from '@chesser/shared';
+import { STOCKFISH_ELO_MIN, STOCKFISH_ELO_MAX } from '@chesser/shared';
 import { useGame, type Color, type TimeControl } from '../store/game';
 import { OPENING_LINES, type OpeningLine } from '../trainers/openings';
 
@@ -26,10 +27,10 @@ const HUMAN_ELO_PRESETS = [600, 800, 1000, 1200, 1600, 2000];
 
 type StartFrom = 'standard' | 'position' | 'opening';
 
-function botLabel(style: BotStyleId, elo: number, maia: number, hasMaiaNets: boolean): string {
-  if (style === 'human') return hasMaiaNets ? `Maia ${maia}` : `Human-like ~${elo}`;
+function botLabel(style: BotStyleId, elo: number, maia: number, viaMaia: boolean): string {
+  if (style === 'human') return viaMaia ? `Maia ${maia}` : `Human-like ~${elo}`;
   const s = style.charAt(0).toUpperCase() + style.slice(1);
-  return `Stockfish ${s} (${elo >= 3190 ? 'max' : elo})`;
+  return `Stockfish ${s} (${elo >= STOCKFISH_ELO_MAX ? 'max' : elo})`;
 }
 
 export function BotPanel() {
@@ -53,20 +54,34 @@ export function BotPanel() {
     if (styles.length > 0 && !styles.some((s) => s.id === style)) setStyle(styles[0]!.id);
   }, [styles, style]);
 
-  const isHumanViaEngine = style === 'human' && (availability?.maiaNetworks ?? []).length === 0;
-  // Keep the slider value inside the human-model range when switching styles.
-  useEffect(() => {
-    if (isHumanViaEngine && (elo < HUMAN_ELO_MIN || elo > HUMAN_ELO_MAX)) {
-      setElo(Math.min(Math.max(elo, HUMAN_ELO_MIN), HUMAN_ELO_MAX));
-    }
-  }, [isHumanViaEngine, elo]);
-
   const selStyle = styles.find((s) => s.id === style);
   const isHuman = style === 'human';
   const maiaNets = availability?.maiaNetworks ?? [];
-  // 'human' without Maia nets runs on the server's human-calibrated engine
-  // sampler: strength comes from the rating slider instead of net buttons.
-  const humanViaEngine = isHuman && maiaNets.length === 0;
+  // Real Maia needs a live lc0 backend — `humanBackend` is the server's honest
+  // signal; net entries alone just mean weights are on disk. Without it,
+  // 'human' runs on the server's human-calibrated engine sampler: strength
+  // comes from the rating slider instead of net buttons.
+  const humanViaMaia = isHuman && availability?.humanBackend === 'maia' && maiaNets.length > 0;
+  const humanViaEngine = isHuman && !humanViaMaia;
+
+  // Keep the slider value inside the selected model's range when switching styles.
+  useEffect(() => {
+    if (humanViaMaia) return; // net grid shown: the slider isn't in play
+    const lo = humanViaEngine ? HUMAN_ELO_MIN : STOCKFISH_ELO_MIN;
+    const hi = humanViaEngine ? HUMAN_ELO_MAX : STOCKFISH_ELO_MAX;
+    if (elo < lo || elo > hi) setElo(Math.min(Math.max(elo, lo), hi));
+  }, [humanViaMaia, humanViaEngine, elo]);
+
+  // Snap the selected net to one that's actually installed (a partial install
+  // may not cover the default), so the label always names the net that plays.
+  useEffect(() => {
+    if (!humanViaMaia || maiaNets.some((n) => n.rating === maiaRating)) return;
+    let nearest = maiaNets[0]!.rating;
+    for (const n of maiaNets) {
+      if (Math.abs(n.rating - maiaRating) < Math.abs(nearest - maiaRating)) nearest = n.rating;
+    }
+    setMaiaRating(nearest);
+  }, [humanViaMaia, maiaNets, maiaRating]);
 
   const filteredOpenings = useMemo(() => {
     const q = openingFilter.trim().toLowerCase();
@@ -86,7 +101,7 @@ export function BotPanel() {
       ? { style, elo: humanElo, moveTimeMs } // no maiaRating: the sampler covers the whole range
       : { style, elo, maiaRating, moveTimeMs };
     const opponent = {
-      name: botLabel(style, humanViaEngine ? humanElo : elo, maiaRating, maiaNets.length > 0),
+      name: botLabel(style, humanViaEngine ? humanElo : elo, maiaRating, humanViaMaia),
       rating: isHuman ? (humanViaEngine ? humanElo : maiaRating) : elo,
     };
 
@@ -135,14 +150,14 @@ export function BotPanel() {
       {selStyle && <p className="mb-3 text-xs leading-snug text-neutral-400">{selStyle.description}</p>}
       {isHuman && availability && (
         <p className="-mt-2 mb-3 text-xs leading-snug text-neutral-400">
-          {maiaNets.length > 0
+          {humanViaMaia
             ? 'Running the Maia neural net (trained on real games at each rating).'
-            : 'Maia nets are not installed here — using the engine-based human model.'}
+            : 'The Maia engine is not available here — using the engine-based human model.'}
         </p>
       )}
 
       {/* strength */}
-      {isHuman && maiaNets.length > 0 ? (
+      {humanViaMaia ? (
         <div className="mb-3">
           <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Rating</div>
           <div className="grid grid-cols-5 gap-1">
@@ -169,8 +184,8 @@ export function BotPanel() {
           </div>
           <input
             type="range"
-            min={humanViaEngine ? HUMAN_ELO_MIN : 1320}
-            max={humanViaEngine ? HUMAN_ELO_MAX : 3190}
+            min={humanViaEngine ? HUMAN_ELO_MIN : STOCKFISH_ELO_MIN}
+            max={humanViaEngine ? HUMAN_ELO_MAX : STOCKFISH_ELO_MAX}
             step={10}
             value={elo}
             onChange={(e) => setElo(Number(e.target.value))}

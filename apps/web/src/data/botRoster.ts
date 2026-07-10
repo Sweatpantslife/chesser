@@ -202,21 +202,30 @@ const MAIA_NET_TOLERANCE = 150;
  * Which backend a human-like persona actually runs on right now: a real Maia
  * neural net, the human-calibrated Stockfish sampler, or null when the server
  * offers neither (or predates the `humanBackend` field).
+ *
+ * `humanBackend === 'maia'` is the only signal that lc0 can actually run the
+ * nets — `maiaNetworks` alone just means weights are on disk, and labeling
+ * (or dispatching) off net presence broke every net-band persona on
+ * nets-without-lc0 deploys.
  */
 export function humanBackendFor(bot: RosterBot, availability: EngineAvailability | null): HumanBackend | null {
   if (bot.bot.style !== 'human' || !availability?.humanBackend) return null;
+  if (availability.humanBackend !== 'maia') return 'stockfish';
   const target = bot.bot.maiaRating;
   if (target != null && availability.maiaNetworks.some((n) => Math.abs(n.rating - target) <= MAIA_NET_TOLERANCE)) {
     return 'maia';
   }
-  return availability.stockfish ? 'stockfish' : null;
+  // lc0 is live but no net covers this band: the sampler answers when
+  // Stockfish exists; on an lc0-only deploy the server substitutes the
+  // nearest net rather than failing, so a Maia net still plays the moves.
+  return availability.stockfish ? 'stockfish' : 'maia';
 }
 
 /**
  * The engine config to actually play a roster bot with. Human-like personas
- * are sent as-is whenever the server can back them (Maia or the sampler); on
- * old servers or engine-less deploys we substitute plain Stockfish at the same
- * rating so every rung stays playable.
+ * are sent as-is whenever the server declares a human backend (Maia or the
+ * sampler); on old servers or engine-less deploys we substitute plain
+ * Stockfish at the same rating so every rung stays playable.
  */
 export function resolveBotConfig(bot: RosterBot, availability: EngineAvailability | null): BotConfig {
   if (bot.bot.style !== 'human') return bot.bot;

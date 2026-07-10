@@ -51,8 +51,13 @@ export class EngineManager {
     return !!this.manifest.stockfishBin;
   }
 
+  /** Nets that can actually play: weights on disk are useless without the lc0 binary. */
+  private get playableNets(): { id: string; rating: number }[] {
+    return this.manifest.lc0Bin ? this.manifest.maiaNetworks : [];
+  }
+
   maiaNetworkId(rating?: number): string | null {
-    const nets = this.manifest.maiaNetworks;
+    const nets = this.playableNets;
     if (nets.length === 0) return null;
     if (rating == null) return nets[Math.floor(nets.length / 2)]!.id;
     // closest available rating
@@ -61,10 +66,10 @@ export class EngineManager {
     return best.id;
   }
 
-  /** The nearest installed Maia net, but only if it's within `tolerance` of the target. */
+  /** The nearest runnable Maia net, but only if it's within `tolerance` of the target. */
   maiaNetworkNear(rating: number, tolerance: number): string | null {
     let best: { id: string; rating: number } | null = null;
-    for (const n of this.manifest.maiaNetworks) {
+    for (const n of this.playableNets) {
       if (!best || Math.abs(n.rating - rating) < Math.abs(best.rating - rating)) best = n;
     }
     return best && Math.abs(best.rating - rating) <= tolerance ? best.id : null;
