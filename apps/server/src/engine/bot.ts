@@ -72,8 +72,14 @@ export class BotService {
     const candidates: Candidate[] = [];
     const white = whiteToMove(req.fen);
     // Maia is shared across sessions, so serialise access to it.
-    const best = await withLock(eng, () =>
-      eng.search({
+    const best = await withLock(eng, async () => {
+      // lc0 reuses its search tree across searches, so without ucinewgame a
+      // repeated position accumulates visits and "go nodes 1" stops meaning
+      // "play the raw policy move" — the persona would drift stronger over
+      // server uptime. Resetting is near-free (the net stays loaded).
+      eng.newGame();
+      await eng.ready();
+      return eng.search({
         fen: req.fen,
         go: 'go nodes 1',
         onInfo: (info) => {
@@ -81,8 +87,8 @@ export class BotService {
           if (!first) return;
           candidates[info.multipv - 1] = { uci: first, cp: comparableCp(info), score: toWhiteScore(info, white) };
         },
-      }),
-    );
+      });
+    });
     let uci = best.bestmove;
     if (!uci || uci === '(none)') throw new Error('Maia returned no move');
     // At nodes=1 Maia's raw policy is deterministic (same game every time), so
