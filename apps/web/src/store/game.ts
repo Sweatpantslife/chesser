@@ -9,6 +9,7 @@ import { buildMoveReviews, checkmateWinner, cpOf, type MoveReview, type Position
 import { detectOpening } from '../lib/openings';
 import { countRepetitions } from '../lib/repetition';
 import { agreedDrawIsRated, botAcceptsDraw, MIN_DRAW_ACCEPT_PLIES } from '../lib/drawPolicy';
+import { botThinkTimeMs, plyOfFen } from '../lib/thinkTime';
 import { recordGameResult } from '../lib/gamify';
 import { useLadder } from './ladder';
 import { useRatings, type GameOutcome } from './ratings';
@@ -591,16 +592,45 @@ export const useGame = create<GameStore>((set, get) => ({
   _maybeTriggerBot() {
     const s = get();
     if (s.mode !== 'play' || s.thinking) return;
-    const liveFen = s.tree[tipOf(s.tree, s.rootId)]!.fen;
+    const tipId = tipOf(s.tree, s.rootId);
+    const tipNode = s.tree[tipId]!;
+    const liveFen = tipNode.fen;
     const live = new Chess(liveFen);
     if (live.isGameOver()) return;
     if (colorOfFen(liveFen) !== s.botColor) return;
     const myGame = gameId;
     set({ thinking: true });
     const bot = s.botConfig;
+
+    // Simulated human thinking time: quick book moves, near-instant recaptures
+    // and only-moves, longer (occasionally much longer) middlegame thinks —
+    // instead of the old fixed 300ms that made every bot feel robotic.
+    const legal = live.moves({ verbose: true });
+    const lastTo = tipNode.uci ? tipNode.uci.slice(2, 4) : null;
+    const recaptureAvailable =
+      !!lastTo && tipNode.san.includes('x') && legal.some((m) => m.to === lastTo && !!m.captured);
+    const thinkMs = botThinkTimeMs({
+      rating: s.opponent?.rating ?? bot.elo ?? bot.maiaRating ?? 1500,
+      ply: plyOfFen(liveFen),
+      legalMoves: legal.length,
+      recaptureAvailable,
+      inCheck: live.inCheck(),
+      clockMs: s.clock ? (s.botColor === 'white' ? s.clock.whiteMs : s.clock.blackMs) : undefined,
+    });
+    // Recent positions let human-like bots avoid shuffling into repetition
+    // while winning (the server ignores the field for other styles).
+    const recentFens = positionsTo(s.tree, tipId).slice(-24);
+    const started = Date.now();
     window.setTimeout(async () => {
       try {
-        const res = await engine.botMove(liveFen, bot);
+        if (gameId !== myGame) return; // a new game started during the dispatch delay
+        const res = await engine.botMove(liveFen, bot, recentFens);
+        // Hold fast engine replies (Maia answers near-instantly) until the
+        // simulated think time has elapsed.
+        const remaining = thinkMs - (Date.now() - started);
+        if (remaining > 0 && gameId === myGame) {
+          await new Promise((r) => window.setTimeout(r, remaining));
+        }
         if (gameId !== myGame) return; // a new game started meanwhile
         const from = res.uci.slice(0, 2);
         const to = res.uci.slice(2, 4);
@@ -615,7 +645,7 @@ export const useGame = create<GameStore>((set, get) => ({
         }
         console.error('[bot]', e);
       }
-    }, 300);
+    }, Math.min(300, thinkMs));
   },
 
   goToNode(id) {

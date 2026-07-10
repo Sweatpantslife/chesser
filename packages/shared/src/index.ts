@@ -21,6 +21,12 @@ export interface EngineAvailability {
   lc0: boolean;
   /** Maia (human-like Lc0) networks present, ascending by rating. */
   maiaNetworks: MaiaNetworkInfo[];
+  /**
+   * Which backend the 'human' style actually runs on: real Maia neural nets
+   * ('maia') or the human-calibrated Stockfish sampler ('stockfish'). Absent
+   * when neither is installed (or on servers that predate this field).
+   */
+  humanBackend?: 'maia' | 'stockfish';
   /** Local Syzygy endgame tablebases are loaded into Stockfish (perfect ≤N-man play). */
   syzygy?: boolean;
   /** Largest piece count the local tablebases cover (e.g. 5 for the 3-4-5 set). */
@@ -54,9 +60,9 @@ export interface BotStyle {
 export const BOT_STYLES: BotStyle[] = [
   {
     id: 'human',
-    name: 'Human-like (Maia)',
+    name: 'Human-like',
     description:
-      'A neural net trained on millions of human games. Plays the move a real player of the chosen rating would most likely make — natural mistakes and all.',
+      'Plays the natural move a real player of the chosen rating would make — typical plans, typical mistakes. Runs the Maia neural net when installed, otherwise a human-calibrated engine model.',
     engine: 'lc0',
   },
   {
@@ -88,15 +94,14 @@ export const BOT_STYLES: BotStyle[] = [
 export interface BotConfig {
   style: BotStyleId;
   /**
-   * Target strength for Stockfish styles. Ignored for 'human'.
-   *
-   * Above {@link STOCKFISH_ELO_MIN} this maps to Stockfish's native UCI_Elo
-   * limiter. *Below* it (down to {@link BOT_RATING_MIN}) the server switches to a
-   * "beginner" weakening path — shallow search plus occasional random/blunder
-   * picks — so the ladder can host genuinely sub-1320 opponents.
+   * Target strength for Stockfish styles. For 'balanced', above
+   * {@link STOCKFISH_ELO_MIN} this maps to Stockfish's native UCI_Elo limiter;
+   * below it (down to {@link BOT_RATING_MIN}) the server switches to the
+   * human-calibrated sampling path. For 'human' it is the target rating used
+   * when no Maia net matches (the Stockfish sampler covers any rating).
    */
   elo?: number;
-  /** Maia network rating for 'human' style. */
+  /** Maia network rating for 'human' style (nets cover ~1100–1900). */
   maiaRating?: number;
   /** Thinking-time budget per move in ms (Stockfish styles). */
   moveTimeMs?: number;
@@ -111,6 +116,13 @@ export const STOCKFISH_ELO_MAX = 3190;
  * [BOT_RATING_MIN, STOCKFISH_ELO_MIN) trigger the server's beginner weakening.
  */
 export const BOT_RATING_MIN = 500;
+
+/**
+ * A Maia net must sit within this many rating points of a 'human' request's
+ * maiaRating to be used. The server dispatches with it and the client labels
+ * with it, so it lives here to keep the two in lockstep.
+ */
+export const MAIA_NET_TOLERANCE = 150;
 
 // ---------------------------------------------------------------------------
 // Evaluation scores (always normalised to White's point of view)
@@ -162,6 +174,13 @@ export interface BotMoveRequest {
   reqId: string;
   fen: string;
   bot: BotConfig;
+  /**
+   * FENs of the most recent positions in the game (oldest first, current last).
+   * Optional; when present, human-like bots use it to avoid shuffling into a
+   * repetition while clearly winning. Servers ignore unknown fields, so old
+   * servers remain compatible.
+   */
+  recentFens?: string[];
 }
 
 export type ClientMessage = AnalyzeRequest | StopRequest | BotMoveRequest | { t: 'hello' };

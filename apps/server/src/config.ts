@@ -188,11 +188,15 @@ export function loadManifest(): EngineManifest {
 
 export function availabilityFrom(manifest: EngineManifest): EngineAvailability {
   const syzygy = syzygyInfo();
+  // Maia needs both the lc0 binary and at least one network.
+  const lc0 = !!manifest.lc0Bin && manifest.maiaNetworks.length > 0;
   return {
     stockfish: !!manifest.stockfishBin,
-    // Maia needs both the lc0 binary and at least one network.
-    lc0: !!manifest.lc0Bin && manifest.maiaNetworks.length > 0,
+    lc0,
     maiaNetworks: manifest.maiaNetworks.map((n) => ({ id: n.id, rating: n.rating })),
+    // What actually answers 'human'-style requests, so clients can label
+    // human-like opponents honestly (real Maia net vs engine-based model).
+    humanBackend: lc0 ? 'maia' : manifest.stockfishBin ? 'stockfish' : undefined,
     // Syzygy only helps Stockfish, so report it as available only when both exist.
     syzygy: !!syzygy && !!manifest.stockfishBin,
     syzygyMaxPieces: syzygy?.maxPieces,

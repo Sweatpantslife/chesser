@@ -241,7 +241,11 @@ test('takeback makes the game unrated: a retried win records no Elo/XP/ladder cr
   const originalBotMove = engine.botMove;
   engine.botMove = (async () => ({ uci: 'g8f6' })) as unknown as typeof engine.botMove;
   useGame.getState().userMove('d1', 'h5');
-  await new Promise((r) => setTimeout(r, 800)); // bot reply fires on a 300ms timer
+  // The bot reply lands after a simulated (jittered) think time — poll for it.
+  const deadline = Date.now() + 10_000;
+  while (useGame.getState().history.length < 6 && Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 25));
+  }
   engine.botMove = originalBotMove;
   assert.equal(useGame.getState().history.length, 6, 'bot replied');
 
@@ -253,6 +257,25 @@ test('takeback makes the game unrated: a retried win records no Elo/XP/ladder cr
   assert.ok(s.gameSummary);
   assert.equal(s.gameSummary!.rated, false);
   assert.equal('takeback-bot' in useLadder.getState().defeated, false, 'no ladder credit');
+});
+
+test('a new game during the bot dispatch delay cancels the stale engine request', async () => {
+  useRatings.getState().reset();
+  let botCalls = 0;
+  const originalBotMove = engine.botMove;
+  engine.botMove = (async () => {
+    botCalls++;
+    return { uci: 'g8f6' };
+  }) as unknown as typeof engine.botMove;
+
+  useGame.getState().newGame({ mode: 'play', playerColor: 'white', setupSan: ['e4', 'e5'], opponent: OPPONENT });
+  useGame.getState().userMove('g1', 'f3'); // bot's turn — dispatch scheduled within 300ms
+  useGame.getState().newGame({ mode: 'play', playerColor: 'white', opponent: OPPONENT }); // reset before it fires
+
+  await new Promise((r) => setTimeout(r, 600)); // past the dispatch delay cap
+  engine.botMove = originalBotMove;
+  assert.equal(botCalls, 0, 'stale dispatch must not reach the engine');
+  assert.equal(useGame.getState().thinking, false);
 });
 
 test('flagging on time records the loss once and resumes the analysis stream', () => {
