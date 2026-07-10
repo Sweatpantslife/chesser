@@ -70,6 +70,30 @@ describe('sprints store (personal bests, clock-injected)', () => {
     expect(useSprints.getState().puzzleStormBest).toEqual({ score: 250, bestStreak: 20, at: 333 });
   });
 
+  it('importMerge resolves score ties by preferring the earlier record', () => {
+    useSprints.getState().recordRushRun('timed3', 10, 5); // at = T0
+    // same score, earlier timestamp — the earlier record stands, so it wins the merge
+    useSprints.getState().importMerge({
+      puzzleRushBest: { timed3: { score: 10, bestStreak: 3, at: T0 - 60_000 } },
+    });
+    expect(useSprints.getState().puzzleRushBest.timed3).toEqual({ score: 10, bestStreak: 3, at: T0 - 60_000 });
+    // same score, later timestamp — ignored
+    useSprints.getState().importMerge({
+      puzzleRushBest: { timed3: { score: 10, bestStreak: 9, at: T0 + 60_000 } },
+    });
+    expect(useSprints.getState().puzzleRushBest.timed3).toEqual({ score: 10, bestStreak: 3, at: T0 - 60_000 });
+    // a tie with an unset timestamp (at = 0) never steals the record
+    useSprints.getState().importMerge({
+      puzzleRushBest: { timed3: { score: 10, bestStreak: 9, at: 0 } },
+    });
+    expect(useSprints.getState().puzzleRushBest.timed3).toEqual({ score: 10, bestStreak: 3, at: T0 - 60_000 });
+    // zero-score records never steal a tie against an empty slot
+    useSprints.getState().importMerge({
+      puzzleRushBest: { survival: { score: 0, bestStreak: 4, at: 1 } },
+    });
+    expect(useSprints.getState().puzzleRushBest.survival).toEqual({ score: 0, bestStreak: 0, at: 0 });
+  });
+
   it('exportState returns the exact synced shape', () => {
     useSprints.getState().recordRushRun('timed3', 3, 2);
     const exported = useSprints.getState().exportState();

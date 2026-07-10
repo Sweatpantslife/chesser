@@ -43,7 +43,10 @@ const emptyBests = (): SprintBests => ({
 
 /** Does `b` beat `a`? Higher score wins; ties keep the earlier record. */
 function beats(a: SprintBest, b: SprintBest): boolean {
-  return b.score > a.score;
+  if (b.score !== a.score) return b.score > a.score;
+  // Equal scores: the earlier real record stands. Zero/unset records
+  // (score 0 or at 0) never steal a tie.
+  return b.score > 0 && b.at > 0 && a.at > 0 && b.at < a.at;
 }
 
 function sanitizeBest(raw: unknown): SprintBest | null {
