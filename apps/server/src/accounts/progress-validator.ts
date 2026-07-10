@@ -25,6 +25,20 @@
  *                            more-played side owns live ratings), so a stale
  *                            device pushing old data neither regresses the
  *                            account nor gets spuriously rejected.
+ *  5. Merged-view checks   — validation always runs against the union of the
+ *                            stored blob and the incoming payload. Sections
+ *                            (or rating categories) omitted from the payload
+ *                            are preserved from the stored copy rather than
+ *                            deleted, lifetime counters are backed by the
+ *                            union of stored + claimed day logs (so a client
+ *                            that prunes old logs is not rejected), and
+ *                            achievement/streak/quest plausibility reads the
+ *                            merged stats — a crafted partial payload can
+ *                            neither erase stored state nor dodge the stored
+ *                            stats that disprove its claims. The real client
+ *                            always sends the full snapshot (sync.ts
+ *                            `gather()`), so legitimate syncs never depend on
+ *                            this preservation.
  *
  * Per-rule behavior is deliberate and consistent:
  *  - REJECT (whole PUT fails with 400): malformed section shapes and
@@ -431,18 +445,34 @@ interface RatingsOut {
 function validateRatings(raw: unknown, storedRaw: unknown, maxDay: string, notes: Notes): RatingsOut {
   if (!isObj(raw)) reject('Ratings section is malformed.');
   const { categories: rawCats, ...rest } = raw;
-  const out: Partial<Record<RatingCat, Category>> = {};
-  if (rawCats === undefined) return { categories: out, rest };
-  if (!isObj(rawCats)) reject('Ratings categories are malformed.');
+  if (rawCats !== undefined && !isObj(rawCats)) reject('Ratings categories are malformed.');
   const storedCats = isObj(storedRaw) && isObj(storedRaw.categories) ? storedRaw.categories : {};
+  const out: Partial<Record<RatingCat, Category>> = {};
   for (const cat of CATS) {
-    if (rawCats[cat] === undefined) continue;
-    const next = sanitizeCategory(cat, rawCats[cat], maxDay, notes);
     const prev = parseStoredCategory(storedCats[cat]);
+    const rawCat = isObj(rawCats) ? rawCats[cat] : undefined;
+    if (rawCat === undefined) {
+      // Omitted category: keep the stored copy — a partial payload must not
+      // delete a category (or the peaks backing its badges) already earned.
+      if (prev) out[cat] = prev;
+      continue;
+    }
+    const next = sanitizeCategory(cat, rawCat, maxDay, notes);
     if (prev) checkCategoryDeltas(cat, next, prev, notes);
     out[cat] = mergeCategory(prev, next, cat, notes);
   }
   return { categories: out, rest };
+}
+
+/** Lenient parse of every stored category (for the merged achievement view). */
+function parseStoredCategories(storedRaw: unknown): Partial<Record<RatingCat, Category>> | undefined {
+  if (!isObj(storedRaw) || !isObj(storedRaw.categories)) return undefined;
+  const out: Partial<Record<RatingCat, Category>> = {};
+  for (const cat of CATS) {
+    const prev = parseStoredCategory(storedRaw.categories[cat]);
+    if (prev) out[cat] = prev;
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -489,7 +519,7 @@ function parseStoredGamify(raw: unknown): GamifyData | null {
   };
 }
 
-function validateGamify(raw: unknown, storedRaw: unknown, maxDay: string, notes: Notes): GamifyData {
+function validateGamify(raw: unknown, stored: GamifyData | null, maxDay: string, notes: Notes): GamifyData {
   if (!isObj(raw)) reject('XP section is malformed.');
 
   const xp = countOf(raw.xp, LIMITS.xpCap, 'XP total');
@@ -512,9 +542,20 @@ function validateGamify(raw: unknown, storedRaw: unknown, maxDay: string, notes:
     }
   }
 
-  // The XP total must be backed by the claimed per-day activity: every client
-  // grant lands in a day log, so the union of day logs bounds the total.
-  const dayXpSum = Object.values(days).reduce((s, d) => s + d.xp, 0);
+  // Lifetime counters are checked against the union of stored + claimed day
+  // logs (per-day max): every client XP grant lands in a day log and the
+  // stored logs were validated when written, so honest totals stay backed even
+  // if a client prunes old day logs to save space — while a fabricated total
+  // exceeds even the union and still fails.
+  const unionDays: Record<string, DayLog> = { ...stored?.days };
+  for (const [day, log] of Object.entries(days)) {
+    const prev = unionDays[day];
+    unionDays[day] = prev ? { xp: Math.max(prev.xp, log.xp), activities: Math.max(prev.activities, log.activities) } : log;
+  }
+
+  // The XP total must be backed by per-day activity: every client grant lands
+  // in a day log, so the union of day logs bounds the total.
+  const dayXpSum = Object.values(unionDays).reduce((s, d) => s + d.xp, 0);
   if (xp > dayXpSum + LIMITS.xpSlack) {
     reject(`XP total of ${Math.round(xp)} is not backed by the claimed daily activity (day logs sum to ${Math.round(dayXpSum)}).`);
   }
@@ -535,7 +576,7 @@ function validateGamify(raw: unknown, storedRaw: unknown, maxDay: string, notes:
   const goalsMet = countOf(raw.goalsMet, 100_000, 'Days the daily goal was met');
   // Only days that reached the lowest goal the client allows (MIN_GOAL_XP) can
   // have met it — zero/low-XP padding days don't back a daily-goal claim.
-  const goalCapableDays = Object.values(days).filter((d) => d.xp >= MIN_GOAL_XP).length;
+  const goalCapableDays = Object.values(unionDays).filter((d) => d.xp >= MIN_GOAL_XP).length;
   if (goalsMet > goalCapableDays) {
     reject(`Daily goal claimed met on ${Math.round(goalsMet)} day(s) but only ${goalCapableDays} day(s) have enough XP to meet the minimum goal.`);
   }
@@ -594,7 +635,7 @@ function parseStoredStreak(raw: unknown): StreakData | null {
   };
 }
 
-function validateStreak(raw: unknown, incomingGamify: GamifyData | null, maxDay: string, notes: Notes): StreakData {
+function validateStreak(raw: unknown, gamify: GamifyData | null, maxDay: string, notes: Notes): StreakData {
   if (!isObj(raw)) reject('Streak section is malformed.');
 
   const count = countOf(raw.count, 100_000, 'Streak');
@@ -635,9 +676,12 @@ function validateStreak(raw: unknown, incomingGamify: GamifyData | null, maxDay:
 
   // A streak counts consecutive *active* days, and every active day writes a
   // day log — so no run (current or best) can exceed the claimed active days
-  // (which are themselves bounded to real, non-future calendar days).
-  if (incomingGamify) {
-    const activeDays = Object.values(incomingGamify.days).filter((d) => d.activities >= 1).length;
+  // (which are themselves bounded to real, non-future calendar days). The
+  // caller passes the *merged* stored∪incoming gamify view, so pruned-but-real
+  // history still backs a run while a payload that omits the gamify section
+  // is still bounded by the stored day logs.
+  if (gamify) {
+    const activeDays = Object.values(gamify.days).filter((d) => d.activities >= 1).length;
     if (count > activeDays) {
       reject(`Streak of ${Math.round(count)} day(s) exceeds the ${activeDays} claimed active day(s).`);
     }
@@ -724,7 +768,7 @@ function parseStoredQuests(raw: unknown): QuestsData | null {
   };
 }
 
-function validateQuests(raw: unknown, incomingGamify: GamifyData | null, maxDay: string, notes: Notes): QuestsData {
+function validateQuests(raw: unknown, gamify: GamifyData | null, maxDay: string, notes: Notes): QuestsData {
   if (!isObj(raw)) reject('Quests section is malformed.');
 
   let day = '';
@@ -763,11 +807,12 @@ function validateQuests(raw: unknown, incomingGamify: GamifyData | null, maxDay:
 
   const totalCompleted = countOf(raw.totalCompleted, 1_000_000, 'Lifetime quests completed');
   const daysAllDone = countOf(raw.daysAllDone, 1_000_000, 'All-quests-done days');
-  if (incomingGamify) {
+  if (gamify) {
     // Quests only advance via recorded activities, and every activity writes
     // `activities ≥ 1` into its day log — so only genuinely active days back
-    // quest claims (zero-activity padding days don't count).
-    const activeDays = Math.max(1, Object.values(incomingGamify.days).filter((d) => d.activities >= 1).length);
+    // quest claims (zero-activity padding days don't count). `gamify` is the
+    // merged stored∪incoming view, so pruned history can't brick honest syncs.
+    const activeDays = Math.max(1, Object.values(gamify.days).filter((d) => d.activities >= 1).length);
     if (totalCompleted > LIMITS.questsPerDay * activeDays) {
       reject(`Lifetime quest count of ${Math.round(totalCompleted)} exceeds the plausible ${LIMITS.questsPerDay}/day over ${activeDays} active day(s).`);
     }
@@ -1171,6 +1216,31 @@ function validateSrsHistory(progress: unknown, maxDay: string, notes: Notes): { 
   return { reviews, activeDays };
 }
 
+/**
+ * Lenient read of the *stored* SRS review history — used when the payload
+ * omits the progress section, so stored reviews still back (or disprove)
+ * achievement claims. No rejects and no mutation: the stored copy already
+ * passed validation when it was written.
+ */
+function storedSrsStats(progress: unknown): { reviews: number; activeDays: Set<string> } {
+  const activeDays = new Set<string>();
+  let reviews = 0;
+  if (isObj(progress) && isObj(progress.history)) {
+    for (const [day, stat] of Object.entries(progress.history)) {
+      if (!isDayKey(day) || !isObj(stat) || !isNum(stat.reviews) || stat.reviews <= 0) continue;
+      reviews += stat.reviews;
+      activeDays.add(day);
+    }
+  }
+  return { reviews, activeDays };
+}
+
+/** Size of a section's `{ [id]: … }` sub-map, if the section holds one. */
+function mapSize(section: unknown, key: string): number | undefined {
+  if (!isObj(section) || !isObj(section[key])) return undefined;
+  return Object.keys(section[key] as Record<string, unknown>).length;
+}
+
 // ---------------------------------------------------------------------------
 // Entry point
 // ---------------------------------------------------------------------------
@@ -1179,84 +1249,118 @@ function validateSrsHistory(progress: unknown, maxDay: string, notes: Notes): { 
  * Marker keys that identify a modern sectioned payload — must mirror the
  * client's detection in apps/web/src/lib/sync.ts `apply()`. A blob with none
  * of these is a legacy bare SRS-progress blob (whose top-level `streak` etc.
- * are SRS fields, not the gamification sections) and passes through untouched.
+ * are SRS fields, not the gamification sections).
  */
 const SECTION_MARKERS = ['progress', 'repertoires', 'mistakes', 'coordinate', 'customPuzzles', 'ratings', 'puzzleRating', 'ladder', 'lessons'];
+
+/**
+ * Gamified sections that are validated here but are not payload-type markers
+ * on the client. A crafted payload carrying only these (e.g. a bare
+ * `{ achievements }` blob) must still take the sectioned validation path —
+ * otherwise it would pass through, and be stored, unchecked. `streak` is
+ * special-cased below: a legacy bare SRS blob has a *numeric* top-level
+ * `streak`, so only an object-shaped one marks a sectioned payload.
+ */
+const GAMIFIED_MARKERS = ['gamify', 'quests', 'achievements'];
+
+function isSectioned(blob: Record<string, unknown>): boolean {
+  return SECTION_MARKERS.some((k) => k in blob) || GAMIFIED_MARKERS.some((k) => k in blob) || isObj(blob.streak);
+}
 
 export function validateProgress(incoming: unknown, stored: unknown, nowMs: number = Date.now()): ValidateResult {
   if (incoming === null || incoming === undefined) return { ok: true, data: null, adjustments: [] };
   if (!isObj(incoming)) return { ok: false, error: 'Progress payload must be an object.' };
-  if (!SECTION_MARKERS.some((k) => k in incoming)) return { ok: true, data: incoming, adjustments: [] };
+
+  const prev = isObj(stored) ? stored : {};
+  let inc: Record<string, unknown> = incoming;
+  if (!isSectioned(incoming)) {
+    // Legacy bare SRS-progress blob. With no sectioned data stored it passes
+    // through untouched (old client, old account). Once the stored blob is
+    // sectioned, though, a bare blob is exactly the `progress` section (the
+    // legacy client synced useProgress.exportState() verbatim) — slot it
+    // there, because storing it verbatim would delete every other section.
+    if (!isSectioned(prev)) return { ok: true, data: incoming, adjustments: [] };
+    inc = { progress: incoming };
+  }
 
   const notes = new Notes();
   const maxDay = dayKeyOf(nowMs + LIMITS.futureDaySlack * 86_400_000);
-  const prev = isObj(stored) ? stored : {};
-  const out: Record<string, unknown> = { ...incoming };
+  // Merged view: sections omitted from the payload are preserved from the
+  // stored blob instead of being deleted, and every plausibility/achievement
+  // check below reads the merged stored∪incoming stats — so a crafted partial
+  // payload can neither erase stored state nor dodge the stored stats that
+  // disprove its claims. The real client always sends the full snapshot
+  // (sync.ts gather()), so legitimate syncs never depend on the preservation.
+  const out: Record<string, unknown> = { ...prev, ...inc };
 
   try {
-    // SRS review history (light checks; the section itself passes through).
-    const srs = validateSrsHistory(out.progress, maxDay, notes);
+    // SRS review history: validate what the payload claims; when the section
+    // is omitted, read the stored history leniently (it was validated when
+    // written) so review achievements stay backed by stored stats.
+    const srs = inc.progress !== undefined ? validateSrsHistory(inc.progress, maxDay, notes) : storedSrsStats(prev.progress);
 
-    // Gamify first — streak/quest plausibility reads the claimed day logs.
-    let incomingGamify: GamifyData | null = null;
-    if (out.gamify !== undefined) {
-      incomingGamify = validateGamify(out.gamify, prev.gamify, maxDay, notes);
-      out.gamify = mergeGamify(parseStoredGamify(prev.gamify), incomingGamify);
+    // Gamify first — streak/quest plausibility reads the merged day logs.
+    const storedGamify = parseStoredGamify(prev.gamify);
+    let gamify: GamifyData | null = storedGamify;
+    if (inc.gamify !== undefined) {
+      gamify = mergeGamify(storedGamify, validateGamify(inc.gamify, storedGamify, maxDay, notes));
+      out.gamify = gamify;
     }
 
-    let ratings: RatingsOut | null = null;
-    if (out.ratings !== undefined) {
-      ratings = validateRatings(out.ratings, prev.ratings, maxDay, notes);
+    let cats: Partial<Record<RatingCat, Category>> | undefined;
+    if (inc.ratings !== undefined) {
+      const ratings = validateRatings(inc.ratings, prev.ratings, maxDay, notes);
       out.ratings = { ...ratings.rest, categories: ratings.categories };
+      cats = ratings.categories;
+    } else {
+      cats = parseStoredCategories(prev.ratings);
     }
 
-    let streak: StreakData | null = null;
-    if (out.streak !== undefined) {
-      streak = validateStreak(out.streak, incomingGamify, maxDay, notes);
-      const prevStreak = parseStoredStreak(prev.streak);
-      out.streak = prevStreak ? mergeStreaks(prevStreak, streak) : streak;
+    const storedStreak = parseStoredStreak(prev.streak);
+    let streak: StreakData | null = storedStreak;
+    if (inc.streak !== undefined) {
+      const next = validateStreak(inc.streak, gamify, maxDay, notes);
+      streak = storedStreak ? mergeStreaks(storedStreak, next) : next;
+      out.streak = streak;
     }
 
-    let quests: QuestsData | null = null;
-    if (out.quests !== undefined) {
-      quests = validateQuests(out.quests, incomingGamify, maxDay, notes);
-      out.quests = mergeQuests(parseStoredQuests(prev.quests), quests);
+    let quests: QuestsData | null = parseStoredQuests(prev.quests);
+    if (inc.quests !== undefined) {
+      quests = mergeQuests(quests, validateQuests(inc.quests, gamify, maxDay, notes));
+      out.quests = quests;
     }
 
-    if (out.ladder !== undefined) out.ladder = validateLadder(out.ladder, prev.ladder, notes);
-    if (out.lessons !== undefined) out.lessons = validateLessons(out.lessons, prev.lessons, notes);
-    if (out.puzzleRating !== undefined) out.puzzleRating = validateLegacyPuzzle(out.puzzleRating, prev.puzzleRating, maxDay, notes);
+    if (inc.ladder !== undefined) out.ladder = validateLadder(inc.ladder, prev.ladder, notes);
+    if (inc.lessons !== undefined) out.lessons = validateLessons(inc.lessons, prev.lessons, notes);
+    if (inc.puzzleRating !== undefined) out.puzzleRating = validateLegacyPuzzle(inc.puzzleRating, prev.puzzleRating, maxDay, notes);
 
-    if (out.achievements !== undefined) {
-      // Achievement claims are checked against the *final* (merged) stats, so a
-      // stale device pushing old counters never loses badges it truly earned.
-      const finalGamify = out.gamify as GamifyData | undefined;
-      const finalStreak = out.streak as StreakData | undefined;
-      const finalQuests = out.quests as QuestsData | undefined;
-      const cats = ratings?.categories;
+    if (inc.achievements !== undefined) {
+      // Achievement claims are checked against the merged stats: stored stats
+      // still back (or disprove) claims when the payload omits their sections,
+      // and a stale device pushing old counters never loses earned badges.
       const peak = (c?: Category): number | undefined => (c ? Math.max(c.eloPeak, c.glickoPeak) : undefined);
       const activeDays = new Set(srs.activeDays);
-      for (const [day, log] of Object.entries(finalGamify?.days ?? {})) if (log.activities > 0) activeDays.add(day);
+      for (const [day, log] of Object.entries(gamify?.days ?? {})) if (log.activities > 0) activeDays.add(day);
       const ctx: ClaimCtx = {
-        level: finalGamify ? levelFromXp(finalGamify.xp) : undefined,
+        level: gamify ? levelFromXp(gamify.xp) : undefined,
         streakMax:
-          finalStreak || finalGamify
-            ? Math.max(finalStreak?.count ?? 0, finalStreak?.best ?? 0, finalGamify?.streak ?? 0, finalGamify?.bestStreak ?? 0)
+          streak || gamify
+            ? Math.max(streak?.count ?? 0, streak?.best ?? 0, gamify?.streak ?? 0, gamify?.bestStreak ?? 0)
             : undefined,
-        goalsMet: finalGamify?.goalsMet,
+        goalsMet: gamify?.goalsMet,
         puzzlesSolved: cats?.puzzles?.won,
         gamesPlayed: cats?.bots && cats.blitz ? cats.bots.played + cats.blitz.played : undefined,
         gamesWon: cats?.bots && cats.blitz ? cats.bots.won + cats.blitz.won : undefined,
         bestWinStreak: cats?.bots && cats.blitz ? Math.max(cats.bots.bestWinStreak, cats.blitz.bestWinStreak) : undefined,
         peaks: cats ? { bots: peak(cats.bots), blitz: peak(cats.blitz), puzzles: peak(cats.puzzles) } : undefined,
-        botsBeaten: out.ladder !== undefined ? Object.keys((out.ladder as { defeated: Record<string, number> }).defeated).length : undefined,
-        lessonsCompleted: out.lessons !== undefined ? Object.keys((out.lessons as { completed: Record<string, unknown> }).completed).length : undefined,
-        questsCompleted: finalQuests?.totalCompleted,
-        questDaysAllDone: finalQuests?.daysAllDone,
+        botsBeaten: mapSize(out.ladder, 'defeated'),
+        lessonsCompleted: mapSize(out.lessons, 'completed'),
+        questsCompleted: quests?.totalCompleted,
+        questDaysAllDone: quests?.daysAllDone,
         reviews: isObj(out.progress) ? srs.reviews : undefined,
-        activeDays: isObj(out.progress) || finalGamify ? activeDays.size : undefined,
+        activeDays: isObj(out.progress) || gamify ? activeDays.size : undefined,
       };
-      const claims = validateAchievements(out.achievements, ctx, nowMs, notes);
+      const claims = validateAchievements(inc.achievements, ctx, nowMs, notes);
       out.achievements = { unlocked: mergeAchievements(prev.achievements, claims.unlocked) };
     }
   } catch (e) {

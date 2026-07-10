@@ -419,6 +419,99 @@ describe('padding-day claims', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Partial payloads — merged-view validation: omitted sections are preserved
+// and stored stats still back (or disprove) every claim
+// ---------------------------------------------------------------------------
+
+describe('partial payloads (merged-view validation)', () => {
+  const unlockedOf = (data: unknown): Record<string, number> =>
+    (data as { achievements: { unlocked: Record<string, number> } }).achievements.unlocked;
+
+  it('drops fabricated claims from a payload containing only an achievements section', () => {
+    // No gamify/ratings/streak sections at all: the stored stats (60 puzzles
+    // solved, level 6, 0 games won, peak 1450, streak best 5) must still be
+    // the ones the claims are checked against — not "unverifiable".
+    const cheat = {
+      achievements: {
+        unlocked: {
+          'tactics-solve-1000': NOW,
+          'rating-puzzles-2000': NOW,
+          'dedication-level-25': NOW,
+          'play-win-150': NOW,
+          'streak-streak-30': NOW,
+        },
+      },
+    };
+    const res = validateProgress(cheat, storedSnapshot(), NOW);
+    expectOk(res);
+    const unlocked = unlockedOf(res.data);
+    for (const id of Object.keys(cheat.achievements.unlocked)) {
+      assert.ok(!(id in unlocked), `${id} should have been dropped`);
+    }
+    assert.ok('tactics-solve-50' in unlocked); // the stored, earned badge survives
+    // …and the partial payload deleted nothing.
+    assert.equal(puzzlesOf(res.data).played, 100);
+    assert.equal((res.data as { gamify: { xp: number } }).gamify.xp, 1000);
+  });
+
+  it('preserves stored sections omitted from the payload (omitting ratings cannot delete them)', () => {
+    const partial = storedSnapshot() as Record<string, unknown>;
+    delete partial.ratings;
+    const res = validateProgress(partial, storedSnapshot(), NOW);
+    expectOk(res);
+    const p = puzzlesOf(res.data);
+    assert.equal(p.played, 100);
+    assert.equal(p.eloPeak, 1450);
+    // The rating badge stays backed by the stored (preserved) categories.
+    assert.ok('tactics-solve-50' in unlockedOf(res.data));
+  });
+
+  it('preserves stored rating categories omitted from the payload', () => {
+    const partial = storedSnapshot();
+    delete (partial.ratings.categories as Record<string, unknown>).puzzles;
+    const res = validateProgress(partial, storedSnapshot(), NOW);
+    expectOk(res);
+    assert.equal(puzzlesOf(res.data).played, 100);
+    assert.equal(puzzlesOf(res.data).eloPeak, 1450);
+  });
+
+  it('accepts an honest XP total when older day logs were pruned client-side', () => {
+    const pruned = storedSnapshot();
+    // The client kept only the most recent day log but the lifetime XP total
+    // (1000, backed by the 5 stored day logs) is untouched.
+    pruned.gamify.days = { [day(-5)]: { xp: 200, activities: 10 } };
+    const res = validateProgress(pruned, storedSnapshot(), NOW);
+    expectOk(res);
+    const gamify = (res.data as { gamify: { xp: number; days: Record<string, unknown> } }).gamify;
+    assert.equal(gamify.xp, 1000);
+    assert.equal(Object.keys(gamify.days).length, 5); // stored logs survive the merge
+  });
+
+  it('still rejects a fabricated XP total that even the stored day logs cannot back', () => {
+    const cheat = storedSnapshot();
+    cheat.gamify.days = { [day(-5)]: { xp: 200, activities: 10 } };
+    cheat.gamify.xp = 50_000; // stored ∪ incoming day logs sum to 1000
+    expectReject(validateProgress(cheat, storedSnapshot(), NOW), /not backed/i);
+  });
+
+  it('bounds streak claims by the stored day logs when the payload omits the gamify section', () => {
+    const cheat = storedSnapshot() as Record<string, unknown>;
+    delete cheat.gamify;
+    cheat.streak = { count: 40, best: 40, lastDay: day(0), freezes: 1, milestonesAwarded: [3, 7, 30] };
+    expectReject(validateProgress(cheat, storedSnapshot(), NOW), /exceeds the \d+ claimed active day/i);
+  });
+
+  it('slots a legacy bare blob into the progress section instead of wiping stored sections', () => {
+    const legacy = { cards: { 'e4:e5': { due: 1 } }, streak: 4 };
+    const res = validateProgress(legacy, storedSnapshot(), NOW);
+    expectOk(res);
+    assert.deepEqual((res.data as { progress: unknown }).progress, legacy);
+    assert.equal(puzzlesOf(res.data).played, 100);
+    assert.ok('tactics-solve-50' in unlockedOf(res.data));
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Clamped payloads — normalizable noise is adjusted, not fatal
 // ---------------------------------------------------------------------------
 
