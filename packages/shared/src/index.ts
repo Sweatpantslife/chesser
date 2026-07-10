@@ -116,6 +116,13 @@ export const STOCKFISH_ELO_MAX = 3190;
  */
 export const BOT_RATING_MIN = 500;
 
+/**
+ * A Maia net must sit within this many rating points of a 'human' request's
+ * maiaRating to be used. The server dispatches with it and the client labels
+ * with it, so it lives here to keep the two in lockstep.
+ */
+export const MAIA_NET_TOLERANCE = 150;
+
 // ---------------------------------------------------------------------------
 // Evaluation scores (always normalised to White's point of view)
 // ---------------------------------------------------------------------------

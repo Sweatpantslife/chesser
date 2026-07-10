@@ -1,4 +1,5 @@
 import type { BotConfig, EngineAvailability } from '@chesser/shared';
+import { MAIA_NET_TOLERANCE } from '@chesser/shared';
 
 /**
  * A named opponent on the ladder. Ordered ascending by `rating` — that order
@@ -193,10 +194,6 @@ export const BOT_ROSTER: RosterBot[] = [
 export const ROSTER_BY_ID: Record<string, RosterBot> = Object.fromEntries(BOT_ROSTER.map((b) => [b.id, b]));
 
 export type HumanBackend = 'maia' | 'stockfish';
-
-/** A Maia net must sit within this many rating points of the persona to be used
- * (matches the server's tolerance, so the label agrees with what actually runs). */
-const MAIA_NET_TOLERANCE = 150;
 
 /**
  * Which backend a human-like persona actually runs on right now: a real Maia

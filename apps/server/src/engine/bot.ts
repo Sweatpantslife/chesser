@@ -1,5 +1,5 @@
 import type { BotMoveMessage, BotMoveRequest, Score } from '@chesser/shared';
-import { BOT_RATING_MIN, STOCKFISH_ELO_MAX, STOCKFISH_ELO_MIN } from '@chesser/shared';
+import { BOT_RATING_MIN, MAIA_NET_TOLERANCE, STOCKFISH_ELO_MAX, STOCKFISH_ELO_MIN } from '@chesser/shared';
 import type { EngineManager } from './manager.js';
 import type { UciEngine, UciInfo } from './uci.js';
 import { styleScore } from './style-score.js';
@@ -9,8 +9,6 @@ import { withLock } from '../util/lock.js';
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
 
-/** A Maia net must sit within this many rating points of the request to be used. */
-const MAIA_NET_TOLERANCE = 150;
 /** Upper bound for the human-like Stockfish sampler's target rating. */
 const HUMANLIKE_RATING_MAX = 2600;
 

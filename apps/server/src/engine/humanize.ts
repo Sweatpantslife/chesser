@@ -199,11 +199,20 @@ export function annotateRepeats(fen: string, candidates: HumanCandidate[], recen
     const k = repetitionKey(f);
     counts.set(k, (counts.get(k) ?? 0) + 1);
   }
+  let g: Chess;
+  try {
+    g = new Chess(fen);
+  } catch {
+    return candidates.map((c) => ({ ...c, repeats: 0 }));
+  }
   return candidates.map((c) => {
     try {
-      const g = new Chess(fen);
+      // move() throws on an illegal move and leaves the board untouched, so
+      // one instance with move/undo covers every candidate.
       g.move({ from: c.uci.slice(0, 2), to: c.uci.slice(2, 4), promotion: c.uci.length > 4 ? c.uci[4] : undefined });
-      return { ...c, repeats: counts.get(repetitionKey(g.fen())) ?? 0 };
+      const key = repetitionKey(g.fen());
+      g.undo();
+      return { ...c, repeats: counts.get(key) ?? 0 };
     } catch {
       return { ...c, repeats: 0 };
     }
