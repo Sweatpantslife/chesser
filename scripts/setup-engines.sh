@@ -101,7 +101,9 @@ setup_maia() {
   for r in "${MAIA_RATINGS[@]}"; do
     local out="$NET_DIR/maia-${r}.pb.gz"
     if [[ -s "$out" ]]; then ok "Maia ${r} already present"; MAIA_NETS+=("$r"); continue; fi
-    local url="https://github.com/CSSLab/maia-chess/raw/master/maia_weights/maia-${r}.pb.gz"
+    # raw.githubusercontent.com is the redirect target of github.com/<repo>/raw/
+    # and also works behind proxies that block github.com file paths.
+    local url="https://raw.githubusercontent.com/CSSLab/maia-chess/master/maia_weights/maia-${r}.pb.gz"
     log "Downloading Maia ${r}"
     if curl -fSL --retry 4 --retry-delay 2 -o "$out" "$url"; then
       ok "Maia ${r} ready"; MAIA_NETS+=("$r")
