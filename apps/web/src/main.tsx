@@ -18,6 +18,12 @@ registerSW({
   // Long-lived windows (installed PWAs left open) otherwise rely on the
   // browser's >24h update heuristics; poll hourly so deploys land sooner.
   onRegisteredSW(_swUrl, registration) {
-    if (registration) setInterval(() => void registration.update(), 60 * 60 * 1000);
+    // update() rejects while offline — swallow it, or an installed PWA left
+    // open offline logs an unhandled rejection every hour. Next tick retries.
+    if (registration) {
+      setInterval(() => {
+        registration.update().catch(() => {});
+      }, 60 * 60 * 1000);
+    }
   },
 });
