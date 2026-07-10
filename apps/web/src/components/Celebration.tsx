@@ -83,9 +83,12 @@ export function Celebration() {
   useEffect(() => {
     fire = burst;
     const unsub = onGamifyEvent((e) => {
-      if (e.kind === 'level') burst(120);
-      else if (e.kind === 'achievement') burst(70);
+      if (e.kind === 'level-up') burst(120);
+      else if (e.kind === 'streak-milestone') burst(90);
+      else if (e.kind === 'quests-all-done') burst(80);
+      else if (e.kind === 'achievement-unlocked') burst(70);
       else if (e.kind === 'goal') burst(50);
+      else if (e.kind === 'quest-complete') burst(35);
     });
     const tRef = timeouts.current;
     return () => {

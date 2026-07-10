@@ -5,6 +5,7 @@ import { AccountButton } from './components/AccountPanel';
 import { InstallButton } from './components/InstallButton';
 import { SettingsDialog } from './components/SettingsDialog';
 import { PlayPage } from './pages/PlayPage';
+import { HomePage } from './pages/HomePage';
 import { HumansPage } from './humans/HumansPage';
 import { LearnPage } from './pages/LearnPage';
 import { OpeningsPage } from './pages/OpeningsPage';
@@ -33,14 +34,16 @@ import {
   IconProfile,
   IconStats,
   IconTactics,
+  IconToday,
   IconTrain,
   LogoMark,
   Wordmark,
 } from './components/icons';
 
-type View = 'play' | 'learn' | 'friends' | 'openings' | 'tactics' | 'endgame' | 'train' | 'coach' | 'coordinates' | 'stats' | 'profile';
+type View = 'home' | 'play' | 'learn' | 'friends' | 'openings' | 'tactics' | 'endgame' | 'train' | 'coach' | 'coordinates' | 'stats' | 'profile';
 
 const TABS: { id: View; label: string; hint: string; icon: ComponentType<SVGProps<SVGSVGElement> & { size?: number }> }[] = [
+  { id: 'home', label: 'Today', hint: 'streak · daily quests · goals', icon: IconToday },
   { id: 'play', label: 'Play', hint: 'vs bots & analysis', icon: IconPlay },
   { id: 'learn', label: 'Learn', hint: 'rules & guided lessons', icon: IconLearn },
   { id: 'friends', label: 'Friends', hint: 'pass & play · online friend games', icon: IconFriends },
@@ -147,9 +150,13 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
 export default function App() {
   const init = useGame((s) => s.init);
   const authInit = useAuth((s) => s.init);
-  // A shared friend-game link (#/friend/CODE) lands straight on the Friends view.
-  const [view, setView] = useState<View>(() => (window.location.hash.startsWith('#/friend/') ? 'friends' : 'play'));
+  // A shared friend-game link (#/friend/CODE) lands straight on the Friends view;
+  // everyone else starts the day on the Today page.
+  const [view, setView] = useState<View>(() => (window.location.hash.startsWith('#/friend/') ? 'friends' : 'home'));
   const [trainTab, setTrainTab] = useState<TrainTab>('mates');
+  // Set when the Today page's "Daily puzzle" entry is used, so the Tactics
+  // page opens straight onto today's puzzle (cleared on any manual nav).
+  const [tacticsDaily, setTacticsDaily] = useState(false);
 
   useEffect(() => {
     const onHash = () => {
@@ -163,6 +170,12 @@ export default function App() {
   const goto = (target: DeckTarget) => {
     if (target.trainTab) setTrainTab(target.trainTab);
     setView(target.view);
+  };
+
+  // All navigation funnels through here so one-shot flags don't go stale.
+  const nav = (v: View) => {
+    setTacticsDaily(false);
+    setView(v);
   };
 
   useEffect(() => {
@@ -179,10 +192,19 @@ export default function App() {
       >
         Skip to content
       </a>
-      <Header view={view} setView={setView} />
+      <Header view={view} setView={nav} />
       {/* key={view} remounts the content on tab switch so .page-fade replays
           its fade (disabled under prefers-reduced-motion in index.css). */}
       <main key={view} id="main" className="page-fade flex-1 p-4">
+        {view === 'home' && (
+          <HomePage
+            go={nav}
+            onDailyPuzzle={() => {
+              setTacticsDaily(true);
+              setView('tactics');
+            }}
+          />
+        )}
         {view === 'play' && <PlayPage />}
         {view === 'learn' && <LearnPage />}
         {/* Kept mounted so a live human-vs-human game survives tab switches. */}
@@ -190,7 +212,7 @@ export default function App() {
           <HumansPage />
         </div>
         {view === 'openings' && <OpeningsPage />}
-        {view === 'tactics' && <TacticsPage />}
+        {view === 'tactics' && <TacticsPage openDaily={tacticsDaily} onDailyOpened={() => setTacticsDaily(false)} />}
         {view === 'endgame' && <EndgamePage />}
         {view === 'train' && <TrainPage tab={trainTab} setTab={setTrainTab} />}
         {view === 'coach' && <CoachPage goPlay={() => setView('play')} />}

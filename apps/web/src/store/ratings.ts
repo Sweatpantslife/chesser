@@ -33,6 +33,14 @@ export const CATEGORY_LABELS: Record<RatingCategory, string> = {
 /** Opponents/puzzles have a known strength, so we treat them as fairly certain. */
 const OPP_RD = 60;
 
+/**
+ * A Glicko rating with RD above this is provisional (Lichess uses the same
+ * cutoff). Provisional ratings swing wildly — one lucky win against a 2100
+ * puzzle launches a fresh 1200±700 rating past 1600 — so they don't count as
+ * a "peak" (which feeds the rating achievements and the peak display).
+ */
+export const PROVISIONAL_RD = 110;
+
 /** Starting Elo per category (puzzles start lower, mirroring the old default). */
 const START_ELO: Record<RatingCategory, number> = { bots: 1500, blitz: 1500, puzzles: 1200 };
 
@@ -52,6 +60,10 @@ export interface CategoryRating {
   won: number; // puzzles: solved
   lost: number; // puzzles: missed
   drawn: number;
+  /** Current run of consecutive wins (a draw or loss resets it). */
+  winStreak: number;
+  /** Longest win run ever (drives the win-streak achievements). */
+  bestWinStreak: number;
   history: Record<string, DaySnapshot>; // YYYY-MM-DD → end-of-day snapshot
 }
 
@@ -69,6 +81,8 @@ function freshCategory(cat: RatingCategory): CategoryRating {
     won: 0,
     lost: 0,
     drawn: 0,
+    winStreak: 0,
+    bestWinStreak: 0,
     history: {},
   };
 }
@@ -118,15 +132,20 @@ function applyRecord(c: CategoryRating, opponentRating: number, outcome: GameOut
   const newGlicko = updateGlickoOne(c.glicko, opponentRating, OPP_RD, score);
   const glickoDelta = Math.round(newGlicko.rating - c.glicko.rating);
   const d = today();
+  // ?? 0 guards state persisted before win streaks existed.
+  const winStreak = outcome === 'win' ? (c.winStreak ?? 0) + 1 : 0;
   const next: CategoryRating = {
     elo: newElo,
     eloPeak: Math.max(c.eloPeak, newElo),
     glicko: newGlicko,
-    glickoPeak: Math.max(c.glickoPeak, newGlicko.rating),
+    // Peaks only count once the rating is established (see PROVISIONAL_RD).
+    glickoPeak: newGlicko.rd <= PROVISIONAL_RD ? Math.max(c.glickoPeak, newGlicko.rating) : c.glickoPeak,
     played: c.played + 1,
     won: c.won + (outcome === 'win' ? 1 : 0),
     lost: c.lost + (outcome === 'loss' ? 1 : 0),
     drawn: c.drawn + (outcome === 'draw' ? 1 : 0),
+    winStreak,
+    bestWinStreak: Math.max(c.bestWinStreak ?? 0, winStreak),
     history: { ...c.history, [d]: { elo: newElo, glicko: Math.round(newGlicko.rating) } },
   };
   return { next, res: { elo: newElo, eloDelta, glicko: Math.round(newGlicko.rating), glickoDelta } };
@@ -146,6 +165,8 @@ function mergeCategory(local: CategoryRating, remote: Partial<CategoryRating> | 
     won: Math.max(local.won, remote.won ?? 0),
     lost: Math.max(local.lost, remote.lost ?? 0),
     drawn: Math.max(local.drawn, remote.drawn ?? 0),
+    winStreak: remoteWins ? (remote.winStreak ?? 0) : (local.winStreak ?? 0),
+    bestWinStreak: Math.max(local.bestWinStreak ?? 0, remote.bestWinStreak ?? 0),
     history: { ...(remote.history ?? {}), ...local.history },
   };
 }
@@ -187,6 +208,8 @@ function categoryFromLegacy(l: { rating: number; peak: number; played: number; s
     won: l.solved,
     lost: Math.max(0, l.played - l.solved),
     drawn: 0,
+    winStreak: 0,
+    bestWinStreak: 0,
     history,
   };
 }

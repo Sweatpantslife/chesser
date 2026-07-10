@@ -6,6 +6,8 @@ import { useCoordinate } from '../store/coordinate';
 import { useCustomPuzzles } from '../store/customPuzzles';
 import { useRatings } from '../store/ratings';
 import { useGamify } from '../store/gamify';
+import { useStreak } from '../store/streak';
+import { useQuests } from '../store/quests';
 import { useAchievements } from '../store/achievements';
 import { useLadder } from '../store/ladder';
 import { useLessons } from '../store/lessons';
@@ -20,11 +22,14 @@ function gather() {
   return {
     progress: useProgress.getState().exportState(),
     repertoires: useRepertoire.getState().exportRepertoires(),
+    repertoirePicks: useRepertoire.getState().exportPicks(),
     mistakes: useMistakes.getState().exportMistakes(),
     coordinate: useCoordinate.getState().exportState(),
     customPuzzles: useCustomPuzzles.getState().exportPuzzles(),
     ratings: useRatings.getState().exportState(),
     gamify: useGamify.getState().exportState(),
+    streak: useStreak.getState().exportState(),
+    quests: useQuests.getState().exportState(),
     achievements: useAchievements.getState().exportState(),
     ladder: useLadder.getState().exportState(),
     lessons: useLessons.getState().exportState(),
@@ -50,12 +55,15 @@ function apply(remote: unknown): void {
   ) {
     useProgress.getState().importMerge(r.progress);
     useRepertoire.getState().importMerge(r.repertoires);
+    useRepertoire.getState().importPicks(r.repertoirePicks);
     useMistakes.getState().importMerge(r.mistakes);
     useCoordinate.getState().importMerge(r.coordinate);
     useCustomPuzzles.getState().importMerge(r.customPuzzles);
     useRatings.getState().importMerge(r.ratings);
     if (!('ratings' in r) && 'puzzleRating' in r) useRatings.getState().importLegacyPuzzle(r.puzzleRating);
     useGamify.getState().importMerge(r.gamify);
+    useStreak.getState().importMerge(r.streak);
+    useQuests.getState().importMerge(r.quests);
     useAchievements.getState().importMerge(r.achievements);
     useLadder.getState().importMerge(r.ladder);
     useLessons.getState().importMerge(r.lessons);
@@ -93,6 +101,8 @@ export function startSync(token: string, onState: (s: SyncState) => void): void 
   unsubs.push(useCustomPuzzles.subscribe(schedule));
   unsubs.push(useRatings.subscribe(schedule));
   unsubs.push(useGamify.subscribe(schedule));
+  unsubs.push(useStreak.subscribe(schedule));
+  unsubs.push(useQuests.subscribe(schedule));
   unsubs.push(useAchievements.subscribe(schedule));
   unsubs.push(useLadder.subscribe(schedule));
   unsubs.push(useLessons.subscribe(schedule));

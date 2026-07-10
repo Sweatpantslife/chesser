@@ -9,7 +9,7 @@
 import type { RatingCategory } from '../store/ratings';
 import { ALL_LESSONS } from '../learn';
 
-export type AchievementCategory = 'learn' | 'tactics' | 'play' | 'ladder' | 'streak' | 'rating' | 'rush' | 'dedication';
+export type AchievementCategory = 'learn' | 'tactics' | 'play' | 'ladder' | 'streak' | 'rating' | 'rush' | 'dedication' | 'quests' | 'coach';
 
 export interface AchievementCtx {
   level: number;
@@ -21,12 +21,17 @@ export interface AchievementCtx {
   puzzlesSolved: number;
   gamesPlayed: number;
   gamesWon: number;
+  bestWinStreak: number; // longest run of consecutive game wins (bots + blitz)
   botsBeaten: number; // distinct ladder bots defeated
   topBotBeatenRating: number; // strongest ladder bot defeated
   rushBest: number;
   reviews: number; // total SRS reviews across decks
   activeDays: number;
   lessonsCompleted: number; // distinct lessons finished on the Learn tab
+  questsCompleted: number; // lifetime daily quests completed
+  questDaysAllDone: number; // days where the whole daily-quest slate was finished
+  weaknessTrainings: number; // rated attempts in the coach's "Train this weakness" drills
+  weaknessesCleared: number; // distinct weaknesses at the cleared bar (lib/gamify WEAKNESS_CLEARED_*)
 }
 
 export interface Achievement {
@@ -58,6 +63,13 @@ export const ACHIEVEMENTS: Achievement[] = [
       { suffix: 'lesson-all', name: 'Graduate', target: ALL_LESSONS.length, xp: 150 },
     ],
   ),
+  ...tiers(
+    { category: 'learn', icon: '🧠', desc: 'Review flashcards across your decks (openings · mates · anti-blunder).', value: (c) => c.reviews },
+    [
+      { suffix: 'reviews-50', name: 'Memory Spark', target: 50, xp: 40 },
+      { suffix: 'reviews-250', name: 'Iron Memory', target: 250, xp: 120 },
+    ],
+  ),
   // — Tactics —
   ...tiers(
     { category: 'tactics', icon: '🎯', desc: 'Solve rated tactics puzzles.', value: (c) => c.puzzlesSolved },
@@ -65,6 +77,7 @@ export const ACHIEVEMENTS: Achievement[] = [
       { suffix: 'solve-10', name: 'First Blood', target: 10, xp: 30 },
       { suffix: 'solve-50', name: 'Sharp Eye', target: 50, xp: 60 },
       { suffix: 'solve-200', name: 'Tactician', target: 200, xp: 120 },
+      { suffix: 'solve-500', name: 'Sniper', target: 500, xp: 200 },
       { suffix: 'solve-1000', name: 'Combination Machine', target: 1000, xp: 300 },
     ],
   ),
@@ -75,6 +88,7 @@ export const ACHIEVEMENTS: Achievement[] = [
       { suffix: 'win-1', name: 'First Win', target: 1, xp: 30 },
       { suffix: 'win-10', name: 'Giant Slayer', target: 10, xp: 60 },
       { suffix: 'win-50', name: 'Seasoned', target: 50, xp: 150 },
+      { suffix: 'win-150', name: 'Conqueror', target: 150, xp: 300 },
     ],
   ),
   ...tiers(
@@ -82,6 +96,14 @@ export const ACHIEVEMENTS: Achievement[] = [
     [
       { suffix: 'play-10', name: 'Getting the Reps', target: 10, xp: 30 },
       { suffix: 'play-100', name: 'Centurion', target: 100, xp: 150 },
+    ],
+  ),
+  ...tiers(
+    { category: 'play', icon: '⚔️', desc: 'Win consecutive games without a draw or loss in between.', value: (c) => c.bestWinStreak },
+    [
+      { suffix: 'winstreak-3', name: 'Hat-Trick', target: 3, xp: 40 },
+      { suffix: 'winstreak-5', name: 'On a Tear', target: 5, xp: 90 },
+      { suffix: 'winstreak-10', name: 'Untouchable', target: 10, xp: 250 },
     ],
   ),
   // — Ladder —
@@ -105,11 +127,12 @@ export const ACHIEVEMENTS: Achievement[] = [
   },
   // — Streaks / daily goals —
   ...tiers(
-    { category: 'streak', icon: '🔥', desc: 'Hit your daily goal on consecutive days.', value: (c) => Math.max(c.streak, c.bestStreak) },
+    { category: 'streak', icon: '🔥', desc: 'Train on consecutive days to keep your streak alive.', value: (c) => Math.max(c.streak, c.bestStreak) },
     [
       { suffix: 'streak-3', name: 'Warming Up', target: 3, xp: 30 },
       { suffix: 'streak-7', name: 'Week Strong', target: 7, xp: 80 },
       { suffix: 'streak-30', name: 'Unbreakable', target: 30, xp: 300 },
+      { suffix: 'streak-100', name: 'Eternal Flame', target: 100, xp: 500 },
     ],
   ),
   {
@@ -122,6 +145,13 @@ export const ACHIEVEMENTS: Achievement[] = [
     target: 1,
     value: (c) => c.goalsMet,
   },
+  ...tiers(
+    { category: 'streak', icon: '🏁', desc: 'Meet your daily XP goal on different days.', value: (c) => c.goalsMet },
+    [
+      { suffix: 'goal-7', name: 'Consistent', target: 7, xp: 60 },
+      { suffix: 'goal-30', name: 'Relentless', target: 30, xp: 200 },
+    ],
+  ),
   // — Levels —
   ...tiers(
     { category: 'dedication', icon: '⭐', desc: 'Earn XP and level up.', value: (c) => c.level },
@@ -129,6 +159,41 @@ export const ACHIEVEMENTS: Achievement[] = [
       { suffix: 'level-5', name: 'Rising Star', target: 5, xp: 50 },
       { suffix: 'level-10', name: 'Devotee', target: 10, xp: 120 },
       { suffix: 'level-25', name: 'Grandmaster of Grind', target: 25, xp: 400 },
+    ],
+  ),
+  // — Daily quests —
+  ...tiers(
+    { category: 'quests', icon: '🗺️', desc: 'Complete daily quests.', value: (c) => c.questsCompleted },
+    [
+      { suffix: 'first', name: 'First Quest', target: 1, xp: 15 },
+      { suffix: '25', name: 'Adventurer', target: 25, xp: 75 },
+    ],
+  ),
+  ...tiers(
+    { category: 'quests', icon: '🏅', desc: 'Finish every daily quest in a single day.', value: (c) => c.questDaysAllDone },
+    [
+      { suffix: 'clean-1', name: 'Clean Sweep', target: 1, xp: 30 },
+      { suffix: 'clean-7', name: 'Sweep Week', target: 7, xp: 150 },
+    ],
+  ),
+  // — Coach —
+  ...tiers(
+    { category: 'coach', icon: '🧑‍🏫', desc: 'Train your diagnosed weaknesses with targeted drills.', value: (c) => c.weaknessTrainings },
+    [
+      { suffix: 'train-1', name: 'Coachable', target: 1, xp: 15 },
+      { suffix: 'train-50', name: 'Star Pupil', target: 50, xp: 100 },
+    ],
+  ),
+  ...tiers(
+    {
+      category: 'coach',
+      icon: '💪',
+      desc: 'Clear a weakness — solve 8 of your last 10 targeted drills (10+ attempts).',
+      value: (c) => c.weaknessesCleared,
+    },
+    [
+      { suffix: 'clear-1', name: 'Weakness No More', target: 1, xp: 50 },
+      { suffix: 'clear-3', name: 'Turnaround Artist', target: 3, xp: 150 },
     ],
   ),
   // — Ratings —
@@ -172,6 +237,16 @@ export const ACHIEVEMENTS: Achievement[] = [
     target: 1600,
     value: (c) => c.ratings.blitz.peak,
   },
+  {
+    id: 'rating-bots-2000',
+    name: 'Master of Machines',
+    desc: 'Reach a 2000 rating against the bots.',
+    icon: '🤖',
+    category: 'rating',
+    xp: 250,
+    target: 2000,
+    value: (c) => c.ratings.bots.peak,
+  },
   // — Puzzle rush —
   ...tiers(
     { category: 'rush', icon: '🏃', desc: 'Score in Puzzle Rush.', value: (c) => c.rushBest },
@@ -187,6 +262,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     [
       { suffix: 'days-7', name: 'Regular', target: 7, xp: 50 },
       { suffix: 'days-30', name: 'Habitual', target: 30, xp: 150 },
+      { suffix: 'days-100', name: 'Devoted', target: 100, xp: 300 },
     ],
   ),
 ];
@@ -202,6 +278,8 @@ export const ACHIEVEMENT_CATEGORY_LABELS: Record<AchievementCategory, string> = 
   rating: 'Ratings',
   rush: 'Puzzle Rush',
   dedication: 'Dedication',
+  quests: 'Daily Quests',
+  coach: 'The Coach',
 };
 
 export function achievementProgress(a: Achievement, ctx: AchievementCtx): { value: number; target: number; pct: number; done: boolean } {

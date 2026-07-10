@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ACHIEVEMENTS,
   ACHIEVEMENT_CATEGORY_LABELS,
@@ -13,8 +13,18 @@ import { useGamify } from '../store/gamify';
 import { useLadder } from '../store/ladder';
 import { useRepertoire } from '../store/repertoire';
 import { useProgress } from '../store/progress';
+import { useQuests } from '../store/quests';
+import { useCoach } from '../store/coach';
 
-function Badge({ a, unlocked, ctx }: { a: Achievement; unlocked: boolean; ctx: ReturnType<typeof buildAchievementCtx> }) {
+/**
+ * The badge gallery: earned badges in full colour with their earn date,
+ * locked ones dimmed/greyscale with a live progress bar toward the target.
+ */
+
+const dateFmt = new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+
+function Badge({ a, earnedAt, ctx }: { a: Achievement; earnedAt: number | undefined; ctx: ReturnType<typeof buildAchievementCtx> }) {
+  const unlocked = earnedAt !== undefined;
   const { value, target, pct, done } = achievementProgress(a, ctx);
   return (
     <div
@@ -45,20 +55,30 @@ function Badge({ a, unlocked, ctx }: { a: Achievement; unlocked: boolean; ctx: R
           </div>
         </div>
       )}
-      {unlocked && done && a.xp > 0 && <div className="mt-2 text-right text-xs text-gold-400/90">+{a.xp} XP</div>}
+      {unlocked && (
+        <div className="mt-2 flex items-center justify-between text-xs">
+          <span className="text-neutral-400">{earnedAt > 0 ? `Earned ${dateFmt.format(earnedAt)}` : 'Earned'}</span>
+          {done && a.xp > 0 && <span className="text-gold-400/90">+{a.xp} XP</span>}
+        </div>
+      )}
     </div>
   );
 }
 
+type Filter = 'all' | 'earned' | 'locked';
+
 /** The full badge wall, grouped by category, locked entries showing progress. */
 export function AchievementGrid() {
   const unlocked = useAchievements((s) => s.unlocked);
+  const [filter, setFilter] = useState<Filter>('all');
   // Subscribe to every source so progress bars stay live.
   useRatings((s) => s.categories);
   useGamify((s) => s.xp);
   useLadder((s) => s.defeated);
   useRepertoire((s) => s.rushHighScore);
   useProgress((s) => s.history);
+  useQuests((s) => s.totalCompleted);
+  useCoach((s) => s.trainingLog);
 
   // Cheap to recompute; the store subscriptions above keep it fresh.
   const ctx = buildAchievementCtx();
@@ -74,25 +94,47 @@ export function AchievementGrid() {
     return [...m.entries()];
   }, []);
 
+  const matches = (a: Achievement) => filter === 'all' || (filter === 'earned') === (a.id in unlocked);
+
   return (
     <div className="rounded-2xl bg-panel p-4 shadow-soft">
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-display text-sm font-semibold text-ink">Achievements</h3>
-        <span className="text-xs text-neutral-400">
-          {earned} / {ACHIEVEMENTS.length} earned
-        </span>
+        <div className="flex items-center gap-2">
+          <div className="inline-flex overflow-hidden rounded-full border border-neutral-700 text-xs">
+            {(['all', 'earned', 'locked'] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                aria-pressed={filter === f}
+                className={`btn-press px-2.5 py-1 font-semibold capitalize ${
+                  filter === f ? 'bg-brand-600 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+          <span className="text-xs text-neutral-400">
+            {earned} / {ACHIEVEMENTS.length} earned
+          </span>
+        </div>
       </div>
       <div className="space-y-4">
-        {grouped.map(([cat, list]) => (
-          <div key={cat}>
-            <div className="mb-2 text-xs uppercase tracking-wide text-neutral-400">{ACHIEVEMENT_CATEGORY_LABELS[cat]}</div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {list.map((a) => (
-                <Badge key={a.id} a={a} unlocked={a.id in unlocked} ctx={ctx} />
-              ))}
+        {grouped.map(([cat, list]) => {
+          const shown = list.filter(matches);
+          if (shown.length === 0) return null;
+          return (
+            <div key={cat}>
+              <div className="mb-2 text-xs uppercase tracking-wide text-neutral-400">{ACHIEVEMENT_CATEGORY_LABELS[cat]}</div>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {shown.map((a) => (
+                  <Badge key={a.id} a={a} earnedAt={unlocked[a.id]} ctx={ctx} />
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

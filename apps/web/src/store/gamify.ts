@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { dayDiff, todayStr } from '../lib/clock';
 
 /**
  * The progression layer: experience points, levels, and a configurable daily
@@ -11,8 +12,7 @@ import { persist } from 'zustand/middleware';
  * daily XP goal — being active but short of the goal doesn't extend it.
  */
 
-const today = () => new Date().toISOString().slice(0, 10);
-const dayDiff = (a: string, b: string) => Math.round((Date.parse(b) - Date.parse(a)) / 86_400_000);
+const today = todayStr; // injectable clock (lib/clock.ts) so day rollover is testable
 
 // Level curve: XP to go from level L to L+1 is BASE + STEP·L (gently rising).
 const BASE = 60;

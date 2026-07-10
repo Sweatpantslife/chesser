@@ -20,6 +20,7 @@ import {
   recordResult,
 } from '../lib/puzzleService';
 import { playMoveSound } from '../lib/sound';
+import { todayStr } from '../lib/clock';
 import { useTimeoutRef } from '../lib/useTimeoutRef';
 import { RushMode } from './RushMode';
 import { MistakesMode } from './MistakesMode';
@@ -41,7 +42,7 @@ const DIFF_COLOR: Record<Difficulty, string> = {
   hard: 'text-rose-300',
 };
 
-export function TacticsPage() {
+export function TacticsPage({ openDaily = false, onDailyOpened }: { openDaily?: boolean; onDailyOpened?: () => void }) {
   const [mode, setMode] = useState<'practice' | 'rush' | 'mistakes'>('practice');
   const mistakeCount = useMistakes((s) => s.cards.length);
   const labels = { practice: 'Practice', rush: 'Puzzle rush', mistakes: `My mistakes${mistakeCount ? ` (${mistakeCount})` : ''}` };
@@ -60,12 +61,12 @@ export function TacticsPage() {
           </button>
         ))}
       </div>
-      {mode === 'practice' ? <PracticeTactics /> : mode === 'rush' ? <RushMode /> : <MistakesMode />}
+      {mode === 'practice' ? <PracticeTactics openDaily={openDaily} onDailyOpened={onDailyOpened} /> : mode === 'rush' ? <RushMode /> : <MistakesMode />}
     </div>
   );
 }
 
-function PracticeTactics() {
+function PracticeTactics({ openDaily = false, onDailyOpened }: { openDaily?: boolean; onDailyOpened?: () => void }) {
   const game = useRef(new Chess());
   const attempt = useRef({ failed: false, revealed: false, rated: false });
   const sessionSeen = useRef(new Set<string>());
@@ -320,8 +321,21 @@ function PracticeTactics() {
 
   // Same puzzle for everyone on a given date, and it works offline.
   const daily = () => {
-    loadDirect(getDailyPuzzle(new Date().toISOString().slice(0, 10)), 'Daily puzzle');
+    loadDirect(getDailyPuzzle(todayStr()), 'Daily puzzle');
   };
+
+  // Deep link from the Today page: land straight on the daily puzzle.
+  // Declared after the filter-reset effect so it wins the initial load.
+  // The flag is one-shot: consuming it here means a later remount (e.g.
+  // toggling Practice → Rush → Practice) won't reload the daily puzzle
+  // over an in-progress attempt.
+  useEffect(() => {
+    if (openDaily) {
+      daily();
+      onDailyOpened?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const SOURCES: { id: Source; label: string }[] = [
     { id: 'builtin', label: 'Curated' },

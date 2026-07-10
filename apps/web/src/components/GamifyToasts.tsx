@@ -11,9 +11,9 @@ interface Toast {
 
 let nextId = 0;
 
-function toastFor(e: GamifyEvent): Toast {
+function toastFor(e: GamifyEvent): Toast | null {
   switch (e.kind) {
-    case 'achievement':
+    case 'achievement-unlocked':
       return {
         id: nextId++,
         icon: e.icon,
@@ -21,16 +21,50 @@ function toastFor(e: GamifyEvent): Toast {
         body: e.xp > 0 ? `${e.name} · +${e.xp} XP` : e.name,
         accent: 'border-gold-400/70 shadow-glow-gold',
       };
-    case 'level':
+    case 'level-up':
       return { id: nextId++, icon: '⭐', title: 'Level up!', body: `You reached level ${e.level}`, accent: 'border-brand-400/70 shadow-glow' };
+    case 'streak-milestone':
+      return {
+        id: nextId++,
+        icon: '🔥',
+        title: `${e.days}-day streak!`,
+        body: e.rewardXp > 0 ? `Milestone reached · +${e.rewardXp} XP` : 'Milestone reached',
+        accent: 'border-gold-400/70 shadow-glow-gold',
+      };
+    case 'streak-freeze-used':
+      return {
+        id: nextId++,
+        icon: '🧊',
+        title: 'Streak freeze used',
+        body: `Your ${e.streak}-day streak survived · ${e.freezesLeft} freeze${e.freezesLeft === 1 ? '' : 's'} left`,
+        accent: 'border-brand-400/70 shadow-glow',
+      };
     case 'goal':
       return {
         id: nextId++,
         icon: '🔥',
         title: 'Daily goal complete',
-        body: `${e.streak}-day streak — keep it going!`,
+        body: e.streak > 0 ? `${e.streak}-day streak — keep it going!` : 'Nice work — come back tomorrow!',
         accent: 'border-accent-400/70 shadow-glow',
       };
+    case 'quest-complete':
+      return {
+        id: nextId++,
+        icon: e.icon,
+        title: 'Quest complete',
+        body: e.xp > 0 ? `${e.name} · +${e.xp} XP` : e.name,
+        accent: 'border-brand-400/70 shadow-glow',
+      };
+    case 'quests-all-done':
+      return {
+        id: nextId++,
+        icon: '🏅',
+        title: 'All quests done!',
+        body: `Daily slate cleared · +${e.bonusXp} XP bonus`,
+        accent: 'border-gold-400/70 shadow-glow-gold',
+      };
+    default:
+      return null; // 'xp-awarded' is too chatty for a toast
   }
 }
 
@@ -42,6 +76,7 @@ export function GamifyToasts() {
     const timeouts = new Set<number>();
     const unsub = onGamifyEvent((e) => {
       const t = toastFor(e);
+      if (!t) return;
       setToasts((cur) => [...cur, t].slice(-4));
       const id = window.setTimeout(() => {
         setToasts((cur) => cur.filter((x) => x.id !== t.id));

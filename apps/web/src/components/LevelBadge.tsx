@@ -1,10 +1,11 @@
 import { useGamify, levelProgress } from '../store/gamify';
+import { useStreak } from '../store/streak';
 import { StreakFlame } from './icons';
 
 /** Compact level + streak chip for the header; clicking opens the Profile. */
 export function LevelBadge({ onClick }: { onClick: () => void }) {
   const xp = useGamify((s) => s.xp);
-  const streak = useGamify((s) => s.activeStreak());
+  const streak = useStreak((s) => s.current());
   const { level, pct } = levelProgress(xp);
 
   return (
