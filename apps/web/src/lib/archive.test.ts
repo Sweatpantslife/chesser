@@ -1,12 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CasualGameRecord } from '../humans/casualHistory';
 import type { SavedGame } from './api';
-import { reportCacheKey, REVIEW_ENGINE_SETTINGS } from './analytics/report';
+import { classificationCounts } from './analytics/classify';
+import { REPORT_VERSION, reportCacheKey, REVIEW_ENGINE_SETTINGS, saveCachedReport } from './analytics/report';
+import type { AnalysisReport } from './analytics/types';
 import {
   applyReview,
   fromCasualGame,
   fromSavedGame,
   parsePgnGame,
+  peekCachedReview,
   perspectiveResult,
   selfNames,
   userColorOf,
@@ -220,5 +223,83 @@ describe('applyReview', () => {
     expect(game.userColor).toBeNull();
     expect(game.accuracy).toBeNull();
     expect(game.opening).toBeNull();
+  });
+});
+
+describe('peekCachedReview', () => {
+  function memoryStorage(): Storage {
+    const map = new Map<string, string>();
+    return {
+      get length() {
+        return map.size;
+      },
+      clear: () => map.clear(),
+      getItem: (k: string) => map.get(k) ?? null,
+      key: (i: number) => [...map.keys()][i] ?? null,
+      removeItem: (k: string) => {
+        map.delete(k);
+      },
+      setItem: (k: string, v: string) => {
+        map.set(k, v);
+      },
+    };
+  }
+
+  /** The smallest report that survives deserializeReport. */
+  function report(gameKey: string): AnalysisReport {
+    const counts = classificationCounts([]);
+    return {
+      version: REPORT_VERSION,
+      createdAt: 0,
+      gameKey,
+      meta: { gameNo: 1, startFen: START, result: '1-0', playerColor: 'white', engine: REVIEW_ENGINE_SETTINGS },
+      white: { accuracy: 92.4, acpl: 12, moves: 2, counts: counts.white },
+      black: { accuracy: 81.7, acpl: 30, moves: 1, counts: counts.black },
+      opening: { eco: 'C20', name: "King's Knight Opening", leftTheoryAtPly: 3 },
+      phases: [],
+      criticalMoments: [],
+      estimatedPerformanceRating: { white: 1800, black: 1600 },
+      moves: [],
+    };
+  }
+
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', memoryStorage());
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  // Pins the storage contract with report.ts (REPORT_ENTRY_PREFIX + entry
+  // format): if the cache ever renames its keys or bumps its shape, this
+  // fails instead of the archive silently losing its review enrichment.
+  it('reads a review written by saveCachedReport for a normalized saved game', () => {
+    const game = fromSavedGame(saved(), selfNames());
+    saveCachedReport(report(game.gameKey!));
+
+    expect(peekCachedReview(game.gameKey!)).toEqual({
+      whiteAccuracy: 92.4,
+      blackAccuracy: 81.7,
+      playerColor: 'white',
+      eco: 'C20',
+      name: "King's Knight Opening",
+    });
+  });
+
+  it('never promotes the peeked game in the LRU index', () => {
+    const game = fromSavedGame(saved(), selfNames());
+    saveCachedReport(report(game.gameKey!));
+    saveCachedReport(report('carv1:aaaaaaaa')); // now the most recently used
+    const indexBefore = localStorage.getItem('chesser-report-index');
+
+    peekCachedReview(game.gameKey!);
+
+    expect(localStorage.getItem('chesser-report-index')).toBe(indexBefore);
+  });
+
+  it('misses on unknown keys and swallows corrupt entries', () => {
+    expect(peekCachedReview('carv1:00000000')).toBeNull();
+    localStorage.setItem('chesser-report:kbad', '{broken');
+    expect(peekCachedReview('kbad')).toBeNull();
   });
 });

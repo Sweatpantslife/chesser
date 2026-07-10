@@ -11,7 +11,7 @@
 import { Chess } from 'chess.js';
 import type { SavedGame } from './api';
 import type { CasualGameRecord } from '../humans/casualHistory';
-import { deserializeReport, reportCacheKey, REVIEW_ENGINE_SETTINGS } from './analytics/report';
+import { deserializeReport, REPORT_ENTRY_PREFIX, reportCacheKey, REVIEW_ENGINE_SETTINGS } from './analytics/report';
 import type { Side } from './analytics/types';
 
 export type ArchiveResult = 'win' | 'loss' | 'draw' | 'unknown';
@@ -161,8 +161,6 @@ export interface ReviewPeek {
   eco: string | null;
   name: string | null;
 }
-
-const REPORT_ENTRY_PREFIX = 'chesser-report:';
 
 /**
  * Read a cached review WITHOUT touching the report cache's LRU index

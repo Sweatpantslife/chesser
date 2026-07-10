@@ -137,7 +137,7 @@
   --t-rose-400: 190 18 60; /* #be123c */
   --t-rose-900: 255 228 230; /* #ffe4e6 */
   --t-amber-200: 146 64 14; /* #92400e */
-  --t-amber-300: 180 83 9; /* #b45309 */
+  --t-amber-300: 163 74 11; /* #a34a0b — amber-700/800 mid; #b45309 passed on white but hit 4.41:1 on tinted cards (#f1eff8); this clears 4.5 on every light surface incl. neutral-900 chips (4.96:1) */
   --t-amber-950: 254 243 199; /* #fef3c7 */
   --t-orange-300: 154 52 18; /* #9a3412 */
   --t-orange-400: 194 65 12; /* #c2410c */
@@ -442,16 +442,29 @@ body {
   animation-delay: 0.3s;
 }
 
-/* Like Tailwind's animate-pulse but with a 0.75 opacity floor: accent text
-   on the page background stays AA at the dimmest point of the cycle, where
-   the stock 0.5 floor dropped it below. */
+/* Like Tailwind's animate-pulse but with an opacity floor high enough that
+   accent text stays AA (4.5:1) at the dimmest point of the cycle, where the
+   stock 0.5 floor dropped it below. The floor is per-theme: the dark tokens
+   have headroom at 0.75 (emerald-400 #34d399 on #141126 = 5.8:1 at the
+   floor), but the light palette needs 0.88 — its worst pulsing pair,
+   rose-400 #be123c on the page #f1eefa, blends to 4.79:1 at 0.88 (emerald
+   5.18:1, neutral-400 5.54:1) and fails at 0.75. Two keyframes (not a
+   var() in one) so a theme switch restarts the animation cleanly. */
 @keyframes pulse-soft {
   50% {
     opacity: 0.75;
   }
 }
+@keyframes pulse-soft-light {
+  50% {
+    opacity: 0.88;
+  }
+}
 .animate-pulse-soft {
   animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+:root[data-theme='light'] .animate-pulse-soft {
+  animation-name: pulse-soft-light;
 }
 
 /* Subtle rise+fade when switching header tabs (content is hard-swapped). */

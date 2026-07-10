@@ -126,7 +126,10 @@ interface ChartSeries {
   format: (v: number) => string;
 }
 
-const shortDate = (t: number) => new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+/** Chart timestamps are UTC bucket starts (see lib/archiveStats bucketStart) /
+ *  UTC-midnight rating days — format them in UTC so the label matches the
+ *  bucket's ISO date instead of drifting a day west of Greenwich. */
+const shortDate = (t: number) => new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
 
 /**
  * Minimal theme-token line chart (one y-axis, 1–2 series). Identity is never
@@ -252,7 +255,7 @@ function GameRow({ game, onOpen }: { game: ArchiveGame; onOpen: (g: ArchiveGame)
   const title = game.userColor && game.opponent ? `You vs ${game.opponent}` : `${game.white} vs ${game.black}`;
   const subtitle = [
     KIND_LABELS[game.kind],
-    game.moves > 0 ? `${game.moves} moves` : null,
+    game.moves > 0 ? `${game.moves} move${game.moves === 1 ? '' : 's'}` : null,
     game.opening?.name ?? null,
     game.resultRaw !== '*' ? game.resultRaw : 'unfinished',
   ]
@@ -276,10 +279,17 @@ function GameRow({ game, onOpen }: { game: ArchiveGame; onOpen: (g: ArchiveGame)
     </>
   );
 
-  if (!game.pgn) {
+  // Not openable: casual games never store moves; a saved game without a
+  // gameKey has a PGN that didn't parse (or holds no moves) — a clickable row
+  // would silently no-op, since openGame only navigates when loadPgn succeeds.
+  if (!game.pgn || !game.gameKey) {
     return (
       <div
-        title="Casual games only log their result — the moves aren't stored, so there's nothing to review."
+        title={
+          !game.pgn
+            ? "Casual games only log their result — the moves aren't stored, so there's nothing to review."
+            : "This game can't be opened — its saved PGN has no readable moves."
+        }
         className="flex min-h-11 w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left"
       >
         {body}
@@ -477,6 +487,18 @@ export function ArchivePage({ goPlay }: { goPlay: () => void }) {
 
   const visible = showAll ? filtered : filtered.slice(0, LIST_PREVIEW);
 
+  // Rating history lives in the ratings store, not the archive — the trend can
+  // (and should) render even when no archived game matches the current slice.
+  const ratingSection = (
+    <Section title="Rating trend" aside={`rated bot games · ${meter}`}>
+      {ratingLines.length > 0 ? (
+        <TrendChart series={ratingLines} />
+      ) : (
+        <EmptyChartNote>No rated games in this period — finish a game against a bot to start your rating history.</EmptyChartNote>
+      )}
+    </Section>
+  );
+
   return (
     <div className="mx-auto w-full max-w-[1000px] space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -589,23 +611,26 @@ export function ArchivePage({ goPlay }: { goPlay: () => void }) {
             <LoadingRows />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-neutral-700 bg-panel/60 p-6 text-center text-sm text-neutral-400 sm:flex-row sm:text-left">
-            <EmptyStatsArt width={150} height={112} className="shrink-0" />
-            <div>
-              <div className="mb-1 font-display text-base font-semibold text-ink">
-                {games.length === 0 ? 'Your dashboard starts with a game' : 'Nothing in this slice'}
+          <>
+            <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-neutral-700 bg-panel/60 p-6 text-center text-sm text-neutral-400 sm:flex-row sm:text-left">
+              <EmptyStatsArt width={150} height={112} className="shrink-0" />
+              <div>
+                <div className="mb-1 font-display text-base font-semibold text-ink">
+                  {games.length === 0 ? 'Your dashboard starts with a game' : 'Nothing in this slice'}
+                </div>
+                {games.length === 0
+                  ? 'Play and save games — win/loss trends, openings and accuracy charts grow from your archive.'
+                  : 'No archived games match the current filters — widen the period or clear the filters to see your trends.'}
               </div>
-              {games.length === 0
-                ? 'Play and save games — win/loss trends, openings and accuracy charts grow from your archive.'
-                : 'No archived games match the current filters — widen the period or clear the filters to see your trends.'}
             </div>
-          </div>
+            {ratingLines.length > 0 && ratingSection}
+          </>
         ) : (
           <>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <StatCard label="Games" value={wdl.total} hint={filterActive ? 'in this slice' : 'all time'} />
               <StatCard label="Record" value={`${wdl.wins}-${wdl.draws}-${wdl.losses}`} hint="W-D-L" />
-              <StatCard label="Win rate" value={wdl.winRate != null ? `${wdl.winRate}%` : '—'} hint={wdl.unknown > 0 ? `${wdl.unknown} without a result` : 'of decided games'} />
+              <StatCard label="Win rate" value={wdl.winRate != null ? `${wdl.winRate}%` : '—'} hint={wdl.unknown > 0 ? `${wdl.unknown} without a result` : 'of games with a result'} />
               <StatCard label="Accuracy" value={avgAcc != null ? `${avgAcc}%` : '—'} hint={reviewed > 0 ? `avg of ${reviewed} review${reviewed === 1 ? '' : 's'}` : 'no reviews yet'} />
             </div>
 
@@ -618,13 +643,7 @@ export function ArchivePage({ goPlay }: { goPlay: () => void }) {
                 </div>
               </Section>
 
-              <Section title="Rating trend" aside={`rated bot games · ${meter}`}>
-                {ratingLines.length > 0 ? (
-                  <TrendChart series={ratingLines} />
-                ) : (
-                  <EmptyChartNote>No rated games in this period — finish a game against a bot to start your rating history.</EmptyChartNote>
-                )}
-              </Section>
+              {ratingSection}
 
               <Section title="Accuracy trend" aside="from your game reviews">
                 {accTrend.length > 0 ? (

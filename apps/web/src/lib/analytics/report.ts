@@ -295,7 +295,16 @@ export function deserializeReport(json: string): AnalysisReport | null {
 
 // --- localStorage report cache (LRU, quota-safe) ----------------------------
 
-const ENTRY_PREFIX = 'chesser-report:';
+/**
+ * localStorage key prefix for cached report entries (`prefix + gameKey`).
+ * Exported because lib/archive's `peekCachedReview` reads entries directly —
+ * deliberately bypassing `loadCachedReport` so listing the archive doesn't
+ * promote every game in the LRU index. Keep the two readers on this one
+ * constant: renaming it (or bumping the entry format) must break a test, not
+ * silently blank the archive's accuracy/opening enrichment.
+ */
+export const REPORT_ENTRY_PREFIX = 'chesser-report:';
+const ENTRY_PREFIX = REPORT_ENTRY_PREFIX;
 const INDEX_KEY = 'chesser-report-index';
 const MAX_CACHED_REPORTS = 20;
 
