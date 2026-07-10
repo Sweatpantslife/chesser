@@ -14,6 +14,7 @@ import { shutdownLocalTablebase } from './tablebase-local.js';
 import { probeExplorer } from './explorer.js';
 import { importGames } from './import.js';
 import { registerAccountRoutes } from './accounts/routes.js';
+import { registerCoachRoutes } from './coach/routes.js';
 import type { ExplorerDb } from '@chesser/shared';
 
 const app = Fastify({ logger: LOG_ENABLED });
@@ -38,6 +39,7 @@ app.get('/api/import', async (req) => {
   return importGames(site === 'chesscom' ? 'chesscom' : 'lichess', user, n);
 });
 registerAccountRoutes(app);
+registerCoachRoutes(app);
 
 // Serve the built web client (single-origin deployment). Real asset paths are
 // served as files; anything else falls through to the SPA's index.html. The

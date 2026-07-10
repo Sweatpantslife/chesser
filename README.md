@@ -341,10 +341,38 @@ All settings are environment variables with sensible defaults — see
 | `CHESSER_TABLEBASE_URL` | Lichess | Tablebase proxy upstream |
 | `CHESSER_EXPLORER_MASTERS_URL` / `CHESSER_EXPLORER_LICHESS_URL` | Lichess | Opening-explorer upstreams |
 | `CHESSER_LOG` | on in prod | Structured (pino) request logs |
+| `ANTHROPIC_API_KEY` | — | AI Coach: enables LLM explanations via the Anthropic API |
+| `OPENAI_API_KEY` | — | AI Coach: any OpenAI-compatible provider (used when no Anthropic key) |
+| `COACH_LLM_MODEL` | per provider | AI Coach model override |
+| `COACH_LLM_BASE_URL` | OpenAI API | Base URL for the OpenAI-compatible provider (e.g. a local Ollama) |
 
 The opening explorer, game import and online tablebase proxy reach out to the
 public Lichess/Chess.com APIs; they degrade gracefully if those hosts are
 blocked from the server.
+
+### AI Coach (optional)
+
+`POST /api/coach/explain` layers natural-language coaching on top of the
+existing engine analysis ("engine-truth + LLM-words"): the web client sends a
+compact payload of verified engine facts (a reviewed move, a game summary, or
+a weakness-profile entry) and the server has an LLM word them. The model is
+instructed to use only the provided facts — it phrases, it never analyses.
+
+- **Providers** — set `ANTHROPIC_API_KEY` (Anthropic Messages API, default
+  model `claude-haiku-4-5-20251001`) or `OPENAI_API_KEY` (+ optional
+  `COACH_LLM_BASE_URL` for any OpenAI-compatible endpoint, default model
+  `gpt-4o-mini`). `COACH_LLM_MODEL` overrides the model for either provider;
+  the Anthropic key wins when both are set. Keys stay server-side only.
+- **Fallback** — with no key configured the endpoint answers HTTP 200
+  `{ "configured": false, "reason": "no-key" }` and the web client silently
+  uses its built-in rule-based explanations; nothing breaks and no errors are
+  shown. Provider failures return 502 and degrade the same way. Users can also
+  turn the feature off in Settings → "AI Coach explanations".
+- **Cost controls** — responses are cached in-memory (LRU, 500 entries, 1 h
+  TTL, keyed on facts + skill level + model), output is capped at ~300 tokens,
+  and the route is rate-limited per IP (token bucket, 20 requests/min → 429).
+  The client additionally memoizes per payload, so re-viewing a move never
+  re-asks.
 
 ## Roadmap
 

@@ -1,4 +1,5 @@
 export * from './friend.js';
+export * from './coach.js';
 
 /**
  * @chesser/shared — types shared between the web client and the engine server.

@@ -20,6 +20,10 @@ import {
 import { bootstrapFromReportCache, useCoach } from '../store/coach';
 import { useGame, type Color } from '../store/game';
 import { useRatings } from '../store/ratings';
+import { useSettings } from '../store/settings';
+import { buildWeaknessFacts } from '../lib/coachApi';
+import { AiNarrative } from '../components/analysis/AiCoach';
+import type { CoachWeaknessFacts } from '@chesser/shared';
 import type { Puzzle } from '../trainers/tactics';
 
 /**
@@ -89,6 +93,7 @@ function WeaknessCard({
   training,
   onTrain,
   onOpen,
+  aiFacts,
 }: {
   entry: WeaknessEntry;
   rank: number;
@@ -97,6 +102,8 @@ function WeaknessCard({
   training: boolean;
   onTrain: () => void;
   onOpen: (example: WeaknessExample) => void;
+  /** AI Coach facts for this weakness (top entry only); null = rule-based text. */
+  aiFacts?: CoachWeaknessFacts | null;
 }) {
   // Subscribe to the raw log (stable reference) and derive stats memoized —
   // selecting trainingStats() directly would return a fresh object per render.
@@ -139,7 +146,7 @@ function WeaknessCard({
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <p className="text-sm leading-relaxed text-neutral-300">{insightFor(entry, profile)}</p>
+          <AiNarrative facts={aiFacts ?? null} fallback={insightFor(entry, profile)} />
           {entry.examples.length > 1 && (
             <ul className="mt-2 space-y-1 text-xs text-neutral-400">
               {entry.examples.slice(1).map((ex) => (
@@ -389,6 +396,7 @@ function WeaknessTrainer({ entry, onClose }: { entry: WeaknessEntry; onClose: ()
 export function CoachPage({ goPlay }: { goPlay: () => void }) {
   const games = useCoach((s) => s.games);
   const loadFen = useGame((s) => s.loadFen);
+  const aiCoach = useSettings((s) => s.aiCoach);
   const [trainingKind, setTrainingKind] = useState<WeaknessKind | null>(null);
 
   // Back-fill digests from reviews cached before this feature existed.
@@ -456,6 +464,7 @@ export function CoachPage({ goPlay }: { goPlay: () => void }) {
               training={trainingKind === entry.kind}
               onTrain={() => setTrainingKind(trainingKind === entry.kind ? null : entry.kind)}
               onOpen={openExample}
+              aiFacts={aiCoach && i === 0 ? buildWeaknessFacts(entry, profile) : null}
             />
           ))}
         </div>
