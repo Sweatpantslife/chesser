@@ -1,13 +1,18 @@
-import { Chess } from 'chess.js';
 import type { BotMoveMessage, BotMoveRequest, Score } from '@chesser/shared';
 import { BOT_RATING_MIN, STOCKFISH_ELO_MAX, STOCKFISH_ELO_MIN } from '@chesser/shared';
 import type { EngineManager } from './manager.js';
 import type { UciEngine, UciInfo } from './uci.js';
 import { styleScore } from './style-score.js';
+import { annotateRepeats, pickHumanMove, pickMaiaVariety, plyOfFen, searchPlanFor } from './humanize.js';
 import { uciToSan } from '../util/san.js';
 import { withLock } from '../util/lock.js';
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
+
+/** A Maia net must sit within this many rating points of the request to be used. */
+const MAIA_NET_TOLERANCE = 150;
+/** Upper bound for the human-like Stockfish sampler's target rating. */
+const HUMANLIKE_RATING_MAX = 2600;
 
 function whiteToMove(fen: string): boolean {
   return fen.split(' ')[1] !== 'b';
@@ -41,27 +46,65 @@ export class BotService {
   ) {}
 
   async move(req: BotMoveRequest): Promise<BotMoveMessage> {
-    if (req.bot.style === 'human') return this.maiaMove(req);
+    if (req.bot.style === 'human') return this.humanMove(req);
     return this.stockfishMove(req);
   }
 
-  // --- Maia (human-like) ----------------------------------------------------
+  // --- Human-like: real Maia when a net matches, sampler otherwise ----------
 
-  private async maiaMove(req: BotMoveRequest): Promise<BotMoveMessage> {
-    const netId = this.manager.maiaNetworkId(req.bot.maiaRating);
-    if (!netId) throw new Error('No Maia network is installed');
+  private async humanMove(req: BotMoveRequest): Promise<BotMoveMessage> {
+    // Real Maia only when a net actually covers the requested band — a 600- or
+    // 2200-rated "human" persona must not silently play a 1100/1900 net.
+    const target = req.bot.maiaRating;
+    const netId = target != null ? this.manager.maiaNetworkNear(target, MAIA_NET_TOLERANCE) : null;
+    if (netId) return this.maiaMove(req, netId);
+    if (this.manager.hasStockfish) return this.humanlikeStockfishMove(req);
+    // Degenerate deploy (lc0-only): the nearest net beats failing outright.
+    const fallback = this.manager.maiaNetworkId(target ?? req.bot.elo);
+    if (fallback) return this.maiaMove(req, fallback);
+    throw new Error('No engine available for human-like play');
+  }
+
+  // --- Maia (human-like neural net) -----------------------------------------
+
+  private async maiaMove(req: BotMoveRequest, netId: string): Promise<BotMoveMessage> {
     const eng = await this.manager.getMaia(netId);
+    const candidates: Candidate[] = [];
+    const white = whiteToMove(req.fen);
     // Maia is shared across sessions, so serialise access to it.
-    const best = await withLock(eng, () => eng.search({ fen: req.fen, go: 'go nodes 1' }));
-    const uci = best.bestmove;
+    const best = await withLock(eng, () =>
+      eng.search({
+        fen: req.fen,
+        go: 'go nodes 1',
+        onInfo: (info) => {
+          const first = info.pv[0];
+          if (!first) return;
+          candidates[info.multipv - 1] = { uci: first, cp: comparableCp(info), score: toWhiteScore(info, white) };
+        },
+      }),
+    );
+    let uci = best.bestmove;
     if (!uci || uci === '(none)') throw new Error('Maia returned no move');
+    // At nodes=1 Maia's raw policy is deterministic (same game every time), so
+    // sample among its near-top policy moves for the first few plies. lc0 lists
+    // MultiPV lines in policy order at one node; if it reported a single line
+    // (or none), this is a no-op and bestmove is played exactly as before.
+    const list = candidates.filter(Boolean);
+    let score = list[0]?.score;
+    if (list.length > 1 && list[0]!.uci === uci) {
+      const pick = list[pickMaiaVariety(list, plyOfFen(req.fen))];
+      if (pick) {
+        uci = pick.uci;
+        score = pick.score;
+      }
+    }
     return {
       t: 'botMove',
       reqId: req.reqId,
       fen: req.fen,
       uci,
       san: uciToSan(req.fen, uci) ?? uci,
-      meta: { engine: 'lc0', style: 'human' },
+      meta: { engine: 'lc0', style: 'human', score },
     };
   }
 
@@ -72,57 +115,40 @@ export class BotService {
     // The session's bot engine handles one search at a time.
     return withLock(eng, () => {
       const elo = req.bot.elo ?? 1500;
-      // Sub-floor ratings can't use Stockfish's UCI_Elo limiter, so weaken by hand.
-      if (elo < STOCKFISH_ELO_MIN) return this.runBeginner(eng, req);
+      // Below Stockfish's UCI_Elo floor the human-like sampler provides the
+      // weakening (it replaced the old uniform-random "beginner" path).
+      if (elo < STOCKFISH_ELO_MIN) return this.runHumanlike(eng, req);
       return this.runStockfish(eng, req);
     });
   }
 
-  // --- Beginner bots (below Stockfish's UCI_Elo floor) ----------------------
-  //
-  // Stockfish's strength limiter bottoms out at 1320 Elo. To host believable
-  // beginner opponents below that we run a *shallow* full-strength search for a
-  // handful of candidate moves, then (a) sometimes play an outright random legal
-  // move — the classic beginner blunder that hangs a piece — and otherwise
-  // (b) pick among the candidates with softmax noise whose temperature rises as
-  // the rating falls. Lower rating ⇒ shallower look, wider net, more noise.
+  private async humanlikeStockfishMove(req: BotMoveRequest): Promise<BotMoveMessage> {
+    const eng = await this.getStockfish();
+    return withLock(eng, () => this.runHumanlike(eng, req));
+  }
 
-  private async runBeginner(eng: UciEngine, req: BotMoveRequest): Promise<BotMoveMessage> {
-    const rating = clamp(Math.round(req.bot.elo ?? 800), BOT_RATING_MIN, STOCKFISH_ELO_MIN - 1);
-    const t = (rating - BOT_RATING_MIN) / (STOCKFISH_ELO_MIN - 1 - BOT_RATING_MIN); // 0 (weakest) … 1
-    const depth = Math.round(1 + t * 5); // 1 … 6 plies
-    const topN = Math.round(6 - t * 4); // 6 … 2 candidate moves
-    const blunderChance = 0.3 * (1 - t); // up to 30% fully-random moves at the floor
-    const temperature = 40 + (1 - t) * 320; // cp; flatter (more random) when low
+  // --- Human-like sampling over Stockfish candidates ------------------------
+  //
+  // A full-strength MultiPV search supplies graded candidate moves; the pure
+  // selection model in humanize.ts (rating-calibrated softmax + lapse tier +
+  // opening variety + safety rails) picks the one a human of this rating
+  // plausibly plays. Covers every rating the ladder needs (600 … 2600) and is
+  // the honest fallback for Maia personas when lc0 isn't installed.
+
+  private async runHumanlike(eng: UciEngine, req: BotMoveRequest): Promise<BotMoveMessage> {
+    const rating = clamp(Math.round(req.bot.elo ?? req.bot.maiaRating ?? 1500), BOT_RATING_MIN, HUMANLIKE_RATING_MAX);
+    const plan = searchPlanFor(rating, req.bot.moveTimeMs);
     const white = whiteToMove(req.fen);
 
-    // An outright random legal move — a real beginner hanging something.
-    if (Math.random() < blunderChance) {
-      const board = new Chess(req.fen);
-      const legal = board.moves({ verbose: true });
-      if (legal.length > 0) {
-        const pick = legal[Math.floor(Math.random() * legal.length)]!;
-        const uci = pick.from + pick.to + (pick.promotion ?? '');
-        return {
-          t: 'botMove',
-          reqId: req.reqId,
-          fen: req.fen,
-          uci,
-          san: pick.san,
-          meta: { engine: 'stockfish', style: req.bot.style, depth: 0 },
-        };
-      }
-    }
-
     eng.setOption('UCI_LimitStrength', false);
-    eng.setOption('MultiPV', Math.max(1, topN));
+    eng.setOption('MultiPV', plan.multiPv);
     await eng.ready();
 
     const candidates = new Map<number, Candidate>();
     let maxDepth = 0;
     await eng.search({
       fen: req.fen,
-      go: `go depth ${depth}`,
+      go: plan.go,
       onInfo: (info) => {
         const first = info.pv[0];
         if (!first) return;
@@ -132,21 +158,10 @@ export class BotService {
     });
 
     const list = [...candidates.values()];
-    if (list.length === 0) throw new Error('Beginner bot found no move');
-    const bestCp = Math.max(...list.map((c) => c.cp));
-    // Softmax over the candidates' (already STM-POV) evals; higher temperature
-    // gives weaker moves a real chance of being chosen.
-    const weights = list.map((c) => Math.exp((c.cp - bestCp) / temperature));
-    const total = weights.reduce((a, b) => a + b, 0);
-    let roll = Math.random() * total;
-    let chosen = list[0]!;
-    for (let i = 0; i < list.length; i++) {
-      roll -= weights[i]!;
-      if (roll <= 0) {
-        chosen = list[i]!;
-        break;
-      }
-    }
+    if (list.length === 0) throw new Error('Bot found no move');
+    const annotated = annotateRepeats(req.fen, list, req.recentFens ?? []);
+    const pick = pickHumanMove(annotated, { rating, ply: plyOfFen(req.fen) });
+    const chosen = list[pick.index]!;
 
     return {
       t: 'botMove',

@@ -40,7 +40,11 @@ export class EngineManager {
   /** Styles offered to clients, filtered to engines that actually exist. */
   styles(): BotStyle[] {
     const have = this.availability();
-    return BOT_STYLES.filter((s) => (s.engine === 'lc0' ? have.lc0 : have.stockfish));
+    // 'human' runs on Maia when installed, and on the human-calibrated
+    // Stockfish sampler otherwise — so either engine can back it.
+    return BOT_STYLES.filter((s) =>
+      s.id === 'human' ? have.lc0 || have.stockfish : s.engine === 'lc0' ? have.lc0 : have.stockfish,
+    );
   }
 
   get hasStockfish(): boolean {
@@ -55,6 +59,15 @@ export class EngineManager {
     let best = nets[0]!;
     for (const n of nets) if (Math.abs(n.rating - rating) < Math.abs(best.rating - rating)) best = n;
     return best.id;
+  }
+
+  /** The nearest installed Maia net, but only if it's within `tolerance` of the target. */
+  maiaNetworkNear(rating: number, tolerance: number): string | null {
+    let best: { id: string; rating: number } | null = null;
+    for (const n of this.manifest.maiaNetworks) {
+      if (!best || Math.abs(n.rating - rating) < Math.abs(best.rating - rating)) best = n;
+    }
+    return best && Math.abs(best.rating - rating) <= tolerance ? best.id : null;
   }
 
   /** Create and initialise a fresh Stockfish process with sane defaults. */
@@ -90,6 +103,9 @@ export class EngineManager {
       const eng = new UciEngine(this.manifest.lc0Bin!, [`--weights=${net.path}`, '--backend=eigen'], `maia-${net.rating}`);
       await eng.start();
       // Maia plays its raw human-like policy at one node — no tree search.
+      // MultiPV exposes the runner-up policy moves so the bot service can add
+      // mild opening variety (lc0 without the option just reports one line).
+      eng.setOption('MultiPV', 4);
       await eng.ready();
       return eng;
     })();

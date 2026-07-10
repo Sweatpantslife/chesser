@@ -3,7 +3,7 @@
 # setup-engines.sh — download / build the chess engines Chesser uses.
 #
 #   * Stockfish  (download official Linux release binary)
-#   * Maia       (download human-like Lc0 networks: 1100 / 1500 / 1900)
+#   * Maia       (download human-like Lc0 networks: 1100 … 1900 in 100 steps)
 #   * Lc0        (build from source — required to run the Maia networks)
 #
 # Everything lands in   engines/bin/  and  engines/networks/  and a machine
@@ -28,7 +28,9 @@ SYZYGY_DIR="$ENGINES_DIR/syzygy"
 mkdir -p "$BIN_DIR" "$NET_DIR" "$SRC_DIR"
 
 SF_VERSION="${SF_VERSION:-sf_17.1}"
-MAIA_RATINGS=("1100" "1500" "1900")
+# The full CSSLab set: one net per 100-point band. Ladder personas map to the
+# nearest net, so partial downloads still work (the server offers what exists).
+MAIA_RATINGS=("1100" "1200" "1300" "1400" "1500" "1600" "1700" "1800" "1900")
 
 # Syzygy tablebases (opt-in; the 3-4-5 set is ~1GB). Override the mirror/set if
 # you have a faster or self-hosted source.
