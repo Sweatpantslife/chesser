@@ -1,6 +1,7 @@
 /**
- * Daily activity streak — pure logic, no clock, no stores. The store
- * (store/streak.ts) owns persistence and feeds in "today" from lib/clock.
+ * Daily activity streak — pure logic, no stores, never reads the current time.
+ * The store (store/streak.ts) owns persistence and feeds in "today" from
+ * lib/clock.
  *
  * Rules (the product spec, in one place):
  * - Any XP-earning activity marks a day active; the streak counts consecutive
@@ -14,6 +15,8 @@
  * - Milestones at 3 / 7 / 30 / 100 days pay a one-time XP bonus (once per
  *   account, not once per run — rebuilding a broken streak does not re-pay).
  */
+
+import { dayDiff } from './clock';
 
 export const STREAK_MILESTONES = [3, 7, 30, 100] as const;
 export const STREAK_MILESTONE_XP: Record<number, number> = { 3: 25, 7: 75, 30: 250, 100: 1000 };
@@ -33,8 +36,6 @@ export function initialStreak(): StreakData {
   return { count: 0, best: 0, lastDay: '', freezes: INITIAL_FREEZES, milestonesAwarded: [] };
 }
 
-const diffDays = (a: string, b: string): number => Math.round((Date.parse(b) - Date.parse(a)) / 86_400_000);
-
 export interface TouchResult {
   data: StreakData;
   extended: boolean; // the streak grew (includes starting at 1 from 0)
@@ -48,7 +49,7 @@ export interface TouchResult {
 export function touchDay(s: StreakData, day: string): TouchResult {
   const none: TouchResult = { data: s, extended: false, usedFreeze: false, broke: false, earnedFreeze: false, newMilestones: [] };
   if (s.lastDay) {
-    const gap = diffDays(s.lastDay, day);
+    const gap = dayDiff(s.lastDay, day);
     if (gap <= 0) return none; // same day (or clock skew / merged remote from the future): already counted
     let count: number;
     let freezes = s.freezes;
@@ -89,7 +90,7 @@ function finish(s: StreakData, day: string, usedFreeze: boolean, broke: boolean)
  */
 export function displayStreak(s: StreakData, today: string): number {
   if (!s.lastDay || s.count === 0) return 0;
-  const gap = diffDays(s.lastDay, today);
+  const gap = dayDiff(s.lastDay, today);
   if (gap <= 1) return s.count;
   if (gap === 2 && s.freezes > 0) return s.count; // savable: playing today consumes the freeze
   return 0;
@@ -98,7 +99,7 @@ export function displayStreak(s: StreakData, today: string): number {
 /** True when the streak survives only thanks to a still-unspent freeze (UI nudge: "play today!"). */
 export function streakAtRisk(s: StreakData, today: string): boolean {
   if (!s.lastDay || s.count === 0) return false;
-  return diffDays(s.lastDay, today) === 2 && s.freezes > 0;
+  return dayDiff(s.lastDay, today) === 2 && s.freezes > 0;
 }
 
 /** A side that has never recorded activity carries no run to merge. */
@@ -138,7 +139,7 @@ export function mergeStreaks(a: StreakData, b: StreakData): StreakData {
     lastDay = newer.lastDay;
   } else {
     lastDay = newer.lastDay;
-    const gap = diffDays(older.lastDay, newer.lastDay);
+    const gap = dayDiff(older.lastDay, newer.lastDay);
     if (gap === 0) {
       count = Math.max(a.count, b.count);
     } else if (newer.count > older.count) {

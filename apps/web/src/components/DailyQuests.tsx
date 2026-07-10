@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useQuests } from '../store/quests';
-import { todayStr } from '../lib/clock';
-import { questsForDay, ALL_QUESTS_BONUS_XP, type QuestDef } from '../lib/quests';
+import { ALL_QUESTS_BONUS_XP, type QuestDef } from '../lib/quests';
 
 /**
  * Today's quest slate: three rotating objectives with live progress bars.
@@ -49,7 +48,7 @@ function QuestRow({ q, value, done }: { q: QuestDef; value: number; done: boolea
 }
 
 export function DailyQuests() {
-  const day = useQuests((s) => s.day);
+  useQuests((s) => s.day); // re-render on rollover so the slate below stays fresh
   const progress = useQuests((s) => s.progress);
   const done = useQuests((s) => s.done);
   const rollover = useQuests((s) => s.rollover);
@@ -59,7 +58,9 @@ export function DailyQuests() {
     rollover();
   }, [rollover]);
 
-  const quests = questsForDay(day || todayStr());
+  // Outside the selector: todaysQuests() builds a fresh array per call, which
+  // useSyncExternalStore would treat as an ever-changing snapshot.
+  const quests = useQuests.getState().todaysQuests();
   const doneCount = quests.filter((q) => q.id in done).length;
   const allDone = doneCount === quests.length;
 

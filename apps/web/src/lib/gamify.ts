@@ -51,7 +51,8 @@ export const XP_AWARDS = {
   gameWin: 25,
   gameDraw: 12,
   gameLoss: 6,
-  gameUpsetBonusMax: 25, // extra for beating a stronger bot: +1 XP per 25 Elo above you, capped
+  gameUpsetEloPerXp: 25, // extra for beating a stronger bot: +1 XP per this many Elo above you…
+  gameUpsetBonusMax: 25, // …capped here
   lessonFirstBase: 15, // + 5 per star (stars 0–3 → 15–30)
   lessonStarBonus: 5,
   lessonReplay: 5,
@@ -330,7 +331,7 @@ export function recordGameResult(opts: { opponentRating: number; outcome: GameOu
   // Base XP by result, with an upset bonus for beating a stronger opponent.
   let xp = opts.outcome === 'win' ? XP_AWARDS.gameWin : opts.outcome === 'draw' ? XP_AWARDS.gameDraw : XP_AWARDS.gameLoss;
   if (opts.outcome === 'win' && opts.opponentRating > before)
-    xp += Math.min(XP_AWARDS.gameUpsetBonusMax, Math.round((opts.opponentRating - before) / 25));
+    xp += Math.min(XP_AWARDS.gameUpsetBonusMax, Math.round((opts.opponentRating - before) / XP_AWARDS.gameUpsetEloPerXp));
   awardXP('game', xp);
   advanceQuests({ type: 'game', outcome: opts.outcome });
   runAchievements();

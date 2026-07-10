@@ -92,8 +92,9 @@ export const useQuests = create<QuestsState>()(
         let totalCompleted = s.totalCompleted;
         for (const q of slate) {
           if (q.id in done) continue;
-          const next = questValueAfter(q, progress[q.id] ?? 0, a);
-          if (next === (progress[q.id] ?? 0)) continue;
+          const prev = progress[q.id] ?? 0;
+          const next = questValueAfter(q, prev, a);
+          if (next === prev) continue;
           progress[q.id] = next;
           if (next >= q.target) {
             done[q.id] = now();
