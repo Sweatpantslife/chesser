@@ -155,6 +155,17 @@ export function IconCoords(p: IconProps) {
   );
 }
 
+/** "Archive" tab: a game box with a drawer handle. */
+export function IconArchive(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <rect x="3.5" y="4.5" width="17" height="4.5" rx="1.5" />
+      <path d="M5.5 9v8.5a2 2 0 002 2h9a2 2 0 002-2V9" />
+      <path d="M10 13.5h4" />
+    </svg>
+  );
+}
+
 export function IconStats(p: IconProps) {
   return (
     <svg {...base(p)}>
