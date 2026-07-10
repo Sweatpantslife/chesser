@@ -29,24 +29,127 @@ const MAX_FACTS_BYTES = 6_000;
 
 // ---------------------------------------------------------------------------
 // Validation — manual field checks, same style as accounts/routes.ts.
+// Every field of each kind is checked (types, lengths, ranges) and unknown
+// keys are rejected, so nothing beyond the documented facts shape can be
+// smuggled into the LLM prompt.
 // ---------------------------------------------------------------------------
 
 const KINDS = new Set(['move', 'game_summary', 'weakness']);
 const LEVELS = new Set<string>(['beginner', 'intermediate', 'advanced']);
+const PHASES = new Set(['opening', 'middlegame', 'endgame']);
+const SIDES = new Set(['white', 'black']);
+const RESULTS = new Set(['win', 'loss', 'draw', 'unknown']);
+const TRENDS = new Set(['improving', 'steady', 'worsening']);
 
-const isStr = (v: unknown): v is string => typeof v === 'string';
-const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
-const isStrArray = (v: unknown, max: number): v is string[] =>
-  Array.isArray(v) && v.length <= max && v.every((s) => typeof s === 'string' && s.length <= 300);
+const isStr = (v: unknown, max: number, min = 0): v is string =>
+  typeof v === 'string' && v.length >= min && v.length <= max;
+/** null OR a string within `max`. */
+const isNullableStr = (v: unknown, max: number): boolean => v === null || isStr(v, max);
+const isNum = (v: unknown, min: number, max: number): v is number =>
+  typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max;
+const isBool = (v: unknown): v is boolean => typeof v === 'boolean';
+const isStrArray = (v: unknown, maxItems: number, maxLen = 300): v is string[] =>
+  Array.isArray(v) && v.length <= maxItems && v.every((s) => typeof s === 'string' && s.length <= maxLen);
+const isIn = (v: unknown, set: Set<string>): boolean => typeof v === 'string' && set.has(v);
+
+const ALLOWED_KEYS: Record<string, ReadonlySet<string>> = {
+  move: new Set([
+    'kind', 'fen', 'side', 'moveLabel', 'san', 'classification', 'evalBefore', 'evalAfter',
+    'winBefore', 'winAfter', 'bestMoveSan', 'pv', 'bestReplySan', 'phase', 'isCheck', 'isMate',
+    'ruleBasedText', 'weaknessThemes',
+  ]),
+  game_summary: new Set([
+    'kind', 'playerColor', 'result', 'accuracy', 'acpl', 'moves', 'counts', 'opening', 'phases',
+    'keyMoments', 'estimatedRating',
+  ]),
+  weakness: new Set([
+    'kind', 'label', 'summary', 'advice', 'count', 'games', 'totalGames', 'trend', 'examples',
+    'accuracy', 'worstPhase',
+  ]),
+};
+
+function validateMoveFacts(f: Record<string, unknown>): string | null {
+  if (!isStr(f.fen, 100, 1)) return 'move facts need a FEN.';
+  if (!isIn(f.side, SIDES)) return 'move facts need a side.';
+  if (!isStr(f.moveLabel, 12, 1)) return 'move facts need a moveLabel.';
+  if (!isStr(f.san, 12, 1)) return 'move facts need a SAN move.';
+  if (!isStr(f.classification, 20, 1)) return 'move facts need a classification.';
+  if (!isNullableStr(f.evalBefore, 12) || !isNullableStr(f.evalAfter, 12)) return 'move evals must be short strings or null.';
+  if (!isNum(f.winBefore, 0, 100) || !isNum(f.winAfter, 0, 100)) return 'move win percentages must be 0-100.';
+  if (!isNullableStr(f.bestMoveSan, 12) || !isNullableStr(f.bestReplySan, 12)) return 'move best/reply SAN must be short strings or null.';
+  if (!isStrArray(f.pv, 12, 12)) return 'move facts pv must be a short SAN list.';
+  if (!isIn(f.phase, PHASES)) return 'move facts need a phase.';
+  if (!isBool(f.isCheck) || !isBool(f.isMate)) return 'move isCheck/isMate must be booleans.';
+  if (!isNullableStr(f.ruleBasedText, 400)) return 'move ruleBasedText must be a short string or null.';
+  if (!isStrArray(f.weaknessThemes, 5, 60)) return 'move weaknessThemes must be a short list.';
+  return null;
+}
+
+function validateGameSummaryFacts(f: Record<string, unknown>): string | null {
+  if (f.playerColor !== null && !isIn(f.playerColor, SIDES)) return 'game_summary playerColor must be a side or null.';
+  if (!isIn(f.result, RESULTS)) return 'game_summary facts need a result.';
+  if (!isNum(f.accuracy, 0, 100) || !isNum(f.acpl, 0, 10_000) || !isNum(f.moves, 0, 1_000)) {
+    return 'game_summary facts need accuracy/acpl/moves in range.';
+  }
+  const counts = f.counts;
+  if (
+    typeof counts !== 'object' || counts === null || Array.isArray(counts) ||
+    Object.entries(counts).length > 12 ||
+    !Object.entries(counts).every(([k, n]) => k.length <= 20 && isNum(n, 0, 1_000))
+  ) {
+    return 'game_summary counts must map classifications to small numbers.';
+  }
+  const opening = f.opening as Record<string, unknown> | null;
+  if (opening !== null) {
+    if (typeof opening !== 'object' || Array.isArray(opening)) return 'game_summary opening must be an object or null.';
+    const keys = Object.keys(opening);
+    if (keys.length > 2 || keys.some((k) => k !== 'eco' && k !== 'name')) return 'game_summary opening has unexpected fields.';
+    if (!isNullableStr(opening.eco ?? null, 8) || !isNullableStr(opening.name ?? null, 120)) return 'game_summary opening eco/name too long.';
+  }
+  const phases = f.phases;
+  if (
+    !Array.isArray(phases) || phases.length > 3 ||
+    !phases.every(
+      (p: unknown) =>
+        typeof p === 'object' && p !== null &&
+        Object.keys(p).every((k) => k === 'phase' || k === 'accuracy') &&
+        isIn((p as Record<string, unknown>).phase, PHASES) &&
+        isNum((p as Record<string, unknown>).accuracy, 0, 100),
+    )
+  ) {
+    return 'game_summary phases must be phase/accuracy pairs.';
+  }
+  if (!isStrArray(f.keyMoments, 8, 300)) return 'game_summary keyMoments must be a short list.';
+  if (f.estimatedRating !== null && !isNum(f.estimatedRating, 0, 4_000)) return 'game_summary estimatedRating must be a rating or null.';
+  return null;
+}
+
+function validateWeaknessFacts(f: Record<string, unknown>): string | null {
+  if (!isStr(f.label, 60, 1)) return 'weakness facts need a label.';
+  if (!isStr(f.summary, 400, 1) || !isStr(f.advice, 400, 1)) return 'weakness facts need summary and advice.';
+  if (!isNum(f.count, 0, 10_000) || !isNum(f.games, 0, 10_000) || !isNum(f.totalGames, 0, 10_000)) {
+    return 'weakness facts need counts in range.';
+  }
+  if (f.trend !== null && !isIn(f.trend, TRENDS)) return 'weakness trend must be a known trend or null.';
+  if (!isStrArray(f.examples, 5, 300)) return 'weakness examples must be a short list.';
+  if (!isNum(f.accuracy, 0, 100)) return 'weakness accuracy must be 0-100.';
+  if (f.worstPhase !== null && !isIn(f.worstPhase, PHASES)) return 'weakness worstPhase must be a phase or null.';
+  return null;
+}
 
 /** Error string, or null when the body is a valid explain request. */
 export function validateExplainBody(body: unknown): string | null {
   if (typeof body !== 'object' || body === null) return 'Body must be a JSON object.';
   const { facts, level } = body as { facts?: unknown; level?: unknown };
-  if (level !== undefined && !(isStr(level) && LEVELS.has(level))) return 'Invalid level.';
-  if (typeof facts !== 'object' || facts === null) return 'Missing facts.';
+  if (level !== undefined && !isIn(level, LEVELS)) return 'Invalid level.';
+  if (typeof facts !== 'object' || facts === null || Array.isArray(facts)) return 'Missing facts.';
   const f = facts as Record<string, unknown>;
-  if (!isStr(f.kind) || !KINDS.has(f.kind)) return 'Invalid facts.kind.';
+  if (typeof f.kind !== 'string' || !KINDS.has(f.kind)) return 'Invalid facts.kind.';
+
+  const allowed = ALLOWED_KEYS[f.kind]!;
+  for (const key of Object.keys(f)) {
+    if (!allowed.has(key)) return `Unexpected facts field "${key}".`;
+  }
 
   try {
     if (JSON.stringify(facts).length > MAX_FACTS_BYTES) return 'Facts payload too large.';
@@ -56,24 +159,11 @@ export function validateExplainBody(body: unknown): string | null {
 
   switch (f.kind) {
     case 'move':
-      if (!isStr(f.fen) || f.fen.length > 100) return 'move facts need a FEN.';
-      if (f.side !== 'white' && f.side !== 'black') return 'move facts need a side.';
-      if (!isStr(f.san) || f.san.length === 0 || f.san.length > 12) return 'move facts need a SAN move.';
-      if (!isStr(f.classification) || f.classification.length > 20) return 'move facts need a classification.';
-      if (!isStrArray(f.pv ?? [], 12)) return 'move facts pv must be a short SAN list.';
-      if (!isNum(f.winBefore) || !isNum(f.winAfter)) return 'move facts need win percentages.';
-      return null;
+      return validateMoveFacts(f);
     case 'game_summary':
-      if (!isNum(f.accuracy) || !isNum(f.acpl) || !isNum(f.moves)) return 'game_summary facts need accuracy/acpl/moves.';
-      if (!isStr(f.result) || f.result.length > 10) return 'game_summary facts need a result.';
-      if (!isStrArray(f.keyMoments ?? [], 8)) return 'game_summary keyMoments must be a short list.';
-      return null;
+      return validateGameSummaryFacts(f);
     case 'weakness':
-      if (!isStr(f.label) || f.label.length === 0 || f.label.length > 60) return 'weakness facts need a label.';
-      if (!isStr(f.summary) || !isStr(f.advice)) return 'weakness facts need summary and advice.';
-      if (!isNum(f.count) || !isNum(f.games) || !isNum(f.totalGames)) return 'weakness facts need counts.';
-      if (!isStrArray(f.examples ?? [], 5)) return 'weakness examples must be a short list.';
-      return null;
+      return validateWeaknessFacts(f);
     default:
       return 'Invalid facts.kind.';
   }
@@ -189,8 +279,14 @@ interface Bucket {
   last: number;
 }
 
+/** Entry count above which the limiter starts sweeping idle buckets. */
+const SWEEP_THRESHOLD = 10_000;
+/** Minimum gap between sweeps — the O(N) scan must not run per-request. */
+const SWEEP_INTERVAL_MS = 60_000;
+
 export class TokenBucketLimiter {
   private buckets = new Map<string, Bucket>();
+  private lastSweep = 0;
   constructor(
     private readonly capacity: number,
     private readonly refillPerMinute: number,
@@ -209,13 +305,24 @@ export class TokenBucketLimiter {
     }
     b.tokens -= 1;
     this.buckets.set(key, b);
-    // Opportunistic sweep so idle IPs don't accumulate forever.
-    if (this.buckets.size > 10_000) {
+    // Opportunistic sweep so idle IPs don't accumulate forever — throttled to
+    // once per SWEEP_INTERVAL_MS so the O(N) scan can't run on every request.
+    // A bucket whose refill has caught back up to capacity carries no state (a
+    // fresh bucket starts full), so dropping it is lossless.
+    if (this.buckets.size > SWEEP_THRESHOLD && t - this.lastSweep >= SWEEP_INTERVAL_MS) {
+      this.lastSweep = t;
       for (const [k, v] of this.buckets) {
-        if (v.tokens >= this.capacity - 0.01 && k !== key) this.buckets.delete(k);
+        if (k === key) continue;
+        const refilled = v.tokens + ((t - v.last) / 60_000) * this.refillPerMinute;
+        if (refilled >= this.capacity - 0.01) this.buckets.delete(k);
       }
     }
     return true;
+  }
+
+  /** Tracked bucket count (tests / observability). */
+  get size(): number {
+    return this.buckets.size;
   }
 }
 

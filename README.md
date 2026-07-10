@@ -341,6 +341,7 @@ All settings are environment variables with sensible defaults — see
 | `CHESSER_TABLEBASE_URL` | Lichess | Tablebase proxy upstream |
 | `CHESSER_EXPLORER_MASTERS_URL` / `CHESSER_EXPLORER_LICHESS_URL` | Lichess | Opening-explorer upstreams |
 | `CHESSER_LOG` | on in prod | Structured (pino) request logs |
+| `TRUST_PROXY` | off | Trust `X-Forwarded-*` from a reverse proxy (set behind Traefik/Nginx) |
 | `ANTHROPIC_API_KEY` | — | AI Coach: enables LLM explanations via the Anthropic API |
 | `OPENAI_API_KEY` | — | AI Coach: any OpenAI-compatible provider (used when no Anthropic key) |
 | `COACH_LLM_MODEL` | per provider | AI Coach model override |
@@ -372,7 +373,10 @@ instructed to use only the provided facts — it phrases, it never analyses.
   TTL, keyed on facts + skill level + model), output is capped at ~300 tokens,
   and the route is rate-limited per IP (token bucket, 20 requests/min → 429).
   The client additionally memoizes per payload, so re-viewing a move never
-  re-asks.
+  re-asks. Behind a reverse proxy, set `TRUST_PROXY=1` so the per-IP limit
+  keys on the real client address instead of the proxy's; it is off by
+  default because trusting `X-Forwarded-For` when NOT behind a proxy would
+  let clients spoof their IP.
 
 ## Roadmap
 

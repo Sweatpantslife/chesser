@@ -30,6 +30,16 @@ export const LOG_ENABLED = process.env.CHESSER_LOG
   ? /^(1|true|yes|on)$/i.test(process.env.CHESSER_LOG)
   : process.env.NODE_ENV === 'production';
 
+/**
+ * Trust X-Forwarded-* headers from a reverse proxy (Fastify's `trustProxy`).
+ * OFF by default on purpose: when the server is NOT behind a proxy, trusting
+ * X-Forwarded-For lets any client spoof its IP — which would defeat the
+ * per-IP rate limit on /api/coach/explain. Set TRUST_PROXY=1 when deploying
+ * behind Traefik/Nginx (e.g. the Coolify setup in the README) so `req.ip`
+ * resolves to the real client instead of the proxy.
+ */
+export const TRUST_PROXY = /^(1|true|yes|on)$/i.test(process.env.TRUST_PROXY ?? '');
+
 /** Resource budget for engines. Kept modest so several can coexist. */
 export const ENGINE_THREADS = Number(process.env.CHESSER_THREADS ?? Math.min(2, Math.max(1, os.cpus().length - 1)));
 export const ENGINE_HASH_MB = Number(process.env.CHESSER_HASH_MB ?? 128);
