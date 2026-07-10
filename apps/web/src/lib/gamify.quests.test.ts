@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { setClock } from './clock';
+import { setClock, todayStr } from './clock';
 import {
   onGamifyEvent,
   recordGameResult,
@@ -7,14 +7,16 @@ import {
   recordPuzzle,
   recordReview,
   recordRush,
+  recordStorm,
   type GamifyEvent,
 } from './gamify';
-import { ALL_QUESTS_BONUS_XP, type QuestGroup } from './quests';
+import { ALL_QUESTS_BONUS_XP, questsForDay, type QuestGroup } from './quests';
 import { useQuests } from '../store/quests';
 import { useGamify } from '../store/gamify';
 import { useStreak } from '../store/streak';
 import { useRatings } from '../store/ratings';
 import { useAchievements } from '../store/achievements';
+import { useSprints } from '../store/sprints';
 
 const T0 = Date.UTC(2026, 6, 1, 12); // 2026-07-01 noon UTC
 
@@ -36,7 +38,19 @@ function act(group: QuestGroup): void {
     case 'rush':
       recordRush(50);
       break;
+    case 'storm':
+      recordStorm({ solved: 20, score: 300 });
+      break;
   }
+}
+
+/** Pin the clock to the first day (from T0) whose slate has a `group` quest. */
+function pinDayWithGroup(group: QuestGroup): void {
+  for (let off = 0; off < 400; off++) {
+    setClock(() => T0 + off * 86_400_000);
+    if (questsForDay(todayStr()).some((q) => q.group === group)) return;
+  }
+  throw new Error(`no day within 400 of T0 has a '${group}' quest`);
 }
 
 describe('daily quests through the gamify pipeline (clock-injected)', () => {
@@ -50,6 +64,7 @@ describe('daily quests through the gamify pipeline (clock-injected)', () => {
     useRatings.getState().reset();
     useAchievements.getState().reset();
     useQuests.getState().reset();
+    useSprints.getState().reset();
     events = [];
     unsub = onGamifyEvent((e) => events.push(e));
   });
@@ -96,6 +111,44 @@ describe('daily quests through the gamify pipeline (clock-injected)', () => {
     recordReview(true); // one real activity, possibly with quest progress attached
     // Exactly one activity was recorded no matter what quest XP it triggered.
     expect(useGamify.getState().todayActivities()).toBe(before + 1);
+  });
+
+  it('a storm run does not advance rush quests', () => {
+    pinDayWithGroup('rush');
+    useQuests.getState().rollover();
+    const rushQuests = useQuests.getState().todaysQuests().filter((q) => q.group === 'rush');
+    expect(rushQuests.length).toBeGreaterThan(0);
+
+    recordStorm({ solved: 25, score: 400 }); // a monster run, but it's Storm
+
+    const s = useQuests.getState();
+    for (const q of rushQuests) {
+      expect(s.progress[q.id] ?? 0).toBe(0);
+      expect(q.id in s.done).toBe(false);
+    }
+    // The run itself still paid XP, tagged with its own source.
+    const stormXp = events.filter((e) => e.kind === 'xp-awarded' && e.source === 'storm');
+    expect(stormXp).toHaveLength(1);
+  });
+
+  it('storm quests advance on recordStorm, not on recordRush', () => {
+    pinDayWithGroup('storm');
+    useQuests.getState().rollover();
+    const stormQuests = useQuests.getState().todaysQuests().filter((q) => q.group === 'storm');
+    expect(stormQuests.length).toBeGreaterThan(0);
+
+    recordRush(50); // a huge Rush run contributes nothing to storm quests
+    for (const q of stormQuests) {
+      expect(useQuests.getState().progress[q.id] ?? 0).toBe(0);
+    }
+
+    recordStorm({ solved: 12, score: 150 }); // satisfies both storm quests' targets
+    const s = useQuests.getState();
+    for (const q of stormQuests) {
+      expect(q.id in s.done).toBe(true);
+    }
+    const completes = events.filter((e) => e.kind === 'quest-complete').map((e) => (e.kind === 'quest-complete' ? e.id : ''));
+    for (const q of stormQuests) expect(completes).toContain(q.id);
   });
 
   it('three straight wins unlock the win-streak badge via bestWinStreak', () => {

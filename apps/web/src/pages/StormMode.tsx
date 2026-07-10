@@ -19,7 +19,7 @@ import { useSprints } from '../store/sprints';
 import { useRatings } from '../store/ratings';
 import { now } from '../lib/clock';
 import { playMoveSound, playSound } from '../lib/sound';
-import { recordRush } from '../lib/gamify';
+import { recordStorm } from '../lib/gamify';
 import { fireConfetti } from '../components/Celebration';
 import { useTimeoutRef } from '../lib/useTimeoutRef';
 import type { Color } from '../store/game';
@@ -86,8 +86,8 @@ export function StormMode() {
     endAt.current = null;
     setRun(state);
     setPhase('over');
-    recordRush(state.solved); // XP + daily quests scale with puzzles solved
     const record = recordStormRun(state.score, state.bestCombo);
+    recordStorm({ solved: state.solved, score: state.score }); // XP + storm quests/badges
     setIsRecord(record);
     if (record && state.score > 0) {
       playSound('achievement');

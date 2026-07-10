@@ -22,6 +22,8 @@ function satisfy(q: QuestDef): Activity[] {
         return { type: 'review', correct: true };
       case 'rush':
         return { type: 'rush', score: Math.max(q.target, 50) };
+      case 'storm':
+        return { type: 'storm', solved: 20, score: Math.max(q.target, 300) };
     }
   };
   return Array.from({ length: n }, one);
