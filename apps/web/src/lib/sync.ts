@@ -6,6 +6,7 @@ import { useCoordinate } from '../store/coordinate';
 import { useCustomPuzzles } from '../store/customPuzzles';
 import { useRatings } from '../store/ratings';
 import { useGamify } from '../store/gamify';
+import { useStreak } from '../store/streak';
 import { useAchievements } from '../store/achievements';
 import { useLadder } from '../store/ladder';
 import { useLessons } from '../store/lessons';
@@ -25,6 +26,7 @@ function gather() {
     customPuzzles: useCustomPuzzles.getState().exportPuzzles(),
     ratings: useRatings.getState().exportState(),
     gamify: useGamify.getState().exportState(),
+    streak: useStreak.getState().exportState(),
     achievements: useAchievements.getState().exportState(),
     ladder: useLadder.getState().exportState(),
     lessons: useLessons.getState().exportState(),
@@ -56,6 +58,7 @@ function apply(remote: unknown): void {
     useRatings.getState().importMerge(r.ratings);
     if (!('ratings' in r) && 'puzzleRating' in r) useRatings.getState().importLegacyPuzzle(r.puzzleRating);
     useGamify.getState().importMerge(r.gamify);
+    useStreak.getState().importMerge(r.streak);
     useAchievements.getState().importMerge(r.achievements);
     useLadder.getState().importMerge(r.ladder);
     useLessons.getState().importMerge(r.lessons);
@@ -93,6 +96,7 @@ export function startSync(token: string, onState: (s: SyncState) => void): void 
   unsubs.push(useCustomPuzzles.subscribe(schedule));
   unsubs.push(useRatings.subscribe(schedule));
   unsubs.push(useGamify.subscribe(schedule));
+  unsubs.push(useStreak.subscribe(schedule));
   unsubs.push(useAchievements.subscribe(schedule));
   unsubs.push(useLadder.subscribe(schedule));
   unsubs.push(useLessons.subscribe(schedule));

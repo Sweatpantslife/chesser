@@ -5,6 +5,7 @@ import { useCoordinate } from '../store/coordinate';
 import { useCustomPuzzles } from '../store/customPuzzles';
 import { useRatings, ratingValue, ratingPeak, RATING_CATEGORIES } from '../store/ratings';
 import { useGamify, levelProgress } from '../store/gamify';
+import { useStreak } from '../store/streak';
 import { useSettings } from '../store/settings';
 import { ReviewSummary } from '../components/ReviewSummary';
 import { RatingMeter } from '../components/RatingMeter';
@@ -69,7 +70,7 @@ export function StatsPage({ goto }: { goto: (target: DeckTarget) => void }) {
 
   const xp = useGamify((s) => s.xp);
   const level = useMemo(() => levelProgress(xp).level, [xp]);
-  const goalStreak = useGamify((s) => s.activeStreak());
+  const dayStreak = useStreak((s) => s.current());
 
   const review = useReviewSummary();
   const today = utcDay(new Date());
@@ -124,7 +125,7 @@ export function StatsPage({ goto }: { goto: (target: DeckTarget) => void }) {
         <StatCard label="Level" value={<span>⭐ {level}</span>} hint={`${xp.toLocaleString()} XP`} />
         <StatCard label="Puzzle rating" value={puzzleRating} hint={`peak ${puzzlePeak} · ${meter}`} />
         <StatCard label="Day streak" value={<span>🔥 {streak}</span>} hint={`best ${bestStreak}`} />
-        <StatCard label="Goal streak" value={<span>🔥 {goalStreak}</span>} hint="daily goals" />
+        <StatCard label="Day streak" value={<span>🔥 {dayStreak}</span>} hint="active days" />
         <StatCard label="Reviews" value={totals.reviews} hint={`${totals.activeDays} active days`} />
         <StatCard label="Accuracy" value={`${totals.acc}%`} hint={`${totals.correct} correct`} />
         <StatCard label="Today" value={todayReviews} hint="reviews" />

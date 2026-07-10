@@ -105,7 +105,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   },
   // — Streaks / daily goals —
   ...tiers(
-    { category: 'streak', icon: '🔥', desc: 'Hit your daily goal on consecutive days.', value: (c) => Math.max(c.streak, c.bestStreak) },
+    { category: 'streak', icon: '🔥', desc: 'Train on consecutive days to keep your streak alive.', value: (c) => Math.max(c.streak, c.bestStreak) },
     [
       { suffix: 'streak-3', name: 'Warming Up', target: 3, xp: 30 },
       { suffix: 'streak-7', name: 'Week Strong', target: 7, xp: 80 },
