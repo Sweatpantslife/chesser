@@ -7,10 +7,12 @@
  * move via `onShowArrow` (cleared on move change, toggle-off and unmount).
  */
 import { useEffect, useState } from 'react';
+import type { CoachMoveFacts } from '@chesser/shared';
 import { CLASSIFICATION_META } from '../../lib/coach';
 import { formatScore } from '../../lib/format';
 import { CLASSIFICATION_GLYPH } from '../../lib/analytics/types';
 import type { ArrowSpec, Classification, EvalPoint, MoveDetail } from '../../lib/analytics/types';
+import { AiMoveExplanation } from './AiCoach';
 
 export interface MoveDetailPanelProps {
   /** report.moves[viewPly - 1] ?? null (null renders nothing). */
@@ -25,6 +27,12 @@ export interface MoveDetailPanelProps {
   onSelectPly?(ply: number): void;
   /** Total mainline plies; lets the next button disable on the last move. */
   maxPly?: number;
+  /**
+   * Facts payload for the AI Coach "Explain this" action (null/omitted = the
+   * feature is off or unavailable → the plain rule-based text renders).
+   * Built by the parent so this panel stays store-free.
+   */
+  aiFacts?: CoachMoveFacts | null;
 }
 
 /** EvalPoint → display string: "+0.35" / "−1.20" pawns, "#N" for mate, "—" when unknown. */
@@ -59,7 +67,7 @@ const moveLabel = (ply: number) => `${Math.ceil(ply / 2)}${ply % 2 === 1 ? '.' :
 const pvLabel = (pvPly: number, i: number): string | null =>
   pvPly % 2 === 1 ? `${Math.ceil(pvPly / 2)}.` : i === 0 ? `${Math.ceil(pvPly / 2)}…` : null;
 
-export function MoveDetailPanel({ move, onShowArrow, onPlayVariation, onPractice, onSelectPly, maxPly }: MoveDetailPanelProps): JSX.Element | null {
+export function MoveDetailPanel({ move, onShowArrow, onPlayVariation, onPractice, onSelectPly, maxPly, aiFacts }: MoveDetailPanelProps): JSX.Element | null {
   const [showBest, setShowBest] = useState(true);
   const arrow = showBest ? bestMoveArrow(move?.bestMoveUci) : null;
   const from = arrow?.from;
@@ -131,7 +139,7 @@ export function MoveDetailPanel({ move, onShowArrow, onPlayVariation, onPractice
           </div>
         </div>
 
-        <p className="text-sm leading-snug text-neutral-200">{move.explanation}</p>
+        <AiMoveExplanation key={move.nodeId ?? move.ply} facts={aiFacts ?? null} fallback={move.explanation} />
 
         {showBestLine && (
           <button
