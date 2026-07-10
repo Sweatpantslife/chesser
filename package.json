@@ -14,6 +14,7 @@
     "gen:tactics": "node scripts/gen-tactics.mjs",
     "gen:openings": "node scripts/gen-openings.mjs",
     "gen:pieces": "node scripts/gen-piece-sets.mjs",
+    "gen:pwa-icons": "node scripts/gen-pwa-icons.mjs",
     "validate:trainers": "pnpm --filter @chesser/server exec tsx ../../scripts/validate-trainers.mts",
     "validate:puzzles": "pnpm --filter @chesser/server exec tsx ../../scripts/validate-puzzles.mts",
     "test:coach": "pnpm --filter @chesser/server exec node --import tsx --test ../../scripts/coach.test.mts",
