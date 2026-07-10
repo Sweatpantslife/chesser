@@ -76,12 +76,28 @@ export function ShareProfilePanel({ onPreview }: { onPreview: (username: string)
     );
   }
   if (!prefs) {
+    // Same silent-failure guard as the Leaderboards page: with prefs null a
+    // failed fetch would otherwise leave "Loading…" up forever.
     return (
       <div className="rounded-2xl bg-panel p-4 shadow-soft">
         <h3 className="mb-1 font-display text-sm font-semibold text-ink">Share your profile</h3>
-        <p role="status" className="text-xs text-neutral-400">
-          Loading your share settings…
-        </p>
+        {error ? (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p role="alert" className="text-xs text-rose-400">
+              Couldn't load your share settings — {error}
+            </p>
+            <button
+              onClick={() => void useSocial.getState().load()}
+              className="btn-press rounded-full bg-neutral-800 px-3 py-1 text-xs font-semibold text-neutral-300 hover:bg-neutral-700 hover:text-ink"
+            >
+              Retry
+            </button>
+          </div>
+        ) : (
+          <p role="status" className="text-xs text-neutral-400">
+            Loading your share settings…
+          </p>
+        )}
       </div>
     );
   }

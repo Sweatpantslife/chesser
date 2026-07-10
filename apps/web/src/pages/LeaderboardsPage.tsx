@@ -75,6 +75,8 @@ export function LeaderboardsPage({ onViewProfile }: { onViewProfile: (username: 
   const token = useAuth((s) => s.token);
   const username = useAuth((s) => s.username);
   const prefs = useSocial((s) => s.prefs);
+  const prefsError = useSocial((s) => s.error);
+  const loadPrefs = useSocial((s) => s.load);
   const submitScores = useSocial((s) => s.submitScores);
 
   const [board, setBoard] = useState<BoardId>('puzzles');
@@ -150,6 +152,20 @@ export function LeaderboardsPage({ onViewProfile }: { onViewProfile: (username: 
       {/* Only render the join CTA once the signed-in prefs have loaded — an
           opted-in player must not see it flash while prefs are in flight. */}
       {(!token || prefs !== null) && !optedIn && <JoinCard signedIn={!!token} onJoined={() => void refresh()} />}
+
+      {/* A failed prefs fetch must not be silent: with prefs still null the
+          join CTA above never mounts, so surface the error + retry here. */}
+      {token && prefs === null && prefsError && (
+        <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-panel p-4 shadow-soft">
+          <p className="text-sm text-rose-400">Couldn't load your share settings — {prefsError}</p>
+          <button
+            onClick={() => void loadPrefs()}
+            className="btn-press rounded-full bg-neutral-800 px-4 py-1.5 text-sm font-semibold text-neutral-300 hover:bg-neutral-700 hover:text-ink"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       <div className="rounded-2xl bg-panel p-4 shadow-soft">
         <div className="mb-3 flex items-center justify-between gap-2">

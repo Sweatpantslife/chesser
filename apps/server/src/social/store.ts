@@ -40,8 +40,11 @@ class SocialStore {
   private db: DbShape = EMPTY;
   /** Bumped on every mutation — read paths use it to cache derived views. */
   private mutations = 0;
-  /** Serializes snapshot writes so they never interleave on the tmp file. */
-  private writeQueue: Promise<void> = Promise.resolve();
+  /** Latest not-yet-written snapshot; superseded in place by newer ones. */
+  private pending: string | null = null;
+  /** The active drain loop (also what flush() awaits). */
+  private writer: Promise<void> = Promise.resolve();
+  private writing = false;
 
   constructor() {
     // Startup-only sync read: no request path exists yet.
@@ -61,18 +64,34 @@ class SocialStore {
     this.mutations++;
     // Snapshot NOW (cheap: the db is small), write async off the request
     // path — no sync fs calls while serving requests. Reads are always
-    // answered from memory, so correctness never depends on the disk copy;
-    // the queue keeps the atomic tmp+rename writes ordered, and a later
-    // snapshot simply supersedes an earlier one.
-    const snapshot = JSON.stringify(this.db);
-    this.writeQueue = this.writeQueue
-      .then(() => writeSnapshot(snapshot))
-      .catch((e) => console.error('[social] failed to persist db:', e));
+    // answered from memory, so correctness never depends on the disk copy.
+    // Writes COALESCE: `pending` always holds only the newest snapshot, so a
+    // mutation burst keeps at most one snapshot string waiting behind the
+    // in-flight write instead of queueing one write per mutation.
+    this.pending = JSON.stringify(this.db);
+    if (!this.writing) this.writer = this.drain();
+  }
+
+  private async drain(): Promise<void> {
+    this.writing = true;
+    try {
+      while (this.pending !== null) {
+        const snapshot = this.pending;
+        this.pending = null;
+        try {
+          await writeSnapshot(snapshot);
+        } catch (e) {
+          console.error('[social] failed to persist db:', e);
+        }
+      }
+    } finally {
+      this.writing = false;
+    }
   }
 
   /** Resolves once every queued write has hit disk (shutdown/tests). */
   flush(): Promise<void> {
-    return this.writeQueue;
+    return this.writer;
   }
 
   /** Read a user's social record (defaults when they've never opted in). */

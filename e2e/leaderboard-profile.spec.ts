@@ -168,6 +168,14 @@ test.describe('leaderboards + shareable profile', () => {
       path: process.env.E2E_SHOT_DIR ? `${process.env.E2E_SHOT_DIR}/public-profile.png` : 'test-results/public-profile.png',
       fullPage: true,
     });
+
+    // REGRESSION: the accessibility skip link (<a href="#main">) is an
+    // in-page anchor — activating it on a shared profile must move focus,
+    // not bounce the view back to the Today page.
+    await visitor.evaluate(() => {
+      window.location.hash = '#main';
+    });
+    await expect(visitor.getByRole('heading', { name: USER })).toBeVisible();
     await visitorCtx.close();
   });
 

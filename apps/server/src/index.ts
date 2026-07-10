@@ -97,9 +97,10 @@ async function shutdown(): Promise<void> {
     await shutdownLocalTablebase();
     await engines.shutdown();
     await app.close();
-    // Social-store writes are queued off the request path; let them land.
-    await socialStore.flush();
   } finally {
+    // Social-store writes are queued off the request path; let them land
+    // even when engine/tablebase teardown throws above.
+    await socialStore.flush().catch(() => {});
     process.exit(0);
   }
 }

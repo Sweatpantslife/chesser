@@ -11,6 +11,7 @@ process.env.CHESSER_DATA_DIR = dataDir;
 
 const { registerAccountRoutes } = await import('../accounts/routes.js');
 const { registerSocialRoutes } = await import('./routes.js');
+const { socialStore } = await import('./store.js');
 const { setClock } = await import('./clock.js');
 const { isoWeekKey } = await import('./week.js');
 const Fastify = (await import('fastify')).default;
@@ -28,6 +29,9 @@ setClock(() => t);
 after(async () => {
   setClock(null);
   await app.close();
+  // Let the store's queued async writes land BEFORE deleting the data dir —
+  // a straggler would otherwise re-create it via mkdir and leak tmp dirs.
+  await socialStore.flush();
   fs.rmSync(dataDir, { recursive: true, force: true });
 });
 afterEach(() => {

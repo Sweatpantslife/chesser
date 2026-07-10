@@ -23,6 +23,7 @@ import { LevelBadge } from './components/LevelBadge';
 import { GamifyToasts } from './components/GamifyToasts';
 import { Celebration } from './components/Celebration';
 import { initGamify } from './lib/gamify';
+import { parseHashRoute, profileHashUser } from './lib/hashRoute';
 import { initSocial } from './store/social';
 import { playSound } from './lib/sound';
 import type { DeckTarget } from './lib/decks';
@@ -172,27 +173,17 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
   );
 }
 
-/** Username from a shared-profile hash (#/profile/NAME), or null. */
-function profileHashUser(): string | null {
-  const h = window.location.hash;
-  if (!h.startsWith('#/profile/')) return null;
-  try {
-    return decodeURIComponent(h.slice('#/profile/'.length)) || null;
-  } catch {
-    return null;
-  }
-}
-
 export default function App() {
   const init = useGame((s) => s.init);
   const authInit = useAuth((s) => s.init);
   // A shared friend-game link (#/friend/CODE) lands straight on the Friends
   // view and a shared profile link (#/profile/NAME) on that public profile;
   // everyone else starts the day on the Today page.
-  const [view, setView] = useState<View>(() =>
-    window.location.hash.startsWith('#/friend/') ? 'friends' : profileHashUser() ? 'shared-profile' : 'home',
-  );
-  const [profileUser, setProfileUser] = useState<string | null>(() => profileHashUser());
+  const [view, setView] = useState<View>(() => {
+    const route = parseHashRoute(window.location.hash);
+    return route.kind === 'friend' ? 'friends' : route.kind === 'profile' ? 'shared-profile' : 'home';
+  });
+  const [profileUser, setProfileUser] = useState<string | null>(() => profileHashUser(window.location.hash));
   const [trainTab, setTrainTab] = useState<TrainTab>('mates');
   // Set when the Today page's "Daily puzzle" entry is used, so the Tactics
   // page opens straight onto today's puzzle (cleared on any manual nav).
@@ -200,20 +191,20 @@ export default function App() {
 
   useEffect(() => {
     const onHash = () => {
-      if (window.location.hash.startsWith('#/friend/')) {
+      const route = parseHashRoute(window.location.hash);
+      if (route.kind === 'friend') {
         setView('friends');
-        return;
-      }
-      const u = profileHashUser();
-      if (u) {
-        setProfileUser(u);
+      } else if (route.kind === 'profile') {
+        setProfileUser(route.user);
         setView('shared-profile');
-        return;
+      } else if (route.kind === 'exit-overlay') {
+        // The hash was cleared (Back out of a profile link). Normal tabs
+        // don't live in the hash, but a shared profile exists ONLY via its
+        // hash — so leaving the hash leaves the view too.
+        setView((v) => (v === 'shared-profile' ? 'home' : v));
       }
-      // No hash route matches. Normal tabs are untouched (they don't live in
-      // the hash), but a shared profile exists ONLY via its hash — so backing
-      // out of #/profile/NAME (empty or foreign hash) must leave the view too.
-      setView((v) => (v === 'shared-profile' ? 'home' : v));
+      // 'ignore' (in-page anchors like the #main skip link, foreign hashes):
+      // never navigate — the skip link must move focus, not views.
     };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
