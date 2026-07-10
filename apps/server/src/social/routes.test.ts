@@ -290,6 +290,33 @@ describe('leaderboard fetch', () => {
     assert.equal(b.me?.rank, null);
   });
 
+  it('standings cache: repeated reads are consistent and every write invalidates', async () => {
+    const token = await register('lb-cache');
+    await putProgress(token);
+    await optIn(token);
+    assert.equal((await submit(token, 'rush', 11)).statusCode, 200);
+
+    // Two consecutive reads (second one served from the memoized standings)
+    // must agree exactly.
+    const first = await board('rush', '', token);
+    const second = await board('rush', '', token);
+    assert.deepEqual(second.entries, first.entries);
+    assert.equal(second.total, first.total);
+
+    // A new accepted submission bumps the store version → fresh standings.
+    t += 30_000;
+    assert.equal((await submit(token, 'rush', 16)).statusCode, 200);
+    const afterSubmit = await board('rush', '', token);
+    assert.equal(afterSubmit.entries.find((e) => e.username === 'lb-cache')?.value, 16);
+
+    // A prefs write invalidates too (covered above via opt-out; assert the
+    // opt-back-in path as well — the cached "hidden" view must not stick).
+    await optIn(token, { leaderboards: false });
+    assert.ok(!(await board('rush', '', token)).entries.some((e) => e.username === 'lb-cache'));
+    await optIn(token, { leaderboards: true });
+    assert.equal((await board('rush', '', token)).entries.find((e) => e.username === 'lb-cache')?.value, 16);
+  });
+
   it('weekly boards use the deterministic week key and roll over', async () => {
     const token = await register('lb-weekly');
     await putProgress(token);

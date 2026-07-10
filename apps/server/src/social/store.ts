@@ -28,10 +28,23 @@ function freshUser(): UserSocial {
   return { prefs: { ...DEFAULT_PREFS }, boards: {}, favoriteOpenings: [] };
 }
 
+/** Atomic snapshot write (tmp + rename), fully async. */
+async function writeSnapshot(json: string): Promise<void> {
+  await fs.promises.mkdir(DATA_DIR, { recursive: true });
+  const tmp = DB_FILE + '.tmp';
+  await fs.promises.writeFile(tmp, json);
+  await fs.promises.rename(tmp, DB_FILE);
+}
+
 class SocialStore {
   private db: DbShape = EMPTY;
+  /** Bumped on every mutation — read paths use it to cache derived views. */
+  private mutations = 0;
+  /** Serializes snapshot writes so they never interleave on the tmp file. */
+  private writeQueue: Promise<void> = Promise.resolve();
 
   constructor() {
+    // Startup-only sync read: no request path exists yet.
     try {
       if (fs.existsSync(DB_FILE)) this.db = { ...EMPTY, ...JSON.parse(fs.readFileSync(DB_FILE, 'utf8')) };
     } catch (e) {
@@ -39,15 +52,27 @@ class SocialStore {
     }
   }
 
+  /** Monotonic mutation counter — a cache-invalidation token for readers. */
+  get version(): number {
+    return this.mutations;
+  }
+
   private persist(): void {
-    try {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-      const tmp = DB_FILE + '.tmp';
-      fs.writeFileSync(tmp, JSON.stringify(this.db));
-      fs.renameSync(tmp, DB_FILE);
-    } catch (e) {
-      console.error('[social] failed to persist db:', e);
-    }
+    this.mutations++;
+    // Snapshot NOW (cheap: the db is small), write async off the request
+    // path — no sync fs calls while serving requests. Reads are always
+    // answered from memory, so correctness never depends on the disk copy;
+    // the queue keeps the atomic tmp+rename writes ordered, and a later
+    // snapshot simply supersedes an earlier one.
+    const snapshot = JSON.stringify(this.db);
+    this.writeQueue = this.writeQueue
+      .then(() => writeSnapshot(snapshot))
+      .catch((e) => console.error('[social] failed to persist db:', e));
+  }
+
+  /** Resolves once every queued write has hit disk (shutdown/tests). */
+  flush(): Promise<void> {
+    return this.writeQueue;
   }
 
   /** Read a user's social record (defaults when they've never opted in). */

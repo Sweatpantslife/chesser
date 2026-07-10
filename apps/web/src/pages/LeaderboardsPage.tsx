@@ -147,7 +147,9 @@ export function LeaderboardsPage({ onViewProfile }: { onViewProfile: (username: 
         ))}
       </nav>
 
-      {!optedIn && <JoinCard signedIn={!!token} onJoined={() => void refresh()} />}
+      {/* Only render the join CTA once the signed-in prefs have loaded — an
+          opted-in player must not see it flash while prefs are in flight. */}
+      {(!token || prefs !== null) && !optedIn && <JoinCard signedIn={!!token} onJoined={() => void refresh()} />}
 
       <div className="rounded-2xl bg-panel p-4 shadow-soft">
         <div className="mb-3 flex items-center justify-between gap-2">

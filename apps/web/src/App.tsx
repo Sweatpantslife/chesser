@@ -200,12 +200,20 @@ export default function App() {
 
   useEffect(() => {
     const onHash = () => {
-      if (window.location.hash.startsWith('#/friend/')) setView('friends');
+      if (window.location.hash.startsWith('#/friend/')) {
+        setView('friends');
+        return;
+      }
       const u = profileHashUser();
       if (u) {
         setProfileUser(u);
         setView('shared-profile');
+        return;
       }
+      // No hash route matches. Normal tabs are untouched (they don't live in
+      // the hash), but a shared profile exists ONLY via its hash — so backing
+      // out of #/profile/NAME (empty or foreign hash) must leave the view too.
+      setView((v) => (v === 'shared-profile' ? 'home' : v));
     };
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);

@@ -49,8 +49,7 @@ interface RankedRow {
   updatedAt: number;
 }
 
-/** All opted-in rows for a board+scope, ranked (best first, deterministic). */
-function rankedRows(board: BoardId, scope: Scope, weekKey: string): RankedRow[] {
+function computeRankedRows(board: BoardId, scope: Scope, weekKey: string): RankedRow[] {
   const rows: RankedRow[] = [];
   for (const [userId, social] of socialStore.all()) {
     if (!social.prefs.leaderboards) continue;
@@ -65,6 +64,29 @@ function rankedRows(board: BoardId, scope: Scope, weekKey: string): RankedRow[] 
   // Best value first; ties go to whoever got there first, then by name so the
   // order is total and stable across requests.
   rows.sort((a, b) => b.value - a.value || a.updatedAt - b.updatedAt || a.username.localeCompare(b.username));
+  return rows;
+}
+
+// Standings are recomputed only when the store actually changed: entries are
+// memoized per (board, scope, weekKey) and validated against the store's
+// mutation counter, so repeated GETs don't re-walk and re-sort every user.
+// Bounded: 3 boards × 2 scopes plus a stale week key or two.
+const STANDINGS_CACHE_MAX = 12;
+const standingsCache = new Map<string, { version: number; rows: RankedRow[] }>();
+
+/** All opted-in rows for a board+scope, ranked (best first, deterministic). */
+function rankedRows(board: BoardId, scope: Scope, weekKey: string): RankedRow[] {
+  const key = `${board}:${scope}:${weekKey}`;
+  const hit = standingsCache.get(key);
+  if (hit && hit.version === socialStore.version) return hit.rows;
+  const rows = computeRankedRows(board, scope, weekKey);
+  if (!hit && standingsCache.size >= STANDINGS_CACHE_MAX) {
+    // Evict oldest-inserted entries (typically last week's keys).
+    for (const k of [...standingsCache.keys()].slice(0, standingsCache.size - STANDINGS_CACHE_MAX + 1)) {
+      standingsCache.delete(k);
+    }
+  }
+  standingsCache.set(key, { version: socialStore.version, rows });
   return rows;
 }
 

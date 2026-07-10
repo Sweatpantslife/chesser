@@ -118,6 +118,18 @@ export function apiGetPublicProfile(username: string): Promise<PublicProfile> {
   return fetch(`/api/social/profile/${encodeURIComponent(username)}`).then(jsonOrThrow);
 }
 
+/**
+ * Map a failed profile fetch to a UI state: 'missing' for the server's
+ * deliberate one-404-fits-all ("private or does not exist", or a bare 404
+ * status when the body carried no message) vs 'error' for anything else —
+ * network failures, 5xx — which should surface as retryable, not as
+ * "this profile doesn't exist".
+ */
+export function classifyProfileError(e: unknown): 'missing' | 'error' {
+  const msg = e instanceof Error ? e.message : '';
+  return /private|does not exist|not exist|\(404\)/i.test(msg) ? 'missing' : 'error';
+}
+
 /** The shareable URL for a profile (hash-routed, same-origin). */
 export function profileUrl(username: string): string {
   return `${window.location.origin}${window.location.pathname}#/profile/${encodeURIComponent(username)}`;

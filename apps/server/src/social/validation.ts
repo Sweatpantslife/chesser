@@ -322,7 +322,10 @@ const COUNT_CAP = 1_000_000;
 export function sanitizeOpenings(raw: unknown): FavoriteOpening[] {
   if (!Array.isArray(raw)) return [];
   const out: FavoriteOpening[] = [];
-  for (const item of raw.slice(0, MAX_OPENINGS)) {
+  // Cap on VALID items, not raw indices — junk entries early in the array
+  // must not push valid ones past the cut.
+  for (const item of raw) {
+    if (out.length >= MAX_OPENINGS) break;
     if (!isObj(item) || typeof item.name !== 'string') continue;
     const name = item.name.trim().slice(0, 80);
     if (!name) continue;

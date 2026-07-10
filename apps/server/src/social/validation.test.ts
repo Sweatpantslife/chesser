@@ -191,4 +191,20 @@ describe('prefs + openings sanitizing', () => {
     assert.equal(out[1]!.eco, null); // ZZ9 is not an ECO code
     assert.equal(out[1]!.games, 0);
   });
+
+  it('caps on VALID openings — junk early in the array cannot crowd out later valid ones', () => {
+    const out = sanitizeOpenings([
+      'junk',
+      null,
+      { name: '' },
+      { eco: 'C50', games: 3, wins: 1 }, // no name
+      42,
+      ...Array.from({ length: 6 }, (_, i) => ({ name: `Opening ${i}`, eco: null, games: 1, wins: 0 })),
+    ]);
+    assert.equal(out.length, 5); // five valid items survive the five junk ones
+    assert.deepEqual(
+      out.map((o) => o.name),
+      ['Opening 0', 'Opening 1', 'Opening 2', 'Opening 3', 'Opening 4'],
+    );
+  });
 });

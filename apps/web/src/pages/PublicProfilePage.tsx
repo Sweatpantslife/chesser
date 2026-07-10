@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiGetPublicProfile, profileUrl, type PublicProfile } from '../lib/socialApi';
+import { apiGetPublicProfile, classifyProfileError, profileUrl, type PublicProfile } from '../lib/socialApi';
 import { ACHIEVEMENTS_BY_ID } from '../lib/achievements';
 import { downloadProfileCard } from '../lib/profileCard';
 import { IconDownload } from '../components/icons';
@@ -67,7 +67,7 @@ export function PublicProfilePage({ username }: { username: string }) {
         }
       })
       .catch((e: unknown) => {
-        if (!cancelled) setState(e instanceof Error && /private|not exist|404/i.test(e.message) ? 'missing' : 'missing');
+        if (!cancelled) setState(classifyProfileError(e));
       });
     return () => {
       cancelled = true;
@@ -89,6 +89,19 @@ export function PublicProfilePage({ username }: { username: string }) {
       <p role="status" className="mx-auto max-w-[760px] py-16 text-center text-sm text-neutral-400">
         Loading profile…
       </p>
+    );
+  }
+  if (state === 'error') {
+    return (
+      <div className="mx-auto max-w-[560px] rounded-2xl bg-panel p-8 text-center shadow-soft">
+        <div aria-hidden="true" className="mb-2 text-3xl">
+          📡
+        </div>
+        <h2 className="font-display text-base font-semibold text-ink">Couldn't load this profile</h2>
+        <p role="alert" className="mt-1 text-sm text-neutral-400">
+          Something went wrong reaching the server — check your connection and try again.
+        </p>
+      </div>
     );
   }
   if (state !== 'ready' || !profile) {

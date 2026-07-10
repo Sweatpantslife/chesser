@@ -16,6 +16,7 @@ import { importGames } from './import.js';
 import { registerAccountRoutes } from './accounts/routes.js';
 import { registerCoachRoutes } from './coach/routes.js';
 import { registerSocialRoutes } from './social/routes.js';
+import { socialStore } from './social/store.js';
 import type { ExplorerDb } from '@chesser/shared';
 
 // trustProxy: opt-in via TRUST_PROXY (see config.ts) — required behind a
@@ -96,6 +97,8 @@ async function shutdown(): Promise<void> {
     await shutdownLocalTablebase();
     await engines.shutdown();
     await app.close();
+    // Social-store writes are queued off the request path; let them land.
+    await socialStore.flush();
   } finally {
     process.exit(0);
   }
