@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useGame, type Color, type TimeControl } from '../store/game';
 import { useLadder } from '../store/ladder';
-import { BOT_ROSTER, resolveBotConfig, type RosterBot } from '../data/botRoster';
+import { BOT_ROSTER, humanBackendFor, resolveBotConfig, type RosterBot } from '../data/botRoster';
 import { BotAvatar } from './BotAvatar';
 
 const TIME_CONTROLS: (TimeControl | null)[] = [
@@ -27,11 +27,14 @@ export function LadderPanel() {
 
   const cleared = Object.keys(defeated).length;
   const isDefeated = (id: string) => id in defeated;
-  const nextIndex = BOT_ROSTER.findIndex((b, i) => {
+  // A rung is open when it's the first, its predecessor fell, or it was already
+  // beaten — so beaten rungs stay replayable even if a new rung is ever
+  // inserted before them in a roster update.
+  const isUnlocked = (i: number) => {
     const prev = BOT_ROSTER[i - 1];
-    const unlocked = i === 0 || (prev ? isDefeated(prev.id) : true);
-    return unlocked && !isDefeated(b.id);
-  });
+    return i === 0 || (prev ? isDefeated(prev.id) : true) || isDefeated(BOT_ROSTER[i]!.id);
+  };
+  const nextIndex = BOT_ROSTER.findIndex((b, i) => isUnlocked(i) && !isDefeated(b.id));
 
   const start = (bot: RosterBot) => {
     const playerColor: Color = color === 'random' ? (Math.random() < 0.5 ? 'white' : 'black') : color;
@@ -99,11 +102,12 @@ export function LadderPanel() {
       <div className="scroll-thin max-h-[58vh] space-y-1.5 overflow-y-auto pr-0.5">
         {BOT_ROSTER.map((bot, i) => {
           const prev = BOT_ROSTER[i - 1];
-          const unlocked = i === 0 || (prev ? isDefeated(prev.id) : true);
+          const unlocked = isUnlocked(i);
           const botCleared = isDefeated(bot.id);
           const isNext = i === nextIndex;
           const isActive = opponent?.id === bot.id && !isGameOver;
-          const maiaStandin = bot.bot.style === 'human' && !availability?.lc0;
+          const isHuman = bot.bot.style === 'human';
+          const backend = humanBackendFor(bot, availability);
 
           return (
             <div
@@ -125,12 +129,20 @@ export function LadderPanel() {
                   </div>
                   <div className="text-xs text-neutral-400">
                     {bot.title}
+                    {isHuman && availability && (
+                      // Honest backend label: what actually answers this persona's moves.
+                      <span className="ml-1 text-neutral-500">
+                        ·{' '}
+                        {backend === 'maia'
+                          ? 'Maia neural net'
+                          : backend === 'stockfish'
+                            ? 'human-like (engine)'
+                            : 'Stockfish stand-in'}
+                      </span>
+                    )}
                     {botCleared && <span className="ml-1 text-emerald-400">· ✓ cleared</span>}
                   </div>
                   <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-neutral-400">{bot.bio}</p>
-                  {maiaStandin && unlocked && (
-                    <p className="mt-0.5 text-xs text-neutral-400">Maia offline — Stockfish stand-in at this rating.</p>
-                  )}
                 </div>
               </div>
               <div className="mt-1.5 flex items-center justify-end">

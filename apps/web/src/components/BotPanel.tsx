@@ -19,11 +19,15 @@ const THINK_OPTIONS = [
 ];
 
 const ELO_PRESETS = [1320, 1600, 1900, 2200, 2500, 3190];
+// The human-like sampler covers any rating; sub-1320 lives here (not the ladder-only path).
+const HUMAN_ELO_MIN = 600;
+const HUMAN_ELO_MAX = 2000;
+const HUMAN_ELO_PRESETS = [600, 800, 1000, 1200, 1600, 2000];
 
 type StartFrom = 'standard' | 'position' | 'opening';
 
-function botLabel(style: BotStyleId, elo: number, maia: number): string {
-  if (style === 'human') return `Maia ${maia}`;
+function botLabel(style: BotStyleId, elo: number, maia: number, hasMaiaNets: boolean): string {
+  if (style === 'human') return hasMaiaNets ? `Maia ${maia}` : `Human-like ~${elo}`;
   const s = style.charAt(0).toUpperCase() + style.slice(1);
   return `Stockfish ${s} (${elo >= 3190 ? 'max' : elo})`;
 }
@@ -49,9 +53,20 @@ export function BotPanel() {
     if (styles.length > 0 && !styles.some((s) => s.id === style)) setStyle(styles[0]!.id);
   }, [styles, style]);
 
+  const isHumanViaEngine = style === 'human' && (availability?.maiaNetworks ?? []).length === 0;
+  // Keep the slider value inside the human-model range when switching styles.
+  useEffect(() => {
+    if (isHumanViaEngine && (elo < HUMAN_ELO_MIN || elo > HUMAN_ELO_MAX)) {
+      setElo(Math.min(Math.max(elo, HUMAN_ELO_MIN), HUMAN_ELO_MAX));
+    }
+  }, [isHumanViaEngine, elo]);
+
   const selStyle = styles.find((s) => s.id === style);
   const isHuman = style === 'human';
   const maiaNets = availability?.maiaNetworks ?? [];
+  // 'human' without Maia nets runs on the server's human-calibrated engine
+  // sampler: strength comes from the rating slider instead of net buttons.
+  const humanViaEngine = isHuman && maiaNets.length === 0;
 
   const filteredOpenings = useMemo(() => {
     const q = openingFilter.trim().toLowerCase();
@@ -66,8 +81,14 @@ export function BotPanel() {
 
   const start = () => {
     const playerColor: Color = color === 'random' ? (Math.random() < 0.5 ? 'white' : 'black') : color;
-    const bot = { style, elo, maiaRating, moveTimeMs };
-    const opponent = { name: botLabel(style, elo, maiaRating), rating: isHuman ? maiaRating : elo };
+    const humanElo = Math.min(Math.max(elo, HUMAN_ELO_MIN), HUMAN_ELO_MAX);
+    const bot = humanViaEngine
+      ? { style, elo: humanElo, moveTimeMs } // no maiaRating: the sampler covers the whole range
+      : { style, elo, maiaRating, moveTimeMs };
+    const opponent = {
+      name: botLabel(style, humanViaEngine ? humanElo : elo, maiaRating, maiaNets.length > 0),
+      rating: isHuman ? (humanViaEngine ? humanElo : maiaRating) : elo,
+    };
 
     if (startFrom === 'position') {
       const fen = fenInput.trim();
@@ -112,17 +133,24 @@ export function BotPanel() {
         ))}
       </div>
       {selStyle && <p className="mb-3 text-xs leading-snug text-neutral-400">{selStyle.description}</p>}
+      {isHuman && availability && (
+        <p className="-mt-2 mb-3 text-xs leading-snug text-neutral-400">
+          {maiaNets.length > 0
+            ? 'Running the Maia neural net (trained on real games at each rating).'
+            : 'Maia nets are not installed here — using the engine-based human model.'}
+        </p>
+      )}
 
       {/* strength */}
-      {isHuman ? (
+      {isHuman && maiaNets.length > 0 ? (
         <div className="mb-3">
           <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Rating</div>
-          <div className="flex gap-1">
+          <div className="grid grid-cols-5 gap-1">
             {maiaNets.map((n) => (
               <button
                 key={n.id}
                 onClick={() => setMaiaRating(n.rating)}
-                className={`flex-1 rounded px-2 py-1 text-xs ${
+                className={`rounded px-2 py-1 text-xs ${
                   maiaRating === n.rating ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                 }`}
               >
@@ -135,21 +163,23 @@ export function BotPanel() {
         <div className="mb-3">
           <div className="mb-1 flex items-center justify-between text-xs">
             <span className="uppercase tracking-wide text-neutral-400">Strength</span>
-            <span className="font-mono text-neutral-300">{elo >= 3190 ? 'max' : `${elo} Elo`}</span>
+            <span className="font-mono text-neutral-300">
+              {humanViaEngine ? `~${elo} Elo` : elo >= 3190 ? 'max' : `${elo} Elo`}
+            </span>
           </div>
           <input
             type="range"
-            min={1320}
-            max={3190}
+            min={humanViaEngine ? HUMAN_ELO_MIN : 1320}
+            max={humanViaEngine ? HUMAN_ELO_MAX : 3190}
             step={10}
             value={elo}
             onChange={(e) => setElo(Number(e.target.value))}
             className="w-full accent-emerald-500"
           />
           <div className="mt-1 flex justify-between">
-            {ELO_PRESETS.map((p) => (
+            {(humanViaEngine ? HUMAN_ELO_PRESETS : ELO_PRESETS).map((p) => (
               <button key={p} onClick={() => setElo(p)} className="text-xs text-neutral-400 hover:text-neutral-200">
-                {p === 3190 ? 'max' : p}
+                {!humanViaEngine && p === 3190 ? 'max' : p}
               </button>
             ))}
           </div>
@@ -167,7 +197,7 @@ export function BotPanel() {
               </button>
             ))}
           </div>
-          <p className="mt-1 text-xs text-neutral-400">For sub-1320 opponents, climb the Ladder tab.</p>
+          {!humanViaEngine && <p className="mt-1 text-xs text-neutral-400">For sub-1320 opponents, climb the Ladder tab.</p>}
         </div>
       )}
 
