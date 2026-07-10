@@ -14,8 +14,9 @@ import { BOT_RATING_MIN, STOCKFISH_ELO_MIN } from '@chesser/shared';
  *    rating (an 800 occasionally hangs a piece; a 1900 makes small slips),
  *  - extra sampling width among near-equal moves in the opening, so games
  *    don't repeat move-for-move,
- *  - eval-gap safety rails: above ~1000-1200 a candidate that throws away a
- *    won position (or walks into mate when anything safe exists) is dropped,
+ *  - eval-gap safety rails, phased in across ~900-1100: at club level and up a
+ *    candidate that throws away a won position (or walks into mate when
+ *    anything safe exists) is dropped,
  *  - a heavy penalty on moves that repeat an earlier position while the bot
  *    is clearly winning, so it converts instead of shuffling.
  *
@@ -60,6 +61,15 @@ const OPENING_MIX = 0.7;
 const WINNING_CP = 200;
 /** Weight multiplier for repetition moves while clearly winning. */
 const REPEAT_WEIGHT = 0.02;
+/**
+ * Eval magnitude beyond which "more winning" stops mattering when grading a
+ * move choice. Mate scores collapse to ~±100000 comparable cp; without this
+ * cap any non-mating alternative counted as a ~99000cp "blunder", making
+ * every railed bot engine-perfect at forced mates. On this scale "mate vs a
+ * +500 move" is a ~1000cp loss (rail-dropped at club level, reachable below
+ * it) while "safe vs getting mated" stays a ≥1500cp loss the rails exclude.
+ */
+const GRADE_EVAL_CAP = 1500;
 
 /**
  * Softmax temperature (cp) by rating. ~256 at 500 (very flat — beginners treat
@@ -91,16 +101,28 @@ export function blunderLossCapFor(rating: number): number {
 }
 
 /**
+ * How much of the safety rails applies: 0 below rating 900, 1 from 1100 up.
+ * Dividing a cap by this phases the rails in smoothly across 900-1100 instead
+ * of switching them on at exactly 1000 — no persona sits on a behavioral
+ * cliff where "sometimes throws games" flips to "never errs badly".
+ */
+function railPhase(rating: number): number {
+  return clamp((rating - 900) / 200, 0, 1);
+}
+
+/**
  * Absolute cap on eval given up in one move, whatever tier picked it. Below
- * 1000 there is no cap (beginners really do throw games); from 1000 up it
- * shrinks (~750 at 1200, ~450 at 1500, ~230 at 1900), which via pure eval
- * gaps also excludes walking into mate or losing a completely won position —
- * both collapse to losses far above the cap.
+ * 900 there is no cap (beginners really do throw games); it then phases in
+ * across 900-1100 and shrinks with rating (~883 at 1100, ~750 at 1200, ~450
+ * at 1500, ~230 at 1900), which via pure eval gaps also excludes walking into
+ * mate or losing a completely won position — on the GRADE_EVAL_CAP scale both
+ * grade as losses above the cap at club level.
  */
 export function hardLossCapFor(rating: number): number {
   const r = clamp(rating, 400, 3200);
-  if (r < 1000) return Infinity;
-  return clamp(2400 * Math.exp(-(r - 500) / 600), 150, 2400);
+  const phase = railPhase(r);
+  if (phase === 0) return Infinity;
+  return clamp(2400 * Math.exp(-(r - 500) / 600), 150, 2400) / phase;
 }
 
 export interface SearchPlan {
@@ -116,7 +138,10 @@ export interface SearchPlan {
  */
 export function searchPlanFor(rating: number, moveTimeMs?: number): SearchPlan {
   const r = clamp(rating, 400, 3200);
-  const multiPv = r < 1100 ? 8 : r < 1700 ? 7 : 6;
+  // Below the rail phase-in the pool is widened so genuinely losing moves
+  // exist in it — a beginner's worst reachable move shouldn't be merely the
+  // 8th-best move of a full-strength search.
+  const multiPv = r < 1000 ? 12 : r < 1100 ? 8 : r < 1700 ? 7 : 6;
   if (r < STOCKFISH_ELO_MIN) {
     const t = clamp((r - BOT_RATING_MIN) / (STOCKFISH_ELO_MIN - 1 - BOT_RATING_MIN), 0, 1);
     const depth = Math.round(1 + t * 5); // 1 … 6, mirrors the old beginner path
@@ -192,7 +217,11 @@ export function pickHumanMove(candidates: HumanCandidate[], ctx: HumanPickContex
   const rating = clamp(ctx.rating, 400, 3200);
 
   const bestCp = Math.max(...candidates.map((c) => c.cp));
-  const loss = candidates.map((c) => bestCp - c.cp);
+  // Grade losses on a capped eval scale: choosing between two crushing moves
+  // (or a mate and a clearly winning move) is a human choice, not a blunder.
+  const grade = (cp: number) => clamp(cp, -GRADE_EVAL_CAP, GRADE_EVAL_CAP);
+  const bestGraded = grade(bestCp);
+  const loss = candidates.map((c) => bestGraded - grade(c.cp));
   const winning = bestCp >= WINNING_CP;
   const repeatPenalised = (i: number) => winning && (candidates[i]!.repeats ?? 0) > 0;
 
@@ -202,13 +231,14 @@ export function pickHumanMove(candidates: HumanCandidate[], ctx: HumanPickContex
   const pool = candidates.map((_, i) => i).filter((i) => loss[i]! <= hardCap);
 
   // Deliberate lapse: a graded error — mostly small, occasionally near the
-  // rating's cap. Below 1000 every inferior move is reachable (loss capped for
-  // weighting so even huge throws keep a tiny tail probability).
+  // rating's cap. Below the rail phase-in every inferior move is reachable
+  // (loss capped for weighting so even huge throws keep a tiny tail
+  // probability); the reach narrows to lapseCap as the rails come online.
   const lapseCap = blunderLossCapFor(rating);
+  const phase = railPhase(rating);
+  const lapseReach = phase === 0 ? Infinity : lapseCap / phase;
   if (rng() < blunderChanceFor(rating)) {
-    const errors = pool.filter(
-      (i) => loss[i]! > 0 && !repeatPenalised(i) && (rating < 1000 || loss[i]! <= lapseCap),
-    );
+    const errors = pool.filter((i) => loss[i]! > 0 && !repeatPenalised(i) && loss[i]! <= lapseReach);
     if (errors.length > 0) {
       const scale = Math.max(1, lapseCap / 2);
       const w = errors.map((i) => Math.exp(-Math.min(loss[i]!, 2 * lapseCap) / scale));
@@ -249,10 +279,15 @@ const MAIA_VARIETY_WEIGHTS = [1, 0.45, 0.2, 0.1];
  * rank order (rank 1 = the raw-policy move Maia would play), occasionally play
  * a near-top alternative during the first plies. Past the opening — or when
  * lc0 reported a single line — always returns 0 (today's behaviour).
+ *
+ * The weights apply to policy rank. At a true one-node search lc0 reports the
+ * identical root score on every MultiPV line, so the cp window filters nothing
+ * there; it is a defensive guard, anchored at the rank-1 policy move, for
+ * builds whose lines carry real (possibly diverging) per-move evals.
  */
 export function pickMaiaVariety(candidates: { cp: number }[], ply: number, rng: () => number = Math.random): number {
   if (ply >= MAIA_VARIETY_PLIES || candidates.length < 2) return 0;
-  const top = Math.max(...candidates.map((c) => c.cp));
+  const top = candidates[0]!.cp;
   const weights = candidates.map((c, i) =>
     i < MAIA_VARIETY_WEIGHTS.length && top - c.cp <= MAIA_VARIETY_WINDOW_CP ? MAIA_VARIETY_WEIGHTS[i]! : 0,
   );

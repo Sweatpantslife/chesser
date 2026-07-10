@@ -159,13 +159,18 @@ export class BotService {
         const first = info.pv[0];
         if (!first) return;
         if (info.depth > maxDepth) maxDepth = info.depth;
+        // A movetime cutoff can leave a fail-high/low bound as the last line;
+        // prefer the previous exact score so the sampler grades on real evals.
+        if (info.bound && candidates.has(info.multipv)) return;
         candidates.set(info.multipv, { uci: first, cp: comparableCp(info), score: toWhiteScore(info, white) });
       },
     });
 
     const list = [...candidates.values()];
     if (list.length === 0) throw new Error('Bot found no move');
-    const annotated = annotateRepeats(req.fen, list, req.recentFens ?? []);
+    // Clients cap what they send at 24; clamp server-side so a hostile client
+    // can't make every bot move iterate a multi-megabyte array.
+    const annotated = annotateRepeats(req.fen, list, (req.recentFens ?? []).slice(-32));
     const pick = pickHumanMove(annotated, { rating, ply: plyOfFen(req.fen) });
     const chosen = list[pick.index]!;
 

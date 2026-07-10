@@ -28,11 +28,14 @@ const SPREAD: HumanCandidate[] = [
   { uci: 'f1f2', cp: -580 }, // -600
 ];
 
-function sample(candidates: HumanCandidate[], rating: number, ply: number, n = 4000) {
+function samplePicks(candidates: HumanCandidate[], rating: number, ply: number, n = 4000) {
   const rng = mulberry32(rating * 7919 + ply + 1);
-  const picks: number[] = [];
-  for (let i = 0; i < n; i++) picks.push(pickHumanMove(candidates, { rating, ply, rng }).index);
+  const picks = [];
+  for (let i = 0; i < n; i++) picks.push(pickHumanMove(candidates, { rating, ply, rng }));
   return picks;
+}
+function sample(candidates: HumanCandidate[], rating: number, ply: number, n = 4000) {
+  return samplePicks(candidates, rating, ply, n).map((p) => p.index);
 }
 const rate = (picks: number[], pred: (i: number) => boolean) => picks.filter(pred).length / picks.length;
 
@@ -88,6 +91,36 @@ test('errors are graded, not engine-perfect-then-random', () => {
   assert.ok(small > large * 2, 'small errors dominate large ones');
 });
 
+test('lapse tier is pinned: rate tracks blunderChanceFor, errors are graded, tail mass exceeds pure softmax', () => {
+  const ply = 30;
+  const low = samplePicks(SPREAD, 600, ply, 20000);
+
+  // (a) The viaLapse rate matches the configured chance per band.
+  const lapseRate = low.filter((p) => p.viaLapse).length / low.length;
+  assert.ok(lapseRate > 0.1 && lapseRate < 0.17, `600 lapse rate tracks ~13% (got ${lapseRate})`);
+  const high = samplePicks(SPREAD, 1900, ply, 8000);
+  const highRate = high.filter((p) => p.viaLapse).length / high.length;
+  assert.ok(highRate > 0 && highRate < 0.02, `1900 lapses are rare but present (got ${highRate})`);
+
+  // (b) Lapse errors are graded: small slips outnumber near-cap throws.
+  const lapses = low.filter((p) => p.viaLapse);
+  const smallLapses = lapses.filter((p) => p.lossCp <= 100).length;
+  const bigLapses = lapses.filter((p) => p.lossCp >= 300).length;
+  assert.ok(bigLapses > 0, 'near-cap lapses occur');
+  assert.ok(smallLapses > bigLapses, 'small lapses outnumber near-cap ones');
+
+  // (c) Differential: the tier adds ≥300cp tail mass beyond what the pure
+  //     softmax predicts — disabling the tier fails this even if viaLapse lies.
+  const t = temperatureFor(600);
+  const w = SPREAD.map((c) => Math.exp(-(20 - c.cp) / t));
+  const softmaxTail = (w[4]! + w[5]!) / w.reduce((a, b) => a + b, 0);
+  const observedTail = low.filter((p) => p.lossCp >= 300).length / low.length;
+  assert.ok(
+    observedTail > softmaxTail + 0.01,
+    `lapse tier must add blunder mass beyond softmax (softmax ${softmaxTail.toFixed(3)}, observed ${observedTail.toFixed(3)})`,
+  );
+});
+
 test('a won position is never thrown into a loss at club level and above', () => {
   const winning: HumanCandidate[] = [
     { uci: 'a1a2', cp: 620 }, // clearly winning
@@ -113,6 +146,25 @@ test('mate-losing moves are never played above ~1200 when a safe move exists', (
   // The only move being mate-losing must still return a move.
   const only = pickHumanMove([{ uci: 'a1a2', cp: -99900 }], { rating: 1500, ply: 40, rng: mulberry32(1) });
   assert.equal(only.uci, 'a1a2');
+});
+
+test('forced mates: a crushing alternative is a human choice, and the rails have no cliff at 1000', () => {
+  const cands: HumanCandidate[] = [
+    { uci: 'a1a2', cp: 99800 }, // mate in 2
+    { uci: 'b1b2', cp: 1600 }, // completely winning queen-grab
+    { uci: 'c1c2', cp: 500 }, // merely winning
+    { uci: 'd1d2', cp: -400 }, // actually bad
+  ];
+  // Even strong bots may take the crushing move instead of the fastest mate —
+  // humans convert material; only engines insist on the mating line…
+  const strong = sample(cands, 1800, 40, 6000);
+  assert.ok(rate(strong, (i) => i === 1) > 0.1, 'crushing alternative stays playable at 1800');
+  // …but clearly inferior moves are still railed off.
+  assert.equal(rate(strong, (i) => i >= 2), 0, 'worse moves stay excluded at 1800');
+  // The rails phase in across 900-1100 instead of switching at exactly 1000.
+  const missRate = (r: number) => rate(sample(cands, r, 40, 6000), (i) => i !== 0);
+  assert.ok(missRate(950) > 0, 'sub-1000 can still miss the mate');
+  assert.ok(missRate(1001) > 0, 'no engine-perfect cliff just above 1000');
 });
 
 test('opening variety: near-equal moves all get played; fades by the middlegame', () => {
@@ -167,8 +219,10 @@ test('searchPlanFor: shallow fixed depth below 1320, movetime above; MultiPV 6-8
   assert.equal(high.go, 'go movetime 600');
   for (const r of [500, 900, 1300, 1700, 2100]) {
     const { multiPv } = searchPlanFor(r);
-    assert.ok(multiPv >= 6 && multiPv <= 8, `MultiPV in range at ${r}`);
+    assert.ok(multiPv >= 6 && multiPv <= 12, `MultiPV in range at ${r}`);
   }
+  // Sub-1000 pools are widened so genuinely losing moves are reachable.
+  assert.ok(searchPlanFor(800).multiPv > searchPlanFor(1200).multiPv);
   // Depth grows with rating within the beginner band.
   const d = (r: number) => Number(searchPlanFor(r).go.split(' ')[2]);
   assert.ok(d(500) < d(900) && d(900) < d(1319));
