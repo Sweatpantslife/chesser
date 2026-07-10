@@ -188,6 +188,9 @@ export default function App() {
   // Set when the Today page's "Daily puzzle" entry is used, so the Tactics
   // page opens straight onto today's puzzle (cleared on any manual nav).
   const [tacticsDaily, setTacticsDaily] = useState(false);
+  // Set by the Today page's sprint entries (Puzzle Rush / Storm), so the
+  // Tactics page opens straight on that mode (cleared on any manual nav).
+  const [tacticsMode, setTacticsMode] = useState<'rush' | 'storm' | null>(null);
 
   useEffect(() => {
     const onHash = () => {
@@ -228,6 +231,7 @@ export default function App() {
   // All navigation funnels through here so one-shot flags don't go stale.
   const nav = (v: View) => {
     setTacticsDaily(false);
+    setTacticsMode(null);
     // Leaving a shared profile: drop its hash so the URL matches the new view.
     if (v !== 'shared-profile' && window.location.hash.startsWith('#/profile/')) {
       window.history.replaceState(null, '', window.location.pathname + window.location.search);
@@ -261,6 +265,10 @@ export default function App() {
               setTacticsDaily(true);
               setView('tactics');
             }}
+            onSprint={(m) => {
+              setTacticsMode(m);
+              setView('tactics');
+            }}
           />
         )}
         {view === 'play' && <PlayPage />}
@@ -270,7 +278,9 @@ export default function App() {
           <HumansPage />
         </div>
         {view === 'openings' && <OpeningsPage />}
-        {view === 'tactics' && <TacticsPage openDaily={tacticsDaily} onDailyOpened={() => setTacticsDaily(false)} />}
+        {view === 'tactics' && (
+          <TacticsPage openDaily={tacticsDaily} onDailyOpened={() => setTacticsDaily(false)} openMode={tacticsMode} />
+        )}
         {view === 'endgame' && <EndgamePage />}
         {view === 'train' && <TrainPage tab={trainTab} setTab={setTrainTab} />}
         {view === 'coach' && <CoachPage goPlay={() => setView('play')} />}

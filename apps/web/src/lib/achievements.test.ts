@@ -19,6 +19,7 @@ function baseCtx(over: Partial<AchievementCtx> = {}): AchievementCtx {
     botsBeaten: 0,
     topBotBeatenRating: 0,
     rushBest: 0,
+    stormBest: 0,
     reviews: 0,
     activeDays: 0,
     lessonsCompleted: 0,
@@ -81,6 +82,17 @@ describe('achievement catalogue (pure evaluation)', () => {
     expect(partial.has('coach-train-1')).toBe(true);
     expect(partial.has('coach-train-50')).toBe(false);
     expect(partial.has('coach-clear-1')).toBe(false);
+  });
+
+  it('storm badges read the best storm score, independent of rushBest', () => {
+    const earned = new Set(evaluateAchievements(baseCtx({ stormBest: 200 })));
+    expect(earned.has('storm-storm-100')).toBe(true);
+    expect(earned.has('storm-storm-200')).toBe(true);
+    expect(earned.has('storm-storm-350')).toBe(false);
+    expect(earned.has('rush-rush-15')).toBe(false); // storm points never unlock rush badges
+
+    const rushOnly = new Set(evaluateAchievements(baseCtx({ rushBest: 50 })));
+    expect(rushOnly.has('storm-storm-100')).toBe(false); // and vice versa
   });
 
   it('achievementProgress clamps at 100% and reports done', () => {

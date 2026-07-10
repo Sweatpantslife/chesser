@@ -9,7 +9,7 @@
 import type { RatingCategory } from '../store/ratings';
 import { ALL_LESSONS } from '../learn';
 
-export type AchievementCategory = 'learn' | 'tactics' | 'play' | 'ladder' | 'streak' | 'rating' | 'rush' | 'dedication' | 'quests' | 'coach';
+export type AchievementCategory = 'learn' | 'tactics' | 'play' | 'ladder' | 'streak' | 'rating' | 'rush' | 'storm' | 'dedication' | 'quests' | 'coach';
 
 export interface AchievementCtx {
   level: number;
@@ -25,6 +25,7 @@ export interface AchievementCtx {
   botsBeaten: number; // distinct ladder bots defeated
   topBotBeatenRating: number; // strongest ladder bot defeated
   rushBest: number;
+  stormBest: number; // best Puzzle Storm score (combo-multiplied points)
   reviews: number; // total SRS reviews across decks
   activeDays: number;
   lessonsCompleted: number; // distinct lessons finished on the Learn tab
@@ -256,6 +257,18 @@ export const ACHIEVEMENTS: Achievement[] = [
       { suffix: 'rush-50', name: 'Blitz Brain', target: 50, xp: 200 },
     ],
   ),
+  // — Puzzle storm — (targets are combo-multiplied points, so they run higher
+  //   than the rush solve counts; the top tier sits just under the server's
+  //   plausibility ceiling for a synced storm best — see the account
+  //   progress-validator's stormScoreCap)
+  ...tiers(
+    { category: 'storm', icon: '🌩️', desc: 'Score points in Puzzle Storm.', value: (c) => c.stormBest },
+    [
+      { suffix: 'storm-100', name: 'Storm Rider', target: 100, xp: 40 },
+      { suffix: 'storm-200', name: 'Eye of the Storm', target: 200, xp: 100 },
+      { suffix: 'storm-350', name: 'Force of Nature', target: 350, xp: 200 },
+    ],
+  ),
   // — Dedication —
   ...tiers(
     { category: 'dedication', icon: '📅', desc: 'Train on different days.', value: (c) => c.activeDays },
@@ -277,6 +290,7 @@ export const ACHIEVEMENT_CATEGORY_LABELS: Record<AchievementCategory, string> = 
   streak: 'Streaks',
   rating: 'Ratings',
   rush: 'Puzzle Rush',
+  storm: 'Puzzle Storm',
   dedication: 'Dedication',
   quests: 'Daily Quests',
   coach: 'The Coach',

@@ -17,10 +17,11 @@ export type Activity =
   | { type: 'review'; correct: boolean }
   | { type: 'game'; outcome: GameOutcome }
   | { type: 'lesson'; firstTime: boolean }
-  | { type: 'rush'; score: number };
+  | { type: 'rush'; score: number }
+  | { type: 'storm'; solved: number; score: number };
 
 /** Rotation buckets — a day's slate never has two quests from one group. */
-export type QuestGroup = 'puzzle' | 'game' | 'lesson' | 'review' | 'rush';
+export type QuestGroup = 'puzzle' | 'game' | 'lesson' | 'review' | 'rush' | 'storm';
 
 export interface QuestDef {
   id: string;
@@ -61,6 +62,9 @@ export const QUEST_CATALOGUE: QuestDef[] = [
   // — Puzzle rush —
   { id: 'quest-rush-run', group: 'rush', name: 'Beat the Clock', desc: 'Finish a Puzzle Rush round.', icon: '⏱️', target: 1, xp: 15, mode: 'sum', measure: (a) => (a.type === 'rush' ? 1 : 0) },
   { id: 'quest-rush-10', group: 'rush', name: 'Rush to Ten', desc: 'Score 10+ in a single Puzzle Rush round.', icon: '🏃', target: 10, xp: 25, mode: 'max', measure: (a) => (a.type === 'rush' ? a.score : 0) },
+  // — Puzzle storm —
+  { id: 'quest-storm-run', group: 'storm', name: 'Weather the Storm', desc: 'Finish a Puzzle Storm run.', icon: '🌩️', target: 1, xp: 15, mode: 'sum', measure: (a) => (a.type === 'storm' ? 1 : 0) },
+  { id: 'quest-storm-100', group: 'storm', name: 'Thunderstruck', desc: 'Score 100+ points in a single Puzzle Storm run.', icon: '⚡', target: 100, xp: 25, mode: 'max', measure: (a) => (a.type === 'storm' ? a.score : 0) },
 ];
 
 export const QUESTS_BY_ID: Record<string, QuestDef> = Object.fromEntries(QUEST_CATALOGUE.map((q) => [q.id, q]));

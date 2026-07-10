@@ -4,79 +4,70 @@ import { Board } from '../board/Board';
 import { type Puzzle } from '../trainers/tactics';
 import { checkKeyMove, ensureBandsFor, getLoadedPuzzles } from '../lib/puzzleService';
 import {
-  RUSH_DURATION_MS,
-  RUSH_MAX_STRIKES,
+  STORM_DURATION_MS,
   formatClock,
-  initialRush,
+  initialStorm,
   mulberry32,
   pickSprintPuzzle,
-  rushEnd,
-  rushMiss,
-  rushSolve,
-  rushTargetRating,
-  type RushState,
-  type RushVariant,
+  stormEnd,
+  stormMiss,
+  stormMultiplier,
+  stormSolve,
+  type StormState,
 } from '../lib/sprint';
 import { useSprints } from '../store/sprints';
-import { useRepertoire } from '../store/repertoire';
+import { useRatings } from '../store/ratings';
 import { now } from '../lib/clock';
 import { playMoveSound, playSound } from '../lib/sound';
-import { recordRush } from '../lib/gamify';
+import { recordStorm } from '../lib/gamify';
 import { fireConfetti } from '../components/Celebration';
 import { useTimeoutRef } from '../lib/useTimeoutRef';
 import type { Color } from '../store/game';
 
 /**
- * PUZZLE RUSH — solve as many puzzles as you can while the difficulty ramps
- * up; three wrong moves and the run is over. Two variants: a 3-minute timed
- * sprint and survival (no clock, strikes only).
+ * PUZZLE STORM — a fixed 3-minute window where the difficulty chases your
+ * pace: fast, accurate solving pushes the puzzles harder, misses ease them
+ * off. Consecutive solves build a combo that multiplies each solve's points
+ * (×1 → ×1.5 → ×2 → ×3); a miss resets the combo but costs nothing else.
  *
- * All run logic (lives, streaks, ramp, selection) lives in lib/sprint.ts —
- * pure and seeded. This component only owns the seed (rolled at start), the
- * clock ticks (lib/clock `now()`), and the board.
+ * All scoring/combo/adaptive rules live in lib/sprint.ts (pure, seeded);
+ * this component owns the seed, the clock and the board.
  */
 
 type Phase = 'idle' | 'running' | 'over';
 
-const VARIANTS: { id: RushVariant; label: string; blurb: string }[] = [
-  { id: 'timed3', label: '3 minutes', blurb: 'Race the clock — 3 strikes still end the run.' },
-  { id: 'survival', label: 'Survival', blurb: 'No clock. Climb until three strikes end you.' },
-];
-
-export function RushMode() {
+export function StormMode() {
   const game = useRef(new Chess());
   const busy = useRef(false);
   const rng = useRef<() => number>(() => 0);
   const usedIds = useRef(new Set<string>());
   const endAt = useRef<number | null>(null);
+  const shownAt = useRef(0);
   const finished = useRef(false);
   const advanceTimer = useTimeoutRef();
 
-  const [variant, setVariant] = useState<RushVariant>('timed3');
   const [phase, setPhase] = useState<Phase>('idle');
-  const [run, _setRun] = useState<RushState>(initialRush());
-  // The live run state is mirrored in a ref so the interval tick and event
-  // handlers always see the current value without stale-closure hazards.
+  const [run, _setRun] = useState<StormState>(initialStorm(1200));
   const runRef = useRef(run);
-  const setRun = (next: RushState) => {
+  const setRun = (next: StormState) => {
     runRef.current = next;
     _setRun(next);
   };
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
-  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [timeLeft, setTimeLeft] = useState(STORM_DURATION_MS);
   const [fen, setFen] = useState(game.current.fen());
   const [lastMove, setLastMove] = useState<[string, string] | undefined>();
   const [flash, setFlash] = useState<'ok' | 'bad' | null>(null);
+  const [lastPoints, setLastPoints] = useState<number | null>(null);
   const [isRecord, setIsRecord] = useState(false);
 
-  const best = useSprints((s) => s.puzzleRushBest[variant]);
-  const recordRushRun = useSprints((s) => s.recordRushRun);
-  const setLegacyHighScore = useRepertoire((s) => s.setRushHighScore);
+  const best = useSprints((s) => s.puzzleStormBest);
+  const recordStormRun = useSprints((s) => s.recordStormRun);
+  const playerRating = useRatings((s) => Math.round(s.categories.puzzles.glicko.rating));
 
-  const loadNext = (state: RushState) => {
-    const target = rushTargetRating(state.solved);
-    void ensureBandsFor(target); // enrich the pool for upcoming picks
-    const p = pickSprintPuzzle(getLoadedPuzzles(), target, usedIds.current, rng.current);
+  const loadNext = (state: StormState) => {
+    void ensureBandsFor(state.target); // enrich the pool as difficulty adapts
+    const p = pickSprintPuzzle(getLoadedPuzzles(), state.target, usedIds.current, rng.current);
     if (!p) return;
     usedIds.current.add(p.id);
     game.current = new Chess(p.fen);
@@ -84,21 +75,21 @@ export function RushMode() {
     setFen(game.current.fen());
     setLastMove(undefined);
     setFlash(null);
+    shownAt.current = now();
     busy.current = false;
   };
 
-  const finish = (state: RushState) => {
+  const finish = (state: StormState) => {
     if (finished.current) return;
     finished.current = true;
     if (advanceTimer.current) clearTimeout(advanceTimer.current);
     endAt.current = null;
     setRun(state);
     setPhase('over');
-    setLegacyHighScore(state.solved); // keeps the legacy rush badges/stat alive
-    const record = recordRushRun(variant, state.solved, state.bestStreak);
-    recordRush(state.solved); // XP + daily quests + achievements
+    const record = recordStormRun(state.score, state.bestCombo);
+    recordStorm({ solved: state.solved, score: state.score }); // XP + storm quests/badges
     setIsRecord(record);
-    if (record && state.solved > 0) {
+    if (record && state.score > 0) {
       playSound('achievement');
       fireConfetti(120);
     }
@@ -110,24 +101,24 @@ export function RushMode() {
     rng.current = mulberry32(Date.now() >>> 0);
     usedIds.current = new Set();
     finished.current = false;
-    const duration = RUSH_DURATION_MS[variant];
-    endAt.current = duration === null ? null : now() + duration;
-    setTimeLeft(duration);
+    endAt.current = now() + STORM_DURATION_MS;
+    setTimeLeft(STORM_DURATION_MS);
     setIsRecord(false);
-    const fresh = initialRush();
+    setLastPoints(null);
+    const fresh = initialStorm(playerRating);
     setRun(fresh);
     setPhase('running');
     loadNext(fresh);
   };
 
-  // Countdown driven by the injectable clock (timed variant only).
+  // Countdown driven by the injectable clock.
   useEffect(() => {
-    if (phase !== 'running' || endAt.current === null) return;
+    if (phase !== 'running') return;
     const tick = () => {
       if (endAt.current === null) return;
       const left = endAt.current - now();
       setTimeLeft(left);
-      if (left <= 0) finish(rushEnd(runRef.current, 'time'));
+      if (left <= 0) finish(stormEnd(runRef.current, 'time'));
     };
     const t = setInterval(tick, 200);
     return () => clearInterval(t);
@@ -163,29 +154,32 @@ export function RushMode() {
       setFen(game.current.fen());
       setLastMove(last ? [last.from, last.to] : undefined);
       setFlash('ok');
-      const next = rushSolve(runRef.current);
-      setRun(next);
-      // Sound escalation: every 5-streak plays the flame-catch whoosh.
-      if (next.streak > 0 && next.streak % 5 === 0) playSound('streak');
-      advanceTimer.current = setTimeout(() => loadNext(next), 300);
+      const prevMult = stormMultiplier(runRef.current.combo);
+      const res = stormSolve(runRef.current, now() - shownAt.current);
+      setRun(res.state);
+      setLastPoints(res.points);
+      // Sound escalation: pip on every solve, flame-whoosh when a combo tier unlocks.
+      if (res.multiplier > prevMult) playSound('streak');
+      else playSound('xpGain');
+      advanceTimer.current = setTimeout(() => loadNext(res.state), 300);
     } else {
       playSound('wrongMove');
       setFlash('bad');
-      const next = rushMiss(runRef.current);
+      setLastPoints(null);
+      const next = stormMiss(runRef.current);
       setRun(next);
-      advanceTimer.current = setTimeout(() => {
-        if (next.over) finish(next);
-        else loadNext(next);
-      }, 450);
+      advanceTimer.current = setTimeout(() => loadNext(next), 450);
     }
   };
 
   const giveUp = () => {
-    finish(rushEnd(runRef.current, 'quit'));
+    finish(stormEnd(runRef.current, 'quit'));
   };
 
   const orientation: Color = puzzle?.turn ?? 'white';
-  const lowTime = timeLeft !== null && timeLeft <= 30_000;
+  const lowTime = timeLeft <= 30_000;
+  const multiplier = stormMultiplier(run.combo);
+  const accuracy = run.solved + run.missed > 0 ? Math.round((run.solved / (run.solved + run.missed)) * 100) : 0;
 
   return (
     <div className="mx-auto grid w-full max-w-[900px] grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_230px]">
@@ -194,8 +188,12 @@ export function RushMode() {
           {phase === 'running' && puzzle && (
             <>
               <span className="text-neutral-400">{puzzle.turn === 'white' ? 'White' : 'Black'} to move — find the win</span>
-              {flash === 'ok' && <span className="text-emerald-400">✓{run.streak >= 2 ? ` ${run.streak} in a row!` : ''}</span>}
-              {flash === 'bad' && <span className="text-rose-400">✗ strike!</span>}
+              {flash === 'ok' && lastPoints !== null && (
+                <span className="font-semibold text-emerald-400" data-testid="storm-points-flash">
+                  +{lastPoints}
+                </span>
+              )}
+              {flash === 'bad' && <span className="text-rose-400">✗ combo lost</span>}
             </>
           )}
         </div>
@@ -219,69 +217,50 @@ export function RushMode() {
       </div>
 
       <div className="space-y-3">
-        <div className="rounded-2xl bg-panel p-4 text-center shadow-soft" data-testid="rush-hud">
-          {RUSH_DURATION_MS[variant] !== null ? (
-            <>
-              <div className="text-xs uppercase tracking-wide text-neutral-400">Time</div>
-              <div className={`font-mono text-3xl ${lowTime && phase === 'running' ? 'animate-pulse-soft text-rose-400' : 'text-ink'}`}>
-                {formatClock(timeLeft ?? RUSH_DURATION_MS[variant]!)}
-              </div>
-            </>
-          ) : (
-            <div className="text-xs uppercase tracking-wide text-neutral-400">Survival</div>
-          )}
+        <div className="rounded-2xl bg-panel p-4 text-center shadow-soft" data-testid="storm-hud">
+          <div className="text-xs uppercase tracking-wide text-neutral-400">Time</div>
+          <div className={`font-mono text-3xl ${lowTime && phase === 'running' ? 'animate-pulse-soft text-rose-400' : 'text-ink'}`}>
+            {formatClock(timeLeft)}
+          </div>
           <div className="mt-3 flex items-center justify-center gap-6">
             <div>
               <div className="text-xs uppercase tracking-wide text-neutral-400">Score</div>
-              <div className="text-2xl font-bold text-emerald-400" data-testid="rush-score">
-                {run.solved}
+              <div className="text-2xl font-bold text-emerald-400" data-testid="storm-score">
+                {run.score}
               </div>
             </div>
             <div>
-              <div className="text-xs uppercase tracking-wide text-neutral-400">Strikes</div>
-              <div className="text-2xl" data-testid="rush-strikes">
-                {Array.from({ length: RUSH_MAX_STRIKES }).map((_, i) => (
-                  <span key={i} className={i < run.strikes ? 'text-rose-500' : 'text-neutral-700'}>
-                    ✕
-                  </span>
-                ))}
+              <div className="text-xs uppercase tracking-wide text-neutral-400">Combo</div>
+              <div
+                className={`text-2xl font-bold ${multiplier > 1 ? 'animate-pulse-soft text-gold-400' : 'text-neutral-500'}`}
+                data-testid="storm-combo"
+              >
+                {run.combo > 0 ? `${run.combo}×` : '—'}
               </div>
             </div>
           </div>
-          {run.streak >= 2 && phase === 'running' && (
-            <div className="mt-2 text-xs font-semibold text-gold-400" data-testid="rush-streak">
-              🔥 {run.streak} streak
+          {multiplier > 1 && phase === 'running' && (
+            <div className="mt-1 text-xs font-semibold text-gold-400" data-testid="storm-multiplier">
+              ⚡ ×{multiplier} points
             </div>
           )}
-          <div className="mt-3 text-xs text-neutral-400" data-testid="rush-best">
-            Best ({variant === 'timed3' ? '3 min' : 'survival'}): {best.score}
+          <div className="mt-3 text-xs text-neutral-400" data-testid="storm-best">
+            Best: {best.score}
           </div>
         </div>
 
         {phase === 'idle' && (
           <div className="rounded-2xl bg-panel p-4 text-sm text-neutral-300 shadow-soft">
-            <div className="mb-2 flex gap-1">
-              {VARIANTS.map((v) => (
-                <button
-                  key={v.id}
-                  onClick={() => setVariant(v.id)}
-                  className={`flex-1 rounded px-2 py-1 text-xs font-semibold ${
-                    variant === v.id ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
-                  }`}
-                >
-                  {v.label}
-                </button>
-              ))}
-            </div>
             <p className="mb-3">
-              Solve as many as you can — difficulty ramps up as you go. {VARIANTS.find((v) => v.id === variant)!.blurb}
+              3 minutes of puzzles that adapt to your pace — solve fast to push the difficulty and build a combo that multiplies
+              your points. A miss breaks the combo but costs nothing else.
             </p>
             <button
               onClick={start}
               className="w-full rounded bg-emerald-700 py-2 font-semibold text-white hover:bg-emerald-800"
-              data-testid="rush-start"
+              data-testid="storm-start"
             >
-              Start rush
+              Start storm
             </button>
           </div>
         )}
@@ -296,30 +275,33 @@ export function RushMode() {
         )}
 
         {phase === 'over' && (
-          <div className="rounded-2xl bg-panel p-4 text-center shadow-soft" data-testid="rush-summary">
-            <div className="text-sm text-neutral-400">
-              {run.endReason === 'strikes' ? 'Struck out!' : run.endReason === 'time' ? "Time's up!" : 'Run over'}
-            </div>
-            <div className="my-1 text-4xl font-bold text-emerald-400">{run.solved}</div>
-            {isRecord && run.solved > 0 && (
-              <div className="mb-2 text-xs font-semibold text-gold-400" data-testid="rush-record">
+          <div className="rounded-2xl bg-panel p-4 text-center shadow-soft" data-testid="storm-summary">
+            <div className="text-sm text-neutral-400">{run.endReason === 'time' ? "Time's up!" : 'Run over'}</div>
+            <div className="my-1 text-4xl font-bold text-emerald-400">{run.score}</div>
+            {isRecord && run.score > 0 && (
+              <div className="mb-2 text-xs font-semibold text-gold-400" data-testid="storm-record">
                 🏆 New best!
               </div>
             )}
-            <div className="mt-1 grid grid-cols-2 gap-2 text-xs text-neutral-300">
-              <div className="rounded bg-panelmute px-2 py-1.5">
-                <div className="text-neutral-400">Missed</div>
-                <div className="text-sm font-semibold text-rose-300">{run.strikes}</div>
+            <div className="mt-1 grid grid-cols-3 gap-2 text-xs text-neutral-300">
+              <div className="rounded bg-panelmute px-1.5 py-1.5">
+                <div className="text-neutral-400">Solved</div>
+                <div className="text-sm font-semibold text-emerald-300">{run.solved}</div>
               </div>
-              <div className="rounded bg-panelmute px-2 py-1.5">
-                <div className="text-neutral-400">Best streak</div>
-                <div className="text-sm font-semibold text-gold-400">{run.bestStreak}</div>
+              <div className="rounded bg-panelmute px-1.5 py-1.5">
+                <div className="text-neutral-400">Missed</div>
+                <div className="text-sm font-semibold text-rose-300">{run.missed}</div>
+              </div>
+              <div className="rounded bg-panelmute px-1.5 py-1.5">
+                <div className="text-neutral-400">Combo</div>
+                <div className="text-sm font-semibold text-gold-400">{run.bestCombo}</div>
               </div>
             </div>
+            <div className="mt-2 text-xs text-neutral-400">{accuracy}% accuracy</div>
             <button
               onClick={start}
               className="mt-3 w-full rounded bg-emerald-700 py-2 font-semibold text-white hover:bg-emerald-800"
-              data-testid="rush-again"
+              data-testid="storm-again"
             >
               Play again
             </button>

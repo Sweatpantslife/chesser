@@ -1,11 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 import { setClock } from './clock';
-import { awardXP, onGamifyEvent, recordPuzzle, type GamifyEvent } from './gamify';
+import { awardXP, onGamifyEvent, recordPuzzle, recordRush, type GamifyEvent } from './gamify';
 import { useGamify, xpToReachLevel } from '../store/gamify';
 import { useStreak } from '../store/streak';
 import { useRatings } from '../store/ratings';
 import { useAchievements } from '../store/achievements';
 import { useQuests } from '../store/quests';
+import { useRepertoire } from '../store/repertoire';
+import { useSprints } from '../store/sprints';
 
 const T0 = Date.UTC(2026, 6, 1, 12); // 2026-07-01 noon UTC
 
@@ -91,5 +93,19 @@ describe('gamify public API hardening', () => {
   it('a first solved puzzle at a provisional rating does not unlock the 1600 rating badge', () => {
     recordPuzzle(2120, true); // the hard daily puzzle, day one
     expect(useAchievements.getState().unlocked['rating-puzzles-1600']).toBeUndefined();
+  });
+
+  it('a new rush best unlocks its badge within the same recordRush call (RushMode finish order: stores first)', () => {
+    useRepertoire.setState({ rushHighScore: 0 });
+    useSprints.getState().reset();
+    // Mirror RushMode.finish() / StormMode.finish(): the high-score stores are
+    // updated BEFORE the gamify wrapper runs, so the achievement re-check
+    // inside recordRush already sees the fresh personal best.
+    useRepertoire.getState().setRushHighScore(15);
+    useSprints.getState().recordRushRun('timed3', 15, 8);
+    recordRush(15);
+    expect(useAchievements.getState().unlocked['rush-rush-15']).toBeDefined();
+    const unlockEvents = events.filter((e) => e.kind === 'achievement-unlocked').map((e) => (e.kind === 'achievement-unlocked' ? e.id : ''));
+    expect(unlockEvents).toContain('rush-rush-15');
   });
 });

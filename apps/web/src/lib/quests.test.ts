@@ -85,4 +85,13 @@ describe('questValueAfter', () => {
     v = questValueAfter(q, v, rush(7)); // worse run doesn't regress
     expect(v).toBe(12);
   });
+
+  it('rush and storm quests ignore each other’s runs', () => {
+    const storm: Activity = { type: 'storm', solved: 20, score: 300 };
+    const rushQ = QUEST_CATALOGUE.find((x) => x.id === 'quest-rush-10')!;
+    const stormQ = QUEST_CATALOGUE.find((x) => x.id === 'quest-storm-100')!;
+    expect(questValueAfter(rushQ, 0, storm)).toBe(0); // storm never feeds rush
+    expect(questValueAfter(stormQ, 0, rush(30))).toBe(0); // and vice versa
+    expect(questValueAfter(stormQ, 0, storm)).toBe(300); // storm quests read the storm score
+  });
 });

@@ -35,6 +35,7 @@ import { useStreak } from '../store/streak';
 import { useProgress } from '../store/progress';
 import { useRepertoire } from '../store/repertoire';
 import { useLadder } from '../store/ladder';
+import { useSprints } from '../store/sprints';
 import { useLessons } from '../store/lessons';
 import { useQuests } from '../store/quests';
 import { useCoach, type TrainingAttempt } from '../store/coach';
@@ -62,6 +63,9 @@ export const XP_AWARDS = {
   rushBase: 5, // + 2 per puzzle solved, capped at 80 total
   rushPerSolve: 2,
   rushCap: 80,
+  stormBase: 5, // + 2 per puzzle solved, capped at 80 total (mirrors rush)
+  stormPerSolve: 2,
+  stormCap: 80,
   // Coach "Train this weakness" flow (extras ON TOP of the base puzzle XP,
   // which flows through recordPuzzle like any other rated attempt):
   coachSolveBonus: 4, // solving a weakness-targeted drill
@@ -105,6 +109,7 @@ export type XpSource =
   | 'game'
   | 'lesson'
   | 'rush'
+  | 'storm'
   | 'achievement'
   | 'streak-milestone'
   | 'coach'
@@ -308,6 +313,7 @@ export function buildAchievementCtx(): AchievementCtx {
     botsBeaten: ladder.clearedCount(),
     topBotBeatenRating,
     rushBest: useRepertoire.getState().rushHighScore,
+    stormBest: useSprints.getState().puzzleStormBest.score,
     reviews,
     activeDays: activeDays.size,
     lessonsCompleted: Object.keys(useLessons.getState().completed).length,
@@ -386,10 +392,25 @@ export function recordLesson(opts: { firstTime: boolean; stars: number }): void 
   runAchievements();
 }
 
-/** A puzzle-rush run ended with `score` solved. */
+/**
+ * A puzzle-rush run ended with `score` solved. Call AFTER the run is in the
+ * high-score stores (useSprints / legacy) so the badge re-check sees the
+ * fresh best.
+ */
 export function recordRush(score: number): void {
   awardXP('rush', Math.min(XP_AWARDS.rushCap, XP_AWARDS.rushBase + score * XP_AWARDS.rushPerSolve));
   advanceQuests({ type: 'rush', score });
+  runAchievements();
+}
+
+/**
+ * A puzzle-storm run ended. XP scales with puzzles `solved` (like rush); the
+ * combo-multiplied `score` feeds the storm quests/badges. Call AFTER the run
+ * is in useSprints.puzzleStormBest so the badge re-check sees the fresh best.
+ */
+export function recordStorm(opts: { solved: number; score: number }): void {
+  awardXP('storm', Math.min(XP_AWARDS.stormCap, XP_AWARDS.stormBase + opts.solved * XP_AWARDS.stormPerSolve));
+  advanceQuests({ type: 'storm', solved: opts.solved, score: opts.score });
   runAchievements();
 }
 

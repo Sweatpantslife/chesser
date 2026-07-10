@@ -3,6 +3,7 @@ import { useStreak } from '../store/streak';
 import { useLessons } from '../store/lessons';
 import { useProgress } from '../store/progress';
 import { useRepertoire } from '../store/repertoire';
+import { useSprints } from '../store/sprints';
 import { isDue } from '../lib/srs';
 import { now } from '../lib/clock';
 import { ALL_LESSONS } from '../learn';
@@ -102,7 +103,47 @@ function ActionCard(props: { icon: string; title: string; body: string; cta: str
   );
 }
 
-export function HomePage({ go, onDailyPuzzle }: { go: (v: HomeTarget) => void; onDailyPuzzle: () => void }) {
+/** Two-CTA entry card for the timed sprint modes, showing current bests. */
+function SprintCard({ onSprint }: { onSprint: (mode: 'rush' | 'storm') => void }) {
+  const rushBest = useSprints((s) => Math.max(s.puzzleRushBest.timed3.score, s.puzzleRushBest.survival.score));
+  const stormBest = useSprints((s) => s.puzzleStormBest.score);
+  return (
+    <div className="card-lift flex items-center gap-3 rounded-2xl bg-panel p-4 shadow-soft">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-600/20 text-2xl">⚡</span>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-semibold text-ink">Puzzle sprints</div>
+        <div className="truncate text-xs text-neutral-400">
+          Race the clock, build combos.
+          {rushBest > 0 || stormBest > 0 ? ` Bests — Rush ${rushBest} · Storm ${stormBest}` : ' Set your first record.'}
+        </div>
+      </div>
+      <div className="flex shrink-0 gap-1.5">
+        <button
+          onClick={() => onSprint('rush')}
+          className="btn-press rounded-full bg-brand-600 px-3.5 py-1.5 text-sm font-bold text-white hover:bg-brand-700"
+        >
+          Rush
+        </button>
+        <button
+          onClick={() => onSprint('storm')}
+          className="btn-press rounded-full bg-brand-600 px-3.5 py-1.5 text-sm font-bold text-white hover:bg-brand-700"
+        >
+          Storm
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function HomePage({
+  go,
+  onDailyPuzzle,
+  onSprint,
+}: {
+  go: (v: HomeTarget) => void;
+  onDailyPuzzle: () => void;
+  onSprint: (mode: 'rush' | 'storm') => void;
+}) {
   const completed = useLessons((s) => s.completed);
   const nextLesson = ALL_LESSONS.find((l) => !(l.id in completed));
   // Opening lines due for spaced-repetition review today (any repertoire).
@@ -127,6 +168,7 @@ export function HomePage({ go, onDailyPuzzle }: { go: (v: HomeTarget) => void; o
             cta="Solve"
             onClick={onDailyPuzzle}
           />
+          <SprintCard onSprint={onSprint} />
           <ActionCard
             icon="📖"
             title={
