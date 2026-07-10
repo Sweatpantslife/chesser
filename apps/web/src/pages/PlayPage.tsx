@@ -18,6 +18,8 @@ import { AnalysisCoach } from '../components/AnalysisCoach';
 import { ReviewSummary } from '../components/analysis/ReviewSummary';
 import { MistakeReviewPanel, MISTAKE_CLASSES } from '../components/analysis/MistakeReviewPanel';
 import { MoveDetailPanel } from '../components/analysis/MoveDetailPanel';
+import { CoachSummaryCard } from '../components/analysis/AiCoach';
+import { buildGameSummaryFacts, buildMoveFacts } from '../lib/coachApi';
 import type { Classification } from '../lib/analytics/types';
 import { engine } from '../lib/engine';
 import { CLASSIFICATION_META } from '../lib/coach';
@@ -161,6 +163,7 @@ function ReportSection() {
   const viewPly = useGame((s) => s.viewPly);
   const currentId = useGame((s) => s.currentId);
   const reviewing = useGame((s) => s.reviewing);
+  const aiCoach = useSettings((s) => s.aiCoach);
   // Class filter for the mistake list, shared with the summary's count cells.
   const [mistakeFilter, setMistakeFilter] = useState<ReadonlySet<Classification>>(() => new Set(MISTAKE_CLASSES));
   if (mode !== 'analysis' || !report || reportGameNo !== gameNo) return null;
@@ -172,6 +175,11 @@ function ReportSection() {
 
   // The move that led to the viewed position (null on the root / a variation).
   const currentMove = report.moves.find((m) => m.nodeId === currentId) ?? null;
+
+  // AI Coach facts — engine-truth payloads built read-only from the report.
+  // Null when the toggle is off; the components then render rule-based text.
+  const moveFacts = aiCoach && currentMove ? buildMoveFacts(currentMove, report) : null;
+  const summaryFacts = aiCoach && !reviewing ? buildGameSummaryFacts(report) : null;
 
   // Play the engine PV as an explorable variation from the move's position.
   const playVariation = (sans: string[], fromPly: number) => {
@@ -254,6 +262,7 @@ function ReportSection() {
         onFilterClass={(cls) => setMistakeFilter(new Set([cls]))}
         onExportPgn={exportPgn}
       />
+      <CoachSummaryCard facts={summaryFacts} />
       <MistakeReviewPanel
         moves={report.moves}
         viewPly={viewPly}
@@ -269,6 +278,7 @@ function ReportSection() {
         onPractice={practice}
         onSelectPly={goToMainlinePly}
         maxPly={report.moves.length}
+        aiFacts={moveFacts}
       />
     </>
   );

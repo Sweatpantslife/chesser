@@ -8,18 +8,21 @@ import { engines } from './engine/manager.js';
 import { Session } from './ws.js';
 import { FriendRoomManager } from './friends/rooms.js';
 import { FriendSession } from './friends/ws.js';
-import { HOST, LOG_ENABLED, PORT, WEB_DIR } from './config.js';
+import { HOST, LOG_ENABLED, PORT, TRUST_PROXY, WEB_DIR } from './config.js';
 import { probeTablebase } from './tablebase.js';
 import { shutdownLocalTablebase } from './tablebase-local.js';
 import { probeExplorer } from './explorer.js';
 import { importGames } from './import.js';
 import { registerAccountRoutes } from './accounts/routes.js';
+import { registerCoachRoutes } from './coach/routes.js';
 import type { ExplorerDb } from '@chesser/shared';
 
+// trustProxy: opt-in via TRUST_PROXY (see config.ts) — required behind a
+// reverse proxy so per-IP rate limiting sees real client addresses.
 // bodyLimit: an explicit cap on request bodies (matches Fastify's default of
 // 1 MiB rather than relying on it) — the largest legitimate payloads are the
 // synced progress blob and saved PGNs, both far under it.
-const app = Fastify({ logger: LOG_ENABLED, bodyLimit: 1_048_576 });
+const app = Fastify({ logger: LOG_ENABLED, trustProxy: TRUST_PROXY, bodyLimit: 1_048_576 });
 await app.register(cors, { origin: true });
 
 app.get('/api/health', async () => ({ ok: true, syzygy: !!engines.availability().syzygy }));
@@ -41,6 +44,7 @@ app.get('/api/import', async (req) => {
   return importGames(site === 'chesscom' ? 'chesscom' : 'lichess', user, n);
 });
 registerAccountRoutes(app);
+registerCoachRoutes(app);
 
 // Serve the built web client (single-origin deployment). Real asset paths are
 // served as files; anything else falls through to the SPA's index.html. The
