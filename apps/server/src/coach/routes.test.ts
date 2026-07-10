@@ -290,27 +290,37 @@ test('provider failure maps to 502 and is not cached', async (t) => {
 // Reverse proxy: rate-limit keying via trustProxy
 // ---------------------------------------------------------------------------
 
-test('behind a trusted proxy (trustProxy: true) each X-Forwarded-For client gets its own bucket', async (t) => {
+test('behind one trusted hop (trustProxy: 1) buckets key on the proxy-appended IP — pre-seeded XFF entries cannot mint fresh buckets', async (t) => {
   const provider = fakeProvider();
-  const app = Fastify({ trustProxy: true });
+  // trustProxy: 1 = what config.ts produces for TRUST_PROXY=1. NEVER `true`:
+  // trusting the whole chain would resolve req.ip to the LEFTMOST (client-
+  // controlled) X-Forwarded-For entry and reopen the spoofing hole.
+  const app = Fastify({ trustProxy: 1 });
   registerCoachRoutes(app, { provider, rateCapacity: 1, rateRefillPerMinute: 1, now: () => 9_000_000 });
   await app.ready();
   t.after(() => app.close());
 
-  const viaProxy = (san: string, clientIp: string) =>
+  // A real appending proxy (nginx proxy_add_x_forwarded_for / Traefik) takes
+  // whatever XFF the client sent and appends the real client IP: a spoofing
+  // client's header arrives as "<forged>, <real-ip>".
+  const viaProxy = (san: string, xff: string) =>
     app.inject({
       method: 'POST',
       url: '/api/coach/explain',
       payload: { facts: moveFacts({ san }) },
       remoteAddress: '172.18.0.2', // the proxy's address, same for everyone
-      headers: { 'x-forwarded-for': clientIp },
+      headers: { 'x-forwarded-for': xff },
     });
 
-  // Two different clients behind the same proxy don't share a bucket…
-  assert.equal((await viaProxy('a3', '203.0.113.5')).statusCode, 200);
-  assert.equal((await viaProxy('a4', '203.0.113.9')).statusCode, 200);
-  // …but the same client is limited (capacity 1).
-  assert.equal((await viaProxy('b3', '203.0.113.5')).statusCode, 429);
+  // Same real client rotating forged leftmost entries must stay in ONE bucket…
+  assert.equal((await viaProxy('a3', '6.6.6.1, 203.0.113.5')).statusCode, 200);
+  assert.equal((await viaProxy('a4', '6.6.6.2, 203.0.113.5')).statusCode, 429);
+  assert.equal((await viaProxy('b3', '6.6.6.3, 203.0.113.5')).statusCode, 429);
+  // …while a genuinely different client (different appended IP) gets its own.
+  assert.equal((await viaProxy('b4', '6.6.6.1, 203.0.113.9')).statusCode, 200);
+  // Honest clients that sent no XFF of their own work too (single-entry header).
+  assert.equal((await viaProxy('c3', '203.0.113.44')).statusCode, 200);
+  assert.equal((await viaProxy('c4', '203.0.113.44')).statusCode, 429);
 });
 
 test('without trustProxy (the default) X-Forwarded-For is ignored, so clients cannot spoof fresh buckets', async (t) => {
