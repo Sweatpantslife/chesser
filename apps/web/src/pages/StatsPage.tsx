@@ -124,7 +124,7 @@ export function StatsPage({ goto }: { goto: (target: DeckTarget) => void }) {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-4">
         <StatCard label="Level" value={<span>⭐ {level}</span>} hint={`${xp.toLocaleString()} XP`} />
         <StatCard label="Puzzle rating" value={puzzleRating} hint={`peak ${puzzlePeak} · ${meter}`} />
-        <StatCard label="Day streak" value={<span>🔥 {streak}</span>} hint={`best ${bestStreak}`} />
+        <StatCard label="Review streak" value={<span>📚 {streak}</span>} hint={`best ${bestStreak}`} />
         <StatCard label="Day streak" value={<span>🔥 {dayStreak}</span>} hint="active days" />
         <StatCard label="Reviews" value={totals.reviews} hint={`${totals.activeDays} active days`} />
         <StatCard label="Accuracy" value={`${totals.acc}%`} hint={`${totals.correct} correct`} />

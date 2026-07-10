@@ -86,12 +86,39 @@ export type GamifyEvent =
 
 const listeners = new Set<(e: GamifyEvent) => void>();
 
+/**
+ * Subscribe to the event bus (returns unsubscribe). Listeners are isolated: a
+ * throwing listener is logged and skipped, never unwinding an award mid-flight.
+ * Do NOT call awardXP from an 'xp-awarded' handler — that recurses; a depth
+ * guard cuts the cycle and drops the event rather than blowing the stack.
+ */
 export function onGamifyEvent(fn: (e: GamifyEvent) => void): () => void {
   listeners.add(fn);
   return () => listeners.delete(fn);
 }
+
+// Legitimate nesting (milestone/achievement bonus XP) is 1–2 deep; anything
+// near this limit is a listener feeding awardXP back into the bus.
+const MAX_EMIT_DEPTH = 25;
+let emitDepth = 0;
+
 function emit(e: GamifyEvent): void {
-  for (const fn of listeners) fn(e);
+  if (emitDepth >= MAX_EMIT_DEPTH) {
+    console.error(`[gamify] '${e.kind}' event dropped — onGamifyEvent listener cycle (don't call awardXP from an 'xp-awarded' handler)`);
+    return;
+  }
+  emitDepth++;
+  try {
+    for (const fn of listeners) {
+      try {
+        fn(e);
+      } catch (err) {
+        console.error('[gamify] onGamifyEvent listener threw', err);
+      }
+    }
+  } finally {
+    emitDepth--;
+  }
 }
 
 /**
@@ -101,8 +128,19 @@ function emit(e: GamifyEvent): void {
  *
  * `countsAsActivity: false` marks passive grants (achievement/milestone bonus
  * XP) that shouldn't tick the streak or the daily activity counter.
+ *
+ * Invalid amounts (NaN/Infinity/negative) are rejected as a no-op — a single
+ * NaN would corrupt the persisted XP total and propagate through sync.
+ * Note: bare awardXP does not advance daily quests (use the record* wrappers),
+ * but level-gated badges are re-checked whenever a grant levels you up.
  */
 export function awardXP(source: XpSource, amount: number, opts: { countsAsActivity?: boolean } = {}): AwardResult {
+  if (!Number.isFinite(amount) || amount < 0) {
+    console.error(`[gamify] awardXP ignored invalid amount ${amount} (source '${source}')`);
+    const s = useGamify.getState();
+    const level = levelFromXp(s.xp);
+    return { xpGained: 0, totalXp: s.xp, prevLevel: level, level, leveledUp: false, goalJustMet: false, streak: s.streak };
+  }
   const countsAsActivity = opts.countsAsActivity ?? true;
   const res = useGamify.getState().award(amount, countsAsActivity);
   emit({ kind: 'xp-awarded', source, amount, totalXp: res.totalXp, level: res.level });
@@ -125,6 +163,10 @@ export function awardXP(source: XpSource, amount: number, opts: { countsAsActivi
     playSound('streak');
     emit({ kind: 'goal', streak: useStreak.getState().current() });
   }
+  // Level-gated badges ('dedication-level-*') must land with the level-up toast
+  // even when the XP came from a bare awardXP (e.g. the coach) rather than a
+  // record* wrapper. Safe to nest: unlock() dedups, so recursion converges.
+  if (res.leveledUp) runAchievements();
   return res;
 }
 

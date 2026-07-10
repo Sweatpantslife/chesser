@@ -50,7 +50,11 @@ function Hero({ onProfile }: { onProfile: () => void }) {
         <div className="min-w-[220px] flex-1">
           <div className="mb-1 flex items-baseline justify-between text-sm">
             <span className="font-display font-semibold text-ink">{greeting()}!</span>
-            <button onClick={onProfile} className="btn-press text-xs font-semibold text-brand-300 hover:text-brand-200">
+            {/* -my keeps the baseline row compact while min-h-8 keeps the tap target ≥24px (WCAG 2.5.8). */}
+            <button
+              onClick={onProfile}
+              className="btn-press -my-1 flex min-h-8 items-center text-xs font-semibold text-brand-300 hover:text-brand-200"
+            >
               Level {level} · {xp.toLocaleString()} XP
             </button>
           </div>

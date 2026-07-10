@@ -33,6 +33,14 @@ export const CATEGORY_LABELS: Record<RatingCategory, string> = {
 /** Opponents/puzzles have a known strength, so we treat them as fairly certain. */
 const OPP_RD = 60;
 
+/**
+ * A Glicko rating with RD above this is provisional (Lichess uses the same
+ * cutoff). Provisional ratings swing wildly — one lucky win against a 2100
+ * puzzle launches a fresh 1200±700 rating past 1600 — so they don't count as
+ * a "peak" (which feeds the rating achievements and the peak display).
+ */
+export const PROVISIONAL_RD = 110;
+
 /** Starting Elo per category (puzzles start lower, mirroring the old default). */
 const START_ELO: Record<RatingCategory, number> = { bots: 1500, blitz: 1500, puzzles: 1200 };
 
@@ -130,7 +138,8 @@ function applyRecord(c: CategoryRating, opponentRating: number, outcome: GameOut
     elo: newElo,
     eloPeak: Math.max(c.eloPeak, newElo),
     glicko: newGlicko,
-    glickoPeak: Math.max(c.glickoPeak, newGlicko.rating),
+    // Peaks only count once the rating is established (see PROVISIONAL_RD).
+    glickoPeak: newGlicko.rd <= PROVISIONAL_RD ? Math.max(c.glickoPeak, newGlicko.rating) : c.glickoPeak,
     played: c.played + 1,
     won: c.won + (outcome === 'win' ? 1 : 0),
     lost: c.lost + (outcome === 'loss' ? 1 : 0),

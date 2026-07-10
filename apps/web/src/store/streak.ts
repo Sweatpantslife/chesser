@@ -4,9 +4,9 @@ import { todayStr } from '../lib/clock';
 import {
   displayStreak,
   initialStreak,
+  mergeStreaks,
   streakAtRisk,
   touchDay,
-  MAX_FREEZES,
   type StreakData,
   type TouchResult,
 } from '../lib/streak';
@@ -64,20 +64,20 @@ export const useStreak = create<StreakState>()(
       importMerge(remote) {
         if (!remote || typeof remote !== 'object') return;
         const r = remote as Partial<StreakData>;
-        const local = pick(get());
-        // The device that was active most recently owns the run; everything
-        // monotonic (best, freezes, paid milestones) merges as max/union.
-        const remoteDay = typeof r.lastDay === 'string' ? r.lastDay : '';
-        const remoteOwns = remoteDay > local.lastDay;
-        const milestones = new Set(local.milestonesAwarded);
-        for (const m of r.milestonesAwarded ?? []) if (typeof m === 'number') milestones.add(m);
-        set({
-          count: remoteOwns ? (typeof r.count === 'number' ? r.count : 0) : local.count,
-          lastDay: remoteOwns ? remoteDay : local.lastDay,
-          best: Math.max(local.best, typeof r.best === 'number' ? r.best : 0),
-          freezes: Math.min(MAX_FREEZES, Math.max(local.freezes, typeof r.freezes === 'number' ? r.freezes : 0)),
-          milestonesAwarded: [...milestones].sort((a, b) => a - b),
-        });
+        const num = (v: unknown): number => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+        // Sanitize the remote blob, then merge with the run-aware pure logic
+        // (lib/streak.ts mergeStreaks): counts combine when the two runs are
+        // really one continued streak, so a fresh device can't wipe a long run.
+        const sanitized: StreakData = {
+          count: num(r.count),
+          best: num(r.best),
+          lastDay: typeof r.lastDay === 'string' ? r.lastDay : '',
+          freezes: num(r.freezes),
+          milestonesAwarded: Array.isArray(r.milestonesAwarded)
+            ? r.milestonesAwarded.filter((m): m is number => typeof m === 'number')
+            : [],
+        };
+        set(mergeStreaks(pick(get()), sanitized));
       },
 
       reset() {

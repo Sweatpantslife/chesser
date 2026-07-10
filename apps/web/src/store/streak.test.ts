@@ -87,6 +87,35 @@ describe('streak store (clock-injected)', () => {
     expect(useStreak.getState().best).toBe(40);
   });
 
+  it('importMerge: a fresh device syncing on the same day does not wipe a longer live streak', () => {
+    // Fresh browser: one activity before sign-in, then pullAndMerge brings the
+    // server blob for the same account. The 50-day run must survive the merge
+    // (and hence the immediate push back to the server).
+    useStreak.getState().touch(); // local: count 1, lastDay 2026-07-01
+    useStreak.getState().importMerge({ count: 50, best: 50, lastDay: '2026-07-01', freezes: 1, milestonesAwarded: [3, 7, 30] });
+    expect(useStreak.getState().count).toBe(50);
+    expect(useStreak.getState().current()).toBe(50);
+  });
+
+  it('importMerge: playing today on a fresh device CONTINUES a server run that ended yesterday', () => {
+    pinDay(1); // today = 2026-07-02
+    useStreak.getState().touch(); // fresh device: count 1, lastDay 2026-07-02
+    useStreak.getState().importMerge({ count: 50, best: 50, lastDay: '2026-07-01', freezes: 1, milestonesAwarded: [3, 7, 30] });
+    expect(useStreak.getState().count).toBe(51);
+    expect(useStreak.getState().best).toBe(51);
+    expect(useStreak.getState().lastDay).toBe('2026-07-02');
+  });
+
+  it('importMerge: the long-streak device keeps its run when it pulls the fresh device blob back', () => {
+    // Seed the long-run device: 50 days ending yesterday.
+    useStreak.getState().importMerge({ count: 50, best: 50, lastDay: '2026-07-01', freezes: 1, milestonesAwarded: [3, 7, 30] });
+    pinDay(1);
+    // The fresh device pushed {count:1, lastDay:today}; the merged result must be 51, not 1.
+    useStreak.getState().importMerge({ count: 1, best: 1, lastDay: '2026-07-02', freezes: 1, milestonesAwarded: [] });
+    expect(useStreak.getState().count).toBe(51);
+    expect(useStreak.getState().current()).toBe(51);
+  });
+
   it('importMerge ignores malformed payloads without throwing', () => {
     useStreak.getState().touch();
     const before = useStreak.getState().exportState();

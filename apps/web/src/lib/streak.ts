@@ -100,3 +100,63 @@ export function streakAtRisk(s: StreakData, today: string): boolean {
   if (!s.lastDay || s.count === 0) return false;
   return diffDays(s.lastDay, today) === 2 && s.freezes > 0;
 }
+
+/** A side that has never recorded activity carries no run to merge. */
+const runless = (s: StreakData): boolean => !s.lastDay || s.count <= 0;
+
+/**
+ * Merge two views of the same account's streak (cross-device sync). Pure and
+ * commutative — both devices compute the same result from the same two blobs.
+ *
+ * The run ending on the later `lastDay` is the live one, but the two runs are
+ * often the SAME streak seen from different devices, so the count must not
+ * blindly follow the later day: a fresh device syncing {count:1, lastDay:today}
+ * against a 50-day run ending today or yesterday would wipe the streak and
+ * push the wipe everywhere. Rules, given `gap` days between the runs' ends:
+ * - same day: the runs overlap — take the larger count.
+ * - newer count > older count: the newer run already subsumes the older one
+ *   (e.g. it IS a previous merge result) — keep it.
+ * - runs touch (`newer.count >= gap`): one continued streak — older.count + gap.
+ * - exactly one uncovered day between them and a freeze is banked: bridge it,
+ *   exactly as touchDay would, consuming the freeze.
+ * - otherwise the old run is truly broken and the newer one stands alone.
+ * Everything monotonic (best, freezes, paid milestones) merges as max/union.
+ */
+export function mergeStreaks(a: StreakData, b: StreakData): StreakData {
+  const [older, newer] = a.lastDay <= b.lastDay ? [a, b] : [b, a];
+  const freezes = Math.min(MAX_FREEZES, Math.max(a.freezes, b.freezes));
+  const milestonesAwarded = [...new Set([...a.milestonesAwarded, ...b.milestonesAwarded])].sort((x, y) => x - y);
+
+  let count: number;
+  let lastDay: string;
+  let spentFreeze = false;
+  if (runless(newer)) {
+    count = older.count;
+    lastDay = older.lastDay;
+  } else if (runless(older)) {
+    count = newer.count;
+    lastDay = newer.lastDay;
+  } else {
+    lastDay = newer.lastDay;
+    const gap = diffDays(older.lastDay, newer.lastDay);
+    if (gap === 0) {
+      count = Math.max(a.count, b.count);
+    } else if (newer.count > older.count) {
+      count = newer.count;
+    } else if (newer.count >= gap) {
+      count = older.count + gap;
+    } else if (newer.count === gap - 1 && freezes > 0) {
+      count = older.count + newer.count;
+      spentFreeze = true;
+    } else {
+      count = newer.count;
+    }
+  }
+  return {
+    count,
+    best: Math.max(a.best, b.best, count),
+    lastDay,
+    freezes: spentFreeze ? freezes - 1 : freezes,
+    milestonesAwarded,
+  };
+}

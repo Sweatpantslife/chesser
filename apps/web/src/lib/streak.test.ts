@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   displayStreak,
   initialStreak,
+  mergeStreaks,
   streakAtRisk,
   touchDay,
   INITIAL_FREEZES,
@@ -130,6 +131,68 @@ describe('streak pure logic', () => {
     it('shows 0 once truly broken', () => {
       expect(displayStreak(base, '2026-07-06')).toBe(0);
       expect(displayStreak(initialStreak(), '2026-07-06')).toBe(0);
+    });
+  });
+
+  describe('mergeStreaks (cross-device sync)', () => {
+    const run = (over: Partial<StreakData>): StreakData => ({ ...initialStreak(), ...over });
+
+    it('same-day tie keeps the longer run (fresh device cannot wipe it)', () => {
+      const longRun = run({ count: 50, best: 50, lastDay: '2026-07-10' });
+      const fresh = run({ count: 1, best: 1, lastDay: '2026-07-10' });
+      const m = mergeStreaks(longRun, fresh);
+      expect(m.count).toBe(50);
+      expect(m.lastDay).toBe('2026-07-10');
+      expect(mergeStreaks(fresh, longRun)).toEqual(m); // commutative
+    });
+
+    it('consecutive days merge as one continued run', () => {
+      const server = run({ count: 50, best: 50, lastDay: '2026-07-09' });
+      const fresh = run({ count: 1, best: 1, lastDay: '2026-07-10' });
+      const m = mergeStreaks(server, fresh);
+      expect(m.count).toBe(51);
+      expect(m.best).toBe(51);
+      expect(m.lastDay).toBe('2026-07-10');
+      expect(mergeStreaks(fresh, server)).toEqual(m);
+    });
+
+    it('re-merging a previous merge result does not inflate the count', () => {
+      const server = run({ count: 50, best: 50, lastDay: '2026-07-09' });
+      const merged = run({ count: 51, best: 51, lastDay: '2026-07-10' });
+      expect(mergeStreaks(server, merged).count).toBe(51);
+    });
+
+    it('bridges exactly one uncovered day with a banked freeze', () => {
+      const server = run({ count: 50, best: 50, lastDay: '2026-07-08', freezes: 1 });
+      const fresh = run({ count: 1, best: 1, lastDay: '2026-07-10', freezes: 1 });
+      const m = mergeStreaks(server, fresh);
+      expect(m.count).toBe(51);
+      expect(m.freezes).toBe(0);
+      expect(mergeStreaks(fresh, server)).toEqual(m);
+    });
+
+    it('a truly broken old run yields to the newer one; best survives', () => {
+      const server = run({ count: 50, best: 50, lastDay: '2026-07-01', freezes: 0 });
+      const fresh = run({ count: 1, best: 1, lastDay: '2026-07-10', freezes: 0 });
+      const m = mergeStreaks(server, fresh);
+      expect(m.count).toBe(1);
+      expect(m.best).toBe(50);
+      expect(m.lastDay).toBe('2026-07-10');
+    });
+
+    it('a side with no run merges to the other side wholesale', () => {
+      const active = run({ count: 3, best: 3, lastDay: '2026-07-10', freezes: 2, milestonesAwarded: [3] });
+      expect(mergeStreaks(initialStreak(), active)).toEqual({ ...active, freezes: 2 });
+      expect(mergeStreaks(active, initialStreak())).toEqual({ ...active, freezes: 2 });
+    });
+
+    it('freezes clamp to MAX_FREEZES and milestone payouts union', () => {
+      const a = run({ count: 2, best: 9, lastDay: '2026-07-10', freezes: 5, milestonesAwarded: [7] });
+      const b = run({ count: 2, best: 2, lastDay: '2026-07-10', freezes: 0, milestonesAwarded: [3] });
+      const m = mergeStreaks(a, b);
+      expect(m.freezes).toBe(MAX_FREEZES);
+      expect(m.milestonesAwarded).toEqual([3, 7]);
+      expect(m.best).toBe(9);
     });
   });
 });

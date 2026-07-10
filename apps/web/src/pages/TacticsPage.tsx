@@ -42,7 +42,7 @@ const DIFF_COLOR: Record<Difficulty, string> = {
   hard: 'text-rose-300',
 };
 
-export function TacticsPage({ openDaily = false }: { openDaily?: boolean }) {
+export function TacticsPage({ openDaily = false, onDailyOpened }: { openDaily?: boolean; onDailyOpened?: () => void }) {
   const [mode, setMode] = useState<'practice' | 'rush' | 'mistakes'>('practice');
   const mistakeCount = useMistakes((s) => s.cards.length);
   const labels = { practice: 'Practice', rush: 'Puzzle rush', mistakes: `My mistakes${mistakeCount ? ` (${mistakeCount})` : ''}` };
@@ -61,12 +61,12 @@ export function TacticsPage({ openDaily = false }: { openDaily?: boolean }) {
           </button>
         ))}
       </div>
-      {mode === 'practice' ? <PracticeTactics openDaily={openDaily} /> : mode === 'rush' ? <RushMode /> : <MistakesMode />}
+      {mode === 'practice' ? <PracticeTactics openDaily={openDaily} onDailyOpened={onDailyOpened} /> : mode === 'rush' ? <RushMode /> : <MistakesMode />}
     </div>
   );
 }
 
-function PracticeTactics({ openDaily = false }: { openDaily?: boolean }) {
+function PracticeTactics({ openDaily = false, onDailyOpened }: { openDaily?: boolean; onDailyOpened?: () => void }) {
   const game = useRef(new Chess());
   const attempt = useRef({ failed: false, revealed: false, rated: false });
   const sessionSeen = useRef(new Set<string>());
@@ -326,8 +326,14 @@ function PracticeTactics({ openDaily = false }: { openDaily?: boolean }) {
 
   // Deep link from the Today page: land straight on the daily puzzle.
   // Declared after the filter-reset effect so it wins the initial load.
+  // The flag is one-shot: consuming it here means a later remount (e.g.
+  // toggling Practice → Rush → Practice) won't reload the daily puzzle
+  // over an in-progress attempt.
   useEffect(() => {
-    if (openDaily) daily();
+    if (openDaily) {
+      daily();
+      onDailyOpened?.();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

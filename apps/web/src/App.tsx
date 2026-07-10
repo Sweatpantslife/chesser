@@ -209,7 +209,7 @@ export default function App() {
           <HumansPage />
         </div>
         {view === 'openings' && <OpeningsPage />}
-        {view === 'tactics' && <TacticsPage openDaily={tacticsDaily} />}
+        {view === 'tactics' && <TacticsPage openDaily={tacticsDaily} onDailyOpened={() => setTacticsDaily(false)} />}
         {view === 'endgame' && <EndgamePage />}
         {view === 'train' && <TrainPage tab={trainTab} setTab={setTrainTab} />}
         {view === 'coordinates' && <CoordinatePage />}
