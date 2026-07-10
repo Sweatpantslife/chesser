@@ -15,6 +15,7 @@ import { CoordinatePage } from './pages/CoordinatePage';
 import { StatsPage } from './pages/StatsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { TrainPage, type TrainTab } from './pages/TrainPage';
+import { CoachPage } from './pages/CoachPage';
 import { LevelBadge } from './components/LevelBadge';
 import { GamifyToasts } from './components/GamifyToasts';
 import { Celebration } from './components/Celebration';
@@ -22,6 +23,7 @@ import { initGamify } from './lib/gamify';
 import { playSound } from './lib/sound';
 import type { DeckTarget } from './lib/decks';
 import {
+  IconCoach,
   IconCoords,
   IconEndgame,
   IconFriends,
@@ -38,7 +40,7 @@ import {
   Wordmark,
 } from './components/icons';
 
-type View = 'home' | 'play' | 'learn' | 'friends' | 'openings' | 'tactics' | 'endgame' | 'train' | 'coordinates' | 'stats' | 'profile';
+type View = 'home' | 'play' | 'learn' | 'friends' | 'openings' | 'tactics' | 'endgame' | 'train' | 'coach' | 'coordinates' | 'stats' | 'profile';
 
 const TABS: { id: View; label: string; hint: string; icon: ComponentType<SVGProps<SVGSVGElement> & { size?: number }> }[] = [
   { id: 'home', label: 'Today', hint: 'streak · daily quests · goals', icon: IconToday },
@@ -49,6 +51,7 @@ const TABS: { id: View; label: string; hint: string; icon: ComponentType<SVGProp
   { id: 'tactics', label: 'Tactics', hint: 'tactics puzzles', icon: IconTactics },
   { id: 'endgame', label: 'Endgame', hint: 'theory & technique', icon: IconEndgame },
   { id: 'train', label: 'Train', hint: 'vision · mates · anti-blunder', icon: IconTrain },
+  { id: 'coach', label: 'Coach', hint: 'your weaknesses · targeted training', icon: IconCoach },
   { id: 'coordinates', label: 'Coords', hint: 'board-vision trainer', icon: IconCoords },
   { id: 'stats', label: 'Stats', hint: 'progress dashboard', icon: IconStats },
   { id: 'profile', label: 'Profile', hint: 'level · ratings · badges', icon: IconProfile },
@@ -212,6 +215,7 @@ export default function App() {
         {view === 'tactics' && <TacticsPage openDaily={tacticsDaily} onDailyOpened={() => setTacticsDaily(false)} />}
         {view === 'endgame' && <EndgamePage />}
         {view === 'train' && <TrainPage tab={trainTab} setTab={setTrainTab} />}
+        {view === 'coach' && <CoachPage goPlay={() => setView('play')} />}
         {view === 'coordinates' && <CoordinatePage />}
         {view === 'stats' && <StatsPage goto={goto} />}
         {view === 'profile' && <ProfilePage goPlay={() => setView('play')} />}
