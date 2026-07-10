@@ -623,6 +623,7 @@ export const useGame = create<GameStore>((set, get) => ({
     const started = Date.now();
     window.setTimeout(async () => {
       try {
+        if (gameId !== myGame) return; // a new game started during the dispatch delay
         const res = await engine.botMove(liveFen, bot, recentFens);
         // Hold fast engine replies (Maia answers near-instantly) until the
         // simulated think time has elapsed.
