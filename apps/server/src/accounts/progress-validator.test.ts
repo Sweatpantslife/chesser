@@ -501,6 +501,55 @@ describe('partial payloads (merged-view validation)', () => {
     expectReject(validateProgress(cheat, storedSnapshot(), NOW), /exceeds the \d+ claimed active day/i);
   });
 
+  it('drops verifiable claims on a fresh account with no backing stats (achievements-only first PUT)', () => {
+    // Nothing stored, nothing incoming to back the claims: every verifiable
+    // badge must be treated as backed-by-0 and dropped, not "unverifiable".
+    const cheat = {
+      achievements: {
+        unlocked: {
+          'tactics-solve-1000': NOW,
+          'play-win-150': NOW,
+          'dedication-level-25': NOW,
+          'streak-streak-100': NOW,
+          'rating-puzzles-2000': NOW,
+          'rush-rush-15': NOW, // genuinely unverifiable id — passes through
+        },
+      },
+    };
+    const res = validateProgress(cheat, null, NOW);
+    expectOk(res);
+    const unlocked = unlockedOf(res.data);
+    for (const id of ['tactics-solve-1000', 'play-win-150', 'dedication-level-25', 'streak-streak-100', 'rating-puzzles-2000']) {
+      assert.ok(!(id in unlocked), `${id} should have been dropped`);
+    }
+    assert.ok('rush-rush-15' in unlocked);
+    assert.ok(res.adjustments.some((a) => a.includes('tactics-solve-1000')));
+  });
+
+  it('keeps genuinely backed badges on a fresh first sync of a full snapshot', () => {
+    const res = validateProgress(storedSnapshot(), null, NOW);
+    expectOk(res);
+    assert.ok('tactics-solve-50' in unlockedOf(res.data)); // 60 puzzles solved ≥ 50
+  });
+
+  it('rejects a forged streak on a fresh account when the gamify section is omitted', () => {
+    const cheat = { streak: { count: 99_999, best: 99_999, lastDay: day(0), freezes: 2, milestonesAwarded: [3, 7, 30, 100] } };
+    expectReject(validateProgress(cheat, null, NOW), /exceeds the 0 claimed active day/i);
+  });
+
+  it('rejects forged lifetime quest counters on a fresh account when the gamify section is omitted', () => {
+    const cheat = { quests: { day: day(0), progress: {}, done: {}, bonusPaid: false, totalCompleted: 1000, daysAllDone: 500 } };
+    expectReject(validateProgress(cheat, null, NOW), /quest count of \d+ exceeds the plausible .* over 0 active day/i);
+  });
+
+  it('still accepts a runless streak and zeroed quest counters without a gamify section', () => {
+    const empty = {
+      streak: { count: 0, best: 0, lastDay: '', freezes: 0, milestonesAwarded: [] },
+      quests: { day: day(0), progress: {}, done: {}, bonusPaid: false, totalCompleted: 0, daysAllDone: 0 },
+    };
+    expectOk(validateProgress(empty, null, NOW));
+  });
+
   it('slots a legacy bare blob into the progress section instead of wiping stored sections', () => {
     const legacy = { cards: { 'e4:e5': { due: 1 } }, streak: 4 };
     const res = validateProgress(legacy, storedSnapshot(), NOW);

@@ -679,15 +679,15 @@ function validateStreak(raw: unknown, gamify: GamifyData | null, maxDay: string,
   // (which are themselves bounded to real, non-future calendar days). The
   // caller passes the *merged* stored∪incoming gamify view, so pruned-but-real
   // history still backs a run while a payload that omits the gamify section
-  // is still bounded by the stored day logs.
-  if (gamify) {
-    const activeDays = Object.values(gamify.days).filter((d) => d.activities >= 1).length;
-    if (count > activeDays) {
-      reject(`Streak of ${Math.round(count)} day(s) exceeds the ${activeDays} claimed active day(s).`);
-    }
-    if (best > activeDays) {
-      reject(`Best streak of ${Math.round(best)} day(s) exceeds the ${activeDays} claimed active day(s).`);
-    }
+  // is still bounded by the stored day logs. When gamify is absent from both
+  // sides there are zero backed active days — the real client always syncs
+  // gamify, so a positive run without it is fabricated, not a legit sync.
+  const activeDays = gamify ? Object.values(gamify.days).filter((d) => d.activities >= 1).length : 0;
+  if (count > activeDays) {
+    reject(`Streak of ${Math.round(count)} day(s) exceeds the ${activeDays} claimed active day(s).`);
+  }
+  if (best > activeDays) {
+    reject(`Best streak of ${Math.round(best)} day(s) exceeds the ${activeDays} claimed active day(s).`);
   }
 
   return { count, best, lastDay, freezes, milestonesAwarded };
@@ -807,17 +807,18 @@ function validateQuests(raw: unknown, gamify: GamifyData | null, maxDay: string,
 
   const totalCompleted = countOf(raw.totalCompleted, 1_000_000, 'Lifetime quests completed');
   const daysAllDone = countOf(raw.daysAllDone, 1_000_000, 'All-quests-done days');
-  if (gamify) {
-    // Quests only advance via recorded activities, and every activity writes
-    // `activities ≥ 1` into its day log — so only genuinely active days back
-    // quest claims (zero-activity padding days don't count). `gamify` is the
-    // merged stored∪incoming view, so pruned history can't brick honest syncs.
-    const activeDays = Math.max(1, Object.values(gamify.days).filter((d) => d.activities >= 1).length);
-    if (totalCompleted > LIMITS.questsPerDay * activeDays) {
-      reject(`Lifetime quest count of ${Math.round(totalCompleted)} exceeds the plausible ${LIMITS.questsPerDay}/day over ${activeDays} active day(s).`);
-    }
-    if (daysAllDone > activeDays) reject(`All-quests-done days (${Math.round(daysAllDone)}) exceed the ${activeDays} claimed active day(s).`);
+  // Quests only advance via recorded activities, and every activity writes
+  // `activities ≥ 1` into its day log — so only genuinely active days back
+  // quest claims (zero-activity padding days don't count). `gamify` is the
+  // merged stored∪incoming view, so pruned history can't brick honest syncs.
+  // When gamify is absent from both sides there are zero backed active days —
+  // the real client always syncs gamify, so positive lifetime counters without
+  // it are fabricated, not a legit sync.
+  const activeDays = gamify ? Math.max(1, Object.values(gamify.days).filter((d) => d.activities >= 1).length) : 0;
+  if (totalCompleted > LIMITS.questsPerDay * activeDays) {
+    reject(`Lifetime quest count of ${Math.round(totalCompleted)} exceeds the plausible ${LIMITS.questsPerDay}/day over ${activeDays} active day(s).`);
   }
+  if (daysAllDone > activeDays) reject(`All-quests-done days (${Math.round(daysAllDone)}) exceed the ${activeDays} claimed active day(s).`);
   if (daysAllDone > totalCompleted) reject('All-quests-done days exceed the lifetime quests completed.');
 
   return { day, progress, done, bonusPaid: raw.bonusPaid === true, totalCompleted, daysAllDone };
@@ -1023,8 +1024,12 @@ function validateAchievements(raw: unknown, ctx: ClaimCtx, nowMs: number, notes:
     }
     const rule = VERIFIABLE.get(id);
     if (rule) {
-      const value = rule.value(ctx);
-      if (value !== undefined && value < rule.target) {
+      // A missing backing stat counts as 0, not "unverifiable": the real
+      // client always syncs every backing section (sync.ts gather()), so the
+      // stat is undefined only when the section is absent from both the
+      // payload and the stored blob — i.e. nothing has ever backed the claim.
+      const value = rule.value(ctx) ?? 0;
+      if (value < rule.target) {
         notes.add(`achievements: dropped '${id}' — claimed with ${rule.stat} at ${Math.round(value)}, needs ${rule.target}.`);
         continue;
       }
