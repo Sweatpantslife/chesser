@@ -134,9 +134,16 @@ export function bootstrapFromReportCache(): void {
   if (!store) return;
   const coach = useCoach.getState();
   try {
+    // Snapshot the keys before ingesting anything: ingestReport() persists the
+    // coach store to localStorage, and mutating storage while indexing it with
+    // key(i) lets the browser reorder entries mid-scan, skipping reports.
+    const keys: string[] = [];
     for (let i = 0; i < store.length; i++) {
       const key = store.key(i);
-      if (!key || !key.startsWith(REPORT_ENTRY_PREFIX)) continue;
+      if (key) keys.push(key);
+    }
+    for (const key of keys) {
+      if (!key.startsWith(REPORT_ENTRY_PREFIX)) continue;
       if (coach.games[key.slice(REPORT_ENTRY_PREFIX.length)]) continue;
       const raw = store.getItem(key);
       if (!raw) continue;
