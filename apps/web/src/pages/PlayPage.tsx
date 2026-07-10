@@ -1,4 +1,5 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Chess } from 'chess.js';
 import type { DrawShape } from 'chessground/draw';
 import { Board } from '../board/Board';
 import { EvalBar } from '../components/EvalBar';
@@ -14,9 +15,16 @@ import { ReviewPanel } from '../components/ReviewPanel';
 import { PromotionDialog } from '../components/PromotionDialog';
 import { GameOverModal } from '../components/GameOverModal';
 import { AnalysisCoach } from '../components/AnalysisCoach';
+import { ReviewSummary } from '../components/analysis/ReviewSummary';
+import { MistakeReviewPanel, MISTAKE_CLASSES } from '../components/analysis/MistakeReviewPanel';
+import { MoveDetailPanel } from '../components/analysis/MoveDetailPanel';
+import type { Classification } from '../lib/analytics/types';
 import { engine } from '../lib/engine';
 import { CLASSIFICATION_META } from '../lib/coach';
+import { goToMainlinePly } from '../lib/mainlineNav';
+import { annotatedPgn } from '../lib/analytics/pgnExport';
 import { useGame, type Color } from '../store/game';
+import { useAnalysisReport } from '../store/analysisReport';
 import { useSettings } from '../store/settings';
 import { ThinkingDots } from '../components/icons';
 
@@ -70,11 +78,13 @@ function BoardArea() {
   const moveReviews = useGame((s) => s.moveReviews);
   const currentId = useGame((s) => s.currentId);
   const arrowsOn = useSettings((s) => s.arrows);
+  const reviewArrow = useAnalysisReport((s) => s.arrow);
 
   const topSide: Color = orientation === 'white' ? 'black' : 'white';
 
   // Engine best-move arrows (analysis board only, so play isn't spoiled), plus
-  // a coloured circle on the played move's square during a coach walkthrough.
+  // a coloured circle on the played move's square during a coach walkthrough
+  // and the review panel's "best move you should have played" arrow.
   const shapes = useMemo<DrawShape[]>(() => {
     const out: DrawShape[] = [];
     const review = coachActive ? moveReviews[currentId] : undefined;
@@ -96,8 +106,16 @@ function BoardArea() {
         });
       }
     }
+    if (reviewArrow && mode === 'analysis') {
+      out.push({
+        orig: reviewArrow.from as DrawShape['orig'],
+        dest: reviewArrow.to as DrawShape['dest'],
+        brush: 'green',
+        modifiers: { lineWidth: 12 },
+      });
+    }
     return out;
-  }, [analysisLines, analysisOn, arrowsOn, mode, coachActive, moveReviews, currentId]);
+  }, [analysisLines, analysisOn, arrowsOn, mode, coachActive, moveReviews, currentId, reviewArrow]);
 
   return (
     <div className="mx-auto w-full max-w-[560px]">
@@ -127,6 +145,132 @@ function BoardArea() {
         <ClockRow side={orientation} />
       </div>
     </div>
+  );
+}
+
+/**
+ * The game-report rail: summary, mistake list and per-move detail, fed by the
+ * analysis-report store. Renders nothing until a report exists for the
+ * current game (fresh review or cache hit) on the analysis board.
+ */
+function ReportSection() {
+  const report = useAnalysisReport((s) => s.report);
+  const reportGameNo = useAnalysisReport((s) => s.gameNo);
+  const gameNo = useGame((s) => s.gameNo);
+  const mode = useGame((s) => s.mode);
+  const viewPly = useGame((s) => s.viewPly);
+  const currentId = useGame((s) => s.currentId);
+  const reviewing = useGame((s) => s.reviewing);
+  // Class filter for the mistake list, shared with the summary's count cells.
+  const [mistakeFilter, setMistakeFilter] = useState<ReadonlySet<Classification>>(() => new Set(MISTAKE_CLASSES));
+  if (mode !== 'analysis' || !report || reportGameNo !== gameNo) return null;
+
+  // Stable references — safe as effect deps downstream. Ply jumps resolve via
+  // mainline node ids (goToMainlinePly) so they land right even while a PV
+  // variation is being explored.
+  const setArrow = useAnalysisReport.getState().setArrow;
+
+  // The move that led to the viewed position (null on the root / a variation).
+  const currentMove = report.moves.find((m) => m.nodeId === currentId) ?? null;
+
+  // Play the engine PV as an explorable variation from the move's position.
+  const playVariation = (sans: string[], fromPly: number) => {
+    goToMainlinePly(fromPly - 1);
+    for (const san of sans) {
+      const st = useGame.getState();
+      let mv;
+      try {
+        mv = new Chess(st.fen).move(san);
+      } catch {
+        break;
+      }
+      if (!mv) break;
+      st.exploreMove(mv.from + mv.to + (mv.promotion ?? ''));
+    }
+    // The variation moves are structural, so the store just cleared its legacy
+    // review fields (graph/table/walkthrough) — restore them from the report;
+    // the mainline is unchanged, so the review is still valid.
+    useAnalysisReport.getState().tryHydrateFromCache();
+  };
+
+  // Play the position out against the engine, from before the chosen move.
+  const practice = (ply: number) => {
+    const row = report.moves[ply - 1];
+    if (!row) return;
+    const st = useGame.getState();
+    // The last-used bot may need an engine that isn't installed (e.g. Maia's
+    // 'human' style on a Stockfish-only server) — the bot would then silently
+    // never move. Fall back to an installed style from the server's catalogue.
+    let bot = st.botConfig;
+    if (st.styles.length > 0 && !st.styles.some((s) => s.id === bot.style)) {
+      bot = { ...bot, style: st.styles.some((s) => s.id === 'balanced') ? 'balanced' : st.styles[0]!.id };
+    }
+    st.newGame({
+      mode: 'play',
+      playerColor: row.side,
+      bot,
+      startFen: row.fenBefore,
+      opponent: null,
+    });
+  };
+
+  const exportPgn = () => {
+    const s = useGame.getState();
+    const last = report.moves[report.moves.length - 1];
+    // The review hook stamps meta.result null; fall back to the mate on the
+    // board, then to the finished-game summary (resignation, flag, draw).
+    const sum = s.gameSummary && s.gameSummary.gameNo === s.gameNo ? s.gameSummary : null;
+    const summaryResult = sum
+      ? sum.outcome === 'draw'
+        ? '1/2-1/2'
+        : (sum.outcome === 'win') === (sum.playerColor === 'white')
+          ? '1-0'
+          : '0-1'
+      : null;
+    const result =
+      report.meta.result ?? (last?.isMate ? (last.side === 'white' ? '1-0' : '0-1') : summaryResult ?? '*');
+    const pc = report.meta.playerColor;
+    const opp = s.opponent?.name ?? 'Chesser bot';
+    const pgn = annotatedPgn(report, {
+      white: pc === 'white' ? 'You' : pc === 'black' ? opp : 'White',
+      black: pc === 'black' ? 'You' : pc === 'white' ? opp : 'Black',
+      result,
+    });
+    const blob = new Blob([pgn], { type: 'application/x-chess-pgn' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'chesser-annotated.pgn';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <>
+      <ReviewSummary
+        report={report}
+        reviewing={reviewing}
+        onSelectPly={goToMainlinePly}
+        onFilterClass={(cls) => setMistakeFilter(new Set([cls]))}
+        onExportPgn={exportPgn}
+      />
+      <MistakeReviewPanel
+        moves={report.moves}
+        viewPly={viewPly}
+        onSelectPly={goToMainlinePly}
+        onPractice={practice}
+        activeClasses={mistakeFilter}
+        onActiveClassesChange={setMistakeFilter}
+      />
+      <MoveDetailPanel
+        move={currentMove}
+        onShowArrow={setArrow}
+        onPlayVariation={playVariation}
+        onPractice={practice}
+        onSelectPly={goToMainlinePly}
+        maxPly={report.moves.length}
+      />
+    </>
   );
 }
 
@@ -187,6 +331,7 @@ export function PlayPage() {
         <AnalysisPanel />
         <OpeningName />
         <ReviewPanel />
+        <ReportSection />
         <MoveList />
         <ExplorerPanel />
       </div>

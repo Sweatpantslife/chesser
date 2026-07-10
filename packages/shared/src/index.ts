@@ -143,6 +143,12 @@ export interface AnalyzeRequest {
   multipv?: number; // default 1
   depth?: number; // optional cap
   movetimeMs?: number; // optional cap; if neither set, runs until stopped
+  /**
+   * Reset the engine's game state (ucinewgame → clears the hash table) before
+   * searching. A fixed-depth search from a fresh state is deterministic —
+   * the game review sets this so grades don't drift between runs.
+   */
+  fresh?: boolean;
 }
 
 export interface StopRequest {

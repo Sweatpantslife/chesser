@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { STARTING_FEN } from '@chesser/shared';
 import { mainlineOf, useGame, type Color } from '../store/game';
+import { useAnalysisReport } from '../store/analysisReport';
 import { detectOpening, type OpeningInfo } from '../lib/openings';
 import { CLASSIFICATION_META, type Classification } from '../lib/coach';
 import { BotAvatar } from './BotAvatar';
 import { Modal } from './Modal';
 import { fireConfetti } from './Celebration';
 import cheerUrl from '../assets/img/mascot-cheer.svg';
+import { EvalGraphPro } from './analysis/EvalGraphPro';
 
 const opposite = (c: Color): Color => (c === 'white' ? 'black' : 'white');
 
@@ -37,14 +39,19 @@ export function GameOverModal() {
   const tree = useGame((s) => s.tree);
   const rootId = useGame((s) => s.rootId);
   const startFen = useGame((s) => s.startFen);
+  const report = useAnalysisReport((s) => s.report);
+  const reportGameNo = useAnalysisReport((s) => s.gameNo);
 
   const show = !!summary && !dismissed && summary.gameNo === gameNo;
 
   // Auto-run a background review the first time the modal opens for this game.
+  // A cached report for the same game short-circuits the engine entirely.
   useEffect(() => {
     if (!show) return;
     const st = useGame.getState();
-    if (connected && st.reviewGameNo !== st.gameNo && !st.reviewing) void st.reviewGame();
+    if (connected && st.reviewGameNo !== st.gameNo && !st.reviewing) {
+      if (!useAnalysisReport.getState().tryHydrateFromCache()) void st.reviewGame();
+    }
   }, [show, connected]);
 
   // Celebrate a win with a confetti burst (skipped under reduced motion).
@@ -163,6 +170,13 @@ export function GameOverModal() {
               </div>
             );
           })}
+          {report && reportGameNo === gameNo && report.moves.length >= 2 && (
+            // Compact win-chance sparkline of the whole game, from the report.
+            <div className="pt-1">
+              {/* No onSelectPly: purely presentational here — no dead click affordance. */}
+              <EvalGraphPro moves={report.moves} phases={report.phases} viewPly={report.moves.length} sparkline />
+            </div>
+          )}
           {chips.length > 0 && (
             <div className="flex flex-wrap gap-1.5 pt-1">
               {chips.map(({ cls, n }) => {

@@ -1,4 +1,5 @@
 import type { AnalysisLine, AnalysisMessage, AnalyzeRequest, Score } from '@chesser/shared';
+import { ENGINE_THREADS } from '../config.js';
 import type { UciEngine, UciInfo } from './uci.js';
 import { uciLineToSan } from '../util/san.js';
 
@@ -35,6 +36,12 @@ export class AnalysisService {
 
     const multipv = Math.min(Math.max(req.multipv ?? 1, 1), MAX_MULTIPV);
     this.engine.setOption('MultiPV', multipv);
+    // `fresh` = deterministic search: single-threaded (SMP search order is
+    // nondeterministic) on a cleared hash table (ucinewgame), so a fixed-depth
+    // request returns identical lines run to run — the game review relies on
+    // this. Live analysis gets the full thread budget back on its next request.
+    this.engine.setOption('Threads', req.fresh ? 1 : ENGINE_THREADS);
+    if (req.fresh) this.engine.newGame();
     await this.engine.ready();
 
     const white = whiteToMove(req.fen);

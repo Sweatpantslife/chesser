@@ -16,6 +16,13 @@ export function AnalysisPanel() {
   const mode = useGame((s) => s.mode);
   const isGameOver = useGame((s) => s.isGameOver);
 
+  // Walk the engine line onto the board as an explorable variation (the PV is
+  // from the currently viewed position; exploreMove no-ops outside analysis).
+  const playLine = (line: AnalysisLine, count: number) => {
+    const st = useGame.getState();
+    for (const uci of line.pvUci.slice(0, count)) st.exploreMove(uci);
+  };
+
   // At checkmate/stalemate the engine has no lines to send, so the empty-lines
   // placeholder would read "thinking…" forever.
   const viewFen = tree[currentId]?.fen;
@@ -87,9 +94,24 @@ export function AnalysisPanel() {
                 <span className={`w-12 shrink-0 font-mono font-semibold tabular-nums ${scoreClass(line)}`}>
                   {formatScore(line.score)}
                 </span>
-                <span className="truncate font-mono text-xs text-neutral-300" title={line.pvSan.join(' ')}>
-                  {line.pvSan.join(' ')}
-                </span>
+                {mode === 'analysis' ? (
+                  <span className="truncate font-mono text-xs text-neutral-300" title={line.pvSan.join(' ')}>
+                    {line.pvSan.map((san, i) => (
+                      <button
+                        key={`${line.multipv}-${i}`}
+                        onClick={() => playLine(line, i + 1)}
+                        title="Play the line up to here"
+                        className="rounded px-0.5 hover:bg-neutral-700 hover:text-ink"
+                      >
+                        {san}
+                      </button>
+                    ))}
+                  </span>
+                ) : (
+                  <span className="truncate font-mono text-xs text-neutral-300" title={line.pvSan.join(' ')}>
+                    {line.pvSan.join(' ')}
+                  </span>
+                )}
               </li>
             ))}
           </ol>

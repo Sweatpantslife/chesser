@@ -1,9 +1,12 @@
 import { useMemo, useRef, useState } from 'react';
 import { mainlineOf, useGame } from '../store/game';
+import { useAnalysisReport } from '../store/analysisReport';
 import { useMistakes, type NewMistake } from '../store/mistakes';
 import { useCustomPuzzles } from '../store/customPuzzles';
 import { generatePuzzles } from '../lib/puzzleGen';
+import { goToMainlinePly } from '../lib/mainlineNav';
 import { EvalGraph } from './EvalGraph';
+import { EvalGraphPro } from './analysis/EvalGraphPro';
 
 export function ReviewPanel() {
   const mode = useGame((s) => s.mode);
@@ -18,6 +21,10 @@ export function ReviewPanel() {
   const moveReviews = useGame((s) => s.moveReviews);
   const reviewGame = useGame((s) => s.reviewGame);
   const startCoach = useGame((s) => s.startCoach);
+  const gameNo = useGame((s) => s.gameNo);
+  const viewPly = useGame((s) => s.viewPly);
+  const report = useAnalysisReport((s) => s.report);
+  const reportGameNo = useAnalysisReport((s) => s.gameNo);
   const addMistakes = useMistakes((s) => s.addMany);
   const addPuzzles = useCustomPuzzles((s) => s.addMany);
   const [saved, setSaved] = useState<number | null>(null);
@@ -92,15 +99,25 @@ export function ReviewPanel() {
   }, [annotations, mainline]);
 
   const seriousCount = counts.white.blunder + counts.white.mistake + counts.black.blunder + counts.black.mistake;
-  const hasResults = Object.keys(annotations).length > 0;
+  // Keyed off moveReviews (filled for EVERY reviewed move), not annotations
+  // (only error moves) — a clean game must still show its results and offer
+  // an explicit Re-review.
+  const hasResults = Object.keys(moveReviews).length > 0;
   const disabled = mode !== 'analysis' || mainline.length === 0 || reviewing;
+  const activeReport = report && reportGameNo === gameNo ? report : null;
+
+  // First review of a reopened game: a cache hit loads the stored report and
+  // skips the engine entirely. An explicit "Re-review" always re-analyses.
+  const onReview = () => {
+    if (hasResults || !useAnalysisReport.getState().tryHydrateFromCache()) void reviewGame();
+  };
 
   return (
     <div className="rounded-lg bg-panel p-3">
       <div className="mb-2 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-ink">Game review</h3>
         <button
-          onClick={() => reviewGame()}
+          onClick={onReview}
           disabled={disabled}
           className="rounded bg-emerald-700 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
         >
@@ -122,7 +139,17 @@ export function ReviewPanel() {
               ▶ Guided walkthrough
             </button>
           )}
-          <EvalGraph />
+          {activeReport ? (
+            <EvalGraphPro
+              moves={activeReport.moves}
+              phases={activeReport.phases}
+              criticalMoments={activeReport.criticalMoments}
+              viewPly={viewPly}
+              onSelectPly={goToMainlinePly}
+            />
+          ) : (
+            <EvalGraph />
+          )}
           <table className="w-full text-xs">
             <thead>
               <tr className="text-neutral-400">
@@ -138,8 +165,13 @@ export function ReviewPanel() {
               {(['white', 'black'] as const).map((side) => (
                 <tr key={side}>
                   <td className="capitalize text-neutral-400">{side}</td>
-                  <td className="text-center font-semibold text-emerald-300">{stats ? `${stats[side].accuracy}%` : '—'}</td>
-                  <td className="text-center">{stats ? stats[side].acpl : '—'}</td>
+                  {/* When a report exists it is the single source of accuracy/ACPL —
+                      the same figures as the Game report card, on the fresh AND the
+                      cached path — so one game never shows two different accuracies. */}
+                  <td className="text-center font-semibold text-emerald-300">
+                    {activeReport ? `${activeReport[side].accuracy}%` : stats ? `${stats[side].accuracy}%` : '—'}
+                  </td>
+                  <td className="text-center">{activeReport ? activeReport[side].acpl : stats ? stats[side].acpl : '—'}</td>
                   <td className="text-center">{counts[side].blunder}</td>
                   <td className="text-center">{counts[side].mistake}</td>
                   <td className="text-center">{counts[side].inaccuracy}</td>

@@ -12,6 +12,8 @@ import { agreedDrawIsRated, botAcceptsDraw, MIN_DRAW_ACCEPT_PLIES } from '../lib
 import { recordGameResult } from '../lib/gamify';
 import { useLadder } from './ladder';
 import { useRatings, type GameOutcome } from './ratings';
+import { useAnalysisReport } from './analysisReport';
+import { REVIEW_ENGINE_SETTINGS } from '../lib/analytics/report';
 
 export type Color = 'white' | 'black';
 export type Mode = 'play' | 'analysis';
@@ -606,7 +608,11 @@ export const useGame = create<GameStore>((set, get) => ({
         set({ thinking: false });
         get()._applyMove({ from, to, promotion });
       } catch (e) {
-        if (gameId === myGame) set({ thinking: false });
+        // Surface the failure instead of leaving the board silently frozen
+        // (e.g. a bot style whose engine isn't installed on this server).
+        if (gameId === myGame) {
+          set({ thinking: false, status: 'Bot failed to move — try a different bot style.' });
+        }
         console.error('[bot]', e);
       }
     }, 300);
@@ -967,10 +973,19 @@ export const useGame = create<GameStore>((set, get) => ({
 
     // Evaluate every position with 2 lines, so we get the best move (and the
     // runner-up, for "only move" detection) at each step — not just the score.
+    // REVIEW_ENGINE_SETTINGS (lib/analytics/report) is the single source of the
+    // review budget: a FIXED-DEPTH search (movetimeMs 0 = no wall-clock cap) on
+    // a fresh engine state (`fresh` sends ucinewgame, clearing the hash table),
+    // so evals — and therefore grades and accuracy — are identical run to run
+    // and device-independent, where the old 300 ms wall-clock budget produced
+    // different (and shallower) evals on every review. The same object flows
+    // into buildFromReview below, so the report cache key self-invalidates
+    // whenever this budget changes.
     const fens = [s0.startFen, ...mainline.map((n) => n.fen)];
     const evals: PositionEval[] = [];
+    const rawLines: AnalysisLine[][] = []; // full multipv lines, for the report layer's PVs
     for (let i = 0; i < fens.length; i++) {
-      const lines = await engine.analyzeManyOnce(fens[i]!, { multipv: 2, movetimeMs: 300, depth: 22 });
+      const lines = await engine.analyzeManyOnce(fens[i]!, { ...REVIEW_ENGINE_SETTINGS, fresh: true });
       if (gameId !== myGame) {
         set({ reviewing: false });
         return; // game changed under us
@@ -982,6 +997,7 @@ export const useGame = create<GameStore>((set, get) => ({
         bestSan: best?.pvSan[0] ?? null,
         secondScore: lines[1]?.score ?? null,
       });
+      rawLines.push(lines);
       set({ reviewProgress: Math.round(((i + 1) / fens.length) * 100) });
     }
 
@@ -1057,6 +1073,20 @@ export const useGame = create<GameStore>((set, get) => ({
       reviewStats: { white: side(agg.white), black: side(agg.black) },
       reviewing: false,
       reviewProgress: 100,
+    });
+    // Hand the raw review data to the report layer (builds the full analysis
+    // report and caches it; self-invalidates via the gameNo comparison).
+    void useAnalysisReport.getState().buildFromReview({
+      startFen: s0.startFen,
+      nodes: mainline.map((n) => ({ id: n.id, san: n.san, uci: n.uci, fen: n.fen, ply: n.ply })),
+      evals,
+      rawLines,
+      moveReviews,
+      bookPly,
+      engine: REVIEW_ENGINE_SETTINGS, // the opts the eval loop above actually ran with
+      gameNo: myGameNo,
+      result: null,
+      playerColor: s0.playerColor,
     });
     get()._refreshAnalysis();
   },
