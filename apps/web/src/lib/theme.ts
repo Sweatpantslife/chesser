@@ -44,6 +44,33 @@ function stamp(resolved: ResolvedTheme): void {
 let systemListener: ((e: MediaQueryListEvent) => void) | null = null;
 let systemMql: MediaQueryList | null = null;
 
+/** MediaQueryList on Safari < 14 / older WebViews: only addListener exists. */
+type LegacyMediaQueryList = MediaQueryList & {
+  addListener?: (listener: (e: MediaQueryListEvent) => void) => void;
+  removeListener?: (listener: (e: MediaQueryListEvent) => void) => void;
+};
+
+/**
+ * (Un)wire a MediaQueryList 'change' listener with the legacy addListener /
+ * removeListener fallback. applyTheme() runs during settings-store rehydration,
+ * so a missing modern API must never throw — worst case the theme simply stops
+ * live-tracking the system preference until the next applyTheme().
+ */
+function wireSystemListener(mql: LegacyMediaQueryList, listener: (e: MediaQueryListEvent) => void, on: boolean): void {
+  try {
+    if (typeof mql.addEventListener === 'function') {
+      if (on) mql.addEventListener('change', listener);
+      else mql.removeEventListener('change', listener);
+    } else if (on) {
+      mql.addListener?.(listener);
+    } else {
+      mql.removeListener?.(listener);
+    }
+  } catch {
+    // Theming is cosmetic — never let listener wiring break app boot.
+  }
+}
+
 /**
  * Apply a theme preference to the document. While the preference is 'system',
  * a single prefers-color-scheme listener keeps the document in sync live.
@@ -53,13 +80,13 @@ export function applyTheme(pref: ThemePref): void {
 
   // (Re)wire the live system listener only when needed.
   if (systemMql && systemListener) {
-    systemMql.removeEventListener('change', systemListener);
+    wireSystemListener(systemMql, systemListener, false);
     systemMql = null;
     systemListener = null;
   }
   if (pref === 'system' && typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
     systemMql = window.matchMedia(MEDIA_LIGHT);
     systemListener = (e) => stamp(e.matches ? 'light' : 'dark');
-    systemMql.addEventListener('change', systemListener);
+    wireSystemListener(systemMql, systemListener, true);
   }
 }

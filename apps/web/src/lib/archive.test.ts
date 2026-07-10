@@ -8,6 +8,7 @@ import {
   applyReview,
   fromCasualGame,
   fromSavedGame,
+  lastFullmove,
   parsePgnGame,
   peekCachedReview,
   perspectiveResult,
@@ -99,6 +100,35 @@ describe('perspectiveResult', () => {
     expect(perspectiveResult('*', 'white')).toBe('unknown');
     expect(perspectiveResult('1-0', null)).toBe('unknown');
     expect(perspectiveResult('0-1', null)).toBe('unknown');
+  });
+});
+
+describe('lastFullmove', () => {
+  it('equals ceil(plies / 2) from the standard start', () => {
+    expect(lastFullmove(START, 1)).toBe(1); // 1. e4
+    expect(lastFullmove(START, 2)).toBe(1); // 1. e4 e5
+    expect(lastFullmove(START, 3)).toBe(2); // 1. e4 e5 2. Nf3
+    expect(lastFullmove(START, 0)).toBe(0);
+  });
+
+  it('follows the PGN numbering when Black is to move at the start', () => {
+    const blackToMove = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
+    expect(lastFullmove(blackToMove, 1)).toBe(1); // 1… e5
+    expect(lastFullmove(blackToMove, 2)).toBe(2); // 1… e5 2. Nf3
+    expect(lastFullmove(blackToMove, 3)).toBe(2); // 1… e5 2. Nf3 Nc6
+  });
+
+  it('honours a custom fullmove number from a SetUp/FEN game', () => {
+    const midGame = '4k3/8/8/8/8/8/8/4K2R w K - 0 30';
+    expect(lastFullmove(midGame, 1)).toBe(30);
+    expect(lastFullmove(midGame, 4)).toBe(31);
+    const midGameBlack = '4k3/8/8/8/8/8/8/4K2R b K - 0 30';
+    expect(lastFullmove(midGameBlack, 1)).toBe(30);
+    expect(lastFullmove(midGameBlack, 2)).toBe(31);
+  });
+
+  it('falls back to move 1 on a malformed fullmove field', () => {
+    expect(lastFullmove('4k3/8/8/8/8/8/8/4K2R w K - 0 x', 3)).toBe(2);
   });
 });
 

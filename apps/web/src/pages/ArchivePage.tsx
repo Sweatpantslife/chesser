@@ -275,7 +275,13 @@ function GameRow({ game, onOpen }: { game: ArchiveGame; onOpen: (g: ArchiveGame)
           {game.accuracy.toFixed(1)}%
         </span>
       )}
-      <span className="shrink-0 text-xs text-neutral-400">{new Date(game.playedAt).toLocaleDateString()}</span>
+      {/* Deliberately LOCAL time (unlike the UTC-bucketed charts): the list
+          answers "when did I play this?" in the user's own timezone. A game
+          played late evening west of UTC may therefore sit in the next day's
+          chart bucket — the tooltip carries the exact time. */}
+      <span title={new Date(game.playedAt).toLocaleString()} className="shrink-0 text-xs text-neutral-400">
+        {new Date(game.playedAt).toLocaleDateString()}
+      </span>
     </>
   );
 
@@ -336,6 +342,17 @@ export function ArchivePage({ goPlay }: { goPlay: () => void }) {
 
   const [tab, setTab] = useState<'games' | 'insights'>('games');
   const [filter, setFilter] = useState<ArchiveFilter>(DEFAULT_FILTER);
+  // Reference time for the period filters. Kept in state (not Date.now() inside
+  // the memos below) so a tab left open for days refreshes its '7d'/'30d'
+  // cutoffs when the user comes back to it.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState === 'visible') setNow(Date.now());
+    };
+    document.addEventListener('visibilitychange', refresh);
+    return () => document.removeEventListener('visibilitychange', refresh);
+  }, []);
   const [saved, setSaved] = useState<SavedGame[] | null>(token ? null : []);
   const [loadError, setLoadError] = useState(false);
   const [retryNonce, setRetryNonce] = useState(0);
@@ -416,7 +433,7 @@ export function ArchivePage({ goPlay }: { goPlay: () => void }) {
     [games, openings],
   );
 
-  const filtered = useMemo(() => filterGames(resolvedGames, filter), [resolvedGames, filter]);
+  const filtered = useMemo(() => filterGames(resolvedGames, filter, now), [resolvedGames, filter, now]);
   const filterActive = filter.result !== 'all' || filter.color !== 'all' || filter.period !== 'all';
 
   const openGame = (g: ArchiveGame) => {
@@ -447,14 +464,27 @@ export function ArchivePage({ goPlay }: { goPlay: () => void }) {
   }, [filtered]);
   const openingsTop = useMemo(() => openingCounts(filtered, 6), [filtered]);
   const ratingLines = useMemo(() => {
-    const from = periodStart(filter.period, Date.now());
+    const from = periodStart(filter.period, now);
     const pct = (v: number) => `${Math.round(v)}`;
     return [
       { label: 'Bots', color: 'var(--c-brand-400)', points: ratingSeries(botsHistory, meter).filter((p) => p.t >= from), format: pct },
       { label: 'Blitz', color: 'var(--c-gold-400)', points: ratingSeries(blitzHistory, meter).filter((p) => p.t >= from), format: pct },
     ].filter((l) => l.points.length > 0);
-  }, [botsHistory, blitzHistory, meter, filter.period]);
-  const profile = useMemo(() => buildWeaknessProfile(Object.values(coachGames)), [coachGames]);
+  }, [botsHistory, blitzHistory, meter, filter.period, now]);
+  // Coach digests carry the review's result / player colour / timestamp, so
+  // the strengths & weaknesses card can honour the same Result/Color/Period
+  // slice as every sibling Insights section (digest createdAt plays the role
+  // of playedAt — the same "when it entered the archive" semantics saved
+  // games use).
+  const digestCount = useMemo(() => Object.keys(coachGames).length, [coachGames]);
+  const profile = useMemo(() => {
+    const sliced = filterGames(
+      Object.values(coachGames).map((d) => ({ digest: d, result: d.result, userColor: d.playerColor, playedAt: d.createdAt })),
+      filter,
+      now,
+    );
+    return buildWeaknessProfile(sliced.map((s) => s.digest));
+  }, [coachGames, filter, now]);
   const strengths = useMemo(() => {
     const out: string[] = [];
     const phases = profile.phases.filter((p) => p.moves > 0).sort((a, b) => b.accuracy - a.accuracy);
@@ -679,7 +709,9 @@ export function ArchivePage({ goPlay }: { goPlay: () => void }) {
             <Section title="Strengths & weaknesses" aside="from reviewed games · full detail on the Coach tab">
               {profile.games === 0 ? (
                 <EmptyChartNote>
-                  Review a finished game (Play → Review) and the coach will chart what you do well and what keeps costing you.
+                  {digestCount > 0
+                    ? 'No reviewed games match the current filters — widen the period or clear the filters to see this breakdown.'
+                    : 'Review a finished game (Play → Review) and the coach will chart what you do well and what keeps costing you.'}
                 </EmptyChartNote>
               ) : (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

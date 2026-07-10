@@ -40,7 +40,7 @@ export interface ArchiveGame {
   result: ArchiveResult;
   /** The other player's name, when the user's side is known. */
   opponent: string | null;
-  /** Full moves. */
+  /** Last full-move number reached (= full-move count from a standard start). */
   moves: number;
   /** Full PGN when the moves were stored (casual games only log results). */
   pgn: string | null;
@@ -106,6 +106,24 @@ export function perspectiveResult(resultRaw: string, userColor: Side | null): Ar
   return 'unknown';
 }
 
+/**
+ * The last full-move number a game reaches, derived from its start FEN's
+ * side-to-move and fullmove fields — so the count agrees with the PGN's own
+ * move numbers even for games saved from a custom position (SetUp/FEN tag
+ * with Black to move or a fullmove number > 1). For games from the standard
+ * start this equals ceil(plies / 2). 0 when no moves were played.
+ */
+export function lastFullmove(startFen: string, plies: number): number {
+  if (plies <= 0) return 0;
+  const fields = startFen.split(' ');
+  const blackToMove = fields[1] === 'b';
+  const parsedStart = Number.parseInt(fields[5] ?? '1', 10);
+  const start = Number.isFinite(parsedStart) && parsedStart > 0 ? parsedStart : 1;
+  // White to move: plies 1,2 complete move `start`, 3,4 complete `start+1`, …
+  // Black to move: ply 1 completes move `start`, 2,3 complete `start+1`, …
+  return blackToMove ? start + Math.floor(plies / 2) : start + Math.ceil(plies / 2) - 1;
+}
+
 /** Normalize a library SavedGame (server, synced) into an ArchiveGame. */
 export function fromSavedGame(g: SavedGame, self: string[]): ArchiveGame {
   const parsed = parsePgnGame(g.pgn);
@@ -120,7 +138,7 @@ export function fromSavedGame(g: SavedGame, self: string[]): ArchiveGame {
     userColor,
     result: perspectiveResult(g.result, userColor),
     opponent: userColor ? (userColor === 'white' ? g.black : g.white) : null,
-    moves: parsed ? Math.ceil(parsed.sans.length / 2) : 0,
+    moves: parsed ? lastFullmove(parsed.startFen, parsed.sans.length) : 0,
     pgn: g.pgn,
     sans: parsed?.sans ?? [],
     gameKey: parsed ? reportCacheKey(parsed.startFen, parsed.ucis, REVIEW_ENGINE_SETTINGS) : null,
