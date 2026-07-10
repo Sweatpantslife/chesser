@@ -122,6 +122,17 @@ export function IconTrain(p: IconProps) {
   );
 }
 
+export function IconCoach(p: IconProps) {
+  // A whistle — the coach's tool of trade.
+  return (
+    <svg {...base(p)}>
+      <circle cx="9" cy="14" r="5" />
+      <path d="M12.5 10.5 20 6v4l-6 2.5" />
+      <circle cx="9" cy="14" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 export function IconCoords(p: IconProps) {
   return (
     <svg {...base(p)}>

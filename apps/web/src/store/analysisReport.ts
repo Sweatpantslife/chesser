@@ -11,6 +11,7 @@ import {
   type ReviewRowsInput,
 } from '../lib/analytics/report';
 import type { AnalysisReport, ArrowSpec, PlayerSummary, Side } from '../lib/analytics/types';
+import { useCoach } from './coach';
 import { mainlineOf, useGame, type Annotation, type SideReview } from './game';
 
 /**
@@ -165,6 +166,8 @@ export const useAnalysisReport = create<AnalysisReportState>((set) => ({
       // report's canonical grades, exactly like the cache path does.
       hydrateLegacyReviewFields(report, input.gameNo);
       saveCachedReport(report);
+      // Feed the coach's weakness profile (no-op for analysis-board reviews).
+      useCoach.getState().ingestReport(report);
     } catch (e) {
       // Degrade to "no report" — a bad row after a ~30 s engine review must
       // not surface as an unhandled rejection while the legacy review stands.
