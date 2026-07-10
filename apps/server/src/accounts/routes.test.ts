@@ -112,8 +112,8 @@ describe('PUT /api/progress anti-cheat', () => {
     const cheat = honestPayload();
     cheat.ratings.categories.puzzles.played = 11; // one new game...
     cheat.ratings.categories.puzzles.won = 7;
-    cheat.ratings.categories.puzzles.elo = 2210; // ...+910 Elo
-    cheat.ratings.categories.puzzles.eloPeak = 2210;
+    cheat.ratings.categories.puzzles.elo = 1600; // ...+300 Elo (max is ±40/game)
+    cheat.ratings.categories.puzzles.eloPeak = 1600;
     const res = await putProgress(token, cheat);
     assert.equal(res.statusCode, 400);
     assert.match((res.json() as { error: string }).error, /rating jump/i);

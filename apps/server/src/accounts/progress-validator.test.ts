@@ -317,6 +317,108 @@ describe('rejected payloads', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Rating-peak plausibility — peaks must be backed by games everywhere
+// ---------------------------------------------------------------------------
+
+describe('rating-peak plausibility', () => {
+  it('rejects a first-sync peak unreachable from the starting rating (no stored baseline)', () => {
+    const cheat = storedSnapshot();
+    cheat.ratings.categories.puzzles = cat({ elo: 1200, eloPeak: 3600, played: 0, won: 0, lost: 0 });
+    expectReject(validateProgress(cheat, null, NOW), /peak rating .* unreachable from the starting rating/i);
+  });
+
+  it('rejects a first-sync live rating unreachable from the starting rating', () => {
+    const cheat = storedSnapshot();
+    cheat.ratings.categories.puzzles = cat({ elo: 3600, eloPeak: 3600, played: 0, won: 0, lost: 0 });
+    expectReject(validateProgress(cheat, null, NOW), /unreachable from the starting rating/i);
+  });
+
+  it('rejects a first-sync Glicko peak unreachable with the claimed games', () => {
+    const cheat = storedSnapshot();
+    cheat.ratings.categories.puzzles = cat({ elo: 1200, eloPeak: 1200, glickoPeak: 3600, played: 2, won: 1, lost: 1 });
+    expectReject(validateProgress(cheat, null, NOW), /glicko peak .* unreachable/i);
+  });
+
+  it('clamps peaks claimed without new games instead of max-merging them in', () => {
+    const cheat = storedSnapshot(); // same played count as stored (100)
+    cheat.ratings.categories.puzzles.eloPeak = 3600;
+    cheat.ratings.categories.puzzles.glickoPeak = 3600;
+    (cheat.achievements.unlocked as Record<string, number>)['rating-puzzles-2000'] = NOW;
+    const res = validateProgress(cheat, storedSnapshot(), NOW);
+    expectOk(res);
+    const p = puzzlesOf(res.data);
+    assert.equal(p.eloPeak, 1450); // stored peak, not the fabricated one
+    assert.equal(p.glickoPeak, 1430);
+    assert.ok(res.adjustments.some((a) => a.includes('without new games')));
+    const unlocked = (res.data as { achievements: { unlocked: Record<string, number> } }).achievements.unlocked;
+    assert.ok(!('rating-puzzles-2000' in unlocked)); // clamped peak can't back the badge
+  });
+
+  it('rejects a peak beyond per-game reach even when new games are claimed', () => {
+    const cheat = storedSnapshot();
+    cheat.ratings.categories.puzzles.played = 102;
+    cheat.ratings.categories.puzzles.won = 62;
+    cheat.ratings.categories.puzzles.eloPeak = 2000; // 2 games can add at most 80
+    expectReject(validateProgress(cheat, storedSnapshot(), NOW), /peak .* unreachable/i);
+  });
+
+  it('rejects a first-sync legacy puzzle peak unreachable with the claimed puzzles', () => {
+    const payload = { puzzleRating: { rating: 1200, peak: 3600, played: 2, solved: 1, history: {} } };
+    expectReject(validateProgress(payload, null, NOW), /peak rating .* unreachable/i);
+  });
+
+  it('clamps a legacy puzzle peak claimed without new puzzles', () => {
+    const stored = { puzzleRating: { rating: 1400, peak: 1450, played: 100, solved: 60, history: {} } };
+    const cheat = { puzzleRating: { rating: 1400, peak: 3600, played: 100, solved: 60, history: {} } };
+    const res = validateProgress(cheat, stored, NOW);
+    expectOk(res);
+    const legacy = (res.data as { puzzleRating: { peak: number } }).puzzleRating;
+    assert.equal(legacy.peak, 1450);
+    assert.ok(res.adjustments.some((a) => a.includes('without new puzzles')));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Zero-activity padding days can't back goal/streak/quest claims
+// ---------------------------------------------------------------------------
+
+describe('padding-day claims', () => {
+  /** Adds `n` zero-XP, zero-activity day logs far in the past. */
+  function pad(days: Record<string, { xp: number; activities: number }>, n: number): void {
+    for (let i = 0; i < n; i++) days[day(-30 - i)] = { xp: 0, activities: 0 };
+  }
+
+  it('rejects goalsMet backed only by zero-XP padding days', () => {
+    const cheat = storedSnapshot();
+    pad(cheat.gamify.days, 45);
+    cheat.gamify.goalsMet = 50; // only 5 days have xp ≥ the minimum goal
+    expectReject(validateProgress(cheat, storedSnapshot(), NOW), /daily goal/i);
+  });
+
+  it('rejects a best goal-streak backed only by padding days', () => {
+    const cheat = storedSnapshot();
+    pad(cheat.gamify.days, 45);
+    cheat.gamify.goalsMet = 50;
+    cheat.gamify.bestStreak = 50;
+    expectReject(validateProgress(cheat, storedSnapshot(), NOW), /daily goal|goal streak/i);
+  });
+
+  it('rejects a best activity streak beyond the claimed active days', () => {
+    const cheat = storedSnapshot();
+    pad(cheat.gamify.days, 95);
+    cheat.streak.best = 100; // only 5 days have activities ≥ 1
+    expectReject(validateProgress(cheat, storedSnapshot(), NOW), /best streak .* exceeds the \d+ claimed active day/i);
+  });
+
+  it('rejects lifetime quest counts backed only by padding days', () => {
+    const cheat = storedSnapshot();
+    pad(cheat.gamify.days, 95);
+    cheat.quests.totalCompleted = 300; // 6/day over 5 active days allows 30
+    expectReject(validateProgress(cheat, storedSnapshot(), NOW), /quest count/i);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Clamped payloads — normalizable noise is adjusted, not fatal
 // ---------------------------------------------------------------------------
 

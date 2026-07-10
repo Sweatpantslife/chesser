@@ -17,6 +17,9 @@ export default defineConfig({
       // All user state lives in localStorage/the sync API, so a reload is safe,
       // and it avoids shipping "refresh to update" UI.
       registerType: 'autoUpdate',
+      // Don't force manifest icons into the precache (they'd bypass the
+      // globIgnores below) — the OS fetches them at install time only.
+      includeManifestIcons: false,
       manifest: {
         name: 'Chesser',
         short_name: 'Chesser',
@@ -46,14 +49,19 @@ export default defineConfig({
         // below instead, so only the rating bands a user actually plays are
         // stored offline.
         globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
-        globIgnores: ['sw-legacy-cleanup.js'],
+        // The big install-time icons (manifest 512s, apple-touch) are only
+        // fetched by the OS when adding to the home screen — precaching them
+        // would cost every client ~240 kB of offline storage for nothing.
+        globIgnores: ['sw-legacy-cleanup.js', 'pwa-512x512.png', 'pwa-maskable-512x512.png', 'apple-touch-icon.png'],
         // The main chunk is ~0.9 MB; leave headroom but keep a ceiling so a
         // future multi-MB asset can't silently bloat every install.
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         // SPA navigation fallback — but never for API/websocket routes: an
         // offline /api request must fail, not be answered with the app shell.
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api\//, /^\/ws(\/|$)/],
+        // (`/api` without a slash included: the server answers it with a JSON
+        // 404, so the SW must not answer it with the app shell.)
+        navigateFallbackDenylist: [/^\/api(\/|$)/, /^\/ws(\/|$)/],
         runtimeCaching: [
           {
             // Lazily fetched puzzle rating bands (~700 kB each). Serve from

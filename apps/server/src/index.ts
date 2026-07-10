@@ -16,7 +16,10 @@ import { importGames } from './import.js';
 import { registerAccountRoutes } from './accounts/routes.js';
 import type { ExplorerDb } from '@chesser/shared';
 
-const app = Fastify({ logger: LOG_ENABLED });
+// bodyLimit: an explicit cap on request bodies (matches Fastify's default of
+// 1 MiB rather than relying on it) — the largest legitimate payloads are the
+// synced progress blob and saved PGNs, both far under it.
+const app = Fastify({ logger: LOG_ENABLED, bodyLimit: 1_048_576 });
 await app.register(cors, { origin: true });
 
 app.get('/api/health', async () => ({ ok: true, syzygy: !!engines.availability().syzygy }));

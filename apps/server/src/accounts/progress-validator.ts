@@ -42,11 +42,17 @@
  * through untouched, except that SRS per-day review history — which feeds the
  * review achievements — gets the same day-key and per-day-cap checks.
  *
- * Known accepted limitation: with no server-side record of individual games,
- * a fully self-consistent fabricated history (fake days each under the per-day
- * caps) cannot be distinguished from a long-offline device's real backlog.
- * The rules therefore bound the *rate* and *shape* of claims — absolute
- * ceilings, per-day caps, per-game rating movement — rather than proving play.
+ * Known accepted limitations (two classes):
+ *  1. With no server-side record of individual games, a fully self-consistent
+ *     fabricated history (fake days each under the per-day caps, ratings
+ *     walked up within the per-game bound from the starting seed) cannot be
+ *     distinguished from a long-offline device's real backlog. The rules
+ *     therefore bound the *rate* and *shape* of claims — absolute ceilings,
+ *     per-day caps, per-game rating movement — rather than proving play.
+ *  2. Achievement ids whose backing stat is not synced (puzzle-rush scores,
+ *     coach drills, `ladder-master`, `learn-lesson-all`) cannot be verified
+ *     and pass through unchecked (up to the badge-count cap). Closing this
+ *     would require syncing those stats; until then such badges are forgeable.
  */
 
 // ---------------------------------------------------------------------------
@@ -69,6 +75,13 @@ export const LIMITS = {
   glickoDeltaPerGame: 350,
   /** Plausible hardest-core single-day volume per rating category. */
   gamesPerDay: { bots: 300, blitz: 300, puzzles: 600 } as Record<RatingCat, number>,
+  /**
+   * Client per-category starting rating (apps/web/src/store/ratings.ts
+   * START_ELO; Glicko seeds at the same number, and the legacy puzzle rating
+   * used the same 1200 default). Anchors the absolute reachability bound:
+   * every rating/peak must be reachable from this seed with the claimed games.
+   */
+  startRating: { bots: 1500, blitz: 1500, puzzles: 1200 } as Record<RatingCat, number>,
   playedCap: 2_000_000,
   historyDaysCap: 5_000, // ~13 years of daily snapshots
   /** Years of hard daily play; nothing legit gets near it. */
@@ -162,6 +175,9 @@ function ratingOf(v: unknown, what: string): number {
 // Level curve — must mirror apps/web/src/store/gamify.ts.
 const LEVEL_BASE = 60;
 const LEVEL_STEP = 40;
+
+/** Client floor for the configurable daily XP goal (store/gamify.ts setGoalXp). */
+const MIN_GOAL_XP = 10;
 function xpToReachLevel(level: number): number {
   const n = Math.max(0, level - 1);
   return n * LEVEL_BASE + (LEVEL_STEP * n * (n + 1)) / 2;
@@ -262,6 +278,27 @@ function sanitizeCategory(cat: RatingCat, raw: unknown, maxDay: string, notes: N
     reject(`Ratings: ${cat} results (${won} won + ${lost} lost + ${drawn} drawn) exceed the ${played} games played.`);
   }
 
+  // Absolute reachability: every account starts a category at the fixed client
+  // seed and moves at most eloDeltaPerGame (glickoDeltaPerGame) per game, so
+  // live ratings AND peaks must be reachable from the seed with the claimed
+  // game count. This is what stops a first sync — where there is no stored
+  // snapshot to diff against — from teleporting a rating or peak to the
+  // ceiling with zero (or too few) games.
+  const eloReach = LIMITS.startRating[cat] + LIMITS.eloDeltaPerGame * played;
+  if (elo > eloReach) {
+    reject(`Ratings: ${cat} rating of ${Math.round(elo)} is unreachable from the starting rating with ${Math.round(played)} game(s).`);
+  }
+  if (eloPeak > eloReach) {
+    reject(`Ratings: ${cat} peak rating of ${Math.round(eloPeak)} is unreachable from the starting rating with ${Math.round(played)} game(s).`);
+  }
+  const glickoReach = LIMITS.startRating[cat] + LIMITS.glickoDeltaPerGame * played;
+  if (gRating > glickoReach) {
+    reject(`Ratings: ${cat} Glicko rating of ${Math.round(gRating)} is unreachable from the starting rating with ${Math.round(played)} game(s).`);
+  }
+  if (glickoPeak > glickoReach) {
+    reject(`Ratings: ${cat} Glicko peak of ${Math.round(glickoPeak)} is unreachable from the starting rating with ${Math.round(played)} game(s).`);
+  }
+
   const winStreak = countOf(raw.winStreak, LIMITS.playedCap, `Ratings: ${cat} win streak`);
   let bestWinStreak = countOf(raw.bestWinStreak, LIMITS.playedCap, `Ratings: ${cat} best win streak`);
   if (bestWinStreak < winStreak) {
@@ -302,10 +339,31 @@ function sanitizeCategory(cat: RatingCat, raw: unknown, maxDay: string, notes: N
   return { elo, eloPeak, glicko: { rating: gRating, rd: g.rd, vol: g.vol }, glickoPeak, played, won, lost, drawn, winStreak, bestWinStreak, history };
 }
 
-/** Delta rules vs the stored snapshot — rejects impossible growth claims. */
-function checkCategoryDeltas(cat: RatingCat, next: Category, prev: Category): void {
+/**
+ * Delta rules vs the stored snapshot — rejects impossible growth claims and
+ * clamps peaks claimed without the games to back them (mutates `next`).
+ */
+function checkCategoryDeltas(cat: RatingCat, next: Category, prev: Category, notes: Notes): void {
   const gamesDelta = next.played - prev.played;
-  if (gamesDelta <= 0) return; // stale/equal push: merge keeps the stored side authoritative
+  if (gamesDelta <= 0) {
+    // Stale/equal push: the merge keeps the stored side's live ratings and
+    // counters — but peaks are max-merged, so an inflated peak claimed with
+    // zero new games would stick permanently. A peak cannot rise without
+    // playing, so clamp it to the stored bound (a clamp, not a reject, to
+    // mirror the live-rating rule in mergeCategory: an honest-but-unusual
+    // device pushing an unsynced parallel history must not brick its sync).
+    const eloBound = Math.max(prev.eloPeak, prev.elo);
+    if (next.eloPeak > eloBound) {
+      notes.add(`ratings.${cat}: peak clamped to ${Math.round(eloBound)} — a higher peak is claimed without new games.`);
+      next.eloPeak = eloBound;
+    }
+    const glickoBound = Math.max(prev.glickoPeak, prev.glicko.rating);
+    if (next.glickoPeak > glickoBound) {
+      notes.add(`ratings.${cat}: Glicko peak clamped to ${Math.round(glickoBound)} — a higher peak is claimed without new games.`);
+      next.glickoPeak = glickoBound;
+    }
+    return;
+  }
 
   // Batch size: new games must be backed by new-or-updated activity days.
   let changedDays = 0;
@@ -381,7 +439,7 @@ function validateRatings(raw: unknown, storedRaw: unknown, maxDay: string, notes
     if (rawCats[cat] === undefined) continue;
     const next = sanitizeCategory(cat, rawCats[cat], maxDay, notes);
     const prev = parseStoredCategory(storedCats[cat]);
-    if (prev) checkCategoryDeltas(cat, next, prev);
+    if (prev) checkCategoryDeltas(cat, next, prev, notes);
     out[cat] = mergeCategory(prev, next, cat, notes);
   }
   return { categories: out, rest };
@@ -423,7 +481,7 @@ function parseStoredGamify(raw: unknown): GamifyData | null {
   return {
     xp: raw.xp,
     days,
-    goalXp: isNum(raw.goalXp) && raw.goalXp >= 10 ? raw.goalXp : 40,
+    goalXp: isNum(raw.goalXp) && raw.goalXp >= MIN_GOAL_XP ? raw.goalXp : 40,
     streak: num(raw.streak),
     bestStreak: num(raw.bestStreak),
     lastGoalDay: isDayKey(raw.lastGoalDay) ? raw.lastGoalDay : '',
@@ -439,7 +497,9 @@ function validateGamify(raw: unknown, storedRaw: unknown, maxDay: string, notes:
   const days: Record<string, DayLog> = {};
   if (raw.days !== undefined) {
     if (!isObj(raw.days)) reject('XP day logs are malformed.');
-    for (const [day, log] of Object.entries(raw.days)) {
+    const entries = Object.entries(raw.days);
+    if (entries.length > LIMITS.historyDaysCap) reject('XP day logs span an implausible number of days.');
+    for (const [day, log] of entries) {
       if (!isDayKey(day) || day < LIMITS.earliestDay) {
         notes.add(`gamify: dropped day log with invalid day '${String(day).slice(0, 20)}'.`);
         continue;
@@ -462,7 +522,7 @@ function validateGamify(raw: unknown, storedRaw: unknown, maxDay: string, notes:
   let goalXp = 40;
   if (raw.goalXp !== undefined) {
     if (!isNum(raw.goalXp)) reject('Daily goal is malformed.');
-    goalXp = Math.max(10, Math.round(raw.goalXp));
+    goalXp = Math.max(MIN_GOAL_XP, Math.round(raw.goalXp));
     if (goalXp !== raw.goalXp) notes.add('gamify: daily goal normalized.');
   }
 
@@ -473,8 +533,12 @@ function validateGamify(raw: unknown, storedRaw: unknown, maxDay: string, notes:
     bestStreak = streak;
   }
   const goalsMet = countOf(raw.goalsMet, 100_000, 'Days the daily goal was met');
-  const dayCount = Object.keys(days).length;
-  if (goalsMet > dayCount) reject(`Daily goal claimed met on ${Math.round(goalsMet)} day(s) but only ${dayCount} day(s) have any activity.`);
+  // Only days that reached the lowest goal the client allows (MIN_GOAL_XP) can
+  // have met it — zero/low-XP padding days don't back a daily-goal claim.
+  const goalCapableDays = Object.values(days).filter((d) => d.xp >= MIN_GOAL_XP).length;
+  if (goalsMet > goalCapableDays) {
+    reject(`Daily goal claimed met on ${Math.round(goalsMet)} day(s) but only ${goalCapableDays} day(s) have enough XP to meet the minimum goal.`);
+  }
   if (bestStreak > goalsMet) reject(`Daily-goal streak of ${Math.round(bestStreak)} exceeds the ${Math.round(goalsMet)} day(s) the goal was met.`);
 
   let lastGoalDay = '';
@@ -570,12 +634,15 @@ function validateStreak(raw: unknown, incomingGamify: GamifyData | null, maxDay:
   }
 
   // A streak counts consecutive *active* days, and every active day writes a
-  // day log — so the run can never exceed the claimed active days (which are
-  // themselves bounded to real, non-future calendar days).
+  // day log — so no run (current or best) can exceed the claimed active days
+  // (which are themselves bounded to real, non-future calendar days).
   if (incomingGamify) {
     const activeDays = Object.values(incomingGamify.days).filter((d) => d.activities >= 1).length;
     if (count > activeDays) {
       reject(`Streak of ${Math.round(count)} day(s) exceeds the ${activeDays} claimed active day(s).`);
+    }
+    if (best > activeDays) {
+      reject(`Best streak of ${Math.round(best)} day(s) exceeds the ${activeDays} claimed active day(s).`);
     }
   }
 
@@ -670,7 +737,9 @@ function validateQuests(raw: unknown, incomingGamify: GamifyData | null, maxDay:
   const progress: Record<string, number> = {};
   if (raw.progress !== undefined) {
     if (!isObj(raw.progress)) reject('Quest progress is malformed.');
-    for (const [id, v] of Object.entries(raw.progress)) {
+    const entries = Object.entries(raw.progress);
+    if (entries.length > 20) reject('Quest progress claims an implausible daily slate.');
+    for (const [id, v] of entries) {
       if (typeof id !== 'string' || id.length > 80 || !isNum(v) || v < 0 || v > 100_000) {
         notes.add('quests: dropped a malformed progress entry.');
         continue;
@@ -695,11 +764,14 @@ function validateQuests(raw: unknown, incomingGamify: GamifyData | null, maxDay:
   const totalCompleted = countOf(raw.totalCompleted, 1_000_000, 'Lifetime quests completed');
   const daysAllDone = countOf(raw.daysAllDone, 1_000_000, 'All-quests-done days');
   if (incomingGamify) {
-    const dayCount = Math.max(1, Object.keys(incomingGamify.days).length);
-    if (totalCompleted > LIMITS.questsPerDay * dayCount) {
-      reject(`Lifetime quest count of ${Math.round(totalCompleted)} exceeds the plausible ${LIMITS.questsPerDay}/day over ${dayCount} active day(s).`);
+    // Quests only advance via recorded activities, and every activity writes
+    // `activities ≥ 1` into its day log — so only genuinely active days back
+    // quest claims (zero-activity padding days don't count).
+    const activeDays = Math.max(1, Object.values(incomingGamify.days).filter((d) => d.activities >= 1).length);
+    if (totalCompleted > LIMITS.questsPerDay * activeDays) {
+      reject(`Lifetime quest count of ${Math.round(totalCompleted)} exceeds the plausible ${LIMITS.questsPerDay}/day over ${activeDays} active day(s).`);
     }
-    if (daysAllDone > dayCount) reject(`All-quests-done days (${Math.round(daysAllDone)}) exceed the ${dayCount} claimed active day(s).`);
+    if (daysAllDone > activeDays) reject(`All-quests-done days (${Math.round(daysAllDone)}) exceed the ${activeDays} claimed active day(s).`);
   }
   if (daysAllDone > totalCompleted) reject('All-quests-done days exceed the lifetime quests completed.');
 
@@ -1012,6 +1084,12 @@ function validateLegacyPuzzle(raw: unknown, storedRaw: unknown, maxDay: string, 
   const solved = countOf(raw.solved, LIMITS.playedCap, 'Puzzles solved');
   if (solved > played) reject(`Puzzles solved (${Math.round(solved)}) exceed puzzles played (${Math.round(played)}).`);
 
+  // Same seed-reachability bound as the modern categories: the legacy puzzle
+  // rating started at the puzzles seed and moved ≤ eloDeltaPerGame per puzzle.
+  const reach = LIMITS.startRating.puzzles + LIMITS.eloDeltaPerGame * played;
+  if (rating > reach) reject(`Puzzle rating of ${Math.round(rating)} is unreachable from the starting rating with ${Math.round(played)} puzzle(s).`);
+  if (peak > reach) reject(`Puzzle peak rating of ${Math.round(peak)} is unreachable from the starting rating with ${Math.round(played)} puzzle(s).`);
+
   const history: Record<string, number> = {};
   if (raw.history !== undefined) {
     if (!isObj(raw.history)) reject('Legacy puzzle history is malformed.');
@@ -1038,6 +1116,20 @@ function validateLegacyPuzzle(raw: unknown, storedRaw: unknown, maxDay: string, 
     const delta = played - prev.played;
     if (delta > 0 && Math.abs(rating - prev.rating) > LIMITS.eloDeltaPerGame * delta) {
       reject(`Puzzle rating jump of ${Math.round(rating - prev.rating)} over ${Math.round(delta)} new puzzle(s) is impossible.`);
+    }
+    // Peaks follow the same per-puzzle bound as the modern categories: with new
+    // puzzles the peak must be reachable from the stored rating (reject); with
+    // none it cannot rise at all (clamp — the merge below max-merges peaks).
+    if (delta > 0) {
+      if (peak > Math.max(prev.peak, prev.rating + LIMITS.eloDeltaPerGame * delta)) {
+        reject(`Puzzle peak rating of ${Math.round(peak)} is unreachable from the stored rating with ${Math.round(delta)} new puzzle(s).`);
+      }
+    } else {
+      const bound = Math.max(prev.peak, prev.rating);
+      if (peak > bound) {
+        notes.add(`puzzleRating: peak clamped to ${Math.round(bound)} — a higher peak is claimed without new puzzles.`);
+        peak = bound;
+      }
     }
     // Merge like the modern categories: more-played side owns the live rating.
     const incomingWins = played > prev.played;
