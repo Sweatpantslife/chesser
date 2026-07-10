@@ -31,6 +31,17 @@ describe('buildBook', () => {
     const all = [...book.values()].flat();
     expect(all.every((e) => e.lineId === 'si-najdorf')).toBe(true);
   });
+
+  it('a line that breaks mid-parse leaves no partial entries in the book', () => {
+    // The first three moves are legal, so a naive builder would commit the
+    // trainee's ...c5 before Kd4 throws — none of it may reach the book.
+    const broken: BookLineInput = { id: 'broken', side: 'black', moves: ['e4', 'c5', 'Nf3', 'Kd4'] };
+    const book = buildBook([broken, line('si-najdorf')], 'black');
+    const all = [...book.values()].flat();
+    expect(all.some((e) => e.lineId === 'broken')).toBe(false);
+    // …and the valid sibling still populates fully (7 black moves in 14 plies).
+    expect(all.filter((e) => e.lineId === 'si-najdorf')).toHaveLength(7);
+  });
 });
 
 describe('classifyMove', () => {

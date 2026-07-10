@@ -46,18 +46,22 @@ export function buildBook(lines: BookLineInput[], side: 'white' | 'black'): Line
   for (const line of lines) {
     if (line.side !== side) continue;
     const c = new Chess();
+    // Buffer per line and commit only after the whole line parses, so a SAN
+    // throwing mid-line can't leave partial entries in the book.
+    const pending: Array<{ key: string; entry: BookEntry }> = [];
     try {
       for (const [ply, san] of line.moves.entries()) {
         const key = posKey(c.fen());
         const mv = c.move(san); // throws on illegal SAN
-        if (mv.color === traineeTurn) {
-          const arr = book.get(key) ?? [];
-          arr.push({ lineId: line.id, ply, san: mv.san });
-          book.set(key, arr);
-        }
+        if (mv.color === traineeTurn) pending.push({ key, entry: { lineId: line.id, ply, san: mv.san } });
       }
     } catch {
-      // skip malformed user lines
+      continue; // skip malformed user lines entirely
+    }
+    for (const { key, entry } of pending) {
+      const arr = book.get(key) ?? [];
+      arr.push(entry);
+      book.set(key, arr);
     }
   }
   return book;
