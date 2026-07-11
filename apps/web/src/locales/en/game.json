@@ -1,0 +1,98 @@
+{
+  "controls": {
+    "first": "First",
+    "firstAria": "First move",
+    "previous": "Previous",
+    "previousAria": "Previous move",
+    "next": "Next",
+    "nextAria": "Next move",
+    "last": "Last",
+    "lastAria": "Last move",
+    "flip": "Flip",
+    "flipTitle": "Flip board (f)",
+    "takeback": "Takeback",
+    "takebackTitle": "Take back",
+    "analyse": "Analyse",
+    "analyseTitle": "Analysis board",
+    "pgn": "PGN",
+    "pgnTitle": "Copy PGN",
+    "library": "Library",
+    "libraryTitle": "Open / import / FEN",
+    "save": "Save",
+    "saved": "Saved",
+    "saveTitle": "Save game to your library",
+    "line": "Line",
+    "lineTitle": "Save this line to a repertoire"
+  },
+  "colors": {
+    "white": "white",
+    "black": "black"
+  },
+  "actions": {
+    "youPlay": "You play <color>{{color}}</color>",
+    "thinking": "thinking…",
+    "resign": "Resign",
+    "confirmResign": "Confirm resign",
+    "offerDraw": "Offer draw",
+    "offerDrawTitle": "Offer the bot a draw",
+    "claimDraw": "Claim draw",
+    "claimDrawTitle": "Claim the draw",
+    "claimDrawUnavailable": "Available on threefold repetition or the 50-move rule",
+    "offeringDraw": "Offering a draw…",
+    "drawDeclined": "The bot declines the draw.",
+    "youWon": "You won! 🎉",
+    "youLost": "You lost — rematch?",
+    "draw": "Draw.",
+    "gameOver": "Game over.",
+    "ladderCleared": "Ladder rung cleared — the next opponent is unlocked.",
+    "analyzeGame": "Analyze game",
+    "rematch": "Rematch",
+    "switchColours": "Switch colours",
+    "summary": "Summary"
+  },
+  "over": {
+    "victory": "Victory",
+    "defeat": "Defeat",
+    "draw": "Draw",
+    "opponent": "Opponent",
+    "youPlayed": "You played <color>{{color}}</color>",
+    "ratingBlitz": "Blitz rating",
+    "ratingBots": "Bots rating",
+    "unrated": "unrated",
+    "accuracy": "Accuracy",
+    "analysingPercent": "analysing {{percent}}%",
+    "analysing": "analysing…",
+    "engineOffline": "engine offline",
+    "you": "You",
+    "movesLabel": "Moves",
+    "openingLabel": "Opening",
+    "walkthrough": "move-by-move walkthrough"
+  },
+  "promotion": {
+    "chooseTitle": "Choose promotion piece",
+    "promoteTo": "Promote to {{piece}}",
+    "pieces": {
+      "q": "queen",
+      "r": "rook",
+      "b": "bishop",
+      "n": "knight"
+    }
+  },
+  "moveList": {
+    "variation": "Variation",
+    "promote": "Promote",
+    "promoteTitle": "Make this the main line",
+    "delete": "Delete",
+    "deleteTitle": "Delete this variation",
+    "moves": "Moves",
+    "empty": "No moves yet. Make moves on the board to build lines."
+  },
+  "evalBar": {
+    "evaluation": "Evaluation: {{score}} (White's view)",
+    "none": "No evaluation"
+  },
+  "evalGraph": {
+    "title": "Click to jump to a move",
+    "aria": "Evaluation graph, move {{current}} of {{total}}. Use arrow keys to step through moves."
+  }
+}

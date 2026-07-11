@@ -1,0 +1,220 @@
+{
+  "panel": {
+    "ariaLabel": "Amis et défis"
+  },
+  "headers": {
+    "friends": "👥 Amis",
+    "challenges": "⚔ Défis"
+  },
+  "signedOut": {
+    "body": "Connectez-vous (en haut à droite) pour ajouter des amis, les défier en partie et suivre leur actualité. Le partage est facultatif — seul votre pseudonyme est affiché."
+  },
+  "add": {
+    "hint": "Ajoutez des amis par nom d'utilisateur, ou échangez vos codes amis — aucun profil public requis.",
+    "label": "Nom d'utilisateur ou code ami",
+    "placeholder": "ex. magnus, ou Q2ZKM7PW",
+    "submit": "Ajouter un ami"
+  },
+  "code": {
+    "yours": "Votre code ami :",
+    "copy": "Copier",
+    "copied": "✓ Copié",
+    "copyAria": "Copier votre code ami"
+  },
+  "requests": {
+    "incomingTitle": "Demandes d'ami",
+    "outgoingTitle": "Demandes envoyées",
+    "waiting": "· en attente",
+    "acceptAria": "Accepter la demande d'ami de {{name}}",
+    "declineAria": "Refuser la demande d'ami de {{name}}",
+    "cancelAria": "Annuler la demande d'ami envoyée à {{name}}"
+  },
+  "list": {
+    "title": "Vos amis",
+    "empty": "Pas encore d'amis — envoyez une demande ci-dessus."
+  },
+  "remove": {
+    "button": "Retirer",
+    "buttonAria": "Retirer {{name}} de vos amis",
+    "confirm": "Confirmer",
+    "confirmAria": "Confirmer le retrait de {{name}}",
+    "keep": "Garder"
+  },
+  "challenge": {
+    "button": "⚔ Défier",
+    "buttonAria": "Défier {{name}} en partie",
+    "cardHint": "Accepter un défi lance une partie amicale en direct, sans classement.",
+    "empty": "Aucun défi en cours. Choisissez un ami et cliquez sur ⚔ Défier.",
+    "timeControlAria": "Cadence du défi lancé à {{name}}",
+    "youPlay": "Vous jouez",
+    "colorAria": "Votre couleur",
+    "send": "Envoyer le défi",
+    "incomingLine": "<from>{{from}}</from> vous défie — {{tc}}, vous jouez {{color}}",
+    "acceptPlay": "Accepter et jouer",
+    "acceptAria": "Accepter le défi de {{name}}",
+    "declineAria": "Refuser le défi de {{name}}",
+    "join": "Rejoindre la partie",
+    "cancelAria": "Annuler le défi lancé à {{name}}",
+    "dismissAria": "Ignorer le défi lancé à {{name}}",
+    "dismiss": "Ignorer",
+    "outDetail": "{{tc}}, vous jouez {{color}}",
+    "outPending": "en attente de {{name}}… ({{detail}})",
+    "outAccepted": "{{name}} a accepté votre défi !",
+    "outDeclined": "{{name}} a refusé votre défi",
+    "outExpired": "votre défi à {{name}} a expiré",
+    "outCancelled": "défi à {{name}} annulé"
+  },
+  "feed": {
+    "title": "Activité des amis",
+    "empty": "Rien pour l'instant — l'activité que vos amis partagent (scores, séries, badges) s'affiche ici.",
+    "note": "Seul ce que chaque ami a choisi de partager (classements / réglages de profil) apparaît ici.",
+    "rush": "a signé un record Puzzle Rush de {{value}}",
+    "ratingBots": "a désormais un classement de {{value}} contre les bots",
+    "ratingPuzzle": "a désormais un classement de {{value}} en problèmes",
+    "achievement": "a débloqué « {{name}} »",
+    "streak_one": "est sur une série de {{count}} jour",
+    "streak_many": "est sur une série de {{count}} jours",
+    "streak_other": "est sur une série de {{count}} jours"
+  },
+  "time": {
+    "justNow": "à l'instant",
+    "minutesAgo_one": "il y a {{count}} min",
+    "minutesAgo_many": "il y a {{count}} min",
+    "minutesAgo_other": "il y a {{count}} min",
+    "hoursAgo_one": "il y a {{count}} h",
+    "hoursAgo_many": "il y a {{count}} h",
+    "hoursAgo_other": "il y a {{count}} h",
+    "daysAgo_one": "il y a {{count}} j",
+    "daysAgo_many": "il y a {{count}} j",
+    "daysAgo_other": "il y a {{count}} j"
+  },
+  "colors": {
+    "white": "Blancs",
+    "black": "Noirs",
+    "whiteLower": "les blancs",
+    "blackLower": "les noirs",
+    "inlineWhite": "les Blancs",
+    "inlineBlack": "les Noirs",
+    "randomColors": "une couleur au hasard",
+    "pickWhite": "□ Blancs",
+    "pickBlack": "■ Noirs",
+    "pickRandom": "⚄ Au hasard"
+  },
+  "timeControl": {
+    "label": "Cadence",
+    "unlimited": "Temps illimité",
+    "unlimitedShort": "illimité"
+  },
+  "menu": {
+    "title": "Jouer contre un humain",
+    "subtitle": "Parties amicales, sans classement — sur cet appareil ou en ligne avec un ami."
+  },
+  "local": {
+    "title": "🤝 Passe-et-joue",
+    "hint": "Deux joueurs, un appareil. Passez-le-vous entre les coups.",
+    "autoFlip": "Retourner automatiquement l'échiquier vers le joueur au trait",
+    "start": "Lancer une partie passe-et-joue",
+    "tag": "· passe-et-joue · sans classement"
+  },
+  "online": {
+    "title": "🔗 Jouer avec un ami en ligne",
+    "hint": "Créez une partie et partagez le lien — aucun compte requis.",
+    "nameLabel": "Votre nom (facultatif)",
+    "namePlaceholder": "Anonyme",
+    "create": "Créer la partie et obtenir le lien",
+    "codePlaceholder": "Un code ? ex. QK7DPM",
+    "join": "Rejoindre"
+  },
+  "recent": {
+    "title": "Parties amicales récentes",
+    "vs": "{{white}} contre {{black}}",
+    "whiteFallback": "Blancs",
+    "blackFallback": "Noirs",
+    "modeLocal": "passe-et-joue",
+    "modeOnline": "lien ami"
+  },
+  "connect": {
+    "connecting": "Connexion…",
+    "settingUp": "Préparation de la partie…"
+  },
+  "invite": {
+    "lead": "Envoyez ce lien à votre ami — la partie commence dès qu'il l'ouvre :",
+    "copyLink": "Copier le lien",
+    "copied": "✓ Copié",
+    "codeHint": "…ou il peut saisir le code <code>{{code}}</code> dans Amis → Rejoindre."
+  },
+  "players": {
+    "waiting": "En attente…",
+    "you": "Vous",
+    "named": "{{name}} (vous)",
+    "opponent": "Votre adversaire",
+    "connected": "connecté",
+    "disconnected": "déconnecté"
+  },
+  "status": {
+    "toMove": "À {{player}} de jouer",
+    "toMoveCheck": "À {{player}} de jouer — échec",
+    "drawClaimable": "{{reason}} — la nulle peut être réclamée",
+    "winsReason": "{{player}} gagne — {{reason}}",
+    "drawReason": "Nulle — {{reason}}",
+    "waitingFriend": "En attente de votre ami…",
+    "onlineTag": "· partie <code>{{code}}</code> · sans classement",
+    "reconnecting": "· reconnexion…",
+    "oppDisconnected": "Votre adversaire s'est déconnecté — la partie reprendra à son retour."
+  },
+  "draw": {
+    "promptLocal": "{{to}} — {{from}} propose la nulle. Accepter ?",
+    "promptOnline": "{{name}} propose la nulle.",
+    "offeredWaiting": "Nulle proposée — en attente de votre adversaire…"
+  },
+  "actions": {
+    "resign": "🏳 Abandonner",
+    "resignAs": "🏳 Abandonner ({{player}})",
+    "confirmResign": "Confirmer l'abandon",
+    "abort": "✕ Interrompre",
+    "offerDraw": "½ Proposer nulle",
+    "claimDraw": "Réclamer la nulle",
+    "claimDrawTitle": "Réclamer la nulle",
+    "claimDrawUnavailable": "Disponible en cas de triple répétition ou de règle des 50 coups",
+    "flipBoard": "⇅ Retourner l'échiquier",
+    "accept": "Accepter",
+    "decline": "Refuser",
+    "rematch": "↻ Revanche",
+    "back": "← Retour",
+    "leave": "← Quitter la partie"
+  },
+  "outcome": {
+    "drew": "Vous avez fait nulle.",
+    "won": "Vous avez gagné ! 🎉",
+    "lost": "Vous avez perdu."
+  },
+  "result": {
+    "aborted": "Partie interrompue",
+    "draw": "Nulle",
+    "wins": "{{player}} gagne"
+  },
+  "reasons": {
+    "checkmate": "échec et mat",
+    "stalemate": "pat",
+    "insufficientMaterial": "matériel insuffisant",
+    "threefoldRepetition": "triple répétition",
+    "fiftyMoveRule": "règle des cinquante coups",
+    "resignation": "abandon",
+    "agreement": "accord mutuel",
+    "aborted": "interrompue",
+    "onTime": "au temps",
+    "timeoutInsufficientMaterial": "temps écoulé contre matériel insuffisant",
+    "playerResigned": "{{name}} a abandonné"
+  },
+  "moveList": {
+    "empty": "Aucun coup pour l'instant.",
+    "start": "Début",
+    "back": "Reculer",
+    "forward": "Avancer",
+    "live": "Aller à la position en direct"
+  },
+  "pgn": {
+    "copy": "⧉ Copier le PGN",
+    "copied": "✓ PGN copié"
+  }
+}

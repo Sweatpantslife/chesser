@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import i18n, { FALLBACK_LANGUAGE } from '../i18n';
 import { now, todayStr } from '../lib/clock';
 import { awardXP } from '../lib/gamify';
 import { buildWeaknessProfile } from '../lib/weakness';
@@ -100,6 +101,10 @@ interface PlanData {
   /** All-items-done bonus already paid this week. */
   weekRewarded: boolean;
   generatedAt: number;
+  /** Language the plan's strings actually resolved in at generation time
+   *  (lib/studyPlan bakes them in). When this trails the active language and
+   *  the week is still untouched, initPlanTracking re-bakes the plan. */
+  planLang: string;
 }
 
 interface PlanState extends PlanData {
@@ -123,7 +128,16 @@ const initialData = (): PlanData => ({
   rewarded: {},
   weekRewarded: false,
   generatedAt: 0,
+  planLang: '',
 });
+
+/** The language buildStudyPlan's strings will actually resolve in right now:
+ *  the active language if its `insights` bundle is loaded (English is bundled
+ *  eagerly; other locales stream in), else the English fallback. */
+function bakeLanguage(): string {
+  const lng = i18n.language || FALLBACK_LANGUAGE;
+  return lng === FALLBACK_LANGUAGE || i18n.hasResourceBundle(lng, 'insights') ? lng : FALLBACK_LANGUAGE;
+}
 
 export const usePlan = create<PlanState>()(
   persist(
@@ -157,7 +171,7 @@ export const usePlan = create<PlanState>()(
         regenerate() {
           const { profile, rating, activity, catalog } = gatherInputs();
           const plan = buildStudyPlan(profile, rating, activity, catalog, new Date(now()));
-          set({ ...initialData(), plan, generatedAt: now() });
+          set({ ...initialData(), plan, generatedAt: now(), planLang: bakeLanguage() });
           return plan;
         },
 
@@ -214,6 +228,26 @@ let wired = false;
 export function initPlanTracking(): void {
   if (wired) return;
   wired = true;
+
+  // Language re-bake: plan strings are resolved at GENERATION time and
+  // persisted (see lib/studyPlan's i18n note). Non-English locales load
+  // lazily, so the first ensurePlan of a fresh es/fr session can run before
+  // the locale's strings exist and bake English in for the whole week. While
+  // the week is UNTOUCHED (no progress) regenerate whenever the active
+  // language's strings become available (or the user switches language) —
+  // deterministic inputs make this invisible apart from the language. Once
+  // progress exists, the documented "old language until the next
+  // regeneration" trade-off applies.
+  const rebakeForLanguage = () => {
+    const s = usePlan.getState();
+    if (!s.plan || s.planLang === bakeLanguage()) return;
+    if (bakeLanguage() !== (i18n.language || FALLBACK_LANGUAGE)) return; // strings not loaded yet — 'loaded' re-fires
+    if (Object.keys(s.progress).length > 0) return;
+    s.regenerate();
+  };
+  i18n.on('languageChanged', rebakeForLanguage);
+  i18n.on('loaded', rebakeForLanguage);
+  rebakeForLanguage();
 
   useCoach.subscribe((s, prev) => {
     const added = s.trainingLog.length - prev.trainingLog.length;

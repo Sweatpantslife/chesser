@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -7,6 +8,7 @@ interface BeforeInstallPromptEvent extends Event {
 
 /** Shows an “Install” chip when the browser offers a PWA install prompt. */
 export function InstallButton() {
+  const { t } = useTranslation('common');
   const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
@@ -32,10 +34,10 @@ export function InstallButton() {
         await prompt.userChoice;
         setPrompt(null);
       }}
-      title="Install Chesser as an app"
+      title={t('install.tooltip')}
       className="min-h-11 rounded bg-neutral-800 px-2 py-1 text-sm text-emerald-300 hover:bg-neutral-700 sm:min-h-0"
     >
-      ⤓ Install
+      ⤓ {t('install.label')}
     </button>
   );
 }

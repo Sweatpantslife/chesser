@@ -1,0 +1,93 @@
+{
+  "hero": {
+    "greeting": {
+      "midnight": "Quemándote las pestañas",
+      "morning": "Buenos días",
+      "afternoon": "Buenas tardes",
+      "evening": "Buenas noches"
+    },
+    "dayUnit_one": "día",
+    "dayUnit_other": "días",
+    "freezeTitle": "Un protector salva tu racha cuando faltas un día",
+    "freezesBanked_one": "🧊 {{count}} protector guardado",
+    "freezesBanked_other": "🧊 {{count}} protectores guardados",
+    "levelXp": "Nivel {{level}} · {{xp}} XP",
+    "toNextLevel": "{{xp}} XP para el nivel {{level}}",
+    "streakAtRisk": "Tu racha pende de un hilo — entrena hoy para salvarla (usa un protector).",
+    "streakKeepAlive": "Mantén viva la llama — cualquier actividad cuenta.",
+    "streakStart": "Haz algo hoy — un problema, una lección, una partida — para encender tu racha."
+  },
+  "daily": {
+    "title": "Problema del día",
+    "body": "Un problema escogido a mano — el mismo para todos, nuevo cada día.",
+    "cta": "Resolver"
+  },
+  "sprints": {
+    "title": "Sprints de problemas",
+    "body": "Corre contra el reloj y encadena combos.",
+    "bests": "Récords — Rush {{rush}} · Storm {{storm}}",
+    "firstRecord": "Consigue tu primer récord.",
+    "rush": "Rush",
+    "storm": "Storm"
+  },
+  "openings": {
+    "dueTitle_one": "{{count}} línea de apertura pendiente hoy",
+    "dueTitle_other": "{{count}} líneas de apertura pendientes hoy",
+    "caughtUpTitle": "Aperturas: todo al día",
+    "startTitle": "Aprende un repertorio de aperturas",
+    "dueBody": "La repetición espaciada dice que es el momento — repásalas antes de que se olviden.",
+    "caughtUpBody": "No hay nada pendiente ahora mismo. Aprende una línea nueva para ampliar tu repertorio.",
+    "startBody": "Elige aperturas para blancas y negras y practícalas jugada a jugada.",
+    "ctaReview": "Repasar",
+    "ctaTrain": "Entrenar",
+    "ctaBuild": "Crear"
+  },
+  "lessons": {
+    "nextTitle": "Próxima lección: {{title}}",
+    "cta": "Aprender",
+    "allDoneTitle": "¡Todas las lecciones completadas!",
+    "allDoneBody": "Repite cualquier lección para afinar — las repeticiones también dan XP.",
+    "ctaBrowse": "Explorar"
+  },
+  "playCard": {
+    "title": "Juega una partida",
+    "body": "Enfréntate a un bot de tu nivel — las victorias cuentan para las misiones.",
+    "cta": "Jugar"
+  },
+  "goal": {
+    "title": "Meta diaria",
+    "freezesTitle_one": "{{count}} protector de racha guardado — un protector salva tu racha cuando faltas un día",
+    "freezesTitle_other": "{{count}} protectores de racha guardados — un protector salva tu racha cuando faltas un día",
+    "best": "mejor",
+    "streakLabel": "racha",
+    "todayLine": "<today>{{today}}</today><rest> / {{goal}} XP hoy</rest>",
+    "met": "✓ Meta cumplida — ¡buen trabajo!",
+    "atRisk": "Entrena hoy para salvar tu racha (usa un protector)",
+    "toGo": "{{xp}} XP para la meta de hoy",
+    "presetsLabel": "Meta"
+  },
+  "quests": {
+    "title": "Misiones diarias",
+    "doneCount": "{{done}} / {{total}} completadas",
+    "questDone": "✓ hecha",
+    "xpReward": "+{{xp}} XP",
+    "allDone": "🏅 Todas las misiones completadas — +{{xp}} XP extra ganados. ¡Nuevas misiones mañana!",
+    "finishAll": "Completa las {{total}} y llévate +{{xp}} XP extra. Misiones nuevas cada día."
+  },
+  "weekly": {
+    "title": "Tu semana de ajedrez",
+    "stats": {
+      "daysActive": "días activos",
+      "xpEarned": "XP ganados",
+      "games": "partidas (V–D–T)",
+      "bestAccuracy": "mejor precisión",
+      "puzzleRating": "puntuación de problemas",
+      "newRushBest": "nuevo récord en Rush",
+      "newStormBest": "nuevo récord en Storm",
+      "lessons": "lecciones",
+      "drills": "ejercicios resueltos"
+    },
+    "aiDisclosure": "Generado por IA a partir de tus estadísticas semanales verificadas",
+    "byokHint": "Añade tu propia clave de IA en Ajustes para desbloquear un resumen personalizado con IA — este resumen funciona sin ella."
+  }
+}

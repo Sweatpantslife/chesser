@@ -1,0 +1,34 @@
+{
+  "auth": {
+    "registrationFailed": "Registration failed",
+    "loginFailed": "Login failed"
+  },
+  "friends": {
+    "unreachable": "Could not reach the server",
+    "signInFirst": "Sign in first.",
+    "enterTarget": "Enter a username or friend code.",
+    "nowFriends": "You and {{username}} are now friends!",
+    "requestSent": "Request sent to {{username}}.",
+    "sendRequestFailed": "Could not send the request",
+    "respondFailed": "Could not respond",
+    "removeFailed": "Could not remove friend",
+    "sendChallengeFailed": "Could not send the challenge",
+    "respondChallengeFailed": "Could not respond to the challenge"
+  },
+  "social": {
+    "loadFailed": "Could not load share settings",
+    "saveFailed": "Could not save share settings"
+  },
+  "game": {
+    "botFailed": "Bot failed to move — try a different bot style."
+  },
+  "byok": {
+    "keyRejected": "The provider rejected the key. Check that it was pasted completely.",
+    "modelNotFound": "The provider could not find that model (or base URL). Check the model name.",
+    "rateLimited": "The provider rate-limited the request. The key works — try again in a minute.",
+    "providerServerError": "The provider had a server error. Try again shortly.",
+    "callFailed": "The provider call failed.",
+    "unreachable": "Could not reach the provider or the app server. Check your connection.",
+    "relayedSuffix": " (relayed via the app server — check key and model)."
+  }
+}

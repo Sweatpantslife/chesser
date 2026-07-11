@@ -7,6 +7,7 @@ import { useSprints } from '../store/sprints';
 import { isDue } from '../lib/srs';
 import { now } from '../lib/clock';
 import { lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import { LESSON_META } from '../learn/meta';
 import { DailyQuests } from '../components/DailyQuests';
 import { DailyGoal } from '../components/DailyGoal';
@@ -28,15 +29,16 @@ import mascotUrl from '../assets/img/mascot.svg';
 
 export type HomeTarget = 'play' | 'learn' | 'tactics' | 'profile' | 'openings' | 'plan';
 
-function greeting(): string {
+function greetingKey(): 'midnight' | 'morning' | 'afternoon' | 'evening' {
   const h = new Date(now()).getHours();
-  if (h < 5) return 'Burning the midnight oil';
-  if (h < 12) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (h < 5) return 'midnight';
+  if (h < 12) return 'morning';
+  if (h < 18) return 'afternoon';
+  return 'evening';
 }
 
 function Hero({ onProfile }: { onProfile: () => void }) {
+  const { t } = useTranslation('home');
   const xp = useGamify((s) => s.xp);
   const streak = useStreak((s) => s.current());
   const freezes = useStreak((s) => s.freezes);
@@ -51,22 +53,22 @@ function Hero({ onProfile }: { onProfile: () => void }) {
           <StreakFlame size={44} lit={streak > 0} animate={streak > 0} />
           <div>
             <div className="font-display text-2xl font-bold leading-none text-ink">
-              {streak} <span className="text-sm font-semibold text-neutral-400">day{streak === 1 ? '' : 's'}</span>
+              {streak} <span className="text-sm font-semibold text-neutral-400">{t('hero.dayUnit', { count: streak })}</span>
             </div>
-            <div className="mt-1 text-xs text-neutral-400" title="A freeze saves your streak when you miss one day">
-              🧊 {freezes} freeze{freezes === 1 ? '' : 's'} banked
+            <div className="mt-1 text-xs text-neutral-400" title={t('hero.freezeTitle')}>
+              {t('hero.freezesBanked', { count: freezes })}
             </div>
           </div>
         </div>
         <div className="min-w-[220px] flex-1">
           <div className="mb-1 flex items-baseline justify-between text-sm">
-            <span className="font-display font-semibold text-ink">{greeting()}!</span>
+            <span className="font-display font-semibold text-ink">{t(`hero.greeting.${greetingKey()}`)}!</span>
             {/* -my keeps the baseline row compact while min-h-8 keeps the tap target ≥24px (WCAG 2.5.8). */}
             <button
               onClick={onProfile}
               className="btn-press -my-1 flex min-h-8 items-center text-xs font-semibold text-brand-300 hover:text-brand-200"
             >
-              Level {level} · {xp.toLocaleString()} XP
+              {t('hero.levelXp', { level, xp: xp.toLocaleString() })}
             </button>
           </div>
           <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-800">
@@ -76,14 +78,10 @@ function Hero({ onProfile }: { onProfile: () => void }) {
             />
           </div>
           <div className="mt-1 text-right text-xs text-neutral-400">
-            {toNext} XP to level {level + 1}
+            {t('hero.toNextLevel', { xp: toNext, level: level + 1 })}
           </div>
           <p className={`mt-1 text-xs ${atRisk ? 'text-gold-400' : 'text-neutral-400'}`}>
-            {atRisk
-              ? 'Your streak is on ice — train today to save it (uses a freeze).'
-              : streak > 0
-                ? 'Keep the flame alive — any activity counts.'
-                : 'Do anything today — a puzzle, a lesson, a game — to light your streak.'}
+            {atRisk ? t('hero.streakAtRisk') : streak > 0 ? t('hero.streakKeepAlive') : t('hero.streakStart')}
           </p>
         </div>
       </div>
@@ -112,16 +110,19 @@ function ActionCard(props: { icon: string; title: string; body: string; cta: str
 
 /** Two-CTA entry card for the timed sprint modes, showing current bests. */
 function SprintCard({ onSprint }: { onSprint: (mode: 'rush' | 'storm') => void }) {
+  const { t } = useTranslation('home');
   const rushBest = useSprints((s) => Math.max(s.puzzleRushBest.timed3.score, s.puzzleRushBest.survival.score));
   const stormBest = useSprints((s) => s.puzzleStormBest.score);
   return (
     <div className="card-lift flex items-center gap-3 rounded-2xl bg-panel p-4 shadow-soft">
       <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-600/20 text-2xl">⚡</span>
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-semibold text-ink">Puzzle sprints</div>
+        <div className="truncate text-sm font-semibold text-ink">{t('sprints.title')}</div>
         <div className="truncate text-xs text-neutral-400">
-          Race the clock, build combos.
-          {rushBest > 0 || stormBest > 0 ? ` Bests — Rush ${rushBest} · Storm ${stormBest}` : ' Set your first record.'}
+          {t('sprints.body')}
+          {rushBest > 0 || stormBest > 0
+            ? ` ${t('sprints.bests', { rush: rushBest, storm: stormBest })}`
+            : ` ${t('sprints.firstRecord')}`}
         </div>
       </div>
       <div className="flex shrink-0 gap-1.5">
@@ -129,13 +130,13 @@ function SprintCard({ onSprint }: { onSprint: (mode: 'rush' | 'storm') => void }
           onClick={() => onSprint('rush')}
           className="btn-press rounded-full bg-brand-600 px-3.5 py-1.5 text-sm font-bold text-white hover:bg-brand-700"
         >
-          Rush
+          {t('sprints.rush')}
         </button>
         <button
           onClick={() => onSprint('storm')}
           className="btn-press rounded-full bg-brand-600 px-3.5 py-1.5 text-sm font-bold text-white hover:bg-brand-700"
         >
-          Storm
+          {t('sprints.storm')}
         </button>
       </div>
     </div>
@@ -151,6 +152,7 @@ export function HomePage({
   onDailyPuzzle: () => void;
   onSprint: (mode: 'rush' | 'storm') => void;
 }) {
+  const { t } = useTranslation('home');
   const completed = useLessons((s) => s.completed);
   const nextLesson = LESSON_META.find((l) => !(l.id in completed));
   // Opening lines due for spaced-repetition review today (any repertoire).
@@ -173,9 +175,9 @@ export function HomePage({
           <DailyGoal />
           <ActionCard
             icon="🧩"
-            title="Daily puzzle"
-            body="One hand-picked puzzle — same for everyone, new every day."
-            cta="Solve"
+            title={t('daily.title')}
+            body={t('daily.body')}
+            cta={t('daily.cta')}
             onClick={onDailyPuzzle}
           />
           <SprintCard onSprint={onSprint} />
@@ -183,19 +185,19 @@ export function HomePage({
             icon="📖"
             title={
               openingsDue > 0
-                ? `${openingsDue} opening line${openingsDue === 1 ? '' : 's'} due today`
+                ? t('openings.dueTitle', { count: openingsDue })
                 : pickedCount > 0
-                  ? 'Openings: all caught up'
-                  : 'Learn an opening repertoire'
+                  ? t('openings.caughtUpTitle')
+                  : t('openings.startTitle')
             }
             body={
               openingsDue > 0
-                ? 'Spaced repetition says it’s time — drill them before they fade.'
+                ? t('openings.dueBody')
                 : pickedCount > 0
-                  ? 'Nothing due right now. Learn a new line to grow your repertoire.'
-                  : 'Pick openings for White and Black, drill them move by move.'
+                  ? t('openings.caughtUpBody')
+                  : t('openings.startBody')
             }
-            cta={openingsDue > 0 ? 'Review' : pickedCount > 0 ? 'Train' : 'Build'}
+            cta={openingsDue > 0 ? t('openings.ctaReview') : pickedCount > 0 ? t('openings.ctaTrain') : t('openings.ctaBuild')}
             onClick={() => go('openings')}
           />
         </div>
@@ -207,21 +209,21 @@ export function HomePage({
         {nextLesson ? (
           <ActionCard
             icon={nextLesson.icon}
-            title={`Next lesson: ${nextLesson.title}`}
+            title={t('lessons.nextTitle', { title: nextLesson.title })}
             body={nextLesson.summary}
-            cta="Learn"
+            cta={t('lessons.cta')}
             onClick={() => go('learn')}
           />
         ) : (
           <ActionCard
             icon="🎓"
-            title="All lessons complete!"
-            body="Replay any lesson to sharpen up — replays still earn XP."
-            cta="Browse"
+            title={t('lessons.allDoneTitle')}
+            body={t('lessons.allDoneBody')}
+            cta={t('lessons.ctaBrowse')}
             onClick={() => go('learn')}
           />
         )}
-        <ActionCard icon="♟️" title="Play a game" body="Face a bot at your level — wins count toward quests." cta="Play" onClick={() => go('play')} />
+        <ActionCard icon="♟️" title={t('playCard.title')} body={t('playCard.body')} cta={t('playCard.cta')} onClick={() => go('play')} />
       </div>
     </div>
   );

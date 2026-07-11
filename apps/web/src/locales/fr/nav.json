@@ -1,0 +1,44 @@
+{
+  "skipToContent": "Aller au contenu",
+  "primaryNav": "Principale",
+  "srTagline": "— jouez et entraînez-vous aux échecs",
+  "tabs": {
+    "home": { "label": "Aujourd'hui", "hint": "série · missions quotidiennes · objectifs" },
+    "play": { "label": "Jouer", "hint": "contre les bots · analyse" },
+    "learn": { "label": "Apprendre", "hint": "règles et leçons guidées" },
+    "masters": { "label": "Maîtres", "hint": "parties de maîtres commentées" },
+    "friends": { "label": "Amis", "hint": "passe-et-joue · parties en ligne entre amis" },
+    "openings": { "label": "Ouvertures", "hint": "exercices de répertoire" },
+    "explorer": { "label": "Explorateur", "hint": "explorateur d'ouvertures · parties de maîtres et en ligne" },
+    "tactics": { "label": "Tactique", "hint": "problèmes de tactique" },
+    "endgame": { "label": "Finales", "hint": "théorie et technique" },
+    "endgame-drills": { "label": "Exercices", "hint": "exercices de finales · vérifiés par table de finales" },
+    "train": { "label": "Entraînement", "hint": "vision · mats · anti-gaffe" },
+    "coach": { "label": "Coach", "hint": "vos faiblesses · entraînement ciblé" },
+    "plan": { "label": "Plan", "hint": "votre plan d'étude hebdomadaire" },
+    "coordinates": { "label": "Coord.", "hint": "entraîneur de vision de l'échiquier" },
+    "archive": { "label": "Archives", "hint": "vos parties · résultats et tendances" },
+    "stats": { "label": "Stats", "hint": "tableau de bord de progression" },
+    "leaders": { "label": "Classement", "hint": "classements · course hebdomadaire" },
+    "profile": { "label": "Profil", "hint": "niveau · classements · badges" }
+  },
+  "status": {
+    "online": "en ligne",
+    "connecting": "connexion…",
+    "connectedTooltip": "Connecté au serveur du moteur",
+    "connectingTooltip": "Tentative de connexion au serveur du moteur — le jeu contre les bots et l'analyse reprendront une fois connecté"
+  },
+  "profileChip": {
+    "tooltip": "Votre profil — niveau, classements et badges",
+    "aria": "Votre profil — niveau {{level}}",
+    "ariaStreak_one": "Votre profil — niveau {{level}}, série de {{count}} jour",
+    "ariaStreak_many": "Votre profil — niveau {{level}}, série de {{count}} jours",
+    "ariaStreak_other": "Votre profil — niveau {{level}}, série de {{count}} jours"
+  },
+  "settings": "Paramètres",
+  "footer": {
+    "tagline": "Chesser — jouez et entraînez-vous aux échecs",
+    "privacy": "Confidentialité",
+    "terms": "Conditions"
+  }
+}

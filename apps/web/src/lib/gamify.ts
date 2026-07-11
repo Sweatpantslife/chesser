@@ -27,6 +27,12 @@
  *
  * Keeping this glue in one place means the call sites stay one-liners and the
  * stores stay unaware of each other.
+ *
+ * i18n: this module must NOT import src/i18n (it sits in store/game's static
+ * import graph, whose tests run under plain `node --test`). It emits no UI
+ * strings of its own — achievement/quest events carry the catalogue's
+ * CANONICAL ENGLISH `name`, which subscribers translate by `id` via the
+ * `progress` namespace (see components/GamifyToasts.tsx).
  */
 import { useRatings, type GameOutcome, type RatingCategory } from '../store/ratings';
 import { useGamify, levelFromXp, type AwardResult } from '../store/gamify';

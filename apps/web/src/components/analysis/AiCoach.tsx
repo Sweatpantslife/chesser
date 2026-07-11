@@ -15,15 +15,16 @@
  *    reviewed game; renders nothing until prose arrives.
  */
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { CoachExplainFacts, CoachGameSummaryFacts, CoachMoveFacts } from '@chesser/shared';
 import { explainWithCoach, serverCoachConfigured, skillLevelFromRating } from '../../lib/coachApi';
 import { useRatings } from '../../store/ratings';
 import { useByok } from '../../store/byok';
 import { ThinkingDots } from '../icons';
 
-const DISCLAIMER = 'AI-generated from engine analysis';
-
-/** One-line nudge shown in place of AI actions when no key is available. */
+/** One-line nudge shown in place of AI actions when no key is available.
+ *  Kept as the canonical English for external callers; rendering inside this
+ *  file goes through i18n (`analysis:ai.noKeyHint` mirrors this string). */
 export const NO_KEY_HINT = 'Add an AI key in Settings to unlock richer coaching.';
 
 /**
@@ -49,12 +50,13 @@ export function useCoachAvailable(): boolean | null {
 }
 
 export function AiCoachBadge(): JSX.Element {
+  const { t } = useTranslation('analysis');
   return (
     <span
-      title={DISCLAIMER}
+      title={t('ai.disclaimer')}
       className="inline-flex shrink-0 items-center rounded-full bg-brand-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-brand-300"
     >
-      AI Coach
+      {t('ai.badge')}
     </span>
   );
 }
@@ -71,6 +73,7 @@ function useSkillLevel() {
 type FetchPhase = 'idle' | 'loading' | 'done' | 'unavailable';
 
 export function AiMoveExplanation({ facts, fallback }: { facts: CoachMoveFacts | null; fallback: string }): JSX.Element {
+  const { t } = useTranslation('analysis');
   const level = useSkillLevel();
   const available = useCoachAvailable();
   const [phase, setPhase] = useState<FetchPhase>('idle');
@@ -112,21 +115,21 @@ export function AiMoveExplanation({ facts, fallback }: { facts: CoachMoveFacts |
           </span>
         )}
       </p>
-      {text && <p className="mt-0.5 text-[10px] text-neutral-400">{DISCLAIMER}</p>}
+      {text && <p className="mt-0.5 text-[10px] text-neutral-400">{t('ai.disclaimer')}</p>}
       {facts && phase === 'idle' && available === true && (
         <button
           onClick={explain}
           data-testid="explain-this"
-          title="Ask the AI coach to explain this move in plain language"
+          title={t('ai.explainTitle')}
           className="btn-press mt-1.5 rounded-lg bg-neutral-700 px-2 py-1 text-xs font-semibold text-neutral-100 hover:bg-neutral-600"
         >
-          Explain this
+          {t('ai.explainThis')}
         </button>
       )}
-      {facts && available === false && <p className="mt-1 text-[10px] text-neutral-400">{NO_KEY_HINT}</p>}
+      {facts && available === false && <p className="mt-1 text-[10px] text-neutral-400">{t('ai.noKeyHint')}</p>}
       {phase === 'loading' && (
         <span className="mt-1.5 flex items-center gap-1.5 text-xs text-brand-300">
-          Coach is thinking
+          {t('ai.thinking')}
           <ThinkingDots />
         </span>
       )}
@@ -148,6 +151,7 @@ export function AiNarrative({
   fallback: string;
   className?: string;
 }): JSX.Element {
+  const { t } = useTranslation('analysis');
   const level = useSkillLevel();
   const [text, setText] = useState<string | null>(null);
   const factsKey = facts ? JSON.stringify(facts) : null;
@@ -175,7 +179,7 @@ export function AiNarrative({
           </span>
         )}
       </p>
-      {text && <p className="mt-0.5 text-[10px] text-neutral-400">{DISCLAIMER}</p>}
+      {text && <p className="mt-0.5 text-[10px] text-neutral-400">{t('ai.disclaimer')}</p>}
     </div>
   );
 }
@@ -186,6 +190,7 @@ export function AiNarrative({
 
 /** "Coach's summary" panel — hidden entirely until the coach's prose arrives. */
 export function CoachSummaryCard({ facts }: { facts: CoachGameSummaryFacts | null }): JSX.Element | null {
+  const { t } = useTranslation('analysis');
   const level = useSkillLevel();
   const [text, setText] = useState<string | null>(null);
   const factsKey = facts ? JSON.stringify(facts) : null;
@@ -207,11 +212,11 @@ export function CoachSummaryCard({ facts }: { facts: CoachGameSummaryFacts | nul
   return (
     <div className="rounded-2xl bg-panel p-3 shadow-soft" data-testid="coach-summary">
       <div className="mb-1.5 flex items-center gap-2">
-        <h3 className="font-display text-sm font-semibold text-ink">Coach&apos;s summary</h3>
+        <h3 className="font-display text-sm font-semibold text-ink">{t('ai.summaryTitle')}</h3>
         <AiCoachBadge />
       </div>
       <p className="text-sm leading-snug text-neutral-200">{text}</p>
-      <p className="mt-1 text-[10px] text-neutral-400">{DISCLAIMER}</p>
+      <p className="mt-1 text-[10px] text-neutral-400">{t('ai.disclaimer')}</p>
     </div>
   );
 }

@@ -1,19 +1,22 @@
+import { useTranslation } from 'react-i18next';
 import type { Score } from '@chesser/shared';
 import type { Color } from '../store/game';
 import { formatScore, whiteWinPercent } from '../lib/format';
 
 export function EvalBar({ score, orientation }: { score: Score | null; orientation: Color }) {
+  const { t } = useTranslation('game');
   const whitePct = whiteWinPercent(score);
   const whiteAtBottom = orientation === 'white';
   const label = score ? formatScore(score) : '·';
   const whiteIsBetter = !score || (score.kind === 'cp' ? score.value >= 0 : score.value > 0);
+  const ariaLabel = score ? t('evalBar.evaluation', { score: label }) : t('evalBar.none');
 
   return (
     <div
       className="relative w-6 shrink-0 rounded bg-chess-black"
       role="img"
-      aria-label={score ? `Evaluation: ${label} (White's view)` : 'No evaluation'}
-      title={score ? `Evaluation: ${label} (White's view)` : 'No evaluation'}
+      aria-label={ariaLabel}
+      title={ariaLabel}
     >
       {/* clip only the fill — the numeric label ("+0.42") is wider than the
           24px bar and must overflow visibly instead of being cut off */}

@@ -1,0 +1,51 @@
+{
+  "title": "Clasificaciones",
+  "subtitle": "Posiciones globales de todas las cuentas de Chesser que decidieron participar.",
+  "scopeAria": "Periodo de tiempo",
+  "navAria": "Clasificación",
+  "scopes": {
+    "global": "Histórico",
+    "weekly": "Esta semana"
+  },
+  "tabs": {
+    "puzzles": { "label": "Problemas", "hint": "Puntuación de táctica" },
+    "bots": { "label": "Bots", "hint": "Puntuación contra bots" },
+    "rush": { "label": "Rush", "hint": "Récord de Puzzle Rush" }
+  },
+  "join": {
+    "title": "Únete a las clasificaciones",
+    "signedIn": "Las clasificaciones son opcionales. Al unirte compartes tu nombre público y tus puntuaciones/récord de Puzzle Rush en las tablas públicas — nada más.",
+    "signedOut": "Inicia sesión (arriba a la derecha) y apúntate para competir. Solo se muestran tu nombre público y tus puntuaciones.",
+    "joining": "Uniéndote…",
+    "cta": "Unirme y compartir mis puntuaciones"
+  },
+  "prefsError": "No se pudieron cargar tus ajustes para compartir — {{error}}",
+  "retry": "Reintentar",
+  "refresh": "Actualizar",
+  "week": "Semana {{week}}, {{year}}",
+  "allTime": "histórico",
+  "value": {
+    "rating": "Puntuación",
+    "best": "Mejor marca"
+  },
+  "loading": "Cargando la clasificación…",
+  "error": "No se pudo conectar con el servidor de clasificaciones. Prueba a actualizar.",
+  "empty": {
+    "weekly": "Nadie ha registrado una puntuación esta semana — ¡sé el primero!",
+    "global": "Aún no hay entradas — ¡sé el primero!"
+  },
+  "caption_one": "Tabla de {{heading}}, {{scope}} — {{count}} jugador clasificado",
+  "caption_other": "Tabla de {{heading}}, {{scope}} — {{count}} jugadores clasificados",
+  "columns": {
+    "rank": "Puesto",
+    "player": "Jugador",
+    "games": "Partidas"
+  },
+  "viewProfile": "Ver el perfil de {{username}}",
+  "you": "Tú",
+  "hint": {
+    "rush": "Termina una ronda de Puzzle Rush y tu récord aparecerá aquí automáticamente.",
+    "other": "Juega una partida o un problema puntuado (y deja que se sincronice) para entrar en esta tabla."
+  },
+  "footer": "Las puntuaciones se verifican en el servidor con tu progreso sincronizado — gestiona qué compartes en tu pestaña Perfil."
+}

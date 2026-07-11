@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useGamify, levelProgress } from '../store/gamify';
 import { useRatings, RATING_CATEGORIES } from '../store/ratings';
 import { useSettings } from '../store/settings';
@@ -10,6 +11,7 @@ import { ShareProfilePanel } from '../components/ShareProfilePanel';
 import mascotUrl from '../assets/img/mascot.svg';
 
 function LevelHeader() {
+  const { t } = useTranslation('profile');
   const xp = useGamify((s) => s.xp);
   const { level, intoLevel, span, toNext, pct } = levelProgress(xp);
   return (
@@ -21,13 +23,13 @@ function LevelHeader() {
       />
       <div className="flex items-center gap-4">
         <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-accent-500 text-white shadow-glow">
-          <span className="text-[10px] uppercase tracking-wide">level</span>
+          <span className="text-[10px] uppercase tracking-wide">{t('level.badge')}</span>
           <span className="font-display text-2xl font-bold leading-none">{level}</span>
         </div>
         <div className="min-w-0 flex-1 pr-16 sm:pr-20">
           <div className="mb-1 flex items-baseline justify-between text-sm">
-            <span className="font-display font-semibold text-ink">{xp.toLocaleString()} XP</span>
-            <span className="text-xs text-neutral-400">{toNext} XP to level {level + 1}</span>
+            <span className="font-display font-semibold text-ink">{t('level.xp', { xp })}</span>
+            <span className="text-xs text-neutral-400">{t('level.toNext', { xp: toNext, level: level + 1 })}</span>
           </div>
           <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-800">
             <div
@@ -72,12 +74,13 @@ function suggestOpponent(glicko: number, defeated: Record<string, number>): Rost
 }
 
 function SuggestedOpponent({ goPlay }: { goPlay: () => void }) {
+  const { t } = useTranslation(['profile', 'bots']);
   const glicko = useRatings((s) => Math.round(s.categories.bots.glicko.rating));
   const defeated = useLadder((s) => s.defeated);
   const bot = suggestOpponent(glicko, defeated);
   return (
     <div className="rounded-2xl bg-panel p-4 shadow-soft">
-      <h3 className="mb-3 font-display text-sm font-semibold text-ink">Suggested next opponent</h3>
+      <h3 className="mb-3 font-display text-sm font-semibold text-ink">{t('suggested.title')}</h3>
       <div className="flex items-center gap-3">
         <span
           className="flex h-11 w-11 items-center justify-center rounded-full text-xl"
@@ -89,27 +92,28 @@ function SuggestedOpponent({ goPlay }: { goPlay: () => void }) {
           <div className="truncate text-sm font-semibold text-ink">
             {bot.name} <span className="font-normal text-neutral-400">· {bot.rating}</span>
           </div>
-          <div className="truncate text-xs text-neutral-400">{bot.title}</div>
+          <div className="truncate text-xs text-neutral-400">{t(`bots:roster.${bot.id}.title`, { defaultValue: bot.title })}</div>
         </div>
         <button
           onClick={goPlay}
           className="btn-press shrink-0 rounded-full bg-brand-600 px-4 py-1.5 text-sm font-bold text-white hover:bg-brand-700"
         >
-          Play
+          {t('suggested.play')}
         </button>
       </div>
-      <p className="mt-2 text-xs text-neutral-400">Matched to your Glicko-2 bots rating ({glicko}).</p>
+      <p className="mt-2 text-xs text-neutral-400">{t('suggested.matched', { rating: glicko })}</p>
     </div>
   );
 }
 
 export function ProfilePage({ goPlay, onViewPublicProfile }: { goPlay: () => void; onViewPublicProfile: (username: string) => void }) {
+  const { t } = useTranslation('profile');
   return (
     <div className="mx-auto w-full max-w-[1000px] space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-base font-semibold text-ink">Profile</h2>
+        <h2 className="font-display text-base font-semibold text-ink">{t('title')}</h2>
         <div className="flex items-center gap-2 text-xs text-neutral-400">
-          <span>Show ratings as</span>
+          <span>{t('meterLabel')}</span>
           <MeterToggle />
         </div>
       </div>

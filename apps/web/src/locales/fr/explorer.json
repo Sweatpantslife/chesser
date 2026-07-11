@@ -1,0 +1,116 @@
+{
+  "title": "Explorateur d'ouvertures",
+  "gamesCount": "{{games}} parties",
+  "db": {
+    "aria": "Base de données",
+    "masters": "Maîtres",
+    "lichess": "Lichess",
+    "mastersTitle": "Parties de maîtres jouées devant l'échiquier",
+    "lichessTitle": "Parties en ligne jouées sur Lichess"
+  },
+  "filters": {
+    "speedsAria": "Cadences",
+    "minRatingAria": "Classement minimum des joueurs",
+    "allRatings": "Tous les classements"
+  },
+  "speeds": {
+    "bullet": "Bullet",
+    "blitz": "Blitz",
+    "rapid": "Rapide",
+    "classical": "Classique"
+  },
+  "name": {
+    "noBookName": "Pas de nom théorique pour cette position.",
+    "startingPosition": "Position de départ — choisissez un premier coup ci-dessous."
+  },
+  "status": {
+    "loading": "Chargement des statistiques d'ouverture…",
+    "unavailableTitle": "Statistiques en direct indisponibles",
+    "unavailableBody": "La base de données d'ouvertures (<host>explorer.lichess.ovh</host>) est injoignable pour le moment. Les noms d'ouvertures fonctionnent hors ligne ; les statistiques de coups reviendront dès que la base sera de nouveau joignable.",
+    "noGames": "Aucune partie de cette base ne passe par ici."
+  },
+  "table": {
+    "move": "Coup",
+    "games": "Parties",
+    "wdl": "Blancs · Nulle · Noirs",
+    "all": "Total"
+  },
+  "moves": {
+    "label": "{{san}} — {{games}} parties : les Blancs gagnent {{white}}, nulle {{draws}}, les Noirs gagnent {{black}}",
+    "playAria": "Jouer {{label}}",
+    "titleWithRating": "{{games}} parties · classement moyen {{rating}}"
+  },
+  "games": {
+    "top": "Meilleures parties",
+    "recent": "Parties récentes",
+    "viewTitle": "Voir {{white}} contre {{black}} sur Lichess (s'ouvre dans un nouvel onglet)"
+  },
+  "page": {
+    "first": "Premier coup",
+    "firstTitle": "Premier",
+    "previous": "Coup précédent",
+    "previousTitle": "Précédent",
+    "next": "Coup suivant",
+    "nextTitle": "Suivant",
+    "last": "Dernier coup",
+    "lastTitle": "Dernier",
+    "flip": "⇅ Retourner",
+    "flipTitle": "Retourner l'échiquier (f)",
+    "reset": "↺ Réinitialiser",
+    "resetTitle": "Revenir à la position de départ",
+    "analyse": "Analyser",
+    "analyseTitle": "Ouvrir cette ligne sur l'échiquier d'analyse",
+    "lineTitle": "Ligne",
+    "lineEmpty": "Jouez un coup sur l'échiquier — ou choisissez-en un dans les statistiques — pour commencer à explorer. Les flèches du clavier parcourent la ligne.",
+    "movesAria": "Coups joués",
+    "start": "Début"
+  },
+  "save": {
+    "addTo": "＋ vers",
+    "targetAria": "Répertoire où enregistrer les lignes",
+    "newRepOption": "Mon répertoire (nouveau)",
+    "saveTitle": "Enregistrer cette ligne dans votre répertoire",
+    "saveAria": "Enregistrer la ligne avec {{san}} dans votre répertoire"
+  },
+  "library": {
+    "title": "Bibliothèque de parties",
+    "tabs": {
+      "saved": "Mes parties",
+      "import": "Importer",
+      "pgn": "Coller",
+      "fen": "FEN"
+    },
+    "vs": "contre",
+    "saved": {
+      "signIn": "Connectez-vous pour enregistrer et retrouver vos parties analysées.",
+      "empty": "Aucune partie enregistrée pour l'instant — utilisez « Enregistrer » sur l'échiquier pour en ajouter une.",
+      "deleteAria": "Supprimer la partie {{white}} contre {{black}}"
+    },
+    "import": {
+      "usernameAria": "Nom d'utilisateur {{site}}",
+      "usernamePlaceholder": "nom d'utilisateur",
+      "fetch": "Récupérer",
+      "fetching": "Récupération…"
+    },
+    "pgn": {
+      "hint": "Collez un PGN pour l'étudier sur l'échiquier d'analyse.",
+      "aria": "Texte PGN",
+      "load": "Charger la partie"
+    },
+    "fen": {
+      "hint": "Collez un FEN pour analyser n'importe quelle position.",
+      "aria": "Position FEN",
+      "analyze": "Analyser"
+    },
+    "errors": {
+      "load": "Impossible de charger vos parties enregistrées — vérifiez votre connexion et rouvrez la bibliothèque.",
+      "readGame": "Impossible de lire cette partie.",
+      "readPgn": "Impossible de lire ce PGN.",
+      "invalidFen": "FEN invalide.",
+      "delete": "Impossible de supprimer la partie.",
+      "importUnavailable": "Import indisponible ({{reason}}). L'hôte de l'API {{site}} doit être joignable depuis le serveur.",
+      "reasonFallback": "erreur",
+      "noneFound": "Aucune partie trouvée pour ce nom d'utilisateur."
+    }
+  }
+}

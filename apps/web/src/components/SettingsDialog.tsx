@@ -1,5 +1,7 @@
 import { createElement, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSettings, PIECE_SETS, type BoardTheme, type PieceSet, type ThemePref } from '../store/settings';
+import { SUPPORTED_LANGUAGES, languageDisplayName, setLanguage } from '../i18n';
 import { loadAllPieceSets } from '../styles/pieceSets';
 import { playSound } from '../lib/sound';
 import { Modal } from './Modal';
@@ -47,15 +49,17 @@ function PieceSwatch({ set }: { set: PieceSet }) {
   );
 }
 
-const APP_THEMES: { id: ThemePref; label: string }[] = [
-  { id: 'light', label: 'Light' },
-  { id: 'dark', label: 'Dark' },
-  { id: 'system', label: 'System' },
-];
+// Labels live in the `settings` namespace under `appearance.<id>`.
+const APP_THEMES: ThemePref[] = ['light', 'dark', 'system'];
 
 export function SettingsDialog({ onClose }: { onClose: () => void }) {
+  const { t, i18n } = useTranslation('settings');
   const { sound, premove, arrows, aiCoach, boardTheme, pieceSet, ratingMeter, theme, setSound, setPremove, setArrows, setAiCoach, setBoardTheme, setPieceSet, setRatingMeter, setTheme } =
     useSettings();
+  // The user's ACTIVE choice, not resolvedLanguage — the latter reports the
+  // English fallback until the chosen locale's lazy chunks finish loading,
+  // which would briefly highlight the wrong language button.
+  const activeLanguage = i18n.language || i18n.resolvedLanguage;
 
   // Load every set's CSS so the previews below render.
   useEffect(() => loadAllPieceSets(), []);
@@ -66,44 +70,67 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
       labelledBy="settings-title"
       className="scroll-thin pop-in max-h-[85vh] w-full max-w-xs overflow-y-auto rounded-2xl bg-panel p-4 shadow-soft"
     >
-        <h3 id="settings-title" className="mb-2 font-display text-sm font-semibold text-ink">Settings</h3>
+        <h3 id="settings-title" className="mb-2 font-display text-sm font-semibold text-ink">{t('title')}</h3>
 
         <div className="mb-3">
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Appearance</div>
-          <div className="flex gap-1" role="group" aria-label="App theme">
-            {APP_THEMES.map((t) => (
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('appearance.label')}</div>
+          <div className="flex gap-1" role="group" aria-label={t('appearance.themeGroupAria')}>
+            {APP_THEMES.map((pref) => (
               <button
-                key={t.id}
+                key={pref}
                 onClick={() => {
                   playSound('uiClick');
-                  setTheme(t.id);
+                  setTheme(pref);
                 }}
-                aria-pressed={theme === t.id}
+                aria-pressed={theme === pref}
                 className={`btn-press flex-1 rounded-full px-2 py-1 text-xs font-semibold ${
-                  theme === t.id ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                  theme === pref ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                 }`}
               >
-                {t.label}
+                {t(`appearance.${pref}`)}
               </button>
             ))}
           </div>
         </div>
 
-        <Toggle on={sound} onChange={setSound} label="Sounds" />
-        <Toggle on={premove} onChange={setPremove} label="Premoves (vs bot)" />
-        <Toggle on={arrows} onChange={setArrows} label="Engine arrows (analysis)" />
-        <Toggle on={aiCoach} onChange={setAiCoach} label="AI Coach explanations" />
-        <p className="-mt-1 mb-1 text-xs text-neutral-400">
-          Natural-language coaching worded by an AI from the engine&apos;s analysis. Falls back to built-in
-          explanations when unavailable.
-        </p>
+        <div className="mb-3">
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('language.label')}</div>
+          <div className="flex flex-wrap gap-1" role="group" aria-label={t('language.label')}>
+            {SUPPORTED_LANGUAGES.map((code) => (
+              <button
+                key={code}
+                // Each name is written in its own language ("English", "Español").
+                lang={code}
+                onClick={() => {
+                  playSound('uiClick');
+                  void setLanguage(code);
+                }}
+                aria-pressed={activeLanguage === code}
+                className={`btn-press flex-1 rounded-full px-2 py-1 text-xs font-semibold ${
+                  activeLanguage === code
+                    ? 'bg-brand-600 text-white'
+                    : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                }`}
+              >
+                {languageDisplayName(code)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <Toggle on={sound} onChange={setSound} label={t('toggles.sounds')} />
+        <Toggle on={premove} onChange={setPremove} label={t('toggles.premoves')} />
+        <Toggle on={arrows} onChange={setArrows} label={t('toggles.arrows')} />
+        <Toggle on={aiCoach} onChange={setAiCoach} label={t('toggles.aiCoach')} />
+        <p className="-mt-1 mb-1 text-xs text-neutral-400">{t('aiCoachNote')}</p>
 
         <ByokSettings />
 
         <div className="mt-3">
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Headline rating</div>
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('rating.label')}</div>
           <div className="flex gap-1">
             {([
+              // Elo and Glicko-2 are proper names — not translated.
               { id: 'elo', label: 'Elo' },
               { id: 'glicko', label: 'Glicko-2' },
             ] as const).map((m) => (
@@ -119,31 +146,31 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
               </button>
             ))}
           </div>
-          <p className="mt-1 text-xs text-neutral-400">Glicko-2 always drives difficulty &amp; pairings behind the scenes.</p>
+          <p className="mt-1 text-xs text-neutral-400">{t('rating.note')}</p>
         </div>
 
         <div className="mt-3">
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Board theme</div>
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('boardTheme.label')}</div>
           <div className="flex flex-wrap gap-2">
-            {THEMES.map((t) => (
+            {THEMES.map((bt) => (
               <button
-                key={t.id}
+                key={bt.id}
                 onClick={() => {
                   playSound('uiClick');
-                  setBoardTheme(t.id);
+                  setBoardTheme(bt.id);
                 }}
-                aria-label={`${t.id} board theme`}
-                aria-pressed={boardTheme === t.id}
-                className={`btn-press h-8 w-8 rounded-lg ring-2 ${boardTheme === t.id ? 'ring-brand-400' : 'ring-transparent'}`}
-                style={{ background: t.swatch }}
-                title={t.id}
+                aria-label={t('boardTheme.aria', { name: t(`boardTheme.names.${bt.id}`) })}
+                aria-pressed={boardTheme === bt.id}
+                className={`btn-press h-8 w-8 rounded-lg ring-2 ${boardTheme === bt.id ? 'ring-brand-400' : 'ring-transparent'}`}
+                style={{ background: bt.swatch }}
+                title={t(`boardTheme.names.${bt.id}`)}
               />
             ))}
           </div>
         </div>
 
         <div className="mt-3">
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Pieces</div>
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('pieces.label')}</div>
           <div className="grid grid-cols-3 gap-2">
             {PIECE_SETS.map((p) => (
               <button
@@ -173,7 +200,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
             onClick={onClose}
             className="underline decoration-neutral-600 underline-offset-2 hover:text-neutral-200"
           >
-            Privacy Policy
+            {t('links.privacy')}
           </a>
           <span aria-hidden="true"> · </span>
           <a
@@ -181,7 +208,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
             onClick={onClose}
             className="underline decoration-neutral-600 underline-offset-2 hover:text-neutral-200"
           >
-            Terms of Service
+            {t('links.terms')}
           </a>
         </p>
 
@@ -189,7 +216,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
           onClick={onClose}
           className="btn-press mt-3 w-full rounded-full bg-neutral-700 py-1.5 text-sm font-semibold text-neutral-200 hover:bg-neutral-600"
         >
-          Done
+          {t('done')}
         </button>
     </Modal>
   );

@@ -1,0 +1,40 @@
+{
+  "signIn": "Se connecter",
+  "createAccount": "Créer un compte",
+  "signingIn": "Connexion…",
+  "creatingAccount": "Création du compte…",
+  "syncHint": "Synchronisez votre progression en ouvertures et en tactique entre vos appareils.",
+  "username": "Nom d'utilisateur",
+  "usernamePlaceholder": "nom d'utilisateur",
+  "password": "Mot de passe",
+  "passwordPlaceholder": "mot de passe",
+  "accountLabel": "Compte",
+  "close": "Fermer",
+  "signedInAs": "Connecté en tant que",
+  "signOut": "Se déconnecter",
+  "sync": {
+    "off": "non synchronisée",
+    "syncing": "synchronisation…",
+    "synced": "synchronisée",
+    "error": "erreur de synchronisation",
+    "progress": "Progression — {{state}}"
+  },
+  "data": {
+    "title": "Vos données",
+    "export": "Exporter mes données",
+    "exporting": "Préparation de l'export…",
+    "exportDone": "Export téléchargé.",
+    "exportFailed": "Échec de l'export — réessayez.",
+    "delete": "Supprimer mon compte…",
+    "note": "Tout ce qui est stocké pour ce compte, au format JSON — ou effacé pour de bon. Voir la <policyLink>Politique de confidentialité</policyLink>."
+  },
+  "deleteDialog": {
+    "title": "Supprimer ce compte ?",
+    "body": "Cette action efface définitivement <name>{{username}}</name> des serveurs de Chesser : vos identifiants, la progression synchronisée, les parties enregistrées, les réglages de partage, les entrées de classement et vos amis. Vos données dans ce navigateur sont également effacées. <b>Aucun retour en arrière possible.</b>",
+    "confirmLabel": "Tapez DELETE pour confirmer",
+    "cancel": "Annuler",
+    "deleting": "Suppression…",
+    "confirm": "Supprimer définitivement",
+    "error": "Impossible de supprimer le compte — réessayez."
+  }
+}

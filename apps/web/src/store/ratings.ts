@@ -24,12 +24,6 @@ import { updateElo } from '../lib/elo';
 export type RatingCategory = 'bots' | 'blitz' | 'puzzles';
 export const RATING_CATEGORIES: RatingCategory[] = ['bots', 'blitz', 'puzzles'];
 
-export const CATEGORY_LABELS: Record<RatingCategory, string> = {
-  bots: 'Bots',
-  blitz: 'Blitz',
-  puzzles: 'Puzzles',
-};
-
 /** Opponents/puzzles have a known strength, so we treat them as fairly certain. */
 const OPP_RD = 60;
 

@@ -1,30 +1,28 @@
+import { useTranslation } from 'react-i18next';
 import { VisionPage } from './VisionPage';
 import { MatesPage } from './MatesPage';
 import { AntiBlunderPage } from './AntiBlunderPage';
 
 export type TrainTab = 'vision' | 'mates' | 'blunders';
 
-const TABS: { id: TrainTab; label: string; hint: string }[] = [
-  { id: 'vision', label: 'Vision', hint: 'blindfold & calculation' },
-  { id: 'mates', label: 'Checkmates', hint: 'pattern library & drills' },
-  { id: 'blunders', label: 'Anti-blunder', hint: '“are you sure?” trainer' },
-];
+const TAB_IDS: TrainTab[] = ['vision', 'mates', 'blunders'];
 
 export function TrainPage({ tab, setTab }: { tab: TrainTab; setTab: (t: TrainTab) => void }) {
+  const { t } = useTranslation('train');
   return (
     <div className="space-y-4">
       <div className="mx-auto flex w-full max-w-[1200px] flex-wrap gap-1">
-        {TABS.map((t) => (
+        {TAB_IDS.map((id) => (
           <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            title={t.hint}
-            aria-pressed={tab === t.id}
+            key={id}
+            onClick={() => setTab(id)}
+            title={t(`tabs.${id}.hint`)}
+            aria-pressed={tab === id}
             className={`rounded px-3 py-1.5 text-sm ${
-              tab === t.id ? 'bg-brand-600 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+              tab === id ? 'bg-brand-600 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
             }`}
           >
-            {t.label}
+            {t(`tabs.${id}.label`)}
           </button>
         ))}
       </div>

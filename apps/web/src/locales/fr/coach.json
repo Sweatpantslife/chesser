@@ -1,0 +1,84 @@
+{
+  "percent": "{{value}} %",
+  "phase": {
+    "opening": "Ouverture",
+    "middlegame": "Milieu de partie",
+    "endgame": "Finale"
+  },
+  "side": {
+    "white": "Blancs",
+    "black": "Noirs"
+  },
+  "trend": {
+    "improving": "en progrès ↓",
+    "rising": "en hausse ↑",
+    "steady": "stable"
+  },
+  "empty": {
+    "title": "Votre coach est prêt quand vous l'êtes",
+    "body": "Jouez une partie contre un bot dans l'onglet <b>Jouer</b> et lancez une analyse de partie — le coach étudie vos parties analysées, repère les schémas récurrents et bâtit un plan d'entraînement autour."
+  },
+  "cards": {
+    "gamesStudied": "Parties étudiées",
+    "gamesStudiedHint": "analysées contre les bots",
+    "accuracy": "Votre précision",
+    "accuracyHint": "sur ces parties",
+    "weakestPhase": "Phase la plus faible",
+    "weakestPhaseHint": "{{accuracy}} % de précision",
+    "weakestPhaseEmpty": "pas encore assez de coups",
+    "focusAreas": "Axes de travail",
+    "focusAreasHint": "schémas récurrents"
+  },
+  "noneRecurring": {
+    "title": "Rien de récurrent pour l'instant — excellent signe !",
+    "body": "Aucun schéma n'est apparu deux fois dans vos parties analysées. Continuez à jouer et à analyser ; le coach refait le point après chaque analyse."
+  },
+  "weakness": {
+    "occurrences_one": "{{times}}× en {{count}} partie",
+    "occurrences_many": "{{times}}× en {{count}} parties",
+    "occurrences_other": "{{times}}× en {{count}} parties",
+    "openAnalysis": "Ouvrir dans l'analyse →",
+    "openAnalysisTitle": "Charger cette position sur l'échiquier d'analyse",
+    "also": "Aussi : {{example}}",
+    "trained_one": "Travaillé {{attempts}}× · {{count}} résolu",
+    "trained_many": "Travaillé {{attempts}}× · {{count}} résolus",
+    "trained_other": "Travaillé {{attempts}}× · {{count}} résolus",
+    "lastTen": "10 derniers : {{pct}} %",
+    "improved": "en hausse depuis {{pct}} %, bravo !",
+    "trainingNow": "Entraînement en cours",
+    "train": "Travailler cette faiblesse"
+  },
+  "trainer": {
+    "title": "Entraînement : {{label}}",
+    "session": "{{solved}}/{{attempts}} cette session · thèmes : {{themes}}",
+    "empty": "Aucun problème correspondant n'est chargé pour l'instant — vérifiez votre connexion et réessayez dans un instant.",
+    "toMove": "{{side}} au trait — trouvez l'idée : {{theme}}.",
+    "solvedMate": "✓ {{san}} — échec et mat !",
+    "solvedExact": "✓ {{san}} — exactement le motif.",
+    "wrong": "Ce n'est pas ça — le motif est toujours sur l'échiquier. Réessayez ou affichez la solution.",
+    "fresh": "Un regard neuf — prenez votre temps.",
+    "solution": "Solution : {{san}}. Regardez comment la suite se déroule.",
+    "rated": "classé {{rating}} · vous {{yours}}",
+    "yourMove": "à vous de jouer",
+    "tryAgain": "Réessayer",
+    "reveal": "Afficher",
+    "next": "Problème suivant →",
+    "done": "Terminer l'entraînement"
+  },
+  "phaseAccuracy": {
+    "title": "Précision par phase",
+    "aside": "vos coups uniquement",
+    "row": "{{accuracy}} % · {{moves}} coups",
+    "noMoves": "aucun coup"
+  },
+  "tendencies": {
+    "title": "Tendances",
+    "asWhite": "Avec les Blancs",
+    "asBlack": "Avec les Noirs",
+    "record": "{{wins}}V {{losses}}D {{draws}}N · {{accuracy}} % de précision",
+    "noGames": "pas encore de parties",
+    "openingStats_one": "{{count}} partie · {{accuracy}} %",
+    "openingStats_many": "{{count}} parties · {{accuracy}} %",
+    "openingStats_other": "{{count}} parties · {{accuracy}} %"
+  }
+}

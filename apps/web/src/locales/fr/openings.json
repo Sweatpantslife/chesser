@@ -1,0 +1,73 @@
+{
+  "myRepertoire": "Mon répertoire",
+  "side": {
+    "white": "blancs",
+    "black": "noirs",
+    "asWhite": "Avec les Blancs",
+    "asBlack": "Avec les Noirs"
+  },
+  "drill": {
+    "lineComplete": "Ligne terminée — ajoutée à votre programme de révision !",
+    "correct": "✓ {{san}}",
+    "continuingAs": "✓ {{san}} — on poursuit dans {{name}}",
+    "notInRepertoire": "Pas dans votre répertoire — réessayez, ou affichez la réponse.",
+    "answer": "Réponse : {{san}}"
+  },
+  "repertoire": {
+    "title": "Répertoire",
+    "browse": "Parcourir les ouvertures",
+    "newPlaceholder": "nouveau répertoire",
+    "create": "Créer",
+    "new": "+ Nouveau",
+    "rename": "Renommer",
+    "renamePrompt": "Renommer le répertoire",
+    "delete": "Supprimer",
+    "deleteConfirm": "Supprimer « {{name}} » ?",
+    "reviewDue": "Réviser les lignes en attente",
+    "emptyMine": "Votre répertoire est vide. Choisissez dans le catalogue les ouvertures à apprendre avec les Blancs et avec les Noirs.",
+    "emptyOther": "Aucune ligne pour l'instant. Construisez-en une sur l'échiquier de l'onglet <playTab>Jouer</playTab>, puis « ★ Enregistrer la ligne ».",
+    "removeLine": "Retirer la ligne"
+  },
+  "board": {
+    "pickLine": "Choisissez une ligne",
+    "youPlay": "vous jouez <sideTag>{{side}}</sideTag>",
+    "yourMove": "· à vous de jouer",
+    "startDrill": "Lancer l'exercice",
+    "repeatLine": "Répéter la ligne",
+    "revealMove": "Afficher le coup"
+  },
+  "info": {
+    "moveNo": "Coup {{n}}",
+    "moves": "Coups"
+  },
+  "catalog": {
+    "title": "Construisez votre répertoire",
+    "done_one": "Fait · {{count}} ligne",
+    "done_many": "Fait · {{count}} lignes",
+    "done_other": "Fait · {{count}} lignes",
+    "sideAria": "Couleur",
+    "addAll": "Tout ajouter",
+    "removeAll": "Tout retirer"
+  },
+  "name": {
+    "title": "Ouverture",
+    "lookUp": "Rechercher",
+    "noneYet": "Pas encore d'ouverture identifiée — jouez quelques coups.",
+    "fromStartOnly": "Les noms d'ouvertures s'affichent à partir de la position de départ standard.",
+    "searchPlaceholder": "Rechercher une ouverture (ex. Najdorf, C50)…",
+    "noMatches": "Aucun résultat.",
+    "searchHint": "Trouvez n'importe quelle ouverture par son nom ou son code ECO, puis chargez-la sur l'échiquier."
+  },
+  "save": {
+    "title": "Enregistrer la ligne dans le répertoire",
+    "noMoves": "Jouez d'abord quelques coups sur l'échiquier, puis enregistrez la ligne.",
+    "mustStartInitial": "Les lignes de répertoire doivent partir de la position initiale.",
+    "repertoire": "Répertoire",
+    "newRepOption": "+ Nouveau répertoire…",
+    "repNamePlaceholder": "nom du répertoire",
+    "repNameAria": "Nom du nouveau répertoire",
+    "lineName": "Nom de la ligne",
+    "youPlay": "Vous jouez",
+    "saveCta": "Enregistrer la ligne"
+  }
+}

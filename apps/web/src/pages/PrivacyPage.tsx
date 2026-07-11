@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { LegalLink, LegalList, LegalSection, LegalShell } from '../components/LegalShell';
 
 /**
@@ -12,8 +13,11 @@ import { LegalLink, LegalList, LegalSection, LegalShell } from '../components/Le
  */
 
 export function PrivacyPage() {
+  // Only the title is translated (it doubles as link text elsewhere); the
+  // policy body below is legal CONTENT and deliberately stays English.
+  const { t } = useTranslation('legal');
   return (
-    <LegalShell title="Privacy Policy" updated="July 11, 2026">
+    <LegalShell title={t('privacyTitle')} updated="July 11, 2026">
       <LegalSection title="The short version">
         <p>
           Chesser is local-first. Your training data lives in your browser; creating an account is optional and only

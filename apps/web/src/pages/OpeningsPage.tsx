@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { Chess } from 'chess.js';
 import { Board } from '../board/Board';
 import { ReviewStats } from '../components/ReviewStats';
@@ -9,6 +10,7 @@ import { catalogLine, catalogOpeningOf } from '../trainers/openingCatalog';
 import { buildBook, classifyMove } from '../lib/lineBook';
 import { recordReview } from '../lib/gamify';
 import { dueLabel } from '../lib/srs';
+import { dueDisplayLabel } from '../lib/srsText';
 import { playMoveSound } from '../lib/sound';
 import type { Color } from '../store/game';
 
@@ -16,11 +18,12 @@ type Phase = 'idle' | 'playing' | 'done';
 
 /** "My repertoire": the user's picks from the curated opening catalog. */
 function usePickedRepertoire(): Repertoire {
+  const { t } = useTranslation('openings');
   const picked = useRepertoire((s) => s.picked);
   return useMemo(
     () => ({
       id: 'mine',
-      name: 'My repertoire',
+      name: t('myRepertoire'),
       builtin: true, // lines are catalog-owned; removal goes through togglePicked
       updatedAt: 0,
       lines: picked.flatMap((id) => {
@@ -29,11 +32,12 @@ function usePickedRepertoire(): Repertoire {
         return l && o ? [{ id: l.id, name: `${o.name} — ${l.name}`, side: l.side, moves: l.moves, eco: l.eco, idea: l.idea }] : [];
       }),
     }),
-    [picked],
+    [picked, t],
   );
 }
 
 export function OpeningsPage() {
+  const { t } = useTranslation(['openings', 'progress']);
   const game = useRef(new Chess());
   const run = useRef({ errors: 0, reveals: 0, graded: false });
 
@@ -118,17 +122,17 @@ export function OpeningsPage() {
         recordReview(g !== 'again');
       }
       setPhase('done');
-      setFeedback({ kind: 'ok', text: 'Line complete — saved to your review schedule!' });
+      setFeedback({ kind: 'ok', text: t('drill.lineComplete') });
       return;
     }
     const opponentToMove = game.current.turn() !== (side === 'white' ? 'w' : 'b');
     if (!opponentToMove) return;
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       game.current.move(line.moves[ply]!);
       sync();
       setPly((p) => p + 1);
     }, 450);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [phase, ply, line, side, grade]);
 
   const dests = useMemo(() => {
@@ -150,7 +154,7 @@ export function OpeningsPage() {
       game.current.move(verdict.san);
       playMoveSound(verdict.san);
       setStats((s) => ({ ...s, correct: s.correct + 1 }));
-      setFeedback({ kind: 'ok', text: `✓ ${verdict.san}` });
+      setFeedback({ kind: 'ok', text: t('drill.correct', { san: verdict.san }) });
       sync();
       setPly((p) => p + 1);
     } else if (verdict.kind === 'alternate') {
@@ -160,18 +164,18 @@ export function OpeningsPage() {
       playMoveSound(verdict.san);
       setStats((s) => ({ ...s, correct: s.correct + 1 }));
       if (target) {
-        setFeedback({ kind: 'ok', text: `✓ ${verdict.san} — continuing as ${target.name}` });
+        setFeedback({ kind: 'ok', text: t('drill.continuingAs', { san: verdict.san, name: target.name }) });
         setLine(target);
         setPly(verdict.ply + 1);
       } else {
-        setFeedback({ kind: 'ok', text: `✓ ${verdict.san}` });
+        setFeedback({ kind: 'ok', text: t('drill.correct', { san: verdict.san }) });
         setPly((p) => p + 1);
       }
       sync();
     } else {
       run.current.errors += 1;
       setStats((s) => ({ ...s, wrong: s.wrong + 1 }));
-      setFeedback({ kind: 'bad', text: 'Not in your repertoire — try again, or reveal.' });
+      setFeedback({ kind: 'bad', text: t('drill.notInRepertoire') });
       sync();
       // Snap the board back. chessground has already rendered the rejected
       // move; on the first ply sync() leaves every Board prop identical
@@ -186,7 +190,7 @@ export function OpeningsPage() {
     run.current.reveals += 1;
     const mv = game.current.move(line.moves[ply]!);
     setStats((s) => ({ ...s, wrong: s.wrong + 1 }));
-    setFeedback({ kind: 'info', text: `Answer: ${mv.san}` });
+    setFeedback({ kind: 'info', text: t('drill.answer', { san: mv.san }) });
     sync();
     setPly((p) => p + 1);
   };
@@ -217,16 +221,17 @@ export function OpeningsPage() {
       {/* repertoire + lines */}
       <div className="order-2 space-y-3 lg:order-1">
         <div className="rounded-2xl bg-panel shadow-soft p-3">
-          <h3 className="mb-2 text-sm font-semibold text-ink">Repertoire</h3>
+          <h3 className="mb-2 text-sm font-semibold text-ink">{t('repertoire.title')}</h3>
           <select
             value={repId}
             onChange={(e) => setRepId(e.target.value)}
-            aria-label="Repertoire"
+            aria-label={t('repertoire.title')}
             className="w-full rounded bg-neutral-800 px-2 py-1.5 text-sm text-ink outline-none"
           >
             {reps.map((r) => (
               <option key={r.id} value={r.id}>
-                {r.name} {r.id === 'builtin' ? '' : `(${r.lines.length})`}
+                {/* The builtin's stored English name translates at display time (see store/repertoire.ts). */}
+                {r.id === 'builtin' ? t('progress:repertoire.starterName', { defaultValue: r.name }) : `${r.name} (${r.lines.length})`}
               </option>
             ))}
           </select>
@@ -237,7 +242,7 @@ export function OpeningsPage() {
                 onClick={() => setBrowsing(true)}
                 className="btn-press rounded bg-brand-600 px-2 py-1 text-xs font-semibold text-white hover:bg-brand-700"
               >
-                📖 Browse openings
+                📖 {t('repertoire.browse')}
               </button>
             )}
             {creating ? (
@@ -246,47 +251,47 @@ export function OpeningsPage() {
                   autoFocus
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  placeholder="new repertoire"
+                  placeholder={t('repertoire.newPlaceholder')}
                   className="min-w-0 flex-1 rounded bg-neutral-800 px-2 py-1 text-xs text-ink outline-none"
                 />
                 <button
                   onClick={() => {
-                    const id = createRepertoire(newName);
+                    const id = createRepertoire(newName.trim() || t('progress:repertoire.defaultName'));
                     setNewName('');
                     setCreating(false);
                     setRepId(id);
                   }}
                   className="rounded bg-emerald-700 px-2 py-1 text-xs text-white"
                 >
-                  Create
+                  {t('repertoire.create')}
                 </button>
               </>
             ) : (
               <>
                 <button onClick={() => setCreating(true)} className="rounded bg-neutral-700 px-2 py-1 text-xs text-neutral-200 hover:bg-neutral-600">
-                  + New
+                  {t('repertoire.new')}
                 </button>
                 {editable && (
                   <>
                     <button
                       onClick={() => {
-                        const n = window.prompt('Rename repertoire', rep.name);
+                        const n = window.prompt(t('repertoire.renamePrompt'), rep.name);
                         if (n) renameRepertoire(rep.id, n);
                       }}
                       className="rounded bg-neutral-700 px-2 py-1 text-xs text-neutral-200 hover:bg-neutral-600"
                     >
-                      Rename
+                      {t('repertoire.rename')}
                     </button>
                     <button
                       onClick={() => {
-                        if (window.confirm(`Delete "${rep.name}"?`)) {
+                        if (window.confirm(t('repertoire.deleteConfirm', { name: rep.name }))) {
                           deleteRepertoire(rep.id);
                           setRepId('mine');
                         }
                       }}
                       className="rounded bg-neutral-700 px-2 py-1 text-xs text-rose-300 hover:bg-neutral-600"
                     >
-                      Delete
+                      {t('repertoire.delete')}
                     </button>
                   </>
                 )}
@@ -302,7 +307,7 @@ export function OpeningsPage() {
             disabled={lineIds.length === 0}
             className="mt-2 w-full rounded bg-emerald-700 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
           >
-            Review due lines
+            {t('repertoire.reviewDue')}
           </button>
         </div>
 
@@ -310,17 +315,17 @@ export function OpeningsPage() {
           {lines.length === 0 ? (
             rep.id === 'mine' ? (
               <div className="space-y-2 text-xs text-neutral-400">
-                <p>Your repertoire is empty. Pick openings to learn as White and as Black from the curated catalog.</p>
+                <p>{t('repertoire.emptyMine')}</p>
                 <button
                   onClick={() => setBrowsing(true)}
                   className="btn-press w-full rounded bg-brand-600 py-1.5 text-sm font-semibold text-white hover:bg-brand-700"
                 >
-                  Browse openings
+                  {t('repertoire.browse')}
                 </button>
               </div>
             ) : (
               <p className="text-xs text-neutral-400">
-                No lines yet. Build one on the <b className="text-neutral-300">Play</b> board, then “★ Save line”.
+                <Trans t={t} i18nKey="repertoire.emptyOther" components={{ playTab: <b className="text-neutral-300" /> }} />
               </p>
             )
           ) : (
@@ -329,7 +334,9 @@ export function OpeningsPage() {
               if (group.length === 0) return null;
               return (
                 <div key={c} className="mb-2">
-                  <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">As {c}</div>
+                  <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">
+                    {c === 'white' ? t('side.asWhite') : t('side.asBlack')}
+                  </div>
                   <div className="space-y-1">
                     {group.map((l) => {
                       const cd = dueLabel((cards[`openings:${l.id}`] ?? { last: 0, due: 0 }) as any);
@@ -354,14 +361,14 @@ export function OpeningsPage() {
                                     : 'text-neutral-300'
                               }`}
                             >
-                              {cd}
+                              {dueDisplayLabel(cd)}
                             </span>
                           </button>
                           {removable && (
                             <button
                               onClick={() => removeLine(l)}
-                              title="Remove line"
-                              aria-label="Remove line"
+                              title={t('repertoire.removeLine')}
+                              aria-label={t('repertoire.removeLine')}
                               className="shrink-0 rounded px-1.5 py-1 text-xs text-neutral-400 hover:bg-neutral-700 hover:text-rose-300"
                             >
                               ×
@@ -381,17 +388,22 @@ export function OpeningsPage() {
       {/* board */}
       <div className="order-1 space-y-3 lg:order-2">
         <div className="flex h-7 items-center gap-3 text-sm">
-          <span className="truncate text-neutral-300">{line?.name ?? 'Pick a line'}</span>
+          <span className="truncate text-neutral-300">{line?.name ?? t('board.pickLine')}</span>
           {line?.eco && <span className="rounded bg-neutral-800 px-1.5 py-0.5 font-mono text-[10px] text-neutral-400">{line.eco}</span>}
           {line && (
             <>
               <span className="text-neutral-400">·</span>
               <span className="shrink-0 text-neutral-400">
-                you play <b className="text-neutral-200">{side}</b>
+                <Trans
+                  t={t}
+                  i18nKey="board.youPlay"
+                  values={{ side: t(`side.${side}`) }}
+                  components={{ sideTag: <b className="text-neutral-200" /> }}
+                />
               </span>
             </>
           )}
-          {traineeToMove && <span className="animate-pulse-soft shrink-0 text-emerald-400">· your move</span>}
+          {traineeToMove && <span className="animate-pulse-soft shrink-0 text-emerald-400">{t('board.yourMove')}</span>}
         </div>
         <div className="mx-auto w-full max-w-[540px]">
           <Board
@@ -409,12 +421,12 @@ export function OpeningsPage() {
         <div className="flex flex-wrap items-center gap-2">
           {phase !== 'playing' && line && (
             <button onClick={() => start(line)} className="rounded bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800">
-              {phase === 'done' ? 'Repeat line' : 'Start drill'}
+              {phase === 'done' ? t('board.repeatLine') : t('board.startDrill')}
             </button>
           )}
           {phase === 'playing' && (
             <button onClick={reveal} className="rounded bg-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600">
-              Reveal move
+              {t('board.revealMove')}
             </button>
           )}
         </div>
@@ -424,7 +436,7 @@ export function OpeningsPage() {
       <div className="order-3 space-y-3">
         <div className="rounded-2xl bg-panel shadow-soft p-3">
           <div className="mb-2 flex items-center justify-between text-sm">
-            <span className="font-semibold text-ink">Move {moveNo}</span>
+            <span className="font-semibold text-ink">{t('info.moveNo', { n: moveNo })}</span>
             <span className="text-xs text-neutral-400">
               <span className="text-emerald-400">{stats.correct}✓</span> · <span className="text-rose-400">{stats.wrong}✗</span>
             </span>
@@ -441,7 +453,7 @@ export function OpeningsPage() {
           {line?.idea && <p className="text-xs leading-snug text-neutral-400">{line.idea}</p>}
         </div>
         <div className="rounded-2xl bg-panelmute p-2">
-          <div className="mb-1 px-1 text-xs uppercase tracking-wide text-neutral-400">Moves</div>
+          <div className="mb-1 px-1 text-xs uppercase tracking-wide text-neutral-400">{t('info.moves')}</div>
           <div className="px-1 font-mono text-sm text-neutral-200">
             {playedSan.length === 0 ? (
               <span className="text-neutral-400">—</span>

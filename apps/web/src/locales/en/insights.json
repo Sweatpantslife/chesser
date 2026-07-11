@@ -1,0 +1,92 @@
+{
+  "weaknesses": {
+    "hangingPieces": {
+      "label": "Hanging pieces",
+      "summary": "Moves that left a piece where it could simply be captured.",
+      "advice": "Before you commit to a move, do one last scan: \"what can my opponent take?\" That single habit removes most of these losses."
+    },
+    "missedMates": {
+      "label": "Missed checkmates",
+      "summary": "Positions where a forced mate was available but a slower move was played.",
+      "advice": "When the enemy king looks airy, pause and hunt checks first — forcing moves are free to calculate because the replies are limited."
+    },
+    "missedForks": {
+      "label": "Missed forks",
+      "summary": "Chances to attack two pieces at once that went unplayed.",
+      "advice": "Knights and pawns are the usual culprits — each time a knight can jump forward, check whether the landing square eyes two targets."
+    },
+    "missedTactics": {
+      "label": "Missed tactics",
+      "summary": "Winning shots — captures, pins, skewers, discovered attacks — that slipped by.",
+      "advice": "Loose pieces and lined-up pieces are tactical fuel. Scan for undefended targets and pieces sharing a line before settling for a quiet move."
+    },
+    "openingMistakes": {
+      "label": "Opening slips",
+      "summary": "Eval given away in the first phase, right out of (or just after) theory.",
+      "advice": "You don't need more memorised lines — develop toward the centre, castle early, and don't move the same piece twice without a reason."
+    },
+    "endgameMistakes": {
+      "label": "Endgame conversion",
+      "summary": "Advantages that shrank or slipped away once the board emptied.",
+      "advice": "In simple positions, king activity and passed pawns decide games. Slow down — endgames reward one careful check more than fast instinct."
+    }
+  },
+  "phases": {
+    "opening": "opening",
+    "middlegame": "middlegame",
+    "endgame": "endgame"
+  },
+  "weekly": {
+    "quiet": "A quiet week on the board so far — nothing logged yet. One puzzle or a quick lesson today is all it takes to get the week moving.",
+    "allDays": "You showed up all 7 days this week and earned {{xp}} XP — that consistency is how players improve.",
+    "mostDays": "You trained on {{days}} of 7 days this week, earning {{xp}} XP.",
+    "someDays_one": "You got {{count}} training day in this week for {{xp}} XP.",
+    "someDays_other": "You got {{count}} training days in this week for {{xp}} XP.",
+    "wdl": "{{wins}}W–{{losses}}L–{{draws}}D",
+    "games_one": "Across {{count}} reviewed game you went {{wdl}}.",
+    "games_other": "Across {{count}} reviewed games you went {{wdl}}.",
+    "gamesAccuracy_one": "Across {{count}} reviewed game you went {{wdl}}, with a best accuracy of {{accuracy}}%.",
+    "gamesAccuracy_other": "Across {{count}} reviewed games you went {{wdl}}, with a best accuracy of {{accuracy}}%.",
+    "ratingClimb": "your puzzle rating climbed {{delta}} points to {{rating}}",
+    "ratingDip": "your puzzle rating dipped {{delta}} points — normal turbulence",
+    "newRushBest": "you set a new Puzzle Rush best of {{score}}",
+    "newStormBest": "a new Storm best of {{score}}",
+    "puzzleJoiner": ", and ",
+    "puzzleSide": "On the puzzle side, {{bits}}.",
+    "lessons_one": "You also finished {{count}} lesson.",
+    "lessons_other": "You also finished {{count}} lessons.",
+    "lessonsStars_one": "You also finished {{count}} lesson ({{stars}} stars).",
+    "lessonsStars_other": "You also finished {{count}} lessons ({{stars}} stars).",
+    "training": "Weakness training: {{solved}}/{{attempts}} drills solved.",
+    "watchPattern": "The pattern to watch is {{label}} ({{count}}× this week) — a good focus for next week.",
+    "streak_one": "Your streak is at {{count}} day — keep it alive.",
+    "streak_other": "Your streak is at {{count}} days — keep it alive."
+  },
+  "plan": {
+    "puzzleTitle_one": "{{label}}: {{count}} puzzle a day",
+    "puzzleTitle_other": "{{label}}: {{count}} puzzles a day",
+    "puzzleWhyEntry": "{{label}} showed up {{count}}× across {{games}} of your last {{total}} reviewed games — daily reps retrain the reflex.",
+    "puzzleWhyPhase": "Your {{phase}} is your least accurate phase — daily {{label}} reps shore it up.",
+    "puzzleWhyDefault": "No recurring weakness stands out yet — daily {{label}} reps keep your tactics sharp.",
+    "lessonTitle": "Lesson: {{title}}",
+    "lessonWhy": "Targets your #{{rank}} focus — {{label}}.",
+    "openingTitle": "Drill: {{name}}",
+    "openingWhyTendency": "Your {{name}} games sit at {{accuracy}}% accuracy over {{games}} games — drill the moves you actually play.",
+    "openingWhyRepertoire_one": "From your repertoire — {{count}} recall rep keeps the line fresh.",
+    "openingWhyRepertoire_other": "From your repertoire — {{count}} recall reps keep the line fresh.",
+    "masterTitle": "Master game: {{white}} – {{black}} ({{year}})",
+    "masterWhy": "A {{difficulty}}-level {{theme}} classic — see the pattern you're training played perfectly.",
+    "difficulty": {
+      "beginner": "beginner",
+      "intermediate": "intermediate",
+      "advanced": "advanced"
+    },
+    "gameThemes": {
+      "attack": "attack",
+      "sacrifice": "sacrifice",
+      "tactics": "tactics",
+      "endgame": "endgame",
+      "positional": "positional"
+    }
+  }
+}

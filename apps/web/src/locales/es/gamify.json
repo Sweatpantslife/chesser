@@ -1,0 +1,37 @@
+{
+  "toasts": {
+    "achievement": {
+      "title": "Logro desbloqueado",
+      "bodyXp": "{{name}} · +{{xp}} XP"
+    },
+    "levelUp": {
+      "title": "¡Subiste de nivel!",
+      "body": "Alcanzaste el nivel {{level}}"
+    },
+    "streakMilestone": {
+      "title_one": "¡Racha de {{count}} día!",
+      "title_other": "¡Racha de {{count}} días!",
+      "body": "Hito alcanzado",
+      "bodyXp": "Hito alcanzado · +{{xp}} XP"
+    },
+    "freezeUsed": {
+      "title": "Protector de racha usado",
+      "body_one": "Tu racha de {{streak}} días sobrevivió · queda {{count}} protector",
+      "body_other": "Tu racha de {{streak}} días sobrevivió · quedan {{count}} protectores"
+    },
+    "goal": {
+      "title": "Meta diaria completada",
+      "bodyStreak_one": "Racha de {{count}} día — ¡sigue así!",
+      "bodyStreak_other": "Racha de {{count}} días — ¡sigue así!",
+      "body": "Buen trabajo — ¡vuelve mañana!"
+    },
+    "quest": {
+      "title": "Misión completada",
+      "bodyXp": "{{name}} · +{{xp}} XP"
+    },
+    "allQuests": {
+      "title": "¡Todas las misiones completadas!",
+      "body": "Misiones del día completadas · +{{xp}} XP extra"
+    }
+  }
+}

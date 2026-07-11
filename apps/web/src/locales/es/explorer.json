@@ -1,0 +1,116 @@
+{
+  "title": "Explorador de aperturas",
+  "gamesCount": "{{games}} partidas",
+  "db": {
+    "aria": "Base de datos",
+    "masters": "Maestros",
+    "lichess": "Lichess",
+    "mastersTitle": "Partidas magistrales presenciales",
+    "lichessTitle": "Partidas en línea jugadas en Lichess"
+  },
+  "filters": {
+    "speedsAria": "Controles de tiempo",
+    "minRatingAria": "Puntuación mínima de los jugadores",
+    "allRatings": "Todas las puntuaciones"
+  },
+  "speeds": {
+    "bullet": "Bullet",
+    "blitz": "Blitz",
+    "rapid": "Rápida",
+    "classical": "Clásica"
+  },
+  "name": {
+    "noBookName": "No hay nombre de libro para esta posición.",
+    "startingPosition": "Posición inicial — elige abajo la primera jugada."
+  },
+  "status": {
+    "loading": "Cargando estadísticas de la apertura…",
+    "unavailableTitle": "Estadísticas en vivo no disponibles",
+    "unavailableBody": "Ahora mismo no se puede acceder a la base de datos de aperturas (<host>explorer.lichess.ovh</host>). Los nombres de las aperturas siguen funcionando sin conexión; las estadísticas de jugadas volverán cuando la base de datos sea accesible.",
+    "noGames": "No hay partidas en esta base de datos desde aquí."
+  },
+  "table": {
+    "move": "Jugada",
+    "games": "Partidas",
+    "wdl": "Blancas · Tablas · Negras",
+    "all": "Total"
+  },
+  "moves": {
+    "label": "{{san}} — {{games}} partidas: blancas ganan {{white}}, tablas {{draws}}, negras ganan {{black}}",
+    "playAria": "Jugar {{label}}",
+    "titleWithRating": "{{games}} partidas · puntuación media {{rating}}"
+  },
+  "games": {
+    "top": "Mejores partidas",
+    "recent": "Partidas recientes",
+    "viewTitle": "Ver {{white}} vs {{black}} en Lichess (se abre en una pestaña nueva)"
+  },
+  "page": {
+    "first": "Primera jugada",
+    "firstTitle": "Primera",
+    "previous": "Jugada anterior",
+    "previousTitle": "Anterior",
+    "next": "Jugada siguiente",
+    "nextTitle": "Siguiente",
+    "last": "Última jugada",
+    "lastTitle": "Última",
+    "flip": "⇅ Girar",
+    "flipTitle": "Girar el tablero (f)",
+    "reset": "↺ Reiniciar",
+    "resetTitle": "Volver a la posición inicial",
+    "analyse": "Analizar",
+    "analyseTitle": "Abrir esta línea en el tablero de análisis",
+    "lineTitle": "Línea",
+    "lineEmpty": "Juega una jugada en el tablero — o elige una de las estadísticas — para empezar a explorar. Las flechas del teclado recorren la línea.",
+    "movesAria": "Jugadas realizadas",
+    "start": "Inicio"
+  },
+  "save": {
+    "addTo": "＋ a",
+    "targetAria": "Repertorio donde guardar las líneas",
+    "newRepOption": "Mi repertorio (nuevo)",
+    "saveTitle": "Guarda esta línea en tu repertorio",
+    "saveAria": "Guardar la línea con {{san}} en tu repertorio"
+  },
+  "library": {
+    "title": "Biblioteca de partidas",
+    "tabs": {
+      "saved": "Mis partidas",
+      "import": "Importar",
+      "pgn": "Pegar",
+      "fen": "FEN"
+    },
+    "vs": "vs",
+    "saved": {
+      "signIn": "Inicia sesión para guardar y volver a tus partidas analizadas.",
+      "empty": "Aún no hay partidas guardadas — usa «Guardar» en el tablero para añadir una.",
+      "deleteAria": "Eliminar la partida {{white}} vs {{black}}"
+    },
+    "import": {
+      "usernameAria": "Usuario de {{site}}",
+      "usernamePlaceholder": "usuario",
+      "fetch": "Obtener",
+      "fetching": "Obteniendo…"
+    },
+    "pgn": {
+      "hint": "Pega un PGN para revisarlo en el tablero de análisis.",
+      "aria": "Texto PGN",
+      "load": "Cargar partida"
+    },
+    "fen": {
+      "hint": "Pega un FEN para analizar cualquier posición.",
+      "aria": "Posición FEN",
+      "analyze": "Analizar"
+    },
+    "errors": {
+      "load": "No se pudieron cargar tus partidas guardadas — comprueba tu conexión y vuelve a abrir la biblioteca.",
+      "readGame": "No se pudo leer esa partida.",
+      "readPgn": "No se pudo leer ese PGN.",
+      "invalidFen": "FEN no válido.",
+      "delete": "No se pudo eliminar la partida.",
+      "importUnavailable": "Importación no disponible ({{reason}}). El servidor debe poder acceder al host de la API de {{site}}.",
+      "reasonFallback": "error",
+      "noneFound": "No se encontraron partidas para ese usuario."
+    }
+  }
+}

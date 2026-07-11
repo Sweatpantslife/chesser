@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuests } from '../store/quests';
 import { ALL_QUESTS_BONUS_XP, type QuestDef } from '../lib/quests';
 
@@ -8,6 +9,7 @@ import { ALL_QUESTS_BONUS_XP, type QuestDef } from '../lib/quests';
  */
 
 function QuestRow({ q, value, done }: { q: QuestDef; value: number; done: boolean }) {
+  const { t } = useTranslation('home');
   const shown = Math.min(value, q.target);
   const pct = Math.min(100, Math.round((shown / q.target) * 100));
   return (
@@ -22,12 +24,16 @@ function QuestRow({ q, value, done }: { q: QuestDef; value: number; done: boolea
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-2">
-            <span className={`truncate text-sm font-semibold ${done ? 'text-emerald-300' : 'text-ink'}`}>{q.name}</span>
+            <span className={`truncate text-sm font-semibold ${done ? 'text-emerald-300' : 'text-ink'}`}>
+              {/* Quest names/descriptions live in the stores group's id-keyed `progress` namespace;
+                  the English from lib/quests is the fallback so en output never changes. */}
+              {t(`progress:quests.${q.id}.name`, { defaultValue: q.name })}
+            </span>
             <span className={`shrink-0 text-xs font-semibold ${done ? 'text-emerald-400' : 'text-gold-400/90'}`}>
-              {done ? '✓ done' : `+${q.xp} XP`}
+              {done ? t('quests.questDone') : t('quests.xpReward', { xp: q.xp })}
             </span>
           </div>
-          <div className="truncate text-xs text-neutral-400">{q.desc}</div>
+          <div className="truncate text-xs text-neutral-400">{t(`progress:quests.${q.id}.desc`, { defaultValue: q.desc })}</div>
           <div className="mt-1.5 flex items-center gap-2">
             <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-neutral-800">
               <div
@@ -48,6 +54,7 @@ function QuestRow({ q, value, done }: { q: QuestDef; value: number; done: boolea
 }
 
 export function DailyQuests() {
+  const { t } = useTranslation('home');
   useQuests((s) => s.day); // re-render on rollover so the slate below stays fresh
   const progress = useQuests((s) => s.progress);
   const done = useQuests((s) => s.done);
@@ -67,10 +74,8 @@ export function DailyQuests() {
   return (
     <div className="rounded-2xl bg-panel p-4 shadow-soft">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="font-display text-sm font-semibold text-ink">Daily quests</h3>
-        <span className="text-xs text-neutral-400">
-          {doneCount} / {quests.length} done
-        </span>
+        <h3 className="font-display text-sm font-semibold text-ink">{t('quests.title')}</h3>
+        <span className="text-xs text-neutral-400">{t('quests.doneCount', { done: doneCount, total: quests.length })}</span>
       </div>
       <ul className="space-y-2">
         {quests.map((q) => (
@@ -79,8 +84,8 @@ export function DailyQuests() {
       </ul>
       <p className={`mt-3 text-xs ${allDone ? 'text-gold-400' : 'text-neutral-400'}`}>
         {allDone
-          ? `🏅 All quests complete — +${ALL_QUESTS_BONUS_XP} XP bonus earned. New quests tomorrow!`
-          : `Finish all ${quests.length} for a +${ALL_QUESTS_BONUS_XP} XP bonus. Fresh quests every day.`}
+          ? t('quests.allDone', { xp: ALL_QUESTS_BONUS_XP })
+          : t('quests.finishAll', { total: quests.length, xp: ALL_QUESTS_BONUS_XP })}
       </p>
     </div>
   );

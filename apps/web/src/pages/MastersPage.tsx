@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Chess } from 'chess.js';
 import { STARTING_FEN } from '@chesser/shared';
 import { Board } from '../board/Board';
@@ -8,7 +9,6 @@ import {
   MASTER_GAMES,
   masterGamePgn,
   plyLabel,
-  THEME_LABELS,
   type GameDifficulty,
   type GameTheme,
   type MasterGame,
@@ -63,6 +63,7 @@ const DIFF_BADGE: Record<GameDifficulty, string> = {
 };
 
 function Library({ onOpen }: { onOpen: (id: string) => void }) {
+  const { t } = useTranslation('learn');
   const [theme, setTheme] = useState<GameTheme | 'all'>('all');
   const [difficulty, setDifficulty] = useState<GameDifficulty | 'all'>('all');
   const [opening, setOpening] = useState<string>('all');
@@ -79,47 +80,44 @@ function Library({ onOpen }: { onOpen: (id: string) => void }) {
   return (
     <div className="mx-auto w-full max-w-[1100px] space-y-4">
       <header>
-        <h2 className="font-display text-2xl font-bold text-ink">Master games</h2>
-        <p className="text-sm text-neutral-400">
-          Famous games, annotated move by move — replay them, jump to the key moments, and take any position to the
-          analysis board.
-        </p>
+        <h2 className="font-display text-2xl font-bold text-ink">{t('masters.title')}</h2>
+        <p className="text-sm text-neutral-400">{t('masters.subtitle')}</p>
       </header>
 
       <div className="space-y-2 rounded-blob bg-panel p-3 shadow-soft">
-        <div className="scrollbar-none flex gap-1.5 overflow-x-auto" role="group" aria-label="Filter by theme">
+        <div className="scrollbar-none flex gap-1.5 overflow-x-auto" role="group" aria-label={t('masters.filters.themeAria')}>
           <button className={chip(theme === 'all')} aria-pressed={theme === 'all'} onClick={() => setTheme('all')}>
-            All themes
+            {t('masters.filters.allThemes')}
           </button>
-          {GAME_THEMES.map((t) => (
-            <button key={t} className={chip(theme === t)} aria-pressed={theme === t} onClick={() => setTheme(t)}>
-              {THEME_LABELS[t]}
+          {GAME_THEMES.map((th) => (
+            <button key={th} className={chip(theme === th)} aria-pressed={theme === th} onClick={() => setTheme(th)}>
+              {t(`masters.themes.${th}`)}
             </button>
           ))}
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
-          <div className="scrollbar-none flex gap-1.5 overflow-x-auto" role="group" aria-label="Filter by difficulty">
+          <div className="scrollbar-none flex gap-1.5 overflow-x-auto" role="group" aria-label={t('masters.filters.difficultyAria')}>
             <button
               className={chip(difficulty === 'all')}
               aria-pressed={difficulty === 'all'}
               onClick={() => setDifficulty('all')}
             >
-              Any level
+              {t('masters.filters.anyLevel')}
             </button>
             {(Object.keys(DIFFICULTY_LABELS) as GameDifficulty[]).map((d) => (
               <button key={d} className={chip(difficulty === d)} aria-pressed={difficulty === d} onClick={() => setDifficulty(d)}>
-                {DIFFICULTY_LABELS[d]}
+                {t(`masters.difficulty.${d}`)}
               </button>
             ))}
           </div>
           <label className="ml-auto flex items-center gap-2 text-sm text-neutral-300">
-            Opening
+            {t('masters.filters.opening')}
             <select
               value={opening}
               onChange={(e) => setOpening(e.target.value)}
               className="min-h-11 rounded-lg border border-neutral-700 bg-neutral-800 px-2 py-1.5 text-sm text-ink sm:min-h-0"
             >
-              <option value="all">All openings</option>
+              <option value="all">{t('masters.filters.allOpenings')}</option>
               {openings.map((o) => (
                 <option key={o} value={o}>
                   {o}
@@ -131,9 +129,7 @@ function Library({ onOpen }: { onOpen: (id: string) => void }) {
       </div>
 
       {filtered.length === 0 ? (
-        <p className="rounded-blob bg-panel p-6 text-center text-sm text-neutral-400">
-          No games match these filters — try clearing one.
-        </p>
+        <p className="rounded-blob bg-panel p-6 text-center text-sm text-neutral-400">{t('masters.noMatches')}</p>
       ) : (
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((g) => (
@@ -147,7 +143,7 @@ function Library({ onOpen }: { onOpen: (id: string) => void }) {
                     {g.white} – {g.black}
                   </span>
                   <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${DIFF_BADGE[g.difficulty]}`}>
-                    {DIFFICULTY_LABELS[g.difficulty]}
+                    {t(`masters.difficulty.${g.difficulty}`)}
                   </span>
                 </div>
                 <span className="text-xs text-neutral-400">
@@ -155,9 +151,9 @@ function Library({ onOpen }: { onOpen: (id: string) => void }) {
                 </span>
                 <span className="text-sm leading-snug text-neutral-300">{g.blurb}</span>
                 <span className="mt-auto flex flex-wrap gap-1 pt-1">
-                  {g.themes.map((t) => (
-                    <span key={t} className="rounded-full bg-neutral-800 px-2 py-0.5 text-xs font-semibold text-neutral-300">
-                      {THEME_LABELS[t]}
+                  {g.themes.map((th) => (
+                    <span key={th} className="rounded-full bg-neutral-800 px-2 py-0.5 text-xs font-semibold text-neutral-300">
+                      {t(`masters.themes.${th}`)}
                     </span>
                   ))}
                 </span>
@@ -200,6 +196,7 @@ interface ReplayStep {
 }
 
 function GameViewer({ game, goPlay, onBack }: { game: MasterGame; goPlay: () => void; onBack: () => void }) {
+  const { t } = useTranslation('learn');
   // ply 0 = start position; ply n = after sans[n-1] (matches data convention).
   const [ply, setPly] = useState(0);
   const [orientation, setOrientation] = useState<Color>('white');
@@ -267,7 +264,7 @@ function GameViewer({ game, goPlay, onBack }: { game: MasterGame; goPlay: () => 
       <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           <button className={btn} onClick={onBack}>
-            ← Library
+            {t('masters.viewer.back')}
           </button>
           <div className="min-w-0">
             <h2 className="truncate font-display text-lg font-bold leading-tight text-ink">
@@ -293,15 +290,21 @@ function GameViewer({ game, goPlay, onBack }: { game: MasterGame; goPlay: () => 
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5">
-          <button className={btn} onClick={() => goTo(0)} disabled={ply === 0} title="First (Home)" aria-label="First move">
+          <button
+            className={btn}
+            onClick={() => goTo(0)}
+            disabled={ply === 0}
+            title={t('masters.viewer.firstTitle')}
+            aria-label={t('masters.viewer.first')}
+          >
             ⏮
           </button>
           <button
             className={btn}
             onClick={() => goTo(ply - 1)}
             disabled={ply === 0}
-            title="Previous (←)"
-            aria-label="Previous move"
+            title={t('masters.viewer.previousTitle')}
+            aria-label={t('masters.viewer.previous')}
           >
             ◀
           </button>
@@ -309,42 +312,46 @@ function GameViewer({ game, goPlay, onBack }: { game: MasterGame; goPlay: () => 
             className={btn}
             onClick={() => goTo(ply + 1, true)}
             disabled={ply === last}
-            title="Next (→)"
-            aria-label="Next move"
+            title={t('masters.viewer.nextTitle')}
+            aria-label={t('masters.viewer.next')}
           >
             ▶
           </button>
-          <button className={btn} onClick={() => goTo(last)} disabled={ply === last} title="Last (End)" aria-label="Last move">
+          <button
+            className={btn}
+            onClick={() => goTo(last)}
+            disabled={ply === last}
+            title={t('masters.viewer.lastTitle')}
+            aria-label={t('masters.viewer.last')}
+          >
             ⏭
           </button>
           <div className="mx-1 h-5 w-px bg-neutral-700" aria-hidden="true" />
           <button
             className={btn}
             onClick={() => setOrientation((o) => (o === 'white' ? 'black' : 'white'))}
-            title="Flip board (f)"
+            title={t('masters.viewer.flipTitle')}
           >
-            ⇅ Flip
+            {t('masters.viewer.flip')}
           </button>
-          <button className={btn} onClick={analyzeFromHere} title="Open this position on the analysis board">
-            Analyze from here
+          <button className={btn} onClick={analyzeFromHere} title={t('masters.viewer.analyzeTitle')}>
+            {t('masters.viewer.analyze')}
           </button>
         </div>
       </div>
 
       <div className="space-y-3">
-        <section className="rounded-blob bg-panel p-3 shadow-soft" aria-label="Commentary">
+        <section className="rounded-blob bg-panel p-3 shadow-soft" aria-label={t('masters.viewer.commentary')}>
           <h3 className="mb-1 text-sm font-semibold text-ink">
-            {ply === 0 ? 'About this game' : `${plyLabel(ply)} ${steps[ply - 1]!.san}${note?.glyph ?? ''}`}
+            {ply === 0 ? t('masters.viewer.about') : `${plyLabel(ply)} ${steps[ply - 1]!.san}${note?.glyph ?? ''}`}
           </h3>
           <p className="text-sm leading-relaxed text-neutral-300" aria-live="polite">
-            {ply === 0
-              ? game.blurb
-              : note?.text ?? 'Step through with the arrow keys — commentary appears on the annotated moves.'}
+            {ply === 0 ? game.blurb : note?.text ?? t('masters.viewer.noNote')}
           </p>
         </section>
 
-        <section className="rounded-blob bg-panel p-3 shadow-soft" aria-label="Key moments">
-          <h3 className="mb-1.5 text-sm font-semibold text-ink">Key moments</h3>
+        <section className="rounded-blob bg-panel p-3 shadow-soft" aria-label={t('masters.viewer.keyMoments')}>
+          <h3 className="mb-1.5 text-sm font-semibold text-ink">{t('masters.viewer.keyMoments')}</h3>
           <div className="flex flex-wrap gap-1.5">
             {game.keyMoments.map((k) => (
               <button
@@ -365,9 +372,9 @@ function GameViewer({ game, goPlay, onBack }: { game: MasterGame; goPlay: () => 
           </div>
         </section>
 
-        <section className="rounded-blob bg-panel p-3 shadow-soft" aria-label="Moves">
-          <h3 className="mb-1.5 text-sm font-semibold text-ink">Moves</h3>
-          <ol className="flex flex-wrap items-center gap-x-1 gap-y-1 text-sm" aria-label="Game moves">
+        <section className="rounded-blob bg-panel p-3 shadow-soft" aria-label={t('masters.viewer.moves')}>
+          <h3 className="mb-1.5 text-sm font-semibold text-ink">{t('masters.viewer.moves')}</h3>
+          <ol className="flex flex-wrap items-center gap-x-1 gap-y-1 text-sm" aria-label={t('masters.viewer.movesAria')}>
             <li>
               <button
                 onClick={() => goTo(0)}
@@ -376,7 +383,7 @@ function GameViewer({ game, goPlay, onBack }: { game: MasterGame; goPlay: () => 
                   ply === 0 ? 'bg-brand-600 text-white' : 'text-neutral-400 hover:bg-neutral-800'
                 }`}
               >
-                Start
+                {t('masters.viewer.start')}
               </button>
             </li>
             {steps.map((m, i) => {

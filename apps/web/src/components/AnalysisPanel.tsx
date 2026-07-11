@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Chess } from 'chess.js';
 import type { AnalysisLine } from '@chesser/shared';
 import { formatScore } from '../lib/format';
@@ -12,6 +13,7 @@ function scoreClass(line: AnalysisLine): string {
 }
 
 export function AnalysisPanel() {
+  const { t } = useTranslation('analysis');
   const { analysisOn, analysisLines, analysisDepth, multipv, setMultipv, setAnalysisOn, tree, currentId } = useGame();
   const mode = useGame((s) => s.mode);
   const isGameOver = useGame((s) => s.isGameOver);
@@ -42,12 +44,10 @@ export function AnalysisPanel() {
     return (
       <div className="rounded-lg bg-panel p-3">
         <div className="mb-2 flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-ink">Engine</h3>
-          <span className="rounded bg-neutral-700 px-1.5 py-0.5 text-[10px] text-neutral-300">off during games</span>
+          <h3 className="text-sm font-semibold text-ink">{t('engine.title')}</h3>
+          <span className="rounded bg-neutral-700 px-1.5 py-0.5 text-[10px] text-neutral-300">{t('engine.offDuringGames')}</span>
         </div>
-        <p className="text-xs text-neutral-400">
-          Engine analysis is disabled while you play — it unlocks the moment the game ends.
-        </p>
+        <p className="text-xs text-neutral-400">{t('engine.disabledWhilePlaying')}</p>
       </div>
     );
   }
@@ -56,23 +56,23 @@ export function AnalysisPanel() {
     <div className="rounded-lg bg-panel p-3">
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-ink">Engine</h3>
+          <h3 className="text-sm font-semibold text-ink">{t('engine.title')}</h3>
           {analysisOn && (
             <span className="rounded bg-neutral-700 px-1.5 py-0.5 text-xs text-neutral-300">
-              Stockfish · depth {analysisDepth}
+              {t('engine.badge', { depth: analysisDepth })}
             </span>
           )}
         </div>
         <label className="flex cursor-pointer items-center gap-1.5 text-xs text-neutral-400">
           <input type="checkbox" checked={analysisOn} onChange={(e) => setAnalysisOn(e.target.checked)} />
-          analyse
+          {t('engine.analyseToggle')}
         </label>
       </div>
 
       {analysisOn ? (
         <>
           <div className="mb-2 flex items-center gap-1 text-xs text-neutral-400">
-            <span>lines</span>
+            <span>{t('engine.lines')}</span>
             {[1, 2, 3, 4, 5].map((n) => (
               <button
                 key={n}
@@ -87,7 +87,7 @@ export function AnalysisPanel() {
           </div>
           <ol className="space-y-1">
             {analysisLines.length === 0 && (
-              <li className="text-xs text-neutral-400">{gameOver ? 'game over — no moves to analyse' : 'thinking…'}</li>
+              <li className="text-xs text-neutral-400">{gameOver ? t('engine.gameOverNoMoves') : t('engine.thinking')}</li>
             )}
             {analysisLines.map((line) => (
               <li key={line.multipv} className="flex items-baseline gap-2 text-sm">
@@ -100,7 +100,7 @@ export function AnalysisPanel() {
                       <button
                         key={`${line.multipv}-${i}`}
                         onClick={() => playLine(line, i + 1)}
-                        title="Play the line up to here"
+                        title={t('engine.playLineTitle')}
                         className="rounded px-0.5 hover:bg-neutral-700 hover:text-ink"
                       >
                         {san}
@@ -117,7 +117,7 @@ export function AnalysisPanel() {
           </ol>
         </>
       ) : (
-        <p className="text-xs text-neutral-400">Analysis is off.</p>
+        <p className="text-xs text-neutral-400">{t('engine.off')}</p>
       )}
     </div>
   );

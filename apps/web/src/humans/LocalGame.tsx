@@ -4,12 +4,25 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
+import { useTranslation } from 'react-i18next';
 import { Board } from '../board/Board';
 import { playMoveSound } from '../lib/sound';
 import type { Color, TimeControl } from '../store/game';
-import { boardEnd, buildPgn, cap, colorOfFen, destsOf, hasMatingMaterial, needsPromotion, opposite } from './chessUtil';
+import { boardEnd, buildPgn, colorOfFen, destsOf, hasMatingMaterial, needsPromotion, opposite } from './chessUtil';
 import { Promotion } from './Promotion';
-import { CopyPgnButton, HumanMoveList, PlayerBar, ResultBanner, btn, dangerBtn, neutralBtn, primaryBtn, useReplay } from './bits';
+import {
+  CopyPgnButton,
+  HumanMoveList,
+  PlayerBar,
+  ResultBanner,
+  btn,
+  colorName,
+  dangerBtn,
+  neutralBtn,
+  primaryBtn,
+  reasonText,
+  useReplay,
+} from './bits';
 import { recordCasualGame } from './casualHistory';
 
 export interface LocalGameConfig {
@@ -25,6 +38,7 @@ interface ManualResult {
 }
 
 export function LocalGame({ config, onExit }: { config: LocalGameConfig; onExit: () => void }) {
+  const { t } = useTranslation('friends');
   const chessRef = useRef<Chess>(new Chess());
   const [fen, setFen] = useState(() => chessRef.current.fen());
   const [sans, setSans] = useState<string[]>([]);
@@ -155,11 +169,15 @@ export function LocalGame({ config, onExit }: { config: LocalGameConfig; onExit:
     setConfirmResign(false);
   };
 
+  // Reasons are canonical English identifiers; `reasonText` localizes known
+  // ones at display time (English output is byte-identical to the raw value).
   const status = over
     ? result.winner === 'draw'
-      ? `Draw — ${result.reason}`
-      : `${cap(result.winner)} wins — ${result.reason}`
-    : `${cap(turn)} to move${end.check ? ' — check' : ''}${claimable ? ` · ${claimable} — a draw can be claimed` : ''}`;
+      ? t('status.drawReason', { reason: reasonText(t, result.reason) })
+      : t('status.winsReason', { player: colorName(t, result.winner), reason: reasonText(t, result.reason) })
+    : `${t(end.check ? 'status.toMoveCheck' : 'status.toMove', { player: colorName(t, turn) })}${
+        claimable ? ` · ${t('status.drawClaimable', { reason: reasonText(t, claimable) })}` : ''
+      }`;
 
   return (
     <div className="mx-auto grid w-full max-w-[1000px] grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
@@ -168,7 +186,7 @@ export function LocalGame({ config, onExit }: { config: LocalGameConfig; onExit:
           <span data-testid="human-status" className={over ? 'font-semibold text-amber-300' : 'text-neutral-300'}>
             {status}
           </span>
-          <span className="text-neutral-400">· pass &amp; play · unrated</span>
+          <span className="text-neutral-400">{t('local.tag')}</span>
         </div>
         <div className="mx-auto w-full max-w-[560px] space-y-2">
           <PlayerBar
@@ -219,19 +237,19 @@ export function LocalGame({ config, onExit }: { config: LocalGameConfig; onExit:
               <div className="flex flex-wrap gap-1.5">
                 {!confirmResign ? (
                   <button className={neutralBtn} onClick={() => setConfirmResign(true)} data-testid="resign">
-                    🏳 Resign ({cap(turn)})
+                    {t('actions.resignAs', { player: colorName(t, turn) })}
                   </button>
                 ) : (
                   <>
                     <button
                       className={dangerBtn}
                       data-testid="confirm-resign"
-                      onClick={() => setManual({ winner: opposite(turn), reason: `${nameOf(turn)} resigned` })}
+                      onClick={() => setManual({ winner: opposite(turn), reason: t('reasons.playerResigned', { name: nameOf(turn) }) })}
                     >
-                      Confirm resign
+                      {t('actions.confirmResign')}
                     </button>
                     <button className={neutralBtn} onClick={() => setConfirmResign(false)}>
-                      Cancel
+                      {t('common:actions.cancel')}
                     </button>
                   </>
                 )}
@@ -241,32 +259,30 @@ export function LocalGame({ config, onExit }: { config: LocalGameConfig; onExit:
                   disabled={drawOfferBy !== null || sans.length < 2}
                   data-testid="offer-draw"
                 >
-                  ½ Offer draw
+                  {t('actions.offerDraw')}
                 </button>
                 <button
                   className={neutralBtn}
                   onClick={claimDraw}
                   disabled={!claimable}
-                  title={claimable ? 'Claim the draw' : 'Available on threefold repetition or the 50-move rule'}
+                  title={claimable ? t('actions.claimDrawTitle') : t('actions.claimDrawUnavailable')}
                 >
-                  Claim draw
+                  {t('actions.claimDraw')}
                 </button>
                 {!config.autoFlip && (
                   <button className={neutralBtn} onClick={() => setManualOrientation(opposite(manualOrientation))}>
-                    ⇅ Flip board
+                    {t('actions.flipBoard')}
                   </button>
                 )}
               </div>
               {drawOfferBy && (
                 <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-300" data-testid="draw-prompt">
-                  <span>
-                    {nameOf(opposite(drawOfferBy))} — {nameOf(drawOfferBy)} offers a draw. Accept?
-                  </span>
+                  <span>{t('draw.promptLocal', { to: nameOf(opposite(drawOfferBy)), from: nameOf(drawOfferBy) })}</span>
                   <button className={primaryBtn} onClick={() => setManual({ winner: 'draw', reason: 'agreement' })}>
-                    Accept
+                    {t('actions.accept')}
                   </button>
                   <button className={neutralBtn} onClick={() => setDrawOfferBy(null)}>
-                    Decline
+                    {t('actions.decline')}
                   </button>
                 </div>
               )}
@@ -276,10 +292,10 @@ export function LocalGame({ config, onExit }: { config: LocalGameConfig; onExit:
               <ResultBanner winner={result.winner} reason={result.reason} />
               <div className="flex flex-wrap gap-1.5">
                 <button className={primaryBtn} onClick={rematch} data-testid="rematch">
-                  ↻ Rematch
+                  {t('actions.rematch')}
                 </button>
                 <button className={neutralBtn} onClick={onExit}>
-                  ← Back
+                  {t('actions.back')}
                 </button>
               </div>
             </div>
@@ -295,7 +311,7 @@ export function LocalGame({ config, onExit }: { config: LocalGameConfig; onExit:
           />
         )}
         <button className={`${btn} w-full bg-neutral-800 text-neutral-400 hover:bg-neutral-700 hover:text-neutral-300`} onClick={onExit}>
-          ← Leave game
+          {t('actions.leave')}
         </button>
       </div>
     </div>

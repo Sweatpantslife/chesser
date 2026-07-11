@@ -1,9 +1,11 @@
+import { Trans, useTranslation } from 'react-i18next';
 import { useGamify, GOAL_PRESETS } from '../store/gamify';
 import { useStreak } from '../store/streak';
 import { StreakFlame } from './icons';
 
 /** SVG ring showing today's XP against the daily goal, with the streak inside. */
 function GoalRing({ value, goal, streak }: { value: number; goal: number; streak: number }) {
+  const { t } = useTranslation('home');
   const pct = Math.min(1, value / goal);
   const R = 34;
   const C = 2 * Math.PI * R;
@@ -36,7 +38,7 @@ function GoalRing({ value, goal, streak }: { value: number; goal: number; streak
           <StreakFlame size={18} lit={streak > 0} animate={streak > 0} />
           {streak}
         </span>
-        <span className="text-xs uppercase tracking-wide text-neutral-400">streak</span>
+        <span className="text-xs uppercase tracking-wide text-neutral-400">{t('goal.streakLabel')}</span>
       </div>
     </div>
   );
@@ -44,6 +46,7 @@ function GoalRing({ value, goal, streak }: { value: number; goal: number; streak
 
 /** The daily-goal card: ring + today's progress + goal presets. */
 export function DailyGoal() {
+  const { t } = useTranslation('home');
   const todayXp = useGamify((s) => s.todayXp());
   const goalXp = useGamify((s) => s.goalXp);
   const setGoalXp = useGamify((s) => s.setGoalXp);
@@ -57,13 +60,13 @@ export function DailyGoal() {
   return (
     <div className="rounded-2xl bg-panel p-4 shadow-soft">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="font-display text-sm font-semibold text-ink">Daily goal</h3>
+        <h3 className="font-display text-sm font-semibold text-ink">{t('goal.title')}</h3>
         <span className="flex items-center gap-2 text-xs text-neutral-400">
-          <span title={`${freezes} streak freeze${freezes === 1 ? '' : 's'} banked — a freeze saves your streak when you miss one day`}>
+          <span title={t('goal.freezesTitle', { count: freezes })}>
             🧊 {freezes}
           </span>
           <span className="flex items-center gap-1">
-            best <StreakFlame size={12} /> {Math.max(bestStreak, legacyBest)}
+            {t('goal.best')} <StreakFlame size={12} /> {Math.max(bestStreak, legacyBest)}
           </span>
         </span>
       </div>
@@ -71,18 +74,18 @@ export function DailyGoal() {
         <GoalRing value={todayXp} goal={goalXp} streak={streak} />
         <div className="min-w-0 flex-1">
           <div className="text-sm text-neutral-200">
-            <span className="font-bold text-brand-300">{todayXp}</span>
-            <span className="text-neutral-400"> / {goalXp} XP today</span>
+            <Trans
+              t={t}
+              i18nKey="goal.todayLine"
+              values={{ today: todayXp, goal: goalXp }}
+              components={{ today: <span className="font-bold text-brand-300" />, rest: <span className="text-neutral-400" /> }}
+            />
           </div>
           <p className={`mt-0.5 text-xs ${met ? 'text-emerald-400' : atRisk ? 'text-gold-400' : 'text-neutral-400'}`}>
-            {met
-              ? '✓ Goal met — nice work!'
-              : atRisk
-                ? 'Train today to save your streak (uses a freeze)'
-                : `${goalXp - todayXp} XP to today's goal`}
+            {met ? t('goal.met') : atRisk ? t('goal.atRisk') : t('goal.toGo', { xp: goalXp - todayXp })}
           </p>
           <div className="mt-2">
-            <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Goal</div>
+            <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('goal.presetsLabel')}</div>
             <div className="flex gap-1">
               {GOAL_PRESETS.map((g) => (
                 <button

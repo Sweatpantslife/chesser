@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
+import '../i18n'; // initialize i18next so t() serves the bundled English strings
 import { setClock } from '../lib/clock';
 import { questsForDay } from '../lib/quests';
 import { useQuests } from '../store/quests';

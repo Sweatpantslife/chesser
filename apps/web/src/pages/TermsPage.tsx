@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { LegalLink, LegalList, LegalSection, LegalShell } from '../components/LegalShell';
 
 /**
@@ -8,8 +9,11 @@ import { LegalLink, LegalList, LegalSection, LegalShell } from '../components/Le
  */
 
 export function TermsPage() {
+  // Only the title is translated (it doubles as link text elsewhere); the
+  // terms body below is legal CONTENT and deliberately stays English.
+  const { t } = useTranslation('legal');
   return (
-    <LegalShell title="Terms of Service" updated="July 11, 2026">
+    <LegalShell title={t('termsTitle')} updated="July 11, 2026">
       <LegalSection title="What Chesser is">
         <p>
           Chesser is a chess game and trainer: play against engine opponents, solve puzzles, drill openings and

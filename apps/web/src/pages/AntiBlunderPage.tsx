@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { Chess } from 'chess.js';
 import { Board } from '../board/Board';
 import { ReviewStats } from '../components/ReviewStats';
@@ -23,6 +24,7 @@ function sanOf(fen: string, uci: string): string {
 }
 
 export function AntiBlunderPage() {
+  const { t } = useTranslation('train');
   const game = useRef(new Chess());
   const attempt = useRef({ tempted: false });
   const pending = useRef<{ from: string; to: string } | null>(null);
@@ -52,7 +54,7 @@ export function AntiBlunderPage() {
     pending.current = null;
     setIdx(i);
     setPhase('solving');
-    setFeedback({ kind: 'info', text: `${p.turn === 'white' ? 'White' : 'Black'} to move — find the safe, strong move.` });
+    setFeedback({ kind: 'info', text: t(`blunders.intro.${p.turn}`) });
     setFen(game.current.fen());
     setLastMove(undefined);
   };
@@ -93,7 +95,9 @@ export function AntiBlunderPage() {
     recordReview(true);
     setFeedback({
       kind: 'ok',
-      text: foundBest ? `✓ ${bestSan} — the right call. ${pos.explanation}` : `That dodges the trap. The model move was ${bestSan}. ${pos.explanation}`,
+      text: foundBest
+        ? t('blunders.rightCall', { san: bestSan, explanation: pos.explanation })
+        : t('blunders.dodged', { san: bestSan, explanation: pos.explanation }),
     });
   };
 
@@ -121,7 +125,7 @@ export function AntiBlunderPage() {
       setPhase('busted');
       grade('blunders', pos.id, 'again');
       recordReview(false);
-      setFeedback({ kind: 'bad', text: `${mv.san}?? still loses — it allows ${mateSan}. ${pos.explanation}` });
+      setFeedback({ kind: 'bad', text: t('blunders.stillLoses', { san: mv.san, mate: mateSan, explanation: pos.explanation }) });
       playLine([mateUci], 0);
       return;
     }
@@ -159,7 +163,7 @@ export function AntiBlunderPage() {
     attempt.current.tempted = true;
     pending.current = null;
     setPhase('solving');
-    setFeedback({ kind: 'info', text: 'Good — a blunder-check just saved you. Now find a safe move.' });
+    setFeedback({ kind: 'info', text: t('blunders.savedYou') });
   };
 
   const reveal = () => {
@@ -168,7 +172,7 @@ export function AntiBlunderPage() {
     setPhase('solved');
     grade('blunders', pos.id, 'again');
     recordReview(false);
-    setFeedback({ kind: 'info', text: `The safe move is ${bestSan}. ${pos.explanation}` });
+    setFeedback({ kind: 'info', text: t('blunders.safeMove', { san: bestSan, explanation: pos.explanation }) });
     sync();
   };
 
@@ -177,7 +181,7 @@ export function AntiBlunderPage() {
   const reviewDue = () => {
     const due = dueIds('blunders', BLUNDER_IDS);
     if (due.length === 0) {
-      setFeedback({ kind: 'info', text: 'No blunder drills due right now — try a new one!' });
+      setFeedback({ kind: 'info', text: t('blunders.noDue') });
       return;
     }
     const i = BLUNDER_POSITIONS.findIndex((b) => b.id === due[0]);
@@ -191,21 +195,20 @@ export function AntiBlunderPage() {
       {/* sidebar */}
       <div className="order-2 space-y-3 lg:order-1">
         <div className="rounded-2xl bg-panel shadow-soft p-3">
-          <h3 className="mb-1 text-sm font-semibold text-ink">Anti-blunder</h3>
+          <h3 className="mb-1 text-sm font-semibold text-ink">{t('blunders.title')}</h3>
           <p className="mb-2 text-xs text-neutral-400">
-            Find the strong move — but watch for the tempting one. Before you commit, the trainer asks:{' '}
-            <em className="text-neutral-300">are you sure?</em>
+            <Trans t={t} i18nKey="blunders.blurb" components={{ em: <em className="text-neutral-300" /> }} />
           </p>
           <ReviewStats deck="blunders" ids={BLUNDER_IDS} />
           <button
             onClick={reviewDue}
             className="mt-3 w-full rounded bg-emerald-700 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800"
           >
-            Review due
+            {t('buttons.reviewDue')}
           </button>
         </div>
         <div className="rounded-2xl bg-panel shadow-soft p-3">
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Positions</div>
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('blunders.positions')}</div>
           <div className="flex flex-wrap gap-1">
             {BLUNDER_POSITIONS.map((b, i) => {
               const cd = cards[`blunders:${b.id}`];
@@ -231,8 +234,8 @@ export function AntiBlunderPage() {
       <div className="order-1 space-y-3 lg:order-2">
         <div className="flex h-7 items-center gap-2 text-sm">
           <span className="rounded bg-neutral-700 px-2 py-0.5 text-xs text-neutral-200">{pos.theme}</span>
-          <span className="text-neutral-400">{pos.turn === 'white' ? 'White' : 'Black'} to move</span>
-          {toMove && <span className="animate-pulse-soft text-emerald-400">· your move</span>}
+          <span className="text-neutral-400">{t(`toMove.${pos.turn}`)}</span>
+          {toMove && <span className="animate-pulse-soft text-emerald-400">{t('yourMove')}</span>}
         </div>
         <div className="mx-auto w-full max-w-[540px]">
           <Board
@@ -249,11 +252,11 @@ export function AntiBlunderPage() {
         <div className="flex flex-wrap items-center gap-2">
           {phase !== 'solved' && phase !== 'busted' && phase !== 'confirm' && (
             <button onClick={reveal} className="rounded bg-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600">
-              Reveal
+              {t('buttons.reveal')}
             </button>
           )}
           <button onClick={next} className="rounded bg-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600">
-            Next →
+            {t('buttons.nextArrow')}
           </button>
         </div>
       </div>
@@ -262,22 +265,27 @@ export function AntiBlunderPage() {
       <div className="order-3 space-y-3">
         {phase === 'confirm' ? (
           <div className="rounded-lg border border-amber-500/50 bg-amber-950/40 p-3">
-            <div className="mb-1 text-sm font-semibold text-amber-300">⚠️ Are you sure?</div>
+            <div className="mb-1 text-sm font-semibold text-amber-300">{t('blunders.areYouSure')}</div>
             <p className="mb-3 text-sm text-amber-200">
-              You’re about to play <b>{temptingSan}</b>. {pos.warning}
+              <Trans
+                t={t}
+                i18nKey="blunders.aboutToPlay"
+                values={{ san: temptingSan, warning: pos.warning }}
+                components={{ b: <b /> }}
+              />
             </p>
             <div className="flex gap-2">
               <button
                 onClick={takeBack}
                 className="flex-1 rounded bg-emerald-700 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
               >
-                Take it back
+                {t('blunders.takeBack')}
               </button>
               <button
                 onClick={playAnyway}
                 className="flex-1 rounded bg-neutral-700 py-2 text-sm text-neutral-200 hover:bg-neutral-600"
               >
-                Play it anyway
+                {t('blunders.playAnyway')}
               </button>
             </div>
           </div>
@@ -285,9 +293,9 @@ export function AntiBlunderPage() {
           <div className="rounded-2xl bg-panel shadow-soft p-3">
             <div className="mb-2 flex items-center justify-between text-sm">
               <span className="text-neutral-300">
-                Position {idx + 1}/{BLUNDER_POSITIONS.length}
+                {t('blunders.counter', { current: idx + 1, total: BLUNDER_POSITIONS.length })}
               </span>
-              <span className="text-xs text-neutral-400">{solvedCount} solved this session</span>
+              <span className="text-xs text-neutral-400">{t('solvedSession', { count: solvedCount })}</span>
             </div>
             {feedback && (
               <p
@@ -309,7 +317,7 @@ export function AntiBlunderPage() {
                 onClick={next}
                 className="mt-3 w-full rounded bg-emerald-700 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
               >
-                Next position
+                {t('blunders.nextPosition')}
               </button>
             )}
           </div>

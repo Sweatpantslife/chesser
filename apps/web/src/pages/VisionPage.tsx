@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Chess } from 'chess.js';
 import { CoordinateBoard, piecesFromFen } from '../components/CoordinateBoard';
 import { CALC_PUZZLES } from '../trainers/calc';
@@ -19,6 +20,7 @@ function fenAfter(fen: string, line: string[], uci = false): string {
 }
 
 export function VisionPage() {
+  const { t } = useTranslation('train');
   const [sub, setSub] = useState<'visualize' | 'blindfold'>('visualize');
   return (
     <div className="space-y-4">
@@ -31,7 +33,7 @@ export function VisionPage() {
               sub === m ? 'bg-brand-600 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
             }`}
           >
-            {m === 'visualize' ? 'Visualize' : 'Blindfold solve'}
+            {m === 'visualize' ? t('vision.visualize') : t('vision.blindfoldSolve')}
           </button>
         ))}
       </div>
@@ -47,6 +49,7 @@ export function VisionPage() {
 type Stage = 'preview' | 'hidden' | 'question' | 'answered';
 
 function Visualize() {
+  const { t } = useTranslation('train');
   const [idx, setIdx] = useState(0);
   const [stage, setStage] = useState<Stage>('preview');
   const [picked, setPicked] = useState<number | null>(null);
@@ -91,33 +94,33 @@ function Visualize() {
             disabled
           />
         </div>
-        {!showPieces && <p className="text-center text-xs text-neutral-400">Pieces hidden — picture the position.</p>}
+        {!showPieces && <p className="text-center text-xs text-neutral-400">{t('vision.piecesHidden')}</p>}
       </div>
 
       <div className="space-y-3">
         <div className="rounded-2xl bg-panel shadow-soft p-3">
           <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-ink">Visualize</h3>
+            <h3 className="text-sm font-semibold text-ink">{t('vision.visualize')}</h3>
             <span className="text-xs text-neutral-400">
-              {score.correct}/{score.total} this session
+              {t('vision.sessionScore', { correct: score.correct, total: score.total })}
             </span>
           </div>
 
           {stage === 'preview' && (
             <>
-              <p className="mb-3 text-xs text-neutral-400">Study the position, then hide it and calculate the line below.</p>
+              <p className="mb-3 text-xs text-neutral-400">{t('vision.studyPrompt')}</p>
               <button
                 onClick={() => setStage('hidden')}
                 className="w-full rounded bg-emerald-700 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
               >
-                Hide pieces & show the line
+                {t('vision.hideAndShow')}
               </button>
             </>
           )}
 
           {(stage === 'hidden' || stage === 'question' || stage === 'answered') && (
             <div className="mb-3">
-              <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">The line</div>
+              <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('vision.theLine')}</div>
               <div className="font-mono text-sm text-neutral-200">
                 {puzzle.line.map((m, i) => (
                   <span key={i}>
@@ -133,7 +136,7 @@ function Visualize() {
               onClick={() => setStage('question')}
               className="w-full rounded bg-emerald-700 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
             >
-              I’ve calculated it →
+              {t('vision.calculated')}
             </button>
           )}
 
@@ -168,21 +171,19 @@ function Visualize() {
           {stage === 'answered' && (
             <>
               <p className={`mt-3 text-sm ${correct ? 'text-emerald-300' : 'text-rose-300'}`}>
-                {correct ? '✓ Correct!' : `Not quite — the answer is “${puzzle.choices[puzzle.answer]}”.`} The board now shows
-                the final position.
+                {correct ? t('vision.correct') : t('vision.notQuite', { answer: puzzle.choices[puzzle.answer] })}{' '}
+                {t('vision.showsFinal')}
               </p>
               <button
                 onClick={next}
                 className="mt-3 w-full rounded bg-emerald-700 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
               >
-                Next puzzle
+                {t('buttons.nextPuzzle')}
               </button>
             </>
           )}
         </div>
-        <p className="px-1 text-xs leading-snug text-neutral-400">
-          Calculating without moving the pieces is the engine of tactics and endgames. Start short, build up.
-        </p>
+        <p className="px-1 text-xs leading-snug text-neutral-400">{t('vision.footer')}</p>
       </div>
     </div>
   );
@@ -220,6 +221,7 @@ function pieceList(fen: string): { white: string; black: string } {
 const EASY = PUZZLES.filter((p) => p.difficulty === 'easy');
 
 function Blindfold() {
+  const { t } = useTranslation('train');
   // Start from the first puzzle's position — with a bare `new Chess()` the
   // first puzzle was unsolvable: clicking the correct answer tried to play it
   // on the STARTING position (wrong side to move) and chess.js threw.
@@ -229,7 +231,7 @@ function Blindfold() {
   const [solved, setSolved] = useState(false);
   const [peek, setPeek] = useState(false);
   const [flash, setFlash] = useState<{ square: string; kind: 'ok' | 'bad' } | null>(null);
-  const [feedback, setFeedback] = useState<string>('Find the winning move — click the piece, then its destination.');
+  const [feedback, setFeedback] = useState<string>(() => t('vision.blindfold.findPrompt'));
   const [score, setScore] = useState({ correct: 0, total: 0 });
 
   const puzzle = EASY[idx] ?? EASY[0];
@@ -245,11 +247,15 @@ function Blindfold() {
     setSolved(false);
     setPeek(false);
     setFlash(null);
-    setFeedback('Find the winning move — click the piece, then its destination.');
+    setFeedback(t('vision.blindfold.findPrompt'));
   };
 
   if (!puzzle) {
-    return <div className="mx-auto max-w-md rounded-2xl bg-panel shadow-soft p-4 text-sm text-neutral-400">No easy puzzles available.</div>;
+    return (
+      <div className="mx-auto max-w-md rounded-2xl bg-panel shadow-soft p-4 text-sm text-neutral-400">
+        {t('vision.blindfold.noPuzzles')}
+      </div>
+    );
   }
 
   const onPick = (sq: string) => {
@@ -271,12 +277,12 @@ function Blindfold() {
       setSelected(null);
       setFlash({ square: sq, kind: 'ok' });
       setScore((s) => ({ correct: s.correct + 1, total: s.total + 1 }));
-      setFeedback(`✓ ${mv.san} — well seen! Board revealed.`);
+      setFeedback(t('vision.blindfold.wellSeen', { san: mv.san }));
     } else {
       setSelected(null);
       setFlash({ square: sq, kind: 'bad' });
       setTimeout(() => setFlash(null), 350);
-      setFeedback('Not the move. Try again, peek, or reveal.');
+      setFeedback(t('vision.blindfold.notMove'));
     }
   };
 
@@ -287,7 +293,7 @@ function Blindfold() {
     setSolved(true);
     setPeek(true);
     setScore((s) => ({ ...s, total: s.total + 1 }));
-    setFeedback(`The move was ${mv.san}.`);
+    setFeedback(t('vision.blindfold.moveWas', { san: mv.san }));
   };
 
   const next = () => load((idx + 1) % EASY.length);
@@ -297,8 +303,8 @@ function Blindfold() {
     <div className="mx-auto grid w-full max-w-[1000px] grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
       <div className="space-y-3">
         <div className="flex h-7 items-center gap-2 text-sm text-neutral-400">
-          <span className="rounded bg-neutral-700 px-2 py-0.5 text-xs text-neutral-200">Blindfold</span>
-          <span>{puzzle.turn === 'white' ? 'White' : 'Black'} to play and win</span>
+          <span className="rounded bg-neutral-700 px-2 py-0.5 text-xs text-neutral-200">{t('vision.blindfold.chip')}</span>
+          <span>{t(`vision.blindfold.toPlayWin.${puzzle.turn}`)}</span>
         </div>
         <div className="mx-auto w-full max-w-[480px]">
           <CoordinateBoard
@@ -317,18 +323,18 @@ function Blindfold() {
       <div className="space-y-3">
         <div className="rounded-2xl bg-panel shadow-soft p-3">
           <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-ink">Blindfold solve</h3>
+            <h3 className="text-sm font-semibold text-ink">{t('vision.blindfoldSolve')}</h3>
             <span className="text-xs text-neutral-400">
-              {score.correct}/{score.total} this session
+              {t('vision.sessionScore', { correct: score.correct, total: score.total })}
             </span>
           </div>
           <div className="space-y-1 text-sm">
             <div>
-              <span className="text-xs uppercase tracking-wide text-neutral-400">White:</span>{' '}
+              <span className="text-xs uppercase tracking-wide text-neutral-400">{t('vision.blindfold.whiteLabel')}</span>{' '}
               <span className="font-mono text-neutral-200">{desc.white}</span>
             </div>
             <div>
-              <span className="text-xs uppercase tracking-wide text-neutral-400">Black:</span>{' '}
+              <span className="text-xs uppercase tracking-wide text-neutral-400">{t('vision.blindfold.blackLabel')}</span>{' '}
               <span className="font-mono text-neutral-200">{desc.black}</span>
             </div>
           </div>
@@ -340,13 +346,13 @@ function Blindfold() {
                   onClick={() => setPeek((p) => !p)}
                   className="rounded bg-neutral-700 px-3 py-1.5 text-xs text-neutral-200 hover:bg-neutral-600"
                 >
-                  {peek ? 'Hide pieces' : 'Peek'}
+                  {peek ? t('vision.blindfold.hidePieces') : t('vision.blindfold.peek')}
                 </button>
                 <button
                   onClick={reveal}
                   className="rounded bg-neutral-700 px-3 py-1.5 text-xs text-neutral-200 hover:bg-neutral-600"
                 >
-                  Reveal
+                  {t('buttons.reveal')}
                 </button>
               </>
             )}
@@ -354,13 +360,11 @@ function Blindfold() {
               onClick={next}
               className="rounded bg-emerald-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-800"
             >
-              Next puzzle →
+              {t('buttons.nextPuzzleArrow')}
             </button>
           </div>
         </div>
-        <p className="px-1 text-xs leading-snug text-neutral-400">
-          Holding the position in your mind’s eye and finding a move blind is the ultimate board-vision test.
-        </p>
+        <p className="px-1 text-xs leading-snug text-neutral-400">{t('vision.blindfold.footer')}</p>
       </div>
     </div>
   );

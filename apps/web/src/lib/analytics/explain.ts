@@ -9,6 +9,11 @@
  * whatever the board can't confirm falls back to generic eval-based phrasing.
  *
  * Pure over {@link MoveRow} — see types.ts for the sign conventions.
+ *
+ * i18n: extraction of these rule-based coaching sentences is DEFERRED to
+ * phase 3 ("labels now, sentences later" — see the i18n handoff); the unit
+ * tests assert the exact English prose. Move-quality LABELS already resolve
+ * via `quality:labels.*` (lib/coach.ts CLASSIFICATION_META).
  */
 import { Chess } from 'chess.js';
 import type { Square } from 'chess.js';

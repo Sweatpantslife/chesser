@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Chess } from 'chess.js';
 import type { ExplorerMove } from '@chesser/shared';
 import { STARTING_FEN } from '@chesser/shared';
@@ -24,6 +25,7 @@ interface LineMove {
  * like the Lichess explorer.
  */
 export function ExplorerPage({ goAnalyze }: { goAnalyze?: () => void }) {
+  const { t } = useTranslation('explorer');
   const [line, setLine] = useState<LineMove[]>([]);
   const [ply, setPly] = useState(0); // how many moves of `line` are on the board
   const [orientation, setOrientation] = useState<Color>('white');
@@ -110,15 +112,15 @@ export function ExplorerPage({ goAnalyze }: { goAnalyze?: () => void }) {
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5">
-          <button className={btn} onClick={() => setPly(0)} disabled={ply === 0} title="First" aria-label="First move">
+          <button className={btn} onClick={() => setPly(0)} disabled={ply === 0} title={t('page.firstTitle')} aria-label={t('page.first')}>
             ⏮
           </button>
           <button
             className={btn}
             onClick={() => setPly((p) => Math.max(0, p - 1))}
             disabled={ply === 0}
-            title="Previous"
-            aria-label="Previous move"
+            title={t('page.previousTitle')}
+            aria-label={t('page.previous')}
           >
             ◀
           </button>
@@ -126,8 +128,8 @@ export function ExplorerPage({ goAnalyze }: { goAnalyze?: () => void }) {
             className={btn}
             onClick={() => setPly((p) => Math.min(line.length, p + 1))}
             disabled={ply === line.length}
-            title="Next"
-            aria-label="Next move"
+            title={t('page.nextTitle')}
+            aria-label={t('page.next')}
           >
             ▶
           </button>
@@ -135,14 +137,14 @@ export function ExplorerPage({ goAnalyze }: { goAnalyze?: () => void }) {
             className={btn}
             onClick={() => setPly(line.length)}
             disabled={ply === line.length}
-            title="Last"
-            aria-label="Last move"
+            title={t('page.lastTitle')}
+            aria-label={t('page.last')}
           >
             ⏭
           </button>
           <div className="mx-1 h-5 w-px bg-neutral-700" />
-          <button className={btn} onClick={() => setOrientation((o) => (o === 'white' ? 'black' : 'white'))} title="Flip board (f)">
-            ⇅ Flip
+          <button className={btn} onClick={() => setOrientation((o) => (o === 'white' ? 'black' : 'white'))} title={t('page.flipTitle')}>
+            {t('page.flip')}
           </button>
           <button
             className={btn}
@@ -151,32 +153,30 @@ export function ExplorerPage({ goAnalyze }: { goAnalyze?: () => void }) {
               setPly(0);
             }}
             disabled={line.length === 0}
-            title="Back to the start position"
+            title={t('page.resetTitle')}
           >
-            ↺ Reset
+            {t('page.reset')}
           </button>
           {goAnalyze && (
-            <button className={btn} onClick={analyze} disabled={pathSan.length === 0} title="Open this line on the analysis board">
-              Analyse
+            <button className={btn} onClick={analyze} disabled={pathSan.length === 0} title={t('page.analyseTitle')}>
+              {t('page.analyse')}
             </button>
           )}
         </div>
 
         <div className="rounded-lg bg-panel p-3">
-          <h3 className="mb-1.5 text-sm font-semibold text-ink">Line</h3>
+          <h3 className="mb-1.5 text-sm font-semibold text-ink">{t('page.lineTitle')}</h3>
           {line.length === 0 ? (
-            <p className="text-xs text-neutral-400">
-              Play a move on the board — or pick one from the stats — to start exploring. Arrow keys step through the line.
-            </p>
+            <p className="text-xs text-neutral-400">{t('page.lineEmpty')}</p>
           ) : (
-            <ol className="flex flex-wrap items-center gap-x-1 gap-y-1 text-sm" aria-label="Moves played">
+            <ol className="flex flex-wrap items-center gap-x-1 gap-y-1 text-sm" aria-label={t('page.movesAria')}>
               <li>
                 <button
                   onClick={() => setPly(0)}
                   aria-current={ply === 0 ? 'step' : undefined}
                   className={`rounded px-1.5 py-0.5 font-mono text-xs ${ply === 0 ? 'bg-brand-600 text-white' : 'text-neutral-400 hover:bg-neutral-800'}`}
                 >
-                  Start
+                  {t('page.start')}
                 </button>
               </li>
               {line.map((m, i) => (

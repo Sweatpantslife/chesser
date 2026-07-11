@@ -16,6 +16,15 @@ export interface CasualGameRecord {
   key?: string;
 }
 
+/**
+ * Canonical stand-in names persisted for a nameless online seat. Records keep
+ * these English tokens (persisted data stays language-neutral); render sites
+ * map them to `friends:recent.whiteFallback` / `.blackFallback` at display
+ * time. The identical literals in PGN export tags are data, not chrome.
+ */
+export const FALLBACK_WHITE_NAME = 'White';
+export const FALLBACK_BLACK_NAME = 'Black';
+
 const KEY = 'chesser.casualGames.v1';
 const MAX = 30;
 

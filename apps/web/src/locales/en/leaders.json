@@ -1,0 +1,51 @@
+{
+  "title": "Leaderboards",
+  "subtitle": "Global standings across every Chesser account that opted in.",
+  "scopeAria": "Time range",
+  "navAria": "Leaderboard",
+  "scopes": {
+    "global": "All-time",
+    "weekly": "This week"
+  },
+  "tabs": {
+    "puzzles": { "label": "Puzzles", "hint": "Tactics rating" },
+    "bots": { "label": "Bots", "hint": "Bot-game rating" },
+    "rush": { "label": "Rush", "hint": "Puzzle Rush best" }
+  },
+  "join": {
+    "title": "Join the leaderboards",
+    "signedIn": "Leaderboards are opt-in. Joining shares your display name and your ratings/Puzzle Rush best on the public boards — nothing else.",
+    "signedOut": "Sign in (top right) and opt in to compete. Only your display name and scores are ever shown.",
+    "joining": "Joining…",
+    "cta": "Join & share my scores"
+  },
+  "prefsError": "Couldn't load your share settings — {{error}}",
+  "retry": "Retry",
+  "refresh": "Refresh",
+  "week": "Week {{week}}, {{year}}",
+  "allTime": "all time",
+  "value": {
+    "rating": "Rating",
+    "best": "Best score"
+  },
+  "loading": "Loading standings…",
+  "error": "Couldn't reach the leaderboard server. Try refreshing.",
+  "empty": {
+    "weekly": "Nobody has posted a score this week — be the first!",
+    "global": "No entries yet — be the first!"
+  },
+  "caption_one": "{{heading}} leaderboard, {{scope}} — {{count}} ranked player",
+  "caption_other": "{{heading}} leaderboard, {{scope}} — {{count}} ranked players",
+  "columns": {
+    "rank": "Rank",
+    "player": "Player",
+    "games": "Games"
+  },
+  "viewProfile": "View {{username}}'s profile",
+  "you": "You",
+  "hint": {
+    "rush": "Finish a Puzzle Rush run and your best lands here automatically.",
+    "other": "Play a rated game or puzzle (and let it sync) to enter this board."
+  },
+  "footer": "Scores are checked server-side against your synced progress — see your Profile tab to manage what you share."
+}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useGame } from '../store/game';
 import { useAuth } from '../store/auth';
 import { toPgn } from '../lib/pgn';
@@ -14,6 +15,7 @@ function botLabel(style: string, elo?: number, maia?: number): string {
 }
 
 export function Controls() {
+  const { t } = useTranslation('game');
   const { history, viewPly, mode, playerColor, botConfig, opponent, stepView, goToPly, flip, takeback, newGame } = useGame();
   const winner = useGame((s) => s.winner);
   const isGameOver = useGame((s) => s.isGameOver);
@@ -74,39 +76,39 @@ export function Controls() {
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <button className={btn} onClick={() => goToPly(0)} disabled={atStart} title="First" aria-label="First move">
+      <button className={btn} onClick={() => goToPly(0)} disabled={atStart} title={t('controls.first')} aria-label={t('controls.firstAria')}>
         ⏮
       </button>
-      <button className={btn} onClick={() => stepView(-1)} disabled={atStart} title="Previous" aria-label="Previous move">
+      <button className={btn} onClick={() => stepView(-1)} disabled={atStart} title={t('controls.previous')} aria-label={t('controls.previousAria')}>
         ◀
       </button>
-      <button className={btn} onClick={() => stepView(1)} disabled={atEnd} title="Next" aria-label="Next move">
+      <button className={btn} onClick={() => stepView(1)} disabled={atEnd} title={t('controls.next')} aria-label={t('controls.nextAria')}>
         ▶
       </button>
-      <button className={btn} onClick={() => goToPly(history.length)} disabled={atEnd} title="Last" aria-label="Last move">
+      <button className={btn} onClick={() => goToPly(history.length)} disabled={atEnd} title={t('controls.last')} aria-label={t('controls.lastAria')}>
         ⏭
       </button>
       <div className="mx-1 h-5 w-px bg-neutral-700" />
-      <button className={btn} onClick={flip} title="Flip board (f)">
-        ⇅ Flip
+      <button className={btn} onClick={flip} title={t('controls.flipTitle')}>
+        ⇅ {t('controls.flip')}
       </button>
-      <button className={btn} onClick={takeback} disabled={history.length === 0} title="Take back">
-        ↶ Takeback
+      <button className={btn} onClick={takeback} disabled={history.length === 0} title={t('controls.takebackTitle')}>
+        ↶ {t('controls.takeback')}
       </button>
-      <button className={btn} onClick={() => newGame({ mode: 'analysis' })} title="Analysis board">
-        Analyse
+      <button className={btn} onClick={() => newGame({ mode: 'analysis' })} title={t('controls.analyseTitle')}>
+        {t('controls.analyse')}
       </button>
-      <button className={btn} onClick={copyPgn} disabled={history.length === 0} title="Copy PGN">
-        {copied ? '✓' : 'PGN'}
+      <button className={btn} onClick={copyPgn} disabled={history.length === 0} title={t('controls.pgnTitle')}>
+        {copied ? '✓' : t('controls.pgn')}
       </button>
-      <button className={btn} onClick={() => setLibOpen(true)} title="Open / import / FEN">
-        Library
+      <button className={btn} onClick={() => setLibOpen(true)} title={t('controls.libraryTitle')}>
+        {t('controls.library')}
       </button>
-      <button className={btn} onClick={saveGame} disabled={history.length === 0} title="Save game to your library">
-        {savedGame ? '✓ Saved' : 'Save'}
+      <button className={btn} onClick={saveGame} disabled={history.length === 0} title={t('controls.saveTitle')}>
+        {savedGame ? `✓ ${t('controls.saved')}` : t('controls.save')}
       </button>
-      <button className={btn} onClick={() => setSaveOpen(true)} disabled={mode !== 'analysis' || viewPly === 0} title="Save this line to a repertoire">
-        ★ Line
+      <button className={btn} onClick={() => setSaveOpen(true)} disabled={mode !== 'analysis' || viewPly === 0} title={t('controls.lineTitle')}>
+        ★ {t('controls.line')}
       </button>
       {libOpen && <LibraryDialog onClose={() => setLibOpen(false)} />}
       {saveOpen && <SaveLineDialog onClose={() => setSaveOpen(false)} />}

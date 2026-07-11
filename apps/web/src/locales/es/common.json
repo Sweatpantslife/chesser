@@ -1,0 +1,20 @@
+{
+  "actions": {
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "done": "Listo"
+  },
+  "install": {
+    "label": "Instalar",
+    "tooltip": "Instala Chesser como aplicación"
+  },
+  "srs": {
+    "new": "nueva",
+    "due": "pendiente",
+    "soon": "pronto",
+    "days_one": "{{count}}d",
+    "days_other": "{{count}}d",
+    "hours_one": "{{count}}h",
+    "hours_other": "{{count}}h"
+  }
+}

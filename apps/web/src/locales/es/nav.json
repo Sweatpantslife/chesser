@@ -1,0 +1,43 @@
+{
+  "skipToContent": "Saltar al contenido",
+  "primaryNav": "Principal",
+  "srTagline": "— juega y entrena ajedrez",
+  "tabs": {
+    "home": { "label": "Hoy", "hint": "racha · misiones diarias · metas" },
+    "play": { "label": "Jugar", "hint": "contra bots y análisis" },
+    "learn": { "label": "Aprender", "hint": "reglas y lecciones guiadas" },
+    "masters": { "label": "Maestros", "hint": "partidas magistrales comentadas" },
+    "friends": { "label": "Amigos", "hint": "en el mismo dispositivo · partidas en línea con amigos" },
+    "openings": { "label": "Aperturas", "hint": "ejercicios de repertorio" },
+    "explorer": { "label": "Explorador", "hint": "explorador de aperturas · partidas magistrales y en línea" },
+    "tactics": { "label": "Táctica", "hint": "problemas de táctica" },
+    "endgame": { "label": "Finales", "hint": "teoría y técnica" },
+    "endgame-drills": { "label": "Ejercicios", "hint": "ejercicios de finales · verificados con tablebase" },
+    "train": { "label": "Entrenar", "hint": "visión · mates · anti-errores" },
+    "coach": { "label": "Entrenador", "hint": "tus debilidades · entrenamiento dirigido" },
+    "plan": { "label": "Plan", "hint": "tu plan de estudio semanal" },
+    "coordinates": { "label": "Coord.", "hint": "entrenador de visión del tablero" },
+    "archive": { "label": "Archivo", "hint": "tus partidas · resultados y tendencias" },
+    "stats": { "label": "Datos", "hint": "panel de progreso" },
+    "leaders": { "label": "Ranking", "hint": "clasificaciones · carrera semanal" },
+    "profile": { "label": "Perfil", "hint": "nivel · puntuaciones · insignias" }
+  },
+  "status": {
+    "online": "en línea",
+    "connecting": "conectando…",
+    "connectedTooltip": "Conectado al servidor del motor",
+    "connectingTooltip": "Intentando conectar con el servidor del motor — el juego contra bots y el análisis se reanudan al conectar"
+  },
+  "profileChip": {
+    "tooltip": "Tu perfil — nivel, puntuaciones e insignias",
+    "aria": "Tu perfil — nivel {{level}}",
+    "ariaStreak_one": "Tu perfil — nivel {{level}}, racha de {{count}} día",
+    "ariaStreak_other": "Tu perfil — nivel {{level}}, racha de {{count}} días"
+  },
+  "settings": "Ajustes",
+  "footer": {
+    "tagline": "Chesser — juega y entrena ajedrez",
+    "privacy": "Privacidad",
+    "terms": "Términos"
+  }
+}

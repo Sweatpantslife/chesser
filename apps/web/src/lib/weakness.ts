@@ -18,6 +18,15 @@
  * Everything here is deterministic given its inputs (no Date.now, no stores,
  * no engine) so the aggregation is unit-testable with fixture reports.
  * Persistence lives in store/coach.ts; presentation in pages/CoachPage.tsx.
+ *
+ * i18n: this module must NOT import src/i18n (store/coach → here sits in
+ * store/game's static import graph, whose tests run under plain `node
+ * --test`). WEAKNESS_META's label/summary/advice are the CANONICAL ENGLISH
+ * strings; render sites resolve display text by kind via the `insights`
+ * namespace — t(`insights:weaknesses.${kind}.label` / `.summary` / `.advice`)
+ * with these as defaultValue. describeExample/insightFor prose feeds the BYOK
+ * coach prompt (English by design); UI translation of those sentences is
+ * deferred to phase 3 with the other rule-based coaching prose.
  */
 import { Chess } from 'chess.js';
 import type { AnalysisReport, MoveDetail, PhaseName, Side } from './analytics/types';

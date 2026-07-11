@@ -1,0 +1,69 @@
+{
+  "title": "Settings",
+  "appearance": {
+    "label": "Appearance",
+    "themeGroupAria": "App theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "language": {
+    "label": "Language"
+  },
+  "toggles": {
+    "sounds": "Sounds",
+    "premoves": "Premoves (vs bot)",
+    "arrows": "Engine arrows (analysis)",
+    "aiCoach": "AI Coach explanations"
+  },
+  "aiCoachNote": "Natural-language coaching worded by an AI from the engine's analysis. Falls back to built-in explanations when unavailable.",
+  "rating": {
+    "label": "Headline rating",
+    "note": "Glicko-2 always drives difficulty & pairings behind the scenes."
+  },
+  "boardTheme": {
+    "label": "Board theme",
+    "aria": "{{name}} board theme",
+    "names": {
+      "brown": "brown",
+      "blue": "blue",
+      "green": "green",
+      "gray": "gray",
+      "candy": "candy",
+      "mint": "mint"
+    }
+  },
+  "pieces": {
+    "label": "Pieces"
+  },
+  "byok": {
+    "title": "AI Coach — your own key",
+    "intro": "Bring your own AI key to unlock richer coaching and the AI weekly recap. The key stays on this device (never sent to or stored on our server) and calls go straight to your chosen provider — <rates>billed to your key at your provider's rates</rates>. The coach keeps replies short, so typical costs are a fraction of a cent per explanation.",
+    "providerAria": "AI provider",
+    "providers": {
+      "anthropic": "Anthropic",
+      "openai": "OpenAI-compatible"
+    },
+    "apiKey": "API key",
+    "model": "Model (default: {{model}})",
+    "modelHints": {
+      "claude-haiku-4-5": "fastest & cheapest — the default",
+      "claude-sonnet-4-6": "stronger prose, mid price",
+      "claude-opus-4-8": "most capable, highest price",
+      "gpt-4o-mini": "cheap default",
+      "gpt-4o": "stronger, pricier"
+    },
+    "baseUrl": "Base URL (any OpenAI-compatible endpoint)",
+    "testKey": "Test key",
+    "testing": "Testing…",
+    "clearKey": "Clear key",
+    "keyWorksDirect": "Key works — {{model}} responded directly from your browser.",
+    "keyWorksRelay": "Key works — {{model}} responded (relayed: your endpoint blocks browser calls, so requests go through the app server without being stored).",
+    "activeNote": "AI coaching is active with your key."
+  },
+  "links": {
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  },
+  "done": "Done"
+}

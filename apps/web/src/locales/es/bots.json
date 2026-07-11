@@ -1,0 +1,68 @@
+{
+  "roster": {
+    "tilly": {
+      "title": "Principiante absoluta",
+      "bio": "Acaba de aprender cómo se mueven las piezas. Cuelga piezas y se le escapan capturas fáciles — el primer peldaño perfecto."
+    },
+    "benny": {
+      "title": "Principiante",
+      "bio": "Distingue un caballo de un alfil, pero las amenazas de una jugada se le pasan de largo. Le encanta una incursión ilusa con la dama."
+    },
+    "cassie": {
+      "title": "Jugadora ocasional",
+      "bio": "Juega por diversión entre café y café. Jugadas de apertura sensatas, pero se pierde cuando la posición se afila."
+    },
+    "maya": {
+      "title": "Estilo humano · 1100",
+      "bio": "Juega como un 1100 de verdad: las jugadas naturales, ligeramente erróneas, que de verdad hace un principiante."
+    },
+    "patrick": {
+      "title": "Novato de club",
+      "bio": "Sólido y testarudo — cambia piezas y se aferra a sus peones. Tendrás que superarlo jugando de verdad."
+    },
+    "rosa": {
+      "title": "Jugadora de club",
+      "bio": "Una habitual de club de las de verdad. Desarrolla con sensatez, enroca pronto y castiga los errores evidentes."
+    },
+    "gus": {
+      "title": "Atacante de cafetería",
+      "bio": "Primero sacrifica y luego pregunta. Enroca rápido y vigila las redes de mate baratas."
+    },
+    "maxine": {
+      "title": "Estilo humano · 1500",
+      "bio": "Jugadas humanas y con principios, con algún despiste muy humano de vez en cuando."
+    },
+    "knox": {
+      "title": "Defensor sólido",
+      "bio": "Un muro de ladrillo. Cambia piezas, evita debilidades y muele finales igualados. Se requiere paciencia."
+    },
+    "priya": {
+      "title": "Estilo humano · 1800",
+      "bio": "Fuerte instinto de club: planes sólidos, táctica rápida y solo algún desliz ocasional bajo presión."
+    },
+    "nora": {
+      "title": "Estilo humano · 1900",
+      "bio": "Instinto de nivel experto y técnica limpia, con errores humanos muy poco frecuentes."
+    },
+    "tess": {
+      "title": "Experta en táctica",
+      "bio": "Ve combinaciones a tres jugadas de profundidad. Deja una pieza suelta y desaparecerá en un instante."
+    },
+    "vera": {
+      "title": "Maestra posicional",
+      "bio": "Te estruja poco a poco — mejores casillas, mejores peones y luego un final ganado. Estratégica hasta la médula."
+    },
+    "ivan": {
+      "title": "Maestro",
+      "bio": "Un todoterreno con fuerza de titulado y sin debilidades evidentes. Necesitarás tu mejor ajedrez."
+    },
+    "nadia": {
+      "title": "Gran maestra",
+      "bio": "Cerca de la cima de la escalera: precisa, profunda y despiadada. Los errores se castigan sin piedad."
+    },
+    "stockzilla": {
+      "title": "Fuerza máxima",
+      "bio": "Stockfish a plena potencia, sin lastre. El jefe final — vencerlo es una verdadera hazaña."
+    }
+  }
+}

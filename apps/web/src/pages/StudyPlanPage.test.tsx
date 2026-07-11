@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import '../i18n'; // initialize i18next so t() serves the bundled English strings
 import { setClock } from '../lib/clock';
 import type { GameDigest, WeaknessKind } from '../lib/weakness';
 import { useCoach } from '../store/coach';

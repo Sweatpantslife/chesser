@@ -9,6 +9,7 @@
  * a compact `sparkline` mode. Renders null for fewer than 2 points.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CLASSIFICATION_META } from '../../lib/coach';
 import { formatScore } from '../../lib/format';
 import type {
@@ -105,8 +106,6 @@ const PHASE_TINT: Record<PhaseName, string> = {
   middlegame: 'rgba(52, 211, 153, 0.05)',
   endgame: 'rgba(251, 191, 36, 0.06)',
 };
-const PHASE_LABEL: Record<PhaseName, string> = { opening: 'Opening', middlegame: 'Middlegame', endgame: 'Endgame' };
-
 const moveLabel = (ply: number) => `${Math.ceil(ply / 2)}${ply % 2 === 1 ? '.' : '…'}`;
 
 const evalString = (ev: EvalPoint | null): string | null => {
@@ -123,6 +122,7 @@ export function EvalGraphPro({
   sparkline = false,
   criticalMoments,
 }: EvalGraphProProps): JSX.Element | null {
+  const { t } = useTranslation('analysis');
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [hoverPly, setHoverPly] = useState<number | null>(null);
@@ -187,11 +187,11 @@ export function EvalGraphPro({
       ref={ref}
       role={interactive ? 'slider' : 'img'}
       tabIndex={interactive ? 0 : undefined}
-      aria-label={interactive ? 'Advantage graph — click or use arrow keys to jump to a move' : 'Advantage graph'}
+      aria-label={interactive ? t('graph.ariaInteractive') : t('graph.aria')}
       aria-valuemin={interactive ? 0 : undefined}
       aria-valuemax={interactive ? n : undefined}
       aria-valuenow={interactive ? cursorPly : undefined}
-      title={sparkline && interactive ? 'Click to jump to a move' : undefined}
+      title={sparkline && interactive ? t('graph.clickTitle') : undefined}
       onClick={
         interactive
           ? (e) => {
@@ -237,7 +237,7 @@ export function EvalGraphPro({
             {i > 0 && <line x1={b.x0} y1={0} x2={b.x0} y2={h} stroke="#4c4677" strokeWidth={1} opacity={0.5} strokeDasharray="3 3" />}
             {b.width >= 56 && (
               <text x={b.x0 + 4} y={10} fontSize={8} fill="#a49cc8" style={{ letterSpacing: '0.08em' }}>
-                {PHASE_LABEL[b.phase]}
+                {t(`phase.${b.phase}`)}
               </text>
             )}
           </g>
@@ -280,7 +280,7 @@ export function EvalGraphPro({
           </div>
           <div className="text-neutral-400">
             {hoveredEval !== null && <span className="mr-1 font-mono">{hoveredEval}</span>}
-            {Math.round(points[hoverPly]!.win)}% White
+            {t('graph.winWhite', { win: Math.round(points[hoverPly]!.win) })}
           </div>
         </div>
       )}

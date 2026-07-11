@@ -8,6 +8,12 @@
  * Progress is fed by the activity stream: lib/gamify.ts calls the quest store
  * with one `Activity` per record* event, and each quest measures what that
  * activity contributes. Persistence/sync live in store/quests.ts.
+ *
+ * i18n: this module must NOT import src/i18n (it sits in store/game's static
+ * import graph, whose tests run under plain `node --test`). `name` / `desc`
+ * are the CANONICAL ENGLISH strings; the UI resolves display text by id via
+ * the `progress` namespace — t(`progress:quests.${id}.name` / `.desc`) with
+ * these as defaultValue. Keep locales/<lng>/progress.json in sync.
  */
 import type { GameOutcome } from '../store/ratings';
 

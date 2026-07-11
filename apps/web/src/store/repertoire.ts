@@ -21,7 +21,16 @@ export interface Repertoire {
 
 const uid = (p: string) => `${p}_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36).slice(-4)}`;
 
-/** The curated starter repertoire, surfaced like any other (read-only). */
+/** The curated starter repertoire, surfaced like any other (read-only).
+ *
+ * i18n: this module must NOT import src/i18n (it sits in store/game's static
+ * import graph via lib/gamify, whose tests run under plain `node --test`),
+ * and repertoire names are PERSISTED user data — never rewrite stored
+ * strings. The two built-in defaults translate at DISPLAY time only:
+ * `name === 'Starter repertoire'` (or `builtin: true`) →
+ * t('progress:repertoire.starterName'); the 'My repertoire' create-fallback →
+ * t('progress:repertoire.defaultName') — callers may also pass a translated
+ * name into createRepertoire, which is stored as the user's own data. */
 export const BUILTIN_REPERTOIRE: Repertoire = {
   id: 'builtin',
   name: 'Starter repertoire',

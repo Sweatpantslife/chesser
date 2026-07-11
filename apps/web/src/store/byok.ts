@@ -18,6 +18,10 @@ import { persist } from 'zustand/middleware';
 
 export type ByokProviderId = 'anthropic' | 'openai';
 
+// i18n note: `hint` strings below are the CANONICAL ENGLISH; ByokSettings
+// resolves display text via `settings:byok.modelHints.<id>` with these as
+// defaultValue. Model ids themselves are never translated.
+
 /** Suggested Anthropic models (the input also accepts any custom id). */
 export const ANTHROPIC_MODEL_SUGGESTIONS = [
   { id: 'claude-haiku-4-5', hint: 'fastest & cheapest — the default' },

@@ -24,15 +24,24 @@
  * drills and master games close the list. Persistence/adaptation lives in
  * store/plan.ts; presentation in pages/StudyPlanPage.tsx.
  */
+import i18n from '../i18n';
 import { WEAKNESS_META, type WeaknessKind, type WeaknessProfile } from './weakness';
 import { weekRangeOf } from './weeklyReport';
-import {
-  DIFFICULTY_LABELS,
-  THEME_LABELS,
-  type GameDifficulty,
-  type GameTheme,
-  type MasterGame,
-} from '../data/masterGames';
+import { type GameDifficulty, type GameTheme, type MasterGame } from '../data/masterGames';
+
+// i18n note: item titles/why sentences resolve through `insights:*` at
+// GENERATION time (English output is byte-identical to the old template
+// strings). The generated plan — including these strings — is persisted by
+// store/plan for the week, so a mid-week language switch shows the old
+// language until the next regeneration; ids/kinds stay language-neutral.
+// store/plan's initPlanTracking re-bakes an UNTOUCHED week's plan when the
+// active locale's strings arrive/change, so a fresh non-English session
+// doesn't lock in English fallbacks for the week.
+const tIns = () => i18n.getFixedT(null, 'insights');
+
+/** Weakness label in the active language (English catalogue label = fallback). */
+const weaknessLabel = (kind: WeaknessKind): string =>
+  tIns()(`weaknesses.${kind}.label`, { defaultValue: WEAKNESS_META[kind].label });
 
 // ---------------------------------------------------------------------------
 // Week identity
@@ -240,20 +249,22 @@ export function buildStudyPlan(
         : ['missedTactics', 'hangingPieces'];
 
   // — Daily puzzle quotas (one per focus kind, severity order) —
+  const t = tIns();
   const puzzleItems: PuzzlePlanItem[] = focus.map((kind, i) => {
     const entry = profile.weaknesses.find((w) => w.kind === kind);
     const meta = WEAKNESS_META[kind];
+    const label = weaknessLabel(kind);
     // Severity-scaled quota: a heavier weakness earns more daily reps.
     const perDay = entry ? clamp(2 + Math.round(entry.score), 2, 5) : i === 0 ? 3 : 2;
     const why = entry
-      ? `${meta.label} showed up ${entry.count}× across ${entry.games} of your last ${profile.games} reviewed games — daily reps retrain the reflex.`
+      ? t('plan.puzzleWhyEntry', { label, count: entry.count, games: entry.games, total: profile.games })
       : profile.worstPhase && (kind === 'openingMistakes' || kind === 'endgameMistakes')
-        ? `Your ${profile.worstPhase} is your least accurate phase — daily ${meta.label.toLowerCase()} reps shore it up.`
-        : `No recurring weakness stands out yet — daily ${meta.label.toLowerCase()} reps keep your tactics sharp.`;
+        ? t('plan.puzzleWhyPhase', { phase: t(`phases.${profile.worstPhase}`), label: label.toLowerCase() })
+        : t('plan.puzzleWhyDefault', { label: label.toLowerCase() });
     return {
       id: `puzzle:${kind}`,
       kind: 'puzzle',
-      title: `${meta.label}: ${perDay} puzzles a day`,
+      title: t('plan.puzzleTitle', { label, count: perDay }),
       why,
       target: perDay * 7,
       weakness: kind,
@@ -279,8 +290,8 @@ export function buildStudyPlan(
     lessonItems.push({
       id: `lesson:${pick}`,
       kind: 'lesson',
-      title: `Lesson: ${lesson.title}`,
-      why: `Targets your #${i + 1} focus — ${WEAKNESS_META[kind].label.toLowerCase()}.`,
+      title: t('plan.lessonTitle', { title: lesson.title }),
+      why: t('plan.lessonWhy', { rank: i + 1, label: weaknessLabel(kind).toLowerCase() }),
       target: 1,
       lessonId: pick,
     });
@@ -294,7 +305,7 @@ export function buildStudyPlan(
     openingItems.push({
       id: `opening:${line.id}`,
       kind: 'opening',
-      title: `Drill: ${line.name}`,
+      title: t('plan.openingTitle', { name: line.name }),
       why,
       target: OPENING_DRILLS_PER_LINE,
       lineId: line.id,
@@ -314,14 +325,14 @@ export function buildStudyPlan(
     if (match) {
       pushLine(
         match,
-        `Your ${tendency.name} games sit at ${tendency.accuracy}% accuracy over ${tendency.games} games — drill the moves you actually play.`,
+        t('plan.openingWhyTendency', { name: tendency.name, accuracy: tendency.accuracy, games: tendency.games }),
       );
     }
   }
   for (const line of catalog.openingLines) {
     if (openingItems.length >= MAX_OPENING_ITEMS) break;
     if (usedLines.has(line.id)) continue;
-    pushLine(line, `From your repertoire — ${OPENING_DRILLS_PER_LINE} recall reps keep the line fresh.`);
+    pushLine(line, t('plan.openingWhyRepertoire', { count: OPENING_DRILLS_PER_LINE }));
   }
 
   // — 1–2 master games: theme-matched, difficulty within one band of rating —
@@ -345,12 +356,15 @@ export function buildStudyPlan(
     .filter((c) => c.dist <= 1)
     .sort((a, b) => b.score - a.score || (a.g.id < b.g.id ? -1 : 1));
   const masterItems: MasterGamePlanItem[] = scored.slice(0, MAX_MASTER_ITEMS).map(({ g }) => {
-    const matchedTheme = wantThemes.find((t) => g.themes.includes(t)) ?? g.themes[0]!;
+    const matchedTheme = wantThemes.find((theme) => g.themes.includes(theme)) ?? g.themes[0]!;
     return {
       id: `master:${g.id}`,
       kind: 'master',
-      title: `Master game: ${g.white} – ${g.black} (${g.year})`,
-      why: `A ${DIFFICULTY_LABELS[g.difficulty].toLowerCase()}-level ${THEME_LABELS[matchedTheme].toLowerCase()} classic — see the pattern you're training played perfectly.`,
+      title: t('plan.masterTitle', { white: g.white, black: g.black, year: g.year }),
+      why: t('plan.masterWhy', {
+        difficulty: t(`plan.difficulty.${g.difficulty}`),
+        theme: t(`plan.gameThemes.${matchedTheme}`),
+      }),
       target: 1,
       gameId: g.id,
     };

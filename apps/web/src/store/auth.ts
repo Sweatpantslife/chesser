@@ -1,7 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import i18n from '../i18n';
 import { apiGetMe, apiLogin, apiLogout, apiRegister } from '../lib/api';
 import { pullAndMerge, startSync, stopSync, type SyncState } from '../lib/sync';
+
+// Server-sent error messages (e.message) pass through untranslated for now
+// (phase 3 would need error codes / Accept-Language); only the client-side
+// fallbacks below are translated, resolved at failure time.
 
 interface AuthState {
   token: string | null;
@@ -53,7 +58,7 @@ export const useAuth = create<AuthState>()(
           await get()._begin(token, name);
           return true;
         } catch (e) {
-          set({ error: e instanceof Error ? e.message : 'Registration failed' });
+          set({ error: e instanceof Error ? e.message : i18n.t('errors:auth.registrationFailed') });
           return false;
         } finally {
           set({ busy: false });
@@ -67,7 +72,7 @@ export const useAuth = create<AuthState>()(
           await get()._begin(token, name);
           return true;
         } catch (e) {
-          set({ error: e instanceof Error ? e.message : 'Login failed' });
+          set({ error: e instanceof Error ? e.message : i18n.t('errors:auth.loginFailed') });
           return false;
         } finally {
           set({ busy: false });
