@@ -122,6 +122,29 @@ class Store {
     this.db.games[userId] = list.filter((g) => g.id !== id);
     this.persist();
   }
+
+  /** Full user lookup by id (export/delete flows). */
+  userById(id: string): DbUser | undefined {
+    for (const u of Object.values(this.db.users)) if (u.id === id) return u;
+    return undefined;
+  }
+
+  /**
+   * Right-to-erasure: remove the account and everything keyed to it — the
+   * user record (credentials), EVERY session token, the synced progress blob
+   * and the saved-games library. One persist at the end.
+   */
+  deleteUser(userId: string): void {
+    for (const [key, u] of Object.entries(this.db.users)) {
+      if (u.id === userId) delete this.db.users[key];
+    }
+    for (const [token, s] of Object.entries(this.db.sessions)) {
+      if (s.userId === userId) delete this.db.sessions[token];
+    }
+    delete this.db.progress[userId];
+    delete this.db.games[userId];
+    this.persist();
+  }
 }
 
 export const store = new Store();

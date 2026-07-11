@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { store, type GameEntry } from './store.js';
 import { hashPassword, newToken, newUserId, validateCredentials, verifyPassword } from './auth.js';
 import { validateProgress } from './progress-validator.js';
+import { moderateUsername } from '../trust/moderation.js';
 
 function bearer(req: FastifyRequest): string | null {
   const h = req.headers['authorization'];
@@ -22,6 +23,11 @@ export function registerAccountRoutes(app: FastifyInstance): void {
     const { username, password } = (req.body ?? {}) as Creds;
     const err = validateCredentials(username, password);
     if (err) return reply.code(400).send({ error: err });
+    // Moderation on top of the charset/length rules: impersonation
+    // (admin/moderator/official-style names) and profanity are rejected with
+    // the human-readable reason (see trust/moderation.ts).
+    const modErr = moderateUsername(username);
+    if (modErr) return reply.code(400).send({ error: modErr });
     if (store.getUser(username as string)) return reply.code(409).send({ error: 'That username is taken.' });
     const { salt, hash } = hashPassword(password as string);
     const id = newUserId();
