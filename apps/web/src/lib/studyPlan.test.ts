@@ -247,6 +247,41 @@ describe('isoWeekIdOf / ratingBandOf', () => {
     expect(isoWeekIdOf(new Date(2027, 0, 1))).toBe('2026-W53'); // ISO year ≠ calendar year
   });
 
+  /** Run `fn` under a forced IANA timezone (Node re-reads TZ on Date ops). */
+  function withTZ(tz: string, fn: () => void) {
+    const prev = process.env.TZ;
+    process.env.TZ = tz;
+    try {
+      fn();
+    } finally {
+      if (prev === undefined) delete process.env.TZ;
+      else process.env.TZ = prev;
+    }
+  }
+
+  it('is stable across DST transitions, including a skipped local midnight', () => {
+    // Chile springs forward AT midnight: Sun 2024-09-08 00:00 does not exist
+    // (clocks jump straight to 01:00) — the hardest edge for local-midnight
+    // arithmetic. Every day of that week must map to the same week id.
+    withTZ('America/Santiago', () => {
+      for (let day = 2; day <= 8; day++) {
+        expect(isoWeekIdOf(new Date(2024, 8, day, 12)), `2024-09-0${day}`).toBe('2024-W36');
+      }
+      expect(isoWeekIdOf(new Date(2024, 8, 9))).toBe('2024-W37'); // next Monday rolls over
+      // Fall-back week (repeated late-night hour on Sat 2024-04-06).
+      for (let day = 1; day <= 7; day++) {
+        expect(isoWeekIdOf(new Date(2024, 3, day, 12)), `2024-04-0${day}`).toBe('2024-W14');
+      }
+    });
+    // When the Monday↔week-1-Monday span crosses a DST change it is a
+    // non-integral number of weeks in ms; Math.round must absorb the drift.
+    withTZ('Europe/Berlin', () => {
+      expect(isoWeekIdOf(new Date(2026, 2, 29, 12))).toBe('2026-W13'); // spring-forward Sunday
+      expect(isoWeekIdOf(new Date(2026, 2, 30, 12))).toBe('2026-W14'); // first CEST Monday
+      expect(isoWeekIdOf(new Date(2026, 9, 25, 12))).toBe('2026-W43'); // fall-back Sunday
+    });
+  });
+
   it('maps ratings to the tactics difficulty bands', () => {
     expect(ratingBandOf(1000)).toBe('beginner');
     expect(ratingBandOf(1299)).toBe('beginner');
