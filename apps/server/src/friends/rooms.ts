@@ -62,7 +62,8 @@ function sanitizeName(name: string | undefined, fallback: string): string {
   return n || fallback;
 }
 
-function validTimeControl(tc: FriendTimeControl | null | undefined): FriendTimeControl | null {
+/** Clamp/validate a client-supplied time control (also used by challenges). */
+export function validTimeControl(tc: FriendTimeControl | null | undefined): FriendTimeControl | null {
   if (!tc) return null;
   const initialMs = Number(tc.initialMs);
   const incrementMs = Number(tc.incrementMs);

@@ -16,6 +16,7 @@ import { importGames } from './import.js';
 import { registerAccountRoutes } from './accounts/routes.js';
 import { registerCoachRoutes } from './coach/routes.js';
 import { registerSocialRoutes } from './social/routes.js';
+import { registerFriendRoutes } from './social/friends-routes.js';
 import { socialStore } from './social/store.js';
 import type { ExplorerDb } from '@chesser/shared';
 
@@ -45,9 +46,15 @@ app.get('/api/import', async (req) => {
   const n = Math.min(Math.max(Number(max) || 15, 1), 30);
   return importGames(site === 'chesscom' ? 'chesscom' : 'lichess', user, n);
 });
+// One room manager serves both the /ws/friend endpoint (below) and the
+// challenge-accept flow: accepting a challenge creates a room here, so the
+// resulting game is an ordinary friend-link game.
+const friendRooms = new FriendRoomManager();
+
 registerAccountRoutes(app);
 registerCoachRoutes(app);
 registerSocialRoutes(app);
+registerFriendRoutes(app, friendRooms);
 
 // Serve the built web client (single-origin deployment). Real asset paths are
 // served as files; anything else falls through to the SPA's index.html. The
@@ -75,7 +82,6 @@ const wss = new WebSocketServer({ noServer: true });
 wss.on('connection', (ws) => {
   new Session(ws);
 });
-const friendRooms = new FriendRoomManager();
 const friendWss = new WebSocketServer({ noServer: true });
 friendWss.on('connection', (ws) => {
   new FriendSession(ws, friendRooms);
