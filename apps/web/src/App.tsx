@@ -9,6 +9,7 @@ import { HomePage } from './pages/HomePage';
 import { HumansPage } from './humans/HumansPage';
 import { LearnPage } from './pages/LearnPage';
 import { OpeningsPage } from './pages/OpeningsPage';
+import { ExplorerPage } from './pages/ExplorerPage';
 import { TacticsPage } from './pages/TacticsPage';
 import { EndgamePage } from './pages/EndgamePage';
 import { EndgameDrillsPage } from './pages/EndgameDrillsPage';
@@ -34,6 +35,7 @@ import {
   IconCoach,
   IconCoords,
   IconEndgame,
+  IconExplorer,
   IconFriends,
   IconGear,
   IconLearn,
@@ -55,6 +57,7 @@ type View =
   | 'learn'
   | 'friends'
   | 'openings'
+  | 'explorer'
   | 'tactics'
   | 'endgame'
   | 'endgame-drills'
@@ -73,6 +76,7 @@ const TABS: { id: View; label: string; hint: string; icon: ComponentType<SVGProp
   { id: 'learn', label: 'Learn', hint: 'rules & guided lessons', icon: IconLearn },
   { id: 'friends', label: 'Friends', hint: 'pass & play · online friend games', icon: IconFriends },
   { id: 'openings', label: 'Openings', hint: 'repertoire drills', icon: IconOpenings },
+  { id: 'explorer', label: 'Explorer', hint: 'opening explorer · master & online games', icon: IconExplorer },
   { id: 'tactics', label: 'Tactics', hint: 'tactics puzzles', icon: IconTactics },
   { id: 'endgame', label: 'Endgame', hint: 'theory & technique', icon: IconEndgame },
   { id: 'endgame-drills', label: 'Drills', hint: 'endgame drills · tablebase-checked', icon: IconBolt },
@@ -282,6 +286,7 @@ export default function App() {
           <HumansPage />
         </div>
         {view === 'openings' && <OpeningsPage />}
+        {view === 'explorer' && <ExplorerPage goAnalyze={() => setView('play')} />}
         {view === 'tactics' && (
           <TacticsPage openDaily={tacticsDaily} onDailyOpened={() => setTacticsDaily(false)} openMode={tacticsMode} />
         )}

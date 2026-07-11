@@ -35,9 +35,19 @@ app.get('/api/tablebase', async (req) => {
   return probeTablebase(fen);
 });
 app.get('/api/explorer', async (req) => {
-  const { fen, db } = req.query as { fen?: string; db?: string };
+  const { fen, db, speeds, ratings, games } = req.query as {
+    fen?: string;
+    db?: string;
+    speeds?: string;
+    ratings?: string;
+    games?: string;
+  };
   if (!fen) return { available: false, reason: 'no-fen' };
-  return probeExplorer(fen, (db === 'lichess' ? 'lichess' : 'masters') as ExplorerDb);
+  return probeExplorer(fen, (db === 'lichess' ? 'lichess' : 'masters') as ExplorerDb, {
+    speeds,
+    ratings,
+    games: games ? Number(games) : 0,
+  });
 });
 app.get('/api/import', async (req) => {
   const { site, user, max } = req.query as { site?: string; user?: string; max?: string };
