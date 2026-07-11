@@ -40,7 +40,14 @@ export function registerProxyGuards(app: FastifyInstance, opts: ProxyGuardOption
   ]);
 
   app.addHook('onRequest', async (req, reply) => {
-    const pathname = req.url.split('?', 1)[0];
+    // Match the ROUTED path, not the raw URL. Fastify percent-decodes the path
+    // when it routes, so `/api/%69mport` reaches the /api/import handler — but
+    // req.url would still read `/api/%69mport` and miss the limiter Map,
+    // bypassing the guard entirely. routeOptions.url is the matched route
+    // pattern ('/api/import'), identical for the plain and the encoded form,
+    // and undefined for unrouted requests (which consume no budget). Mirrors
+    // metrics.ts, which already keys on req.routeOptions.url.
+    const pathname = req.routeOptions?.url;
     const limiter = pathname ? limiters.get(pathname) : undefined;
     if (!limiter) return;
     if (!limiter.take(req.ip || 'unknown')) {

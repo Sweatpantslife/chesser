@@ -12,7 +12,14 @@ import crypto from 'node:crypto';
 import Fastify, { type FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import fastifyStatic from '@fastify/static';
-import { buildCsp, inlineScriptHashes, parseAllowedOrigins, registerSecurityHeaders } from './security-headers.js';
+import {
+  buildCsp,
+  DEFAULT_CONNECT_ORIGINS,
+  inlineScriptHashes,
+  parseAllowedOrigins,
+  parseConnectOrigins,
+  registerSecurityHeaders,
+} from './security-headers.js';
 import { registerProxyGuards, type ProxyGuardOptions } from './proxy-guard.js';
 
 // ---------------------------------------------------------------------------
@@ -118,6 +125,30 @@ test('HSTS is sent only when the request arrived over TLS (via trusted proxy)', 
 
   const tls = await app.inject({ method: 'GET', url: '/api/ping', headers: { 'x-forwarded-proto': 'https' } });
   assert.equal(tls.headers['strict-transport-security'], 'max-age=31536000');
+});
+
+test('parseConnectOrigins: unset → []; http(s) origins normalized; non-http dropped', () => {
+  assert.deepEqual(parseConnectOrigins(undefined), []);
+  assert.deepEqual(parseConnectOrigins(''), []);
+  assert.deepEqual(parseConnectOrigins('ftp://nope.example, not a url'), []);
+  assert.deepEqual(parseConnectOrigins('http://192.168.1.50:11434/v1, https://llm.example.com'), [
+    'http://192.168.1.50:11434',
+    'https://llm.example.com',
+  ]);
+});
+
+test('operator-whitelisted connect-src origins reach the CSP (LAN/self-hosted LLM escape hatch)', async (t) => {
+  const app = Fastify();
+  registerSecurityHeaders(app, {
+    connectOrigins: [...DEFAULT_CONNECT_ORIGINS, ...parseConnectOrigins('http://192.168.1.50:11434')],
+  });
+  app.get('/api/ping', async () => ({ ok: true }));
+  await app.ready();
+  t.after(() => app.close());
+
+  const csp = String((await app.inject({ method: 'GET', url: '/api/ping' })).headers['content-security-policy']);
+  assert.ok(csp.includes('http://192.168.1.50:11434'), 'custom LAN endpoint allowed in connect-src');
+  assert.ok(csp.includes('https://api.anthropic.com'), 'defaults still present');
 });
 
 test('buildCsp shape stays parseable', () => {
@@ -234,4 +265,18 @@ test('explorer exhausts to 429 and the query string does not bypass matching', a
   t.after(() => app.close());
   assert.equal((await app.inject({ method: 'GET', url: '/api/explorer?fen=a&db=lichess' })).statusCode, 200);
   assert.equal((await app.inject({ method: 'GET', url: '/api/explorer?fen=b' })).statusCode, 429);
+});
+
+test('a percent-encoded path cannot bypass the limiter (matches the routed path, not raw url)', async (t) => {
+  // Fastify decodes %69 → 'i', so /api/%69mport routes to /api/import. The guard
+  // must consume budget for it exactly like the plain path, or one encoded byte
+  // grants unlimited proxied requests. Capacity 2, no refill.
+  const app = await proxyApp({ importCapacity: 2, importRefillPerMinute: 0, now: () => 0 });
+  t.after(() => app.close());
+
+  const statuses: number[] = [];
+  for (let i = 0; i < 5; i++) {
+    statuses.push((await app.inject({ method: 'GET', url: '/api/%69mport?user=x' })).statusCode);
+  }
+  assert.deepEqual(statuses, [200, 200, 429, 429, 429], 'encoded path is rate-limited like the plain one');
 });

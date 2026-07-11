@@ -4,12 +4,15 @@
  *   • WS_MAX_PAYLOAD_BYTES caps a single WS message (ws's default is 100 MiB
  *     — a memory-DoS invitation). 1 MiB matches the HTTP bodyLimit; real
  *     protocol messages (analyze requests, friend moves) are well under 4 KB.
- *   • WsSessionGuard bounds concurrent /ws sessions per client IP and
- *     globally. Each /ws session may lazily spawn up to TWO Stockfish child
+ *   • WsSessionGuard bounds concurrent /ws CONNECTIONS per client IP and
+ *     globally. Each connection may lazily spawn up to TWO Stockfish child
  *     processes (analysis + bot), so without a ceiling one client opening
- *     sockets in a loop exhausts CPU and RAM. Rejected sockets get close code
- *     1013 ("try again later") — the web client's auto-reconnect backs off
- *     and retries.
+ *     sockets in a loop exhausts CPU and RAM. Note this caps connections, not
+ *     engine spawns: the web client opens one /ws per tab on mount and holds it
+ *     for the tab's lifetime, so idle tabs count toward the cap too (documented
+ *     in DEPLOYMENT.md). Rejected sockets get close code 1013 ("try again
+ *     later"); the web client's auto-reconnect uses capped exponential backoff
+ *     with jitter (lib/engine.ts) so a refused socket does not hot-loop.
  *
  * Defaults are deliberately generous (see accounts/guard.ts for the same
  * reasoning): behind a proxy without TRUST_PROXY every client shares the

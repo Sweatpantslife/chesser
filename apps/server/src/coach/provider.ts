@@ -45,6 +45,9 @@ export function anthropicProvider(apiKey: string, model: string): CoachProvider 
     async complete({ system, user, maxTokens }) {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
+        // Never follow redirects: a completions POST has no legitimate 3xx, and
+        // following one would let an upstream bounce the request elsewhere.
+        redirect: 'error',
         headers: {
           'x-api-key': apiKey,
           'anthropic-version': '2023-06-01',
@@ -81,6 +84,14 @@ export function openAiProvider(apiKey: string, model: string, baseUrl: string): 
     async complete({ system, user, maxTokens }) {
       const res = await fetch(`${base}/chat/completions`, {
         method: 'POST',
+        // SSRF guard, redirect half: `base` is user-supplied (BYOK), and its
+        // host + every DNS answer are vetted as public BEFORE this call — but
+        // undici follows 3xx by default, so a vetted public endpoint could
+        // 302 the request to 169.254.169.254 / 127.0.0.1 / an internal host
+        // and reach it from inside the network. `redirect: 'error'` refuses
+        // any 3xx (a completions POST never legitimately redirects), closing
+        // the redirect bypass that the initial-host DNS check cannot see.
+        redirect: 'error',
         headers: {
           Authorization: `Bearer ${apiKey}`,
           'content-type': 'application/json',
@@ -115,7 +126,9 @@ export function openAiProvider(apiKey: string, model: string, baseUrl: string): 
  * client could otherwise aim it at loopback/link-local/private services
  * (SSRF). This covers literal addresses and well-known names; a public name
  * that DNS-resolves to a private address is caught by the async
- * `byokBaseUrlDnsError` check the route runs before fetching.
+ * `byokBaseUrlDnsError` check the route runs before fetching. A vetted public
+ * host that then 3xx-redirects to an internal address is refused by
+ * `redirect: 'error'` on the fetch itself (see openAiProvider.complete).
  */
 function isForbiddenByokHost(hostname: string): boolean {
   const h = hostname.toLowerCase().replace(/^\[|\]$/g, '');

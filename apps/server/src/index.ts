@@ -13,7 +13,12 @@ import { probeTablebase } from './tablebase.js';
 import { shutdownLocalTablebase } from './tablebase-local.js';
 import { probeExplorer } from './explorer.js';
 import { importGames } from './import.js';
-import { parseAllowedOrigins, registerSecurityHeaders } from './security-headers.js';
+import {
+  DEFAULT_CONNECT_ORIGINS,
+  parseAllowedOrigins,
+  parseConnectOrigins,
+  registerSecurityHeaders,
+} from './security-headers.js';
 import { registerProxyGuards } from './proxy-guard.js';
 import { genReqId, logger, registerRequestIdHeader } from './logging.js';
 import { registerHealth } from './health.js';
@@ -52,7 +57,13 @@ registerRequestIdHeader(app);
 await app.register(cors, { origin: parseAllowedOrigins(process.env.CHESSER_ALLOWED_ORIGINS) });
 // Security headers (CSP, nosniff, frame denial, HSTS-behind-TLS, …) on every
 // response — API JSON and the served SPA alike. See security-headers.ts.
-registerSecurityHeaders(app, { webDir: WEB_DIR });
+// connectOrigins: the BYOK direct-call defaults (Anthropic/OpenAI) plus any
+// operator-whitelisted endpoints (CHESSER_COACH_CONNECT_ORIGINS) — required for
+// the browser to reach a self-hosted / LAN OpenAI-compatible endpoint directly.
+registerSecurityHeaders(app, {
+  webDir: WEB_DIR,
+  connectOrigins: [...DEFAULT_CONNECT_ORIGINS, ...parseConnectOrigins(process.env.CHESSER_COACH_CONNECT_ORIGINS)],
+});
 // Per-IP budgets for the unauthenticated Lichess/chess.com proxy endpoints.
 registerProxyGuards(app);
 // Liveness/readiness probes (quiet, unmetered) + Prometheus /metrics with its

@@ -11,6 +11,10 @@ const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'chesser-auth-hardening-')
 process.env.CHESSER_DATA_DIR = dataDir;
 
 const LEGACY_TOKEN = 'a'.repeat(64);
+// A password longer than the new 512-byte cap. Such accounts could exist:
+// the old validator enforced only a 6-char minimum (no upper bound) under a
+// 1 MiB body limit. Login must still accept it — there is no password reset.
+const LEGACY_LONG_PASSWORD = 'correct-horse-battery-staple-'.repeat(30); // ~870 bytes
 fs.writeFileSync(
   path.join(dataDir, 'db.json'),
   JSON.stringify({
@@ -21,6 +25,15 @@ fs.writeFileSync(
         // scryptSync('hunter22', 'legacysalt', 64) — a pre-async-migration hash.
         salt: 'legacysalt',
         hash: (await import('node:crypto')).default.scryptSync('hunter22', 'legacysalt', 64).toString('hex'),
+        createdAt: 1_700_000_000_000,
+      },
+      'legacy-longpass': {
+        id: 'legacylongid',
+        username: 'legacy-longpass',
+        salt: 'legacysalt2',
+        hash: (await import('node:crypto')).default
+          .scryptSync(LEGACY_LONG_PASSWORD, 'legacysalt2', 64)
+          .toString('hex'),
         createdAt: 1_700_000_000_000,
       },
     },
@@ -203,15 +216,16 @@ describe('input validation', () => {
     assert.match((res.json() as { error: string }).error, /too long/i);
   });
 
-  it('rejects an oversized password on login fast, with the uniform 401', async () => {
-    assert.equal((await registerUser('big-login-user')).statusCode, 200);
-    const started = process.hrtime.bigint();
-    const res = await login('big-login-user', 'y'.repeat(MAX_PASSWORD_BYTES + 88));
-    const elapsedMs = Number(process.hrtime.bigint() - started) / 1e6;
-    assert.equal(res.statusCode, 401);
-    assert.match((res.json() as { error: string }).error, /invalid username or password/i);
-    // No scrypt ran on the oversized input — this path must be quick.
-    assert.ok(elapsedMs < 250, `took ${elapsedMs}ms`);
+  it('lets a legacy account whose password exceeds the new cap log in (no login-time length reject)', async () => {
+    // The 512-byte cap is registration-only; login must not lock out a pre-cap
+    // account holding a longer password (there is no reset). A WRONG long
+    // password still fails the uniform 401 via the normal verify path.
+    assert.ok(LEGACY_LONG_PASSWORD.length > MAX_PASSWORD_BYTES, 'fixture password is over the cap');
+    const ok = await login('legacy-longpass', LEGACY_LONG_PASSWORD);
+    assert.equal(ok.statusCode, 200, ok.body);
+    const wrong = await login('legacy-longpass', `${LEGACY_LONG_PASSWORD}x`);
+    assert.equal(wrong.statusCode, 401);
+    assert.match((wrong.json() as { error: string }).error, /invalid username or password/i);
   });
 
   it('rejects a multi-KiB auth body outright (413)', async () => {

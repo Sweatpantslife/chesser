@@ -5,7 +5,6 @@ import {
   hashPassword,
   newToken,
   newUserId,
-  passwordTooLong,
   validateCredentials,
   verifyPassword,
 } from './auth.js';
@@ -86,12 +85,13 @@ export function registerAccountRoutes(app: FastifyInstance, opts: AccountRouteOp
         .header('retry-after', String(Math.ceil(lockedMs / 1000)))
         .send({ error: 'Too many failed attempts — try again later.' });
     }
-    // Oversized passwords are refused BEFORE any scrypt work (CPU-DoS guard);
-    // no stored password can be this long, so the uniform 401 stays truthful.
-    if (passwordTooLong(password)) {
-      guard.recordFailure(username);
-      return reply.code(401).send({ error: 'Invalid username or password.' });
-    }
+    // No length pre-check here: the 512-byte cap is a REGISTRATION rule, and
+    // accounts predating it (the old validator only enforced a 6-char minimum,
+    // under a 1 MiB body limit) may legitimately hold a longer password — a
+    // login-time reject would lock them out permanently (no password reset
+    // exists). The AUTH_BODY_LIMIT (4 KiB) already bounds the input, and scrypt
+    // cost is dominated by its fixed memory-hard core, not the input length, so
+    // verifying a few-KiB password is not a CPU-DoS vector.
     const user = store.getUser(username);
     let ok = false;
     if (user) {

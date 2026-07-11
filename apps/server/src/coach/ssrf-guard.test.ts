@@ -5,10 +5,12 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import http from 'node:http';
+import type { AddressInfo } from 'node:net';
 import Fastify, { type FastifyInstance } from 'fastify';
 import type { CoachWeeklyReportFacts } from '@chesser/shared';
 import { BYOK_BASE_URL_HEADER, BYOK_KEY_HEADER, BYOK_PROVIDER_HEADER, registerCoachRoutes } from './routes.js';
-import { byokBaseUrlDnsError, isForbiddenIpAddress, type DnsLookupFn } from './provider.js';
+import { byokBaseUrlDnsError, isForbiddenIpAddress, openAiProvider, type DnsLookupFn } from './provider.js';
 
 // ---------------------------------------------------------------------------
 // isForbiddenIpAddress
@@ -197,4 +199,42 @@ test('explain lets a publicly-resolving base URL through to the provider', async
   const res = await postByok(app, 'https://llm.example.com/v1');
   assert.equal(res.statusCode, 200);
   assert.equal(res.json().explanation, 'ok.');
+});
+
+// ---------------------------------------------------------------------------
+// Redirect half of the SSRF guard: the initial-host DNS check vets only the
+// FIRST hop, so a vetted public endpoint must not be able to 3xx the request
+// onward to an internal address. openAiProvider.complete uses redirect:'error'.
+// ---------------------------------------------------------------------------
+
+test('the openai provider never follows a 3xx redirect (would bypass the DNS host check)', async (t) => {
+  // Stand-in for an internal service (cloud metadata / loopback admin API): if
+  // the provider follows the redirect, it reaches this and returns its content.
+  let internalHits = 0;
+  const internal = http.createServer((_req, res) => {
+    internalHits += 1;
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ choices: [{ message: { content: 'INTERNAL-SECRET' } }] }));
+  });
+  await new Promise<void>((r) => internal.listen(0, '127.0.0.1', () => r()));
+  const internalPort = (internal.address() as AddressInfo).port;
+
+  // A "public" endpoint that 302-redirects the completions POST internally.
+  const redirector = http.createServer((_req, res) => {
+    res.writeHead(302, { Location: `http://127.0.0.1:${internalPort}/chat/completions` });
+    res.end();
+  });
+  await new Promise<void>((r) => redirector.listen(0, '127.0.0.1', () => r()));
+  const redirectorPort = (redirector.address() as AddressInfo).port;
+  t.after(() => {
+    internal.close();
+    redirector.close();
+  });
+
+  const provider = openAiProvider('sk-user-key', 'gpt-4o-mini', `http://127.0.0.1:${redirectorPort}/v1`);
+  await assert.rejects(
+    () => provider.complete({ system: 's', user: 'u', maxTokens: 10 }),
+    'a 3xx response must reject, not be followed',
+  );
+  assert.equal(internalHits, 0, 'the redirect target must never be reached');
 });

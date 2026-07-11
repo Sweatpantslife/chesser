@@ -101,8 +101,8 @@ deliberately. `.env.example` mirrors this list.
 | Variable | Default | Purpose / notes |
 |---|---|---|
 | `CHESSER_SESSION_TTL_DAYS` | `30` | Bearer-token lifetime in days, sliding (each authenticated use extends it). Legacy tokens from before expiry existed are backfilled to now + TTL, so existing logins keep working after upgrade. |
-| `CHESSER_WS_MAX_SESSIONS` | `32` | Global cap on concurrent `/ws` engine sessions (each may spawn up to two Stockfish processes). |
-| `CHESSER_WS_MAX_SESSIONS_PER_IP` | `8` | Per-client-IP cap on `/ws` engine sessions (needs `TRUST_PROXY` behind a proxy, otherwise all clients share the proxy's IP). |
+| `CHESSER_WS_MAX_SESSIONS` | `32` | Global cap on concurrent `/ws` **connections** (each may spawn up to two Stockfish processes). The web client opens one `/ws` per browser tab on load and holds it for the tab's lifetime, so **every open tab consumes a slot — even one only browsing, not analyzing.** Size this for your expected concurrent-tab count, not just active analyses; a tab over the cap is closed with 1013 and reconnects with capped exponential backoff (no hot-loop), losing engine features until a slot frees. |
+| `CHESSER_WS_MAX_SESSIONS_PER_IP` | `8` | Per-client-IP cap on `/ws` connections (needs `TRUST_PROXY` behind a proxy, otherwise all clients share the proxy's IP). Behind a shared NAT (school/office/family), raise this so multiple tabs from one public IP aren't starved. |
 
 ### Optional — logging & observability
 
@@ -136,6 +136,7 @@ tokens and request bodies are redacted or never serialized in the first place.
 | `OPENAI_API_KEY` | unset | **SECRET.** OpenAI(-compatible) alternative. |
 | `COACH_LLM_MODEL` | `claude-haiku-4-5-20251001` / `gpt-4o-mini` | Model override for either provider. |
 | `COACH_LLM_BASE_URL` | `https://api.openai.com/v1` | OpenAI-compatible base URL (e.g. a local Ollama). |
+| `CHESSER_COACH_CONNECT_ORIGINS` | unset | Comma-separated http(s) origins added to the CSP `connect-src` so BYOK users can point the coach at a **custom / LAN** OpenAI-compatible endpoint called directly from the browser (Ollama, LM Studio, llama.cpp — e.g. `http://192.168.1.50:11434`). Without it the CSP allows only `api.anthropic.com` + `api.openai.com` and a custom endpoint is blocked in-browser. A public **https** endpoint doesn't need this (it falls back to the server-side pass-through); a plain-http LAN endpoint also requires serving the app over http (browsers block https→http as mixed content). |
 
 With no server key configured, `/api/coach/status` reports
 `{ configured: false }` and the web client falls back to rule-based
@@ -214,13 +215,18 @@ What the shipped hardening protects against:
   unless `CHESSER_ALLOWED_ORIGINS` opts in).
 - **SSRF via BYOK base URLs** — https-only, no credentials, hostname AND
   every DNS answer must be public address space; private/link-local/CGNAT/
-  multicast ranges refused (v4 + v6, v4-mapped unwrapped).
+  multicast ranges refused (v4 + v6, v4-mapped unwrapped). The upstream call
+  also refuses 3xx redirects (`redirect: 'error'`), so a vetted public host
+  cannot bounce the request onward to an internal address.
 - **Upstream-quota theft & outbound amplification** — `/api/explorer`,
   `/api/tablebase`, `/api/import` and `/api/coach/explain` are per-IP
   rate-limited; the Lichess token is only ever sent to Lichess.
 - **Resource exhaustion via WebSockets** — 1 MiB `maxPayload` (was 100 MiB
-  default), global + per-IP caps on engine-spawning `/ws` sessions, friend
-  rooms capped and TTL-swept.
+  default), global + per-IP caps on concurrent `/ws` connections (each may
+  spawn up to two Stockfish processes), friend rooms capped and TTL-swept.
+  Because the client holds one `/ws` per open tab, size the caps for concurrent
+  tabs (see the `CHESSER_WS_MAX_SESSIONS*` notes above); refused tabs back off
+  rather than hot-loop.
 - **Proxy misconfiguration** — `TRUST_PROXY` uses explicit hop counts; the
   client-controlled leftmost XFF entry is never trusted.
 - **Secrets in logs** — pino redaction for auth headers/passwords/tokens,
@@ -245,3 +251,15 @@ Explicitly **out of scope** (documented decisions, not oversights):
   to fix for this feature).
 - **CAPTCHA / bot detection** on registration — rate limits bound account
   creation per IP instead.
+- **Targeted account-lockout DoS** — the per-account lockout is keyed on the
+  submitted username and is deliberately IP-independent (so it still works when
+  a reverse proxy without `TRUST_PROXY` collapses every client onto one IP —
+  the case where per-IP throttling is useless). The tradeoff: anyone who knows
+  a username (register returns a 409 on a taken name; leaderboards/profiles are
+  opt-in) can lock that account's *login* by submitting a handful of wrong
+  passwords per unlock window, and the legitimate owner is refused until the
+  backoff (≤ 1h) elapses. Existing sessions keep working; only new logins are
+  affected, and the account is never compromised. We accept this in favor of a
+  brute-force defense that survives a mis-set proxy; a public deployment that
+  cares more about targeted-lockout DoS than credential stuffing should front
+  the app with a CDN/WAF that does per-client challenge instead.

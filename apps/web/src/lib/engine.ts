@@ -26,6 +26,7 @@ class EngineClient {
   private ws: WebSocket | null = null;
   private buffer: string[] = [];
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private reconnectAttempts = 0;
 
   private analysisReqId: string | null = null;
   private analysisHandler: AnalysisHandler | null = null;
@@ -45,6 +46,7 @@ class EngineClient {
     this.ws = ws;
     ws.onopen = () => {
       this.connected = true;
+      this.reconnectAttempts = 0; // a real connection resets the backoff
       this.onStatus.forEach((fn) => fn(true));
       for (const m of this.buffer.splice(0)) ws.send(m);
     };
@@ -59,10 +61,19 @@ class EngineClient {
 
   private scheduleReconnect(): void {
     if (this.reconnectTimer) return;
+    // Exponential backoff with jitter, capped at 30s. Without this a socket the
+    // server refuses (e.g. it is at its /ws session cap, closing us with 1013)
+    // would hot-loop the handshake ~every 1.5s forever, and after a server
+    // restart every tab would reconnect in lockstep (thundering herd). The
+    // jitter spreads that out; onopen resets reconnectAttempts to 0 so a normal
+    // transient drop still reconnects quickly.
+    const base = Math.min(30_000, 1500 * 2 ** this.reconnectAttempts);
+    const delay = base / 2 + Math.random() * (base / 2); // 50–100% of base
+    this.reconnectAttempts += 1;
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
       this.connect();
-    }, 1500);
+    }, delay);
   }
 
   private send(msg: ClientMessage): void {

@@ -136,3 +136,29 @@ export function parseAllowedOrigins(raw: string | undefined): false | string[] {
   }
   return origins.length > 0 ? origins : false;
 }
+
+/**
+ * Extra `connect-src` origins for the coach's BYOK direct-from-browser path,
+ * from CHESSER_COACH_CONNECT_ORIGINS (comma-separated http(s) origins). The
+ * default CSP only allows api.anthropic.com + api.openai.com, so a custom
+ * OpenAI-compatible endpoint — notably a self-hosted / LAN LLM (Ollama,
+ * LM Studio, llama.cpp) — is otherwise blocked in the browser as a CSP network
+ * error. Operators opt those hosts back in here (e.g. http://192.168.1.50:11434).
+ * Returns [] when unset so callers can spread it onto DEFAULT_CONNECT_ORIGINS.
+ */
+export function parseConnectOrigins(raw: string | undefined): string[] {
+  if (!raw) return [];
+  const origins: string[] = [];
+  for (const part of raw.split(',')) {
+    const s = part.trim();
+    if (!s) continue;
+    try {
+      const u = new URL(s);
+      if (u.protocol !== 'http:' && u.protocol !== 'https:') continue;
+      origins.push(u.origin);
+    } catch {
+      logger.warn(`[config] CHESSER_COACH_CONNECT_ORIGINS entry is not a valid origin, ignored: "${s}"`);
+    }
+  }
+  return origins;
+}
