@@ -1,5 +1,6 @@
 import type { WebSocket, RawData } from 'ws';
 import type { ClientMessage, ServerMessage } from '@chesser/shared';
+import { logger } from './logging.js';
 import { engines } from './engine/manager.js';
 import { AnalysisService } from './engine/analysis.js';
 import { BotService } from './engine/bot.js';
@@ -79,7 +80,7 @@ export class Session {
       // Internal error text stays on the server (same pattern as friends/ws.ts)
       // — engine failures often carry paths and setup details a client has no
       // business seeing.
-      console.error('[ws] session error:', e);
+      logger.error({ err: e }, '[ws] session error');
       this.send({ t: 'error', reqId, message: 'Engine request failed.' });
     }
   }

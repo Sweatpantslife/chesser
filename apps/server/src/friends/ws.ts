@@ -6,6 +6,7 @@
  */
 import type { WebSocket, RawData } from 'ws';
 import type { FriendClientMessage, FriendServerMessage } from '@chesser/shared';
+import { logger } from '../logging.js';
 import { FriendRoomManager, FriendRoom, RoomError } from './rooms.js';
 
 export class FriendSession {
@@ -42,7 +43,7 @@ export class FriendSession {
       this.handle(msg);
     } catch (e) {
       const message = e instanceof RoomError ? e.message : 'Something went wrong.';
-      if (!(e instanceof RoomError)) console.error('[friends]', e);
+      if (!(e instanceof RoomError)) logger.error({ err: e }, '[friends] session error');
       this.send({ t: 'error', message });
     }
   }

@@ -1,13 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { REPO_ROOT } from '../config.js';
+import { logger } from '../logging.js';
 
 /**
  * A tiny dependency-free JSON-file store for accounts and synced progress.
  * Single-process, atomic writes (temp + rename). Point CHESSER_DATA_DIR at a
  * persistent volume in production.
  */
-const DATA_DIR = process.env.CHESSER_DATA_DIR ?? path.join(REPO_ROOT, 'data');
+export const DATA_DIR = process.env.CHESSER_DATA_DIR ?? path.join(REPO_ROOT, 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
 
 export interface DbUser {
@@ -66,7 +67,7 @@ class Store {
     try {
       if (fs.existsSync(DB_FILE)) this.db = { ...EMPTY, ...JSON.parse(fs.readFileSync(DB_FILE, 'utf8')) };
     } catch (e) {
-      console.error('[accounts] failed to load db, starting fresh:', e);
+      logger.error({ err: e }, '[accounts] failed to load db, starting fresh');
     }
     // Backfill legacy sessions (pre-expiry) so existing logins survive the
     // upgrade, and drop anything already expired. Persist only on change.
@@ -96,7 +97,7 @@ class Store {
       fs.writeFileSync(tmp, JSON.stringify(this.db));
       fs.renameSync(tmp, DB_FILE);
     } catch (e) {
-      console.error('[accounts] failed to persist db:', e);
+      logger.error({ err: e }, '[accounts] failed to persist db');
     }
   }
 

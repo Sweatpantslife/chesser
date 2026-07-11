@@ -33,6 +33,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
+import { logger } from './logging.js';
 
 /** sha256 CSP source tokens for every inline <script> in an HTML document. */
 export function inlineScriptHashes(html: string): string[] {
@@ -130,7 +131,7 @@ export function parseAllowedOrigins(raw: string | undefined): false | string[] {
       if (u.protocol !== 'http:' && u.protocol !== 'https:') continue;
       origins.push(u.origin);
     } catch {
-      console.warn(`[config] CHESSER_ALLOWED_ORIGINS entry is not a valid origin, ignored: "${s}"`);
+      logger.warn(`[config] CHESSER_ALLOWED_ORIGINS entry is not a valid origin, ignored: "${s}"`);
     }
   }
   return origins.length > 0 ? origins : false;

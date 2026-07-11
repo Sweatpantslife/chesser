@@ -52,6 +52,11 @@ services:
       # - CHESSER_EXPLORER_LICHESS_URL=https://explorer.lichess.ovh/lichess
       # Local Syzygy tablebases (see the volume mount below).
       # - CHESSER_SYZYGY_PATH=/syzygy
+      # Observability (see .env.example): bearer token for GET /metrics —
+      # RECOMMENDED on a public domain, the endpoint is open without it — and
+      # an optional Sentry-compatible DSN for error reports.
+      # - CHESSER_METRICS_TOKEN=
+      # - CHESSER_SENTRY_DSN=
     expose:
       - "8787"
     # ports:
