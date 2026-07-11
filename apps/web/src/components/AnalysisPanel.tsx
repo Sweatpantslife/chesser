@@ -45,7 +45,7 @@ export function AnalysisPanel() {
           <h3 className="text-sm font-semibold text-ink">Engine</h3>
           <span className="rounded bg-neutral-700 px-1.5 py-0.5 text-[10px] text-neutral-300">off during games</span>
         </div>
-        <p className="text-xs text-neutral-500">
+        <p className="text-xs text-neutral-400">
           Engine analysis is disabled while you play — it unlocks the moment the game ends.
         </p>
       </div>

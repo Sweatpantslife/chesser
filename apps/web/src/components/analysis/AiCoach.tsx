@@ -112,7 +112,7 @@ export function AiMoveExplanation({ facts, fallback }: { facts: CoachMoveFacts |
           </span>
         )}
       </p>
-      {text && <p className="mt-0.5 text-[10px] text-neutral-500">{DISCLAIMER}</p>}
+      {text && <p className="mt-0.5 text-[10px] text-neutral-400">{DISCLAIMER}</p>}
       {facts && phase === 'idle' && available === true && (
         <button
           onClick={explain}
@@ -123,7 +123,7 @@ export function AiMoveExplanation({ facts, fallback }: { facts: CoachMoveFacts |
           Explain this
         </button>
       )}
-      {facts && available === false && <p className="mt-1 text-[10px] text-neutral-500">{NO_KEY_HINT}</p>}
+      {facts && available === false && <p className="mt-1 text-[10px] text-neutral-400">{NO_KEY_HINT}</p>}
       {phase === 'loading' && (
         <span className="mt-1.5 flex items-center gap-1.5 text-xs text-brand-300">
           Coach is thinking
@@ -175,7 +175,7 @@ export function AiNarrative({
           </span>
         )}
       </p>
-      {text && <p className="mt-0.5 text-[10px] text-neutral-500">{DISCLAIMER}</p>}
+      {text && <p className="mt-0.5 text-[10px] text-neutral-400">{DISCLAIMER}</p>}
     </div>
   );
 }
@@ -211,7 +211,7 @@ export function CoachSummaryCard({ facts }: { facts: CoachGameSummaryFacts | nul
         <AiCoachBadge />
       </div>
       <p className="text-sm leading-snug text-neutral-200">{text}</p>
-      <p className="mt-1 text-[10px] text-neutral-500">{DISCLAIMER}</p>
+      <p className="mt-1 text-[10px] text-neutral-400">{DISCLAIMER}</p>
     </div>
   );
 }

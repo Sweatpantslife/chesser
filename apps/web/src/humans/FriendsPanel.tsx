@@ -459,7 +459,7 @@ export function FriendsPanel({ active, onJoinGame }: { active: boolean; onJoinGa
                 })}
               </ul>
             )}
-            <p className="mt-2 text-[11px] text-neutral-500">Only what each friend chose to share (leaderboards / profile settings) appears here.</p>
+            <p className="mt-2 text-[11px] text-neutral-400">Only what each friend chose to share (leaderboards / profile settings) appears here.</p>
           </div>
         </div>
       </div>

@@ -252,7 +252,7 @@ export function PublicProfilePage({ username }: { username: string }) {
       )}
 
       <div className="flex flex-col items-center gap-1">
-        <p className="text-center text-xs text-neutral-500">Shared by {shared.username} on Chesser — only opted-in stats are shown.</p>
+        <p className="text-center text-xs text-neutral-400">Shared by {shared.username} on Chesser — only opted-in stats are shown.</p>
         <ReportProfileButton username={shared.username} />
       </div>
     </div>

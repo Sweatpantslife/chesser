@@ -90,7 +90,7 @@ export function OpeningCatalogBrowser({ onClose }: { onClose: () => void }) {
                       </span>
                       <span className="min-w-0">
                         <span className="font-semibold text-neutral-100">{l.name}</span>
-                        <span className="ml-1.5 font-mono text-[10px] text-neutral-500">{l.eco}</span>
+                        <span className="ml-1.5 font-mono text-[10px] text-neutral-400">{l.eco}</span>
                         <span className="mt-0.5 block leading-snug text-neutral-400">{l.idea}</span>
                       </span>
                     </button>
