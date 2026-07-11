@@ -5,32 +5,6 @@ import { AccountButton } from './components/AccountPanel';
 import { InstallButton } from './components/InstallButton';
 import { HomePage } from './pages/HomePage';
 import type { TrainTab } from './pages/TrainPage';
-
-// Route-level code splitting: only the app shell + Today (home) page ship in
-// the initial chunk. Every other view — and the settings dialog — is a lazy
-// chunk fetched on first navigation (then cached; the service worker also
-// precaches them in the background, so offline still covers every view).
-const SettingsDialog = lazy(() => import('./components/SettingsDialog').then((m) => ({ default: m.SettingsDialog })));
-const PlayPage = lazy(() => import('./pages/PlayPage').then((m) => ({ default: m.PlayPage })));
-const HumansPage = lazy(() => import('./humans/HumansPage').then((m) => ({ default: m.HumansPage })));
-const LearnPage = lazy(() => import('./pages/LearnPage').then((m) => ({ default: m.LearnPage })));
-const MastersPage = lazy(() => import('./pages/MastersPage').then((m) => ({ default: m.MastersPage })));
-const OpeningsPage = lazy(() => import('./pages/OpeningsPage').then((m) => ({ default: m.OpeningsPage })));
-const ExplorerPage = lazy(() => import('./pages/ExplorerPage').then((m) => ({ default: m.ExplorerPage })));
-const TacticsPage = lazy(() => import('./pages/TacticsPage').then((m) => ({ default: m.TacticsPage })));
-const EndgamePage = lazy(() => import('./pages/EndgamePage').then((m) => ({ default: m.EndgamePage })));
-const EndgameDrillsPage = lazy(() => import('./pages/EndgameDrillsPage').then((m) => ({ default: m.EndgameDrillsPage })));
-const CoordinatePage = lazy(() => import('./pages/CoordinatePage').then((m) => ({ default: m.CoordinatePage })));
-const StatsPage = lazy(() => import('./pages/StatsPage').then((m) => ({ default: m.StatsPage })));
-const ProfilePage = lazy(() => import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
-const TrainPage = lazy(() => import('./pages/TrainPage').then((m) => ({ default: m.TrainPage })));
-const CoachPage = lazy(() => import('./pages/CoachPage').then((m) => ({ default: m.CoachPage })));
-const StudyPlanPage = lazy(() => import('./pages/StudyPlanPage').then((m) => ({ default: m.StudyPlanPage })));
-const ArchivePage = lazy(() => import('./pages/ArchivePage').then((m) => ({ default: m.ArchivePage })));
-const LeaderboardsPage = lazy(() => import('./pages/LeaderboardsPage').then((m) => ({ default: m.LeaderboardsPage })));
-const PublicProfilePage = lazy(() => import('./pages/PublicProfilePage').then((m) => ({ default: m.PublicProfilePage })));
-const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then((m) => ({ default: m.PrivacyPage })));
-const TermsPage = lazy(() => import('./pages/TermsPage').then((m) => ({ default: m.TermsPage })));
 import { Footer } from './components/Footer';
 import { ConsentNotice } from './components/ConsentNotice';
 import { LevelBadge } from './components/LevelBadge';
@@ -64,6 +38,32 @@ import {
   LogoMark,
   Wordmark,
 } from './components/icons';
+
+// Route-level code splitting: only the app shell + Today (home) page ship in
+// the initial chunk. Every other view — and the settings dialog — is a lazy
+// chunk fetched on first navigation (then cached; the service worker also
+// precaches them in the background, so offline still covers every view).
+const SettingsDialog = lazy(() => import('./components/SettingsDialog').then((m) => ({ default: m.SettingsDialog })));
+const PlayPage = lazy(() => import('./pages/PlayPage').then((m) => ({ default: m.PlayPage })));
+const HumansPage = lazy(() => import('./humans/HumansPage').then((m) => ({ default: m.HumansPage })));
+const LearnPage = lazy(() => import('./pages/LearnPage').then((m) => ({ default: m.LearnPage })));
+const MastersPage = lazy(() => import('./pages/MastersPage').then((m) => ({ default: m.MastersPage })));
+const OpeningsPage = lazy(() => import('./pages/OpeningsPage').then((m) => ({ default: m.OpeningsPage })));
+const ExplorerPage = lazy(() => import('./pages/ExplorerPage').then((m) => ({ default: m.ExplorerPage })));
+const TacticsPage = lazy(() => import('./pages/TacticsPage').then((m) => ({ default: m.TacticsPage })));
+const EndgamePage = lazy(() => import('./pages/EndgamePage').then((m) => ({ default: m.EndgamePage })));
+const EndgameDrillsPage = lazy(() => import('./pages/EndgameDrillsPage').then((m) => ({ default: m.EndgameDrillsPage })));
+const CoordinatePage = lazy(() => import('./pages/CoordinatePage').then((m) => ({ default: m.CoordinatePage })));
+const StatsPage = lazy(() => import('./pages/StatsPage').then((m) => ({ default: m.StatsPage })));
+const ProfilePage = lazy(() => import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
+const TrainPage = lazy(() => import('./pages/TrainPage').then((m) => ({ default: m.TrainPage })));
+const CoachPage = lazy(() => import('./pages/CoachPage').then((m) => ({ default: m.CoachPage })));
+const StudyPlanPage = lazy(() => import('./pages/StudyPlanPage').then((m) => ({ default: m.StudyPlanPage })));
+const ArchivePage = lazy(() => import('./pages/ArchivePage').then((m) => ({ default: m.ArchivePage })));
+const LeaderboardsPage = lazy(() => import('./pages/LeaderboardsPage').then((m) => ({ default: m.LeaderboardsPage })));
+const PublicProfilePage = lazy(() => import('./pages/PublicProfilePage').then((m) => ({ default: m.PublicProfilePage })));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then((m) => ({ default: m.PrivacyPage })));
+const TermsPage = lazy(() => import('./pages/TermsPage').then((m) => ({ default: m.TermsPage })));
 
 type View =
   | 'home'
@@ -228,10 +228,12 @@ export default function App() {
   const [tacticsMode, setTacticsMode] = useState<'rush' | 'storm' | null>(null);
   // HumansPage stays mounted once visited (a live human-vs-human game must
   // survive tab switches), but with code splitting we don't mount — or fetch —
-  // it at all until the Friends tab is first opened. Render-phase guarded
-  // update: flips exactly once, on the first render where view is 'friends'.
+  // it at all until the Friends tab is first opened. Flipped in an effect
+  // (not during render) so a discarded/suspended render can't half-commit it.
   const [friendsVisited, setFriendsVisited] = useState(view === 'friends');
-  if (view === 'friends' && !friendsVisited) setFriendsVisited(true);
+  useEffect(() => {
+    if (view === 'friends') setFriendsVisited(true);
+  }, [view]);
 
   useEffect(() => {
     const onHash = () => {
