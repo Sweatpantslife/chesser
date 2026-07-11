@@ -1,0 +1,93 @@
+{
+  "tabs": {
+    "ladder": "🪜 Échelle",
+    "custom": "⚙ Personnalisée"
+  },
+  "color": {
+    "label": "Vous jouez",
+    "white": "blancs",
+    "black": "noirs",
+    "random": "au hasard"
+  },
+  "timeControl": {
+    "label": "Cadence",
+    "unlimited": "∞"
+  },
+  "custom": {
+    "title": "Partie personnalisée",
+    "waitingForServer": "En attente du serveur du moteur… (lancez <cmd>pnpm dev:server</cmd>)",
+    "style": "Style",
+    "humanViaMaia": "Le réseau neuronal Maia est utilisé (entraîné sur de vraies parties à chaque niveau).",
+    "humanViaEngine": "Le moteur Maia n'est pas disponible ici — utilisation du modèle humain basé sur le moteur.",
+    "rating": "Classement",
+    "strength": "Force",
+    "eloValue": "{{elo}} Elo",
+    "eloApprox": "~{{elo}} Elo",
+    "eloMax": "max",
+    "think": {
+      "label": "Réflexion",
+      "fast": "Rapide",
+      "normal": "Normale",
+      "slow": "Lente"
+    },
+    "subLadderHint": "Pour des adversaires sous 1320, grimpez l'onglet Échelle.",
+    "startFrom": {
+      "label": "Départ",
+      "standard": "Standard",
+      "position": "Position",
+      "opening": "Ouverture"
+    },
+    "fenPlaceholder": "Collez un FEN…",
+    "fenError": "Ce FEN n'est pas une position légale.",
+    "useCurrentPosition": "Utiliser la position actuelle de l'échiquier",
+    "openingFilterPlaceholder": "Filtrer les ouvertures…",
+    "noOpeningsMatch": "Aucune ouverture ne correspond.",
+    "openingStart_one": "Départ après <b>{{count}}</b> coup de l'ouverture {{name}}.",
+    "openingStart_many": "Départ après <b>{{count}}</b> coups de l'ouverture {{name}}.",
+    "openingStart_other": "Départ après <b>{{count}}</b> coups de l'ouverture {{name}}.",
+    "start": "Commencer la partie",
+    "opponent": {
+      "maia": "Maia {{rating}}",
+      "humanLike": "Style humain ~{{elo}}",
+      "stockfish": "Stockfish {{styleName}} ({{strength}})"
+    }
+  },
+  "ladder": {
+    "title": "L'échelle",
+    "cleared": "{{cleared}}/{{total}} franchis",
+    "intro": "Battez chaque bot pour débloquer le suivant. Les barreaux franchis restent ouverts — rejouez-les à tout moment, avec l'une ou l'autre couleur.",
+    "backend": {
+      "maiaNet": "réseau neuronal Maia",
+      "engineHuman": "style humain (moteur)",
+      "standIn": "doublure Stockfish"
+    },
+    "clearedBadge": "· ✓ franchi",
+    "lockedHint": "🔒 Battez {{name}} pour débloquer",
+    "previousBot": "le bot précédent",
+    "restart": "Recommencer",
+    "replay": "Rejouer",
+    "play": "Jouer ▶",
+    "reset": {
+      "prompt": "Réinitialiser la progression de l'échelle",
+      "confirm": "Réinitialiser toute la progression ?",
+      "yes": "Oui",
+      "no": "Non"
+    }
+  },
+  "meter": {
+    "category": {
+      "bots": "Bots",
+      "blitz": "Blitz",
+      "puzzles": "Problèmes"
+    },
+    "peak": "pic {{value}}",
+    "recordPuzzles": "{{solved}} résolus · {{missed}} manqués",
+    "recordGames": "{{won}}V {{drawn}}N {{lost}}D",
+    "emptyNoGames": "Pas encore de parties.",
+    "emptyTrend": "Jouez davantage pour dessiner une tendance."
+  },
+  "status": {
+    "thinking": "· réflexion",
+    "analysisBoard": "· échiquier d'analyse"
+  }
+}

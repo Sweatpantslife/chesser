@@ -1,0 +1,40 @@
+{
+  "toasts": {
+    "achievement": {
+      "title": "Succès débloqué",
+      "bodyXp": "{{name}} · +{{xp}} XP"
+    },
+    "levelUp": {
+      "title": "Niveau supérieur !",
+      "body": "Vous avez atteint le niveau {{level}}"
+    },
+    "streakMilestone": {
+      "title_one": "Série de {{count}} jour !",
+      "title_many": "Série de {{count}} jours !",
+      "title_other": "Série de {{count}} jours !",
+      "body": "Palier atteint",
+      "bodyXp": "Palier atteint · +{{xp}} XP"
+    },
+    "freezeUsed": {
+      "title": "Gel de série utilisé",
+      "body_one": "Votre série de {{streak}} jours a survécu · {{count}} gel restant",
+      "body_many": "Votre série de {{streak}} jours a survécu · {{count}} gels restants",
+      "body_other": "Votre série de {{streak}} jours a survécu · {{count}} gels restants"
+    },
+    "goal": {
+      "title": "Objectif du jour atteint",
+      "bodyStreak_one": "Série de {{count}} jour — continuez sur votre lancée !",
+      "bodyStreak_many": "Série de {{count}} jours — continuez sur votre lancée !",
+      "bodyStreak_other": "Série de {{count}} jours — continuez sur votre lancée !",
+      "body": "Bien joué — revenez demain !"
+    },
+    "quest": {
+      "title": "Mission accomplie",
+      "bodyXp": "{{name}} · +{{xp}} XP"
+    },
+    "allQuests": {
+      "title": "Toutes les missions terminées !",
+      "body": "Programme du jour bouclé · bonus de +{{xp}} XP"
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "labels": {
+    "brilliant": "Brillant",
+    "great": "Excellent coup",
+    "best": "Meilleur coup",
+    "good": "Bon coup",
+    "book": "Théorie",
+    "inaccuracy": "Imprécision",
+    "mistake": "Erreur",
+    "blunder": "Gaffe",
+    "miss": "Gain manqué"
+  },
+  "tablebase": {
+    "winMate": "Table de finales : gain, mat en {{n}}",
+    "win": "Table de finales : position gagnante",
+    "lossMate": "Table de finales : défaite, mat en {{n}}",
+    "loss": "Table de finales : position perdante",
+    "draw": "Table de finales : nulle",
+    "cursedWin": "Table de finales : gain (menacé par la règle des 50 coups)",
+    "blessedLoss": "Table de finales : défaite (sauvée par la règle des 50 coups)",
+    "unknown": "Table de finales : inconnu",
+    "feedback": {
+      "throwsWin": "Ce coup gâche le gain !",
+      "winning": "Coup gagnant.",
+      "optimal": "Optimal — le gain le plus rapide.",
+      "slowWin": "Toujours gagnant, mais pas le plus rapide.",
+      "losesDraw": "Ce coup perd — la nulle s'envole.",
+      "holdsDraw": "Maintient la nulle."
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "consent": {
+    "aria": "Avis sur le stockage des données",
+    "body": "Chesser enregistre votre progression et vos réglages dans ce navigateur — rien ne quitte votre appareil, sauf si vous créez un compte pour synchroniser. Pas de publicité, pas de pistage. <policyLink>Politique de confidentialité</policyLink>",
+    "dismiss": "Compris"
+  },
+  "lastUpdated": "Dernière mise à jour : {{date}}",
+  "privacyTitle": "Politique de confidentialité",
+  "termsTitle": "Conditions d'utilisation"
+}

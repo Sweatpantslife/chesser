@@ -1,0 +1,243 @@
+{
+  "percent": "{{value}} %",
+  "empty": {
+    "title": "Votre histoire commence ici",
+    "body": "Pas encore d'historique d'entraînement. Résolvez des problèmes, travaillez vos ouvertures, apprenez des motifs de mat ou lancez l'entraîneur de coordonnées — votre précision et votre volume s'afficheront ici."
+  },
+  "cards": {
+    "level": "Niveau",
+    "levelHint": "{{xp}} XP",
+    "puzzleRating": "Classement problèmes",
+    "puzzleRatingHint": "pic {{peak}} · {{meter}}",
+    "reviewStreak": "Série de révisions",
+    "reviewStreakHint": "record {{best}}",
+    "dayStreak": "Série de jours",
+    "dayStreakHint": "jours actifs",
+    "reviews": "Révisions",
+    "reviewsHint_one": "{{count}} jour actif",
+    "reviewsHint_many": "{{count}} jours actifs",
+    "reviewsHint_other": "{{count}} jours actifs",
+    "accuracy": "Précision",
+    "accuracyHint_one": "{{count}} correcte",
+    "accuracyHint_many": "{{count}} correctes",
+    "accuracyHint_other": "{{count}} correctes",
+    "today": "Aujourd'hui",
+    "todayHint": "révisions",
+    "dueNow": "À revoir",
+    "dueNowHint": "tous les paquets"
+  },
+  "sections": {
+    "ratings": "Classements",
+    "ratingsAside": "{{solved}} résolus · {{custom}} de vos parties",
+    "activity": "Activité",
+    "activityAside": "{{weeks}} dernières semaines",
+    "last30": "30 derniers jours",
+    "last30Aside": "révisions ▮ · précision ▬",
+    "learning": "Progression d'apprentissage",
+    "bests": "Records personnels"
+  },
+  "legend": {
+    "less": "moins",
+    "more": "plus"
+  },
+  "bests": {
+    "puzzleRush": "Puzzle Rush",
+    "puzzleStorm": "Puzzle Storm",
+    "coordWhite": "Coord. blancs",
+    "coordBlack": "Coord. noirs",
+    "squareColour": "Couleur de case",
+    "knightsTour": "Tour du cavalier"
+  },
+  "charts": {
+    "heatmapEmpty": "Pas encore d'activité — les problèmes et exercices résolus illumineront ce calendrier.",
+    "heatmapCell_one": "{{date}} : {{count}} révision",
+    "heatmapCell_many": "{{date}} : {{count}} révisions",
+    "heatmapCell_other": "{{date}} : {{count}} révisions",
+    "activityEmpty": "Pas encore d'activité — jouez une partie ou résolvez un problème pour lancer le graphique.",
+    "learned": "<seen>{{seen}}</seen>/{{total}} appris",
+    "due_one": "{{count}} à revoir",
+    "due_many": "{{count}} à revoir",
+    "due_other": "{{count}} à revoir"
+  },
+  "archive": {
+    "result": {
+      "win": "V",
+      "draw": "N",
+      "loss": "D",
+      "unknown": "–",
+      "winTitle": "Victoire",
+      "drawTitle": "Nulle",
+      "lossTitle": "Défaite",
+      "unknownTitle": "Aucun résultat de votre côté"
+    },
+    "youPlayed": {
+      "white": "Vous jouiez les blancs",
+      "black": "Vous jouiez les noirs"
+    },
+    "wdl": {
+      "winsShort": "{{count}}V",
+      "drawsShort": "{{count}}N",
+      "lossesShort": "{{count}}D",
+      "winRate": "{{rate}} % de victoires",
+      "splitAria": "{{wins}} victoires, {{draws}} nulles, {{losses}} défaites",
+      "winsTitle_one": "{{count}} victoire",
+      "winsTitle_many": "{{count}} victoires",
+      "winsTitle_other": "{{count}} victoires",
+      "drawsTitle_one": "{{count}} nulle",
+      "drawsTitle_many": "{{count}} nulles",
+      "drawsTitle_other": "{{count}} nulles",
+      "lossesTitle_one": "{{count}} défaite",
+      "lossesTitle_many": "{{count}} défaites",
+      "lossesTitle_other": "{{count}} défaites",
+      "allGames": "Toutes les parties",
+      "asWhite": "Avec les Blancs",
+      "asBlack": "Avec les Noirs"
+    },
+    "trend": {
+      "chartAria": "Graphique de tendance",
+      "pointTitle": "{{label}} — {{date}} : {{value}}"
+    },
+    "series": {
+      "bots": "Bots",
+      "blitz": "Blitz",
+      "accuracy": "Précision"
+    },
+    "filters": {
+      "resultLabel": "Résultat",
+      "resultAria": "Filtrer par résultat",
+      "colorLabel": "Couleur",
+      "colorAria": "Filtrer par couleur",
+      "periodLabel": "Période",
+      "periodAria": "Filtrer par période",
+      "all": "Tous",
+      "wins": "Victoires",
+      "draws": "Nulles",
+      "losses": "Défaites",
+      "any": "Toutes",
+      "white": "Blancs",
+      "black": "Noirs",
+      "allTime": "Tout",
+      "7d": "7 j",
+      "30d": "30 j",
+      "90d": "90 j",
+      "year": "Année",
+      "clear": "Effacer les filtres"
+    },
+    "kind": {
+      "bot": "contre bot",
+      "analysis": "échiquier d'analyse",
+      "local": "passe-et-joue",
+      "online": "partie entre amis"
+    },
+    "row": {
+      "youVs": "Vous contre {{opponent}}",
+      "whiteVsBlack": "{{white}} contre {{black}}",
+      "moves_one": "{{count}} coup",
+      "moves_many": "{{count}} coups",
+      "moves_other": "{{count}} coups",
+      "unfinished": "inachevée",
+      "accuracyTitle": "Votre précision dans l'analyse enregistrée",
+      "casualNoMoves": "Les parties amicales n'enregistrent que leur résultat — les coups ne sont pas stockés, il n'y a donc rien à revoir.",
+      "unreadablePgn": "Cette partie ne peut pas être ouverte — son PGN enregistré ne contient aucun coup lisible.",
+      "openTitle": "Ouvrir cette partie sur l'échiquier d'analyse"
+    },
+    "loadingAria": "Chargement de vos parties",
+    "tabs": {
+      "aria": "Sections des archives",
+      "games": "Parties",
+      "insights": "Bilan"
+    },
+    "loadError": "Impossible de charger vos parties enregistrées — vérifiez votre connexion.",
+    "retry": "Réessayer",
+    "empty": {
+      "title": "Aucune partie dans vos archives pour l'instant",
+      "body": "Terminez une partie contre un bot et cliquez sur « Enregistrer » sur l'échiquier — elle arrivera ici avec son résultat, son ouverture et (après une analyse) sa précision.",
+      "signIn": "Connectez-vous d'abord pour que vos parties suivent votre compte ; les résultats passe-et-joue de cet appareil s'affichent ici aussi."
+    },
+    "noMatch": "Aucune partie ne correspond à ces filtres.",
+    "count_one": "{{count}} partie",
+    "count_many": "{{count}} parties",
+    "count_other": "{{count}} parties",
+    "filteredSuffix": "(filtré)",
+    "signInHint": "Connectez-vous pour enregistrer vos parties contre les bots dans vos archives",
+    "showFewer": "En voir moins",
+    "showAll": "Tout afficher ({{count}})",
+    "insightsEmpty": {
+      "noGamesTitle": "Votre tableau de bord commence par une partie",
+      "noSliceTitle": "Rien dans cette tranche",
+      "noGamesBody": "Jouez et enregistrez des parties — les tendances de résultats, les ouvertures et les courbes de précision se nourrissent de vos archives.",
+      "noSliceBody": "Aucune partie archivée ne correspond aux filtres actuels — élargissez la période ou effacez les filtres pour voir vos tendances."
+    },
+    "stats": {
+      "games": "Parties",
+      "inSlice": "dans cette tranche",
+      "allTime": "au total",
+      "record": "Bilan",
+      "recordHint": "V-N-D",
+      "winRate": "Taux de victoire",
+      "noResult_one": "{{count}} sans résultat",
+      "noResult_many": "{{count}} sans résultat",
+      "noResult_other": "{{count}} sans résultat",
+      "withResult": "des parties avec résultat",
+      "accuracy": "Précision",
+      "avgReviews_one": "moyenne sur {{count}} analyse",
+      "avgReviews_many": "moyenne sur {{count}} analyses",
+      "avgReviews_other": "moyenne sur {{count}} analyses",
+      "noReviews": "pas encore d'analyses"
+    },
+    "sections": {
+      "wdl": "Victoires / nulles / défaites",
+      "ratingTrend": "Tendance du classement",
+      "ratingTrendAside": "parties classées contre bots · {{meter}}",
+      "ratingTrendEmpty": "Aucune partie classée sur cette période — terminez une partie contre un bot pour démarrer votre historique de classement.",
+      "accuracyTrend": "Tendance de précision",
+      "accuracyTrendAside": "d'après vos analyses de parties",
+      "accuracyTrendEmpty": "Aucune partie analysée dans cette tranche — ouvrez une partie et lancez « Analyser » pour tracer votre précision.",
+      "openings": "Ouvertures les plus jouées",
+      "openingsEmpty": "Pas encore d'ouvertures identifiées — les ouvertures sont détectées à partir des coups de chaque partie enregistrée.",
+      "sw": "Forces et faiblesses",
+      "swAside": "d'après les parties analysées · détail complet dans l'onglet Coach"
+    },
+    "profileEmpty": {
+      "filtered": "Aucune partie analysée ne correspond aux filtres actuels — élargissez la période ou effacez les filtres pour voir ce bilan.",
+      "none": "Analysez une partie terminée (Jouer → Analyser) et le coach dressera la carte de ce que vous réussissez et de ce qui vous coûte des points."
+    },
+    "strengths": {
+      "title": "Forces",
+      "phase": "Phase la plus forte : {{phase}} ({{accuracy}} % de précision)",
+      "color": "Plus précis avec les {{side}} ({{better}} % contre {{other}} %)",
+      "improving": "En progrès : {{label}} — moins fréquent dans vos parties récentes",
+      "empty": "Pas assez de parties analysées pour dégager des forces."
+    },
+    "phaseNames": {
+      "opening": "ouverture",
+      "middlegame": "milieu de partie",
+      "endgame": "finale"
+    },
+    "sides": {
+      "white": "Blancs",
+      "black": "Noirs"
+    },
+    "weaknesses": {
+      "title": "Faiblesses",
+      "occurrences_one": "×{{times}} en {{count}} partie",
+      "occurrences_many": "×{{times}} en {{count}} parties",
+      "occurrences_other": "×{{times}} en {{count}} parties",
+      "improving": " · en progrès",
+      "rising": " · en hausse",
+      "empty": "Aucune faiblesse récurrente dans vos analyses récentes — continuez ainsi."
+    }
+  },
+  "achievements": {
+    "title": "Succès",
+    "filter": {
+      "all": "tous",
+      "earned": "obtenus",
+      "locked": "verrouillés"
+    },
+    "earnedCount": "{{earned}} / {{total}} obtenus",
+    "earnedOn": "Obtenu le {{date}}",
+    "earned": "Obtenu",
+    "xpReward": "+{{xp}} XP"
+  }
+}

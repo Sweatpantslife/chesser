@@ -1,0 +1,60 @@
+{
+  "card": {
+    "title": "Le plan de la semaine",
+    "subtitle": "{{weekLabel}} · {{done}}/{{total}} éléments faits",
+    "open": "Ouvrir",
+    "progressAria": "Progression hebdomadaire du plan d'étude",
+    "allCaughtUp": "Tout est fait pour aujourd'hui — à demain ! 🎉",
+    "leftToday_one": "{{count}} restant aujourd'hui",
+    "leftToday_many": "{{count}} restants aujourd'hui",
+    "leftToday_other": "{{count}} restants aujourd'hui",
+    "more_one": "…et {{count}} de plus au plan",
+    "more_many": "…et {{count}} de plus au plan",
+    "more_other": "…et {{count}} de plus au plan"
+  },
+  "page": {
+    "title": "Le plan d'étude de la semaine",
+    "regenerate": "↻ Régénérer",
+    "personalizedIntro": "Construit à partir de vos parties analysées — l'objectif de la semaine :",
+    "personalizedOutro": ". Régénérez à tout moment — le plan relit votre profil et votre classement les plus récents.",
+    "starter": "Une semaine de départ au niveau {{level}}. Jouez et analysez des parties dans l'onglet Jouer : le plan reciblera vos vraies faiblesses.",
+    "weekProgressAria": "Progression de la semaine",
+    "progressSummary": "{{pct}} % · {{done}}/{{total}} éléments"
+  },
+  "difficulty": {
+    "beginner": "débutant",
+    "intermediate": "intermédiaire",
+    "advanced": "avancé"
+  },
+  "kinds": {
+    "puzzle": {
+      "heading": "Problèmes quotidiens",
+      "blurb": "le quota se réinitialise chaque jour — les exercices du coach résolus comptent automatiquement",
+      "cta": "S'entraîner"
+    },
+    "lesson": {
+      "heading": "Leçons",
+      "blurb": "terminer la leçon la coche automatiquement",
+      "cta": "Apprendre"
+    },
+    "opening": {
+      "heading": "Exercices d'ouverture",
+      "blurb": "répétitions de rappel tirées de votre propre répertoire",
+      "cta": "Travailler"
+    },
+    "master": {
+      "heading": "Parties de maîtres",
+      "blurb": "classiques commentés adaptés à votre objectif",
+      "cta": "Regarder"
+    }
+  },
+  "item": {
+    "done": "✓ fait",
+    "progressAria": "{{title}} — progression hebdomadaire",
+    "today": "aujourd'hui {{done}}/{{target}}",
+    "logOne": "+1 aujourd'hui",
+    "logOneAria": "Compter un problème résolu pour « {{title}} »",
+    "markDone": "Marquer comme fait",
+    "markDoneAria": "Marquer « {{title}} » comme fait"
+  }
+}

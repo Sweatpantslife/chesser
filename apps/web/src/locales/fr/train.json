@@ -1,0 +1,215 @@
+{
+  "tabs": {
+    "vision": {
+      "label": "Vision",
+      "hint": "à l'aveugle et calcul"
+    },
+    "mates": {
+      "label": "Mats",
+      "hint": "bibliothèque de motifs et exercices"
+    },
+    "blunders": {
+      "label": "Anti-gaffe",
+      "hint": "l'entraîneur « êtes-vous sûr ? »"
+    }
+  },
+  "buttons": {
+    "tryAgain": "Réessayer",
+    "reveal": "Afficher",
+    "reviewDue": "À réviser",
+    "nextDrillArrow": "Exercice suivant →",
+    "nextDrill": "Exercice suivant",
+    "nextPuzzleArrow": "Problème suivant →",
+    "nextPuzzle": "Problème suivant",
+    "nextArrow": "Suivant →",
+    "restart": "Recommencer",
+    "hint": "Indice"
+  },
+  "toMove": {
+    "white": "Trait aux Blancs",
+    "black": "Trait aux Noirs"
+  },
+  "yourMove": "· à vous de jouer",
+  "solvedSession_one": "{{count}} résolu cette session",
+  "solvedSession_many": "{{count}} résolus cette session",
+  "solvedSession_other": "{{count}} résolus cette session",
+  "colors": {
+    "white": "blancs",
+    "black": "noirs"
+  },
+  "colorsUpper": {
+    "white": "Blancs",
+    "black": "Noirs"
+  },
+  "vision": {
+    "visualize": "Visualiser",
+    "blindfoldSolve": "Résolution à l'aveugle",
+    "sessionScore": "{{correct}}/{{total}} cette session",
+    "piecesHidden": "Pièces masquées — représentez-vous la position.",
+    "studyPrompt": "Étudiez la position, puis masquez-la et calculez la ligne ci-dessous.",
+    "hideAndShow": "Masquer les pièces et afficher la ligne",
+    "theLine": "La ligne",
+    "calculated": "J'ai fini de calculer →",
+    "correct": "✓ Correct !",
+    "notQuite": "Pas tout à fait — la réponse est « {{answer}} ».",
+    "showsFinal": "L'échiquier montre maintenant la position finale.",
+    "footer": "Calculer sans déplacer les pièces est le moteur de la tactique et des finales. Commencez court, puis allongez.",
+    "blindfold": {
+      "chip": "À l'aveugle",
+      "toPlayWin": {
+        "white": "Les Blancs jouent et gagnent",
+        "black": "Les Noirs jouent et gagnent"
+      },
+      "findPrompt": "Trouvez le coup gagnant — cliquez sur la pièce, puis sur sa case d'arrivée.",
+      "noPuzzles": "Aucun problème facile disponible.",
+      "wellSeen": "✓ {{san}} — bien vu ! Échiquier révélé.",
+      "notMove": "Ce n'est pas le coup. Réessayez, jetez un œil, ou affichez la solution.",
+      "moveWas": "Le coup était {{san}}.",
+      "whiteLabel": "Blancs :",
+      "blackLabel": "Noirs :",
+      "peek": "Jeter un œil",
+      "hidePieces": "Masquer les pièces",
+      "footer": "Tenir la position dans sa tête et trouver un coup à l'aveugle est le test ultime de vision de l'échiquier."
+    }
+  },
+  "mates": {
+    "title": "Motifs de mat",
+    "blurb": "Apprenez les réseaux de mat classiques, puis exercez-les jusqu'au réflexe.",
+    "toMateIn": {
+      "white": "Les Blancs matent en {{n}}.",
+      "black": "Les Noirs matent en {{n}}."
+    },
+    "mateIn": "mat en {{n}}",
+    "solved": "✓ {{san}} — {{pattern}} !",
+    "wrong": "Ce n'est pas le coup de mat. Réessayez, ou affichez la solution.",
+    "tryAgain": "Réessayez.",
+    "keyMove": "Le coup clé est {{san}}.",
+    "noDue": "Aucun exercice de mat à réviser pour l'instant — apprenez un nouveau motif !"
+  },
+  "blunders": {
+    "title": "Anti-gaffe",
+    "blurb": "Trouvez le coup fort — mais méfiez-vous du coup tentant. Avant de valider, l'entraîneur demande : <em>êtes-vous sûr ?</em>",
+    "positions": "Positions",
+    "intro": {
+      "white": "Trait aux Blancs — trouvez le coup fort et sûr.",
+      "black": "Trait aux Noirs — trouvez le coup fort et sûr."
+    },
+    "rightCall": "✓ {{san}} — le bon choix. {{explanation}}",
+    "dodged": "Vous esquivez le piège. Le coup modèle était {{san}}. {{explanation}}",
+    "stillLoses": "{{san}}?? perd quand même — cela permet {{mate}}. {{explanation}}",
+    "savedYou": "Bien — une vérification anti-gaffe vient de vous sauver. Trouvez maintenant un coup sûr.",
+    "safeMove": "Le coup sûr est {{san}}. {{explanation}}",
+    "noDue": "Aucun exercice anti-gaffe à réviser pour l'instant — essayez-en un nouveau !",
+    "areYouSure": "⚠️ Êtes-vous sûr ?",
+    "aboutToPlay": "Vous êtes sur le point de jouer <b>{{san}}</b>. {{warning}}",
+    "takeBack": "Reprendre",
+    "playAnyway": "Jouer quand même",
+    "counter": "Position {{current}}/{{total}}",
+    "nextPosition": "Position suivante"
+  },
+  "coordinates": {
+    "mode": {
+      "find": "Trouver la case",
+      "name": "Nommer la case",
+      "color": "Couleur de la case",
+      "knight": "Tour du cavalier"
+    },
+    "blurbs": {
+      "find": "Cliquez la case annoncée aussi vite que possible.",
+      "name": "Nommez la case en surbrillance.",
+      "color": "La case en surbrillance est-elle claire ou foncée ?",
+      "knight": "Cliquez toutes les cases où le cavalier peut sauter."
+    },
+    "click": "Cliquez",
+    "namePrompt": "Nommez la case en surbrillance",
+    "colorPrompt": "La case entourée est-elle claire ou foncée ?",
+    "knightPrompt": "Cliquez chaque coup de cavalier —",
+    "knightLeft_one": "{{count}} restante",
+    "knightLeft_many": "{{count}} restantes",
+    "knightLeft_other": "{{count}} restantes",
+    "tagline": "Vision de l'échiquier : un sprint de 30 secondes.",
+    "start": "Démarrer",
+    "timeUp": "Temps !",
+    "newBest": "🏆 Nouveau record !",
+    "again": "Encore",
+    "light": "Claire",
+    "dark": "Foncée",
+    "time": "Temps",
+    "score": "Score",
+    "best": "Record",
+    "bestFor": "record pour « {{mode}} »",
+    "modeLabel": "Mode",
+    "side": "Côté",
+    "sides": {
+      "white": "blancs",
+      "black": "noirs",
+      "random": "au hasard"
+    },
+    "showCoords": "Afficher les coordonnées",
+    "showPieces": "Afficher les pièces"
+  },
+  "endgame": {
+    "title": "Études de finales",
+    "status": {
+      "won": "✓ Échec et mat — résolu !",
+      "heldDraw": "✓ Nulle tenue !",
+      "drawnSlipped": "½ Nulle — le gain s'est envolé.",
+      "mated": "Vous vous êtes fait mater ! Recommencez et réessayez.",
+      "engineDefending": "Le moteur défend…",
+      "yourMove": "À vous de jouer.",
+      "winningMate": "Gagnant — mat en {{n}}.",
+      "slipping": "Attention — votre avantage s'effrite.",
+      "keepConverting": "À vous de jouer — poursuivez la conversion."
+    },
+    "goal": {
+      "win": "gain",
+      "draw": "nulle"
+    },
+    "goalLong": {
+      "win": "mater",
+      "draw": "tenir la nulle"
+    },
+    "youPlayGoal": "Vous jouez les <color>{{color}}</color> — objectif : <goal>{{goal}}</goal>.",
+    "nextStudy": "Étude suivante →",
+    "tablebaseWord": "table de finales",
+    "evalReadout": "éval {{score}} · profondeur {{depth}}",
+    "syzygyLoaded": "♟ Tables de finales Syzygy à {{n}} pièces chargées — le défenseur est parfait."
+  },
+  "endgameDrills": {
+    "title": "Exercices de finales",
+    "blurb": "La technique essentielle contre une défense parfaite — chaque coup est vérifié par la table de finales.",
+    "introWin": "Vous avez les {{color}} — convertissez le gain contre une défense parfaite.",
+    "introDraw": "Vous avez les {{color}} — tenez la nulle contre un jeu parfait.",
+    "bestWas": "{{verdict}} Le meilleur était {{san}}. Coup repris — réessayez.",
+    "tbSuffix": "{{verdict}} (table de finales)",
+    "offlineBook": "Hors ligne — impossible de vérifier ce coup avec la table de finales. La ligne théorique joue {{san}} ici. Coup repris — réessayez.",
+    "bookMove": "{{san}} — coup théorique ✓ (hors ligne)",
+    "unverified": "{{san}} — non vérifié (hors ligne, en dehors de la ligne théorique).",
+    "hintTb": "Indice : {{san}} — le meilleur selon la table de finales.",
+    "hintBook": "Indice : {{san}} — le coup théorique.",
+    "noHint": "Pas d'indice ici — fiez-vous à la technique.",
+    "noDue": "Aucun exercice de finale à réviser pour l'instant — choisissez une technique à apprendre !",
+    "status": {
+      "won": "✓ Converti — exercice terminé !",
+      "held": "✓ Nulle tenue — exercice terminé !",
+      "slippedWin": "Le gain s'est envolé — recommencez et réessayez.",
+      "slippedDraw": "La nulle s'est envolée — recommencez et réessayez.",
+      "thinking": "La défense parfaite réfléchit…",
+      "offline": "À vous de jouer — hors ligne, jugé sur la ligne théorique."
+    },
+    "goalLong": {
+      "win": "convertir le gain",
+      "draw": "tenir la nulle"
+    },
+    "youPlayGoal": "Vous jouez les <color>{{color}}</color> — objectif : <goal>{{goal}}</goal>.",
+    "doneSession_one": "{{count}} terminé cette session",
+    "doneSession_many": "{{count}} terminés cette session",
+    "doneSession_other": "{{count}} terminés cette session",
+    "verdictTb": "verdict : {{source}} · {{category}}{{dtz}}",
+    "verdictSourceLichess": "table de finales Lichess",
+    "verdictOffline": "verdict : hors ligne — ligne théorique embarquée",
+    "slips_one": "{{count}} glissade reprise dans cette tentative.",
+    "slips_many": "{{count}} glissades reprises dans cette tentative.",
+    "slips_other": "{{count}} glissades reprises dans cette tentative."
+  }
+}

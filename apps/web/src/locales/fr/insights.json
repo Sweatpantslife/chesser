@@ -1,0 +1,100 @@
+{
+  "weaknesses": {
+    "hangingPieces": {
+      "label": "Pièces en prise",
+      "summary": "Des coups qui ont laissé une pièce là où elle pouvait être capturée sans contrepartie.",
+      "advice": "Avant de valider un coup, faites un dernier balayage : « que peut prendre mon adversaire ? » Cette simple habitude élimine la plupart de ces pertes."
+    },
+    "missedMates": {
+      "label": "Mats manqués",
+      "summary": "Des positions où un mat forcé était disponible mais où un coup plus lent a été joué.",
+      "advice": "Quand le roi adverse semble exposé, marquez une pause et cherchez d'abord les échecs — les coups forçants se calculent facilement car les réponses sont limitées."
+    },
+    "missedForks": {
+      "label": "Fourchettes manquées",
+      "summary": "Des occasions d'attaquer deux pièces à la fois qui ne se sont pas concrétisées.",
+      "advice": "Les cavaliers et les pions sont les suspects habituels — chaque fois qu'un cavalier peut bondir en avant, vérifiez si la case d'arrivée vise deux cibles."
+    },
+    "missedTactics": {
+      "label": "Tactiques manquées",
+      "summary": "Des coups gagnants — captures, clouages, enfilades, attaques à la découverte — passés inaperçus.",
+      "advice": "Les pièces en l'air et les pièces alignées sont du carburant tactique. Cherchez les cibles non défendues et les pièces qui partagent une ligne avant de vous contenter d'un coup tranquille."
+    },
+    "openingMistakes": {
+      "label": "Erreurs d'ouverture",
+      "summary": "De l'avantage concédé dans la première phase, dès la sortie de la théorie (ou juste après).",
+      "advice": "Pas besoin de mémoriser plus de lignes — développez vers le centre, roquez tôt et ne jouez pas deux fois la même pièce sans raison."
+    },
+    "endgameMistakes": {
+      "label": "Conversion en finale",
+      "summary": "Des avantages qui ont fondu ou se sont envolés une fois l'échiquier vidé.",
+      "advice": "Dans les positions simples, l'activité du roi et les pions passés décident des parties. Ralentissez — les finales récompensent une vérification soignée plus que l'instinct rapide."
+    }
+  },
+  "phases": {
+    "opening": "ouverture",
+    "middlegame": "milieu de partie",
+    "endgame": "finale"
+  },
+  "weekly": {
+    "quiet": "Une semaine calme sur l'échiquier pour l'instant — rien d'enregistré. Un problème ou une leçon rapide aujourd'hui suffit à lancer la semaine.",
+    "allDays": "Vous avez répondu présent les 7 jours cette semaine et gagné {{xp}} XP — c'est cette régularité qui fait progresser.",
+    "mostDays": "Vous vous êtes entraîné {{days}} jours sur 7 cette semaine, pour {{xp}} XP.",
+    "someDays_one": "Vous avez casé {{count}} jour d'entraînement cette semaine, pour {{xp}} XP.",
+    "someDays_many": "Vous avez casé {{count}} jours d'entraînement cette semaine, pour {{xp}} XP.",
+    "someDays_other": "Vous avez casé {{count}} jours d'entraînement cette semaine, pour {{xp}} XP.",
+    "wdl": "{{wins}}V–{{losses}}D–{{draws}}N",
+    "games_one": "En {{count}} partie analysée, votre bilan est {{wdl}}.",
+    "games_many": "En {{count}} parties analysées, votre bilan est {{wdl}}.",
+    "games_other": "En {{count}} parties analysées, votre bilan est {{wdl}}.",
+    "gamesAccuracy_one": "En {{count}} partie analysée, votre bilan est {{wdl}}, avec une précision record de {{accuracy}} %.",
+    "gamesAccuracy_many": "En {{count}} parties analysées, votre bilan est {{wdl}}, avec une précision record de {{accuracy}} %.",
+    "gamesAccuracy_other": "En {{count}} parties analysées, votre bilan est {{wdl}}, avec une précision record de {{accuracy}} %.",
+    "ratingClimb": "votre classement en problèmes a grimpé de {{delta}} points, à {{rating}}",
+    "ratingDip": "votre classement en problèmes a cédé {{delta}} points — turbulences normales",
+    "newRushBest": "vous avez signé un nouveau record Puzzle Rush de {{score}}",
+    "newStormBest": "un nouveau record Storm de {{score}}",
+    "puzzleJoiner": ", et ",
+    "puzzleSide": "Côté problèmes, {{bits}}.",
+    "lessons_one": "Vous avez aussi terminé {{count}} leçon.",
+    "lessons_many": "Vous avez aussi terminé {{count}} leçons.",
+    "lessons_other": "Vous avez aussi terminé {{count}} leçons.",
+    "lessonsStars_one": "Vous avez aussi terminé {{count}} leçon ({{stars}} étoiles).",
+    "lessonsStars_many": "Vous avez aussi terminé {{count}} leçons ({{stars}} étoiles).",
+    "lessonsStars_other": "Vous avez aussi terminé {{count}} leçons ({{stars}} étoiles).",
+    "training": "Entraînement des faiblesses : {{solved}}/{{attempts}} exercices résolus.",
+    "watchPattern": "Le schéma à surveiller est {{label}} ({{count}}× cette semaine) — un bon objectif pour la semaine prochaine.",
+    "streak_one": "Votre série est à {{count}} jour — gardez-la en vie.",
+    "streak_many": "Votre série est à {{count}} jours — gardez-la en vie.",
+    "streak_other": "Votre série est à {{count}} jours — gardez-la en vie."
+  },
+  "plan": {
+    "puzzleTitle_one": "{{label}} : {{count}} problème par jour",
+    "puzzleTitle_many": "{{label}} : {{count}} problèmes par jour",
+    "puzzleTitle_other": "{{label}} : {{count}} problèmes par jour",
+    "puzzleWhyEntry": "{{label}} est apparu {{count}}× dans {{games}} de vos {{total}} dernières parties analysées — des répétitions quotidiennes rééduquent le réflexe.",
+    "puzzleWhyPhase": "Votre {{phase}} est votre phase la moins précise — des répétitions quotidiennes de {{label}} la consolident.",
+    "puzzleWhyDefault": "Aucune faiblesse récurrente ne ressort encore — des répétitions quotidiennes de {{label}} gardent votre tactique affûtée.",
+    "lessonTitle": "Leçon : {{title}}",
+    "lessonWhy": "Cible votre axe de travail n°{{rank}} — {{label}}.",
+    "openingTitle": "Exercice : {{name}}",
+    "openingWhyTendency": "Vos parties en {{name}} plafonnent à {{accuracy}} % de précision sur {{games}} parties — travaillez les coups que vous jouez vraiment.",
+    "openingWhyRepertoire_one": "Tiré de votre répertoire — {{count}} répétition de rappel garde la ligne fraîche.",
+    "openingWhyRepertoire_many": "Tiré de votre répertoire — {{count}} répétitions de rappel gardent la ligne fraîche.",
+    "openingWhyRepertoire_other": "Tiré de votre répertoire — {{count}} répétitions de rappel gardent la ligne fraîche.",
+    "masterTitle": "Partie de maître : {{white}} – {{black}} ({{year}})",
+    "masterWhy": "Un classique {{theme}} de niveau {{difficulty}} — voyez le schéma que vous travaillez joué à la perfection.",
+    "difficulty": {
+      "beginner": "débutant",
+      "intermediate": "intermédiaire",
+      "advanced": "avancé"
+    },
+    "gameThemes": {
+      "attack": "attaque",
+      "sacrifice": "sacrifice",
+      "tactics": "tactique",
+      "endgame": "finale",
+      "positional": "positionnel"
+    }
+  }
+}

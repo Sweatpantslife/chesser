@@ -1,0 +1,154 @@
+{
+  "tabs": {
+    "practice": "Pratique",
+    "rush": "Puzzle Rush",
+    "storm": "Puzzle Storm",
+    "mistakes": "Mes erreurs",
+    "mistakesCount": "Mes erreurs ({{n}})"
+  },
+  "sidebar": {
+    "title": "Tactique",
+    "blurb": "Trouvez l'unique coup gagnant — chaque problème est vérifié par le moteur.",
+    "yourRating": "Votre classement",
+    "source": "Source",
+    "difficulty": "Difficulté",
+    "theme": "Thème",
+    "allThemes": "Tous",
+    "themeCount_one": "{{count}} problème",
+    "themeCount_many": "{{count}} problèmes",
+    "themeCount_other": "{{count}} problèmes",
+    "noThemes": "aucun thème ici",
+    "ratedOrder": "Proposer des problèmes proches de mon classement",
+    "reviewDue": "À réviser",
+    "dailyPuzzle": "Problème du jour"
+  },
+  "difficulty": {
+    "all": "toutes",
+    "easy": "facile",
+    "medium": "moyenne",
+    "hard": "difficile"
+  },
+  "source": {
+    "builtin": "Sélection",
+    "mine": "Mes parties",
+    "mineCount": "Mes parties ({{n}})",
+    "all": "Toutes"
+  },
+  "practice": {
+    "toPlayWin": {
+      "white": "Les Blancs jouent et gagnent.",
+      "black": "Les Noirs jouent et gagnent."
+    },
+    "toMove": {
+      "white": "Trait aux Blancs",
+      "black": "Trait aux Noirs"
+    },
+    "yourMove": "· à vous de jouer",
+    "rated": "classé {{rating}}",
+    "feedback": {
+      "checkmate": "✓ {{san}} — échec et mat !",
+      "solvedTheme": "✓ {{san}} — {{theme}} !",
+      "wrong": "Ce n'est pas le coup gagnant. Réessayez, ou affichez la solution.",
+      "tryAgain": "Réessayez.",
+      "solution": "Solution : {{san}}",
+      "noReviews": "Aucune révision en attente — essayez de nouveaux problèmes !",
+      "removed": "Retiré de vos problèmes."
+    },
+    "override": {
+      "rated": "Choix classé",
+      "review": "Révision"
+    },
+    "counter": "Problème {{current}}/{{total}}",
+    "solvedSession_one": "{{count}} résolu cette session",
+    "solvedSession_many": "{{count}} résolus cette session",
+    "solvedSession_other": "{{count}} résolus cette session",
+    "ratingDelta": "{{delta}} au classement",
+    "fromSource": "source : {{source}}",
+    "seenBefore": "Vous l'avez déjà vu — retrouvez l'idée.",
+    "empty": {
+      "mineTitle": "Pas encore de problèmes tirés de vos parties",
+      "mineBody": "Ouvrez une partie dans l'onglet <b>Jouer</b>, puis utilisez <b>« Créer des problèmes à partir de cette partie »</b> dans le panneau d'analyse de partie.",
+      "filterTitle": "Rien ne correspond à ce filtre",
+      "filterBody": "Aucun problème pour ce filtre. Générez-en davantage avec <code>pnpm gen:tactics</code>."
+    },
+    "buttons": {
+      "tryAgain": "Réessayer",
+      "reveal": "Afficher",
+      "nextPuzzleArrow": "Problème suivant →",
+      "nextPuzzle": "Problème suivant",
+      "deletePuzzle": "Supprimer ce problème"
+    }
+  },
+  "sprint": {
+    "toMove": {
+      "white": "Trait aux Blancs — trouvez le gain",
+      "black": "Trait aux Noirs — trouvez le gain"
+    },
+    "time": "Temps",
+    "score": "Score",
+    "missed": "Manqués",
+    "timesUp": "Temps écoulé !",
+    "runOver": "Session terminée",
+    "newBest": "🏆 Nouveau record !",
+    "endRun": "Terminer la session",
+    "playAgain": "Rejouer"
+  },
+  "rush": {
+    "variants": {
+      "timed3": {
+        "label": "3 minutes",
+        "blurb": "Courez contre la montre — 3 fautes mettent toujours fin à la session."
+      },
+      "survival": {
+        "label": "Survie",
+        "blurb": "Pas de chrono. Grimpez jusqu'à ce que trois fautes vous arrêtent."
+      }
+    },
+    "variantShort": {
+      "timed3": "3 min",
+      "survival": "survie"
+    },
+    "inARow_one": "{{count}} d'affilée !",
+    "inARow_many": "{{count}} d'affilée !",
+    "inARow_other": "{{count}} d'affilée !",
+    "strike": "✗ faute !",
+    "strikes": "Fautes",
+    "streak_one": "🔥 série de {{count}}",
+    "streak_many": "🔥 série de {{count}}",
+    "streak_other": "🔥 série de {{count}}",
+    "best": "Record ({{variant}}) : {{score}}",
+    "idleIntro": "Résolvez-en autant que possible — la difficulté monte au fil de la session.",
+    "start": "Lancer le rush",
+    "struckOut": "Éliminé !",
+    "bestStreak": "Meilleure série"
+  },
+  "storm": {
+    "comboLost": "✗ combo perdu",
+    "combo": "Combo",
+    "multiplier": "⚡ ×{{multiplier}} points",
+    "best": "Record : {{score}}",
+    "idleBlurb": "3 minutes de problèmes qui s'adaptent à votre rythme — résolvez vite pour faire monter la difficulté et bâtir un combo qui multiplie vos points. Un raté casse le combo mais ne coûte rien d'autre.",
+    "start": "Lancer le storm",
+    "solved": "Résolus",
+    "accuracy": "{{accuracy}} % de précision"
+  },
+  "mistakes": {
+    "title": "Vos erreurs",
+    "severity": {
+      "mistake": "erreur",
+      "blunder": "gaffe"
+    },
+    "toMove": {
+      "white": "Trait aux Blancs",
+      "black": "Trait aux Noirs"
+    },
+    "prompt": "Vous avez joué {{san}} ici — trouvez un coup plus fort.",
+    "checkmate": "✓ {{san}} — échec et mat ! Bien mieux que {{played}}.",
+    "checking": "vérification…",
+    "holdsUp": "✓ {{san}} tient la route — bien mieux que {{played}}.",
+    "stillDrops": "✗ {{san}} perd encore ~{{loss}} %. Essayez autre chose.",
+    "empty": "Aucune erreur enregistrée pour l'instant. Sur l'échiquier <b>Jouer</b>, analysez une partie puis « Enregistrer les erreurs à travailler ».",
+    "gotIt": "Compris ✓",
+    "skip": "Passer →"
+  }
+}
