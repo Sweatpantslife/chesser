@@ -1,0 +1,40 @@
+{
+  "signIn": "Sign in",
+  "createAccount": "Create account",
+  "signingIn": "Signing in…",
+  "creatingAccount": "Creating account…",
+  "syncHint": "Sync your opening and tactics progress across devices.",
+  "username": "Username",
+  "usernamePlaceholder": "username",
+  "password": "Password",
+  "passwordPlaceholder": "password",
+  "accountLabel": "Account",
+  "close": "Close",
+  "signedInAs": "Signed in as",
+  "signOut": "Sign out",
+  "sync": {
+    "off": "not syncing",
+    "syncing": "syncing…",
+    "synced": "synced",
+    "error": "sync error",
+    "progress": "Progress {{state}}"
+  },
+  "data": {
+    "title": "Your data",
+    "export": "Export my data",
+    "exporting": "Preparing export…",
+    "exportDone": "Export downloaded.",
+    "exportFailed": "Export failed — try again.",
+    "delete": "Delete my account…",
+    "note": "Everything stored for this account, as JSON — or erased for good. See the <policyLink>Privacy Policy</policyLink>."
+  },
+  "deleteDialog": {
+    "title": "Delete this account?",
+    "body": "This permanently erases <name>{{username}}</name> from Chesser's servers: your sign-in, synced progress, saved games, sharing settings, leaderboard entries and friends. Your data in this browser is cleared too. <b>There is no undo.</b>",
+    "confirmLabel": "Type DELETE to confirm",
+    "cancel": "Cancel",
+    "deleting": "Deleting…",
+    "confirm": "Delete forever",
+    "error": "Could not delete the account — try again."
+  }
+}

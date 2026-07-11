@@ -1,0 +1,10 @@
+{
+  "consent": {
+    "aria": "Aviso de almacenamiento de datos",
+    "body": "Chesser guarda tu progreso y tus ajustes en este navegador — nada sale de tu dispositivo a menos que crees una cuenta para sincronizar. Sin anuncios y sin rastreo. <policyLink>Política de privacidad</policyLink>",
+    "dismiss": "Entendido"
+  },
+  "lastUpdated": "Última actualización: {{date}}",
+  "privacyTitle": "Política de privacidad",
+  "termsTitle": "Términos del servicio"
+}

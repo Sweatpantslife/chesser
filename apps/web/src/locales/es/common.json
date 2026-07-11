@@ -1,0 +1,11 @@
+{
+  "actions": {
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "done": "Listo"
+  },
+  "install": {
+    "label": "Instalar",
+    "tooltip": "Instala Chesser como aplicación"
+  }
+}

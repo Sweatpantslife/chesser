@@ -1,6 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
+// Side-effect import: initializes i18next (bundled English + lazy locales)
+// before the first render. See src/i18n/README.md.
+import './i18n';
 import App from './App';
 import './index.css';
 

@@ -1,0 +1,40 @@
+{
+  "signIn": "Iniciar sesión",
+  "createAccount": "Crear cuenta",
+  "signingIn": "Iniciando sesión…",
+  "creatingAccount": "Creando cuenta…",
+  "syncHint": "Sincroniza tu progreso de aperturas y táctica entre dispositivos.",
+  "username": "Nombre de usuario",
+  "usernamePlaceholder": "usuario",
+  "password": "Contraseña",
+  "passwordPlaceholder": "contraseña",
+  "accountLabel": "Cuenta",
+  "close": "Cerrar",
+  "signedInAs": "Sesión iniciada como",
+  "signOut": "Cerrar sesión",
+  "sync": {
+    "off": "sin sincronizar",
+    "syncing": "sincronizando…",
+    "synced": "sincronizado",
+    "error": "error de sincronización",
+    "progress": "Progreso: {{state}}"
+  },
+  "data": {
+    "title": "Tus datos",
+    "export": "Exportar mis datos",
+    "exporting": "Preparando la exportación…",
+    "exportDone": "Exportación descargada.",
+    "exportFailed": "La exportación falló — inténtalo de nuevo.",
+    "delete": "Eliminar mi cuenta…",
+    "note": "Todo lo almacenado para esta cuenta, en JSON — o borrado para siempre. Consulta la <policyLink>Política de privacidad</policyLink>."
+  },
+  "deleteDialog": {
+    "title": "¿Eliminar esta cuenta?",
+    "body": "Esto borra permanentemente <name>{{username}}</name> de los servidores de Chesser: tu inicio de sesión, el progreso sincronizado, las partidas guardadas, los ajustes para compartir, las entradas en las clasificaciones y tus amigos. Los datos de este navegador también se borran. <b>No se puede deshacer.</b>",
+    "confirmLabel": "Escribe DELETE para confirmar",
+    "cancel": "Cancelar",
+    "deleting": "Eliminando…",
+    "confirm": "Eliminar para siempre",
+    "error": "No se pudo eliminar la cuenta — inténtalo de nuevo."
+  }
+}

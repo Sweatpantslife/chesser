@@ -1,0 +1,11 @@
+{
+  "actions": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "done": "Done"
+  },
+  "install": {
+    "label": "Install",
+    "tooltip": "Install Chesser as an app"
+  }
+}
