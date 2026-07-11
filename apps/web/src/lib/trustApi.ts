@@ -43,12 +43,19 @@ export function apiDeleteAccount(token: string): Promise<{ ok: boolean }> {
  * key, consent) so the device is as clean as the server.
  */
 export function clearLocalData(): void {
-  const doomed: string[] = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && key.startsWith('chesser-')) doomed.push(key);
+  // Storage can be blocked outright (private mode, strict settings) and then
+  // even reading `localStorage` throws — never let that derail the deletion
+  // flow, which is already irreversible server-side by the time this runs.
+  try {
+    const doomed: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('chesser-')) doomed.push(key);
+    }
+    for (const key of doomed) localStorage.removeItem(key);
+  } catch {
+    // If storage never worked, no chesser-* keys were stored either.
   }
-  for (const key of doomed) localStorage.removeItem(key);
 }
 
 // --- abuse reports ------------------------------------------------------------

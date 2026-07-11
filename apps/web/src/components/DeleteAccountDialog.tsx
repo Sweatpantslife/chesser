@@ -27,7 +27,13 @@ export function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
       await apiDeleteAccount(token);
       // Server side is gone; now stop syncing, drop the session state and
       // wipe every local trace, then reload into a fresh signed-out app.
-      await useAuth.getState().logout();
+      // From here everything is best-effort: the deletion already happened,
+      // so a logout hiccup must never strand the user with stale local state.
+      try {
+        await useAuth.getState().logout();
+      } catch {
+        // Local cleanup below still runs; the reload lands signed out.
+      }
       clearLocalData();
       window.location.reload();
     } catch (err) {

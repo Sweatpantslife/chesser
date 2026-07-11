@@ -28,6 +28,16 @@ function authUserId(req: FastifyRequest): string | null {
 /** Same one-404 as the public-profile route — don't leak account existence. */
 const PROFILE_NOT_FOUND = 'This profile is private or does not exist.';
 
+/**
+ * ISO string for a stored epoch-ms value, or null when it is missing/invalid
+ * (e.g. a legacy friendship edge from before `since` existed). The export
+ * mirrors the stores — a bad date must neither crash it nor be synthesized.
+ */
+function isoOrNull(ms: number | undefined): string | null {
+  const d = new Date(ms ?? NaN);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
 export function registerTrustRoutes(app: FastifyInstance): void {
   // --- data export ----------------------------------------------------------
   // Everything Chesser stores server-side about the signed-in account, as one
@@ -43,8 +53,8 @@ export function registerTrustRoutes(app: FastifyInstance): void {
     const social = socialStore.get(uid);
     const g = socialStore.graph();
     const friends = friendsOf(g, uid)
-      .map((f) => ({ username: store.usernameById(f.id) ?? null, since: new Date(f.since).toISOString() }))
-      .filter((f): f is { username: string; since: string } => f.username !== null);
+      .map((f) => ({ username: store.usernameById(f.id) ?? null, since: isoOrNull(f.since) }))
+      .filter((f): f is { username: string; since: string | null } => f.username !== null);
 
     return {
       exportedAt: new Date(now()).toISOString(),

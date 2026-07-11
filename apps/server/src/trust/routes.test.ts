@@ -14,6 +14,7 @@ const { registerSocialRoutes } = await import('../social/routes.js');
 const { registerTrustRoutes } = await import('./routes.js');
 const { trustStore } = await import('./store.js');
 const { socialStore } = await import('../social/store.js');
+const { store } = await import('../accounts/store.js');
 const { setClock } = await import('../social/clock.js');
 const Fastify = (await import('fastify')).default;
 
@@ -31,6 +32,7 @@ setClock(() => nowMs);
 after(async () => {
   await app.close();
   await socialStore.flush().catch(() => {});
+  await trustStore.flush().catch(() => {});
   fs.rmSync(dataDir, { recursive: true, force: true });
 });
 
@@ -121,6 +123,21 @@ describe('GET /api/account/export', () => {
     assert.equal(body.social.sharePrefs.profile, true);
     assert.deepEqual(body.friends.friends, []);
     assert.deepEqual(body.reportsFiled, []);
+  });
+
+  it('survives a legacy friendship edge with a missing date (since: null)', async () => {
+    const token = await register('export-legacy');
+    await register('export-legacy-pal');
+    const uid = store.getUser('export-legacy')!.id;
+    const pal = store.getUser('export-legacy-pal')!.id;
+    // An edge as an old social.json (predating `since`) could hold it — the
+    // export must not crash on it, and must not invent a date.
+    socialStore.updateGraph((g) => g.edges.push({ a: uid, b: pal, since: undefined as unknown as number }));
+
+    const res = await app.inject({ method: 'GET', url: '/api/account/export', headers: auth(token) });
+    assert.equal(res.statusCode, 200, res.body);
+    const body = res.json() as { friends: { friends: { username: string; since: string | null }[] } };
+    assert.deepEqual(body.friends.friends, [{ username: 'export-legacy-pal', since: null }]);
   });
 });
 

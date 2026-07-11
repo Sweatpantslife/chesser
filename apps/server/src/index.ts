@@ -19,6 +19,7 @@ import { registerSocialRoutes } from './social/routes.js';
 import { registerFriendRoutes } from './social/friends-routes.js';
 import { registerTrustRoutes } from './trust/routes.js';
 import { socialStore } from './social/store.js';
+import { trustStore } from './trust/store.js';
 import type { ExplorerDb } from '@chesser/shared';
 
 // trustProxy: opt-in via TRUST_PROXY (see config.ts) — required behind a
@@ -116,9 +117,10 @@ async function shutdown(): Promise<void> {
     await engines.shutdown();
     await app.close();
   } finally {
-    // Social-store writes are queued off the request path; let them land
-    // even when engine/tablebase teardown throws above.
+    // Social/trust-store writes are queued off the request path; let them
+    // land even when engine/tablebase teardown throws above.
     await socialStore.flush().catch(() => {});
+    await trustStore.flush().catch(() => {});
     process.exit(0);
   }
 }

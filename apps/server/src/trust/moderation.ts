@@ -155,7 +155,10 @@ export function moderateUsername(name: unknown): string | null {
  */
 export function cleanDisplayName(raw: string | undefined, maxLen: number, fallback: string): string {
   // eslint-disable-next-line no-control-regex
-  const n = (raw ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, maxLen);
+  const cleaned = (raw ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim();
+  // Bound by code points, not UTF-16 units — a plain .slice() can cut an
+  // astral character (emoji) in half and leave a malformed lone surrogate.
+  const n = [...cleaned].slice(0, maxLen).join('');
   if (!n || isImpersonating(n) || isProfane(n)) return fallback;
   return n;
 }
