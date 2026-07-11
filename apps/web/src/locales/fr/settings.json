@@ -1,0 +1,69 @@
+{
+  "title": "Paramètres",
+  "appearance": {
+    "label": "Apparence",
+    "themeGroupAria": "Thème de l'application",
+    "light": "Clair",
+    "dark": "Sombre",
+    "system": "Système"
+  },
+  "language": {
+    "label": "Langue"
+  },
+  "toggles": {
+    "sounds": "Sons",
+    "premoves": "Pré-coups (contre les bots)",
+    "arrows": "Flèches du moteur (analyse)",
+    "aiCoach": "Explications du coach IA"
+  },
+  "aiCoachNote": "Des conseils en langage naturel rédigés par une IA à partir de l'analyse du moteur. Repli sur les explications intégrées en cas d'indisponibilité.",
+  "rating": {
+    "label": "Classement principal",
+    "note": "Glicko-2 pilote toujours la difficulté et les appariements en coulisses."
+  },
+  "boardTheme": {
+    "label": "Thème de l'échiquier",
+    "aria": "Thème d'échiquier {{name}}",
+    "names": {
+      "brown": "marron",
+      "blue": "bleu",
+      "green": "vert",
+      "gray": "gris",
+      "candy": "bonbon",
+      "mint": "menthe"
+    }
+  },
+  "pieces": {
+    "label": "Pièces"
+  },
+  "byok": {
+    "title": "Coach IA — votre propre clé",
+    "intro": "Utilisez votre propre clé d'IA pour débloquer un coaching plus riche et le récap hebdomadaire par IA. La clé reste sur cet appareil (jamais envoyée à notre serveur ni stockée dessus) et les appels vont directement au fournisseur de votre choix — <rates>facturés sur votre clé aux tarifs de votre fournisseur</rates>. Le coach garde des réponses courtes : le coût typique est une fraction de centime par explication.",
+    "providerAria": "Fournisseur d'IA",
+    "providers": {
+      "anthropic": "Anthropic",
+      "openai": "Compatible OpenAI"
+    },
+    "apiKey": "Clé API",
+    "model": "Modèle (par défaut : {{model}})",
+    "modelHints": {
+      "claude-haiku-4-5": "le plus rapide et le moins cher — le choix par défaut",
+      "claude-sonnet-4-6": "prose plus soignée, prix intermédiaire",
+      "claude-opus-4-8": "le plus performant, le plus cher",
+      "gpt-4o-mini": "l'option économique par défaut",
+      "gpt-4o": "plus performant, plus cher"
+    },
+    "baseUrl": "URL de base (tout point d'accès compatible OpenAI)",
+    "testKey": "Tester la clé",
+    "testing": "Test…",
+    "clearKey": "Effacer la clé",
+    "keyWorksDirect": "La clé fonctionne — {{model}} a répondu directement depuis votre navigateur.",
+    "keyWorksRelay": "La clé fonctionne — {{model}} a répondu (relayé : votre point d'accès bloque les appels depuis le navigateur, les requêtes passent donc par le serveur de l'application sans y être stockées).",
+    "activeNote": "Le coaching IA est actif avec votre clé."
+  },
+  "links": {
+    "privacy": "Politique de confidentialité",
+    "terms": "Conditions d'utilisation"
+  },
+  "done": "Terminé"
+}

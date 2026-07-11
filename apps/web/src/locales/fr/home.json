@@ -1,0 +1,97 @@
+{
+  "hero": {
+    "greeting": {
+      "midnight": "Encore debout à pas d'heure",
+      "morning": "Bonjour",
+      "afternoon": "Bon après-midi",
+      "evening": "Bonsoir"
+    },
+    "dayUnit_one": "jour",
+    "dayUnit_many": "jours",
+    "dayUnit_other": "jours",
+    "freezeTitle": "Un gel sauve votre série quand vous manquez un jour",
+    "freezesBanked_one": "🧊 {{count}} gel en réserve",
+    "freezesBanked_many": "🧊 {{count}} gels en réserve",
+    "freezesBanked_other": "🧊 {{count}} gels en réserve",
+    "levelXp": "Niveau {{level}} · {{xp}} XP",
+    "toNextLevel": "{{xp}} XP avant le niveau {{level}}",
+    "streakAtRisk": "Votre série est en sursis — entraînez-vous aujourd'hui pour la sauver (consomme un gel).",
+    "streakKeepAlive": "Gardez la flamme vivante — toute activité compte.",
+    "streakStart": "Faites une activité aujourd'hui — un problème, une leçon, une partie — pour allumer votre série."
+  },
+  "daily": {
+    "title": "Problème du jour",
+    "body": "Un problème choisi à la main — le même pour tout le monde, nouveau chaque jour.",
+    "cta": "Résoudre"
+  },
+  "sprints": {
+    "title": "Sprints de problèmes",
+    "body": "Courez contre la montre, enchaînez les combos.",
+    "bests": "Records — Rush {{rush}} · Storm {{storm}}",
+    "firstRecord": "Établissez votre premier record.",
+    "rush": "Rush",
+    "storm": "Storm"
+  },
+  "openings": {
+    "dueTitle_one": "{{count}} ligne d'ouverture à revoir aujourd'hui",
+    "dueTitle_many": "{{count}} lignes d'ouverture à revoir aujourd'hui",
+    "dueTitle_other": "{{count}} lignes d'ouverture à revoir aujourd'hui",
+    "caughtUpTitle": "Ouvertures : tout est à jour",
+    "startTitle": "Apprenez un répertoire d'ouvertures",
+    "dueBody": "La répétition espacée dit que c'est le moment — travaillez-les avant qu'elles ne s'effacent.",
+    "caughtUpBody": "Rien à revoir pour l'instant. Apprenez une nouvelle ligne pour étoffer votre répertoire.",
+    "startBody": "Choisissez des ouvertures pour les Blancs et les Noirs, travaillez-les coup par coup.",
+    "ctaReview": "Réviser",
+    "ctaTrain": "S'entraîner",
+    "ctaBuild": "Construire"
+  },
+  "lessons": {
+    "nextTitle": "Prochaine leçon : {{title}}",
+    "cta": "Apprendre",
+    "allDoneTitle": "Toutes les leçons terminées !",
+    "allDoneBody": "Rejouez n'importe quelle leçon pour vous perfectionner — les reprises rapportent aussi de l'XP.",
+    "ctaBrowse": "Parcourir"
+  },
+  "playCard": {
+    "title": "Jouer une partie",
+    "body": "Affrontez un bot de votre niveau — les victoires comptent pour les missions.",
+    "cta": "Jouer"
+  },
+  "goal": {
+    "title": "Objectif du jour",
+    "freezesTitle_one": "{{count}} gel de série en réserve — un gel sauve votre série quand vous manquez un jour",
+    "freezesTitle_many": "{{count}} gels de série en réserve — un gel sauve votre série quand vous manquez un jour",
+    "freezesTitle_other": "{{count}} gels de série en réserve — un gel sauve votre série quand vous manquez un jour",
+    "best": "record",
+    "streakLabel": "série",
+    "todayLine": "<today>{{today}}</today><rest> / {{goal}} XP aujourd'hui</rest>",
+    "met": "✓ Objectif atteint — bien joué !",
+    "atRisk": "Entraînez-vous aujourd'hui pour sauver votre série (consomme un gel)",
+    "toGo": "{{xp}} XP avant l'objectif du jour",
+    "presetsLabel": "Objectif"
+  },
+  "quests": {
+    "title": "Missions quotidiennes",
+    "doneCount": "{{done}} / {{total}} faites",
+    "questDone": "✓ fait",
+    "xpReward": "+{{xp}} XP",
+    "allDone": "🏅 Toutes les missions terminées — bonus de +{{xp}} XP gagné. Nouvelles missions demain !",
+    "finishAll": "Terminez les {{total}} pour un bonus de +{{xp}} XP. Des missions fraîches chaque jour."
+  },
+  "weekly": {
+    "title": "Votre semaine d'échecs",
+    "stats": {
+      "daysActive": "jours actifs",
+      "xpEarned": "XP gagnés",
+      "games": "parties (V–D–N)",
+      "bestAccuracy": "précision record",
+      "puzzleRating": "classement problèmes",
+      "newRushBest": "nouveau record Rush",
+      "newStormBest": "nouveau record Storm",
+      "lessons": "leçons",
+      "drills": "exercices résolus"
+    },
+    "aiDisclosure": "Généré par IA à partir de vos statistiques hebdomadaires vérifiées",
+    "byokHint": "Ajoutez votre propre clé d'IA dans les Paramètres pour débloquer un récap IA personnalisé — ce résumé fonctionne sans."
+  }
+}

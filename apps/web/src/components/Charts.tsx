@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 
 export function StatCard({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
   return (
@@ -11,14 +12,15 @@ export function StatCard({ label, value, hint }: { label: string; value: ReactNo
 }
 
 export function ProgressBar({ label, seen, total, due }: { label: string; seen: number; total: number; due: number }) {
+  const { t } = useTranslation('stats');
   const pct = total ? Math.round((seen / total) * 100) : 0;
   return (
     <div>
       <div className="mb-1 flex items-center justify-between text-xs">
         <span className="text-neutral-300">{label}</span>
         <span className="text-neutral-400">
-          <span className="text-neutral-200">{seen}</span>/{total} learned
-          {due > 0 && <span className="ml-2 text-amber-300">{due} due</span>}
+          <Trans t={t} i18nKey="charts.learned" values={{ seen, total }} components={{ seen: <span className="text-neutral-200" /> }} />
+          {due > 0 && <span className="ml-2 text-amber-300">{t('charts.due', { count: due })}</span>}
         </span>
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-800">
@@ -34,10 +36,11 @@ const heatLevel = (v: number) => (v === 0 ? 0 : v <= 3 ? 1 : v <= 9 ? 2 : v <= 1
 
 /** GitHub-style activity calendar. `days` are chronological, starting on a Sunday. */
 export function Heatmap({ days }: { days: { date: string; value: number }[] }) {
+  const { t } = useTranslation('stats');
   if (days.every((d) => d.value === 0)) {
     return (
       <p className="rounded-xl border border-dashed border-neutral-700 px-3 py-2 text-sm text-neutral-400">
-        No activity yet — solved puzzles and drills will light up this calendar.
+        {t('charts.heatmapEmpty')}
       </p>
     );
   }
@@ -49,7 +52,7 @@ export function Heatmap({ days }: { days: { date: string; value: number }[] }) {
       {days.map((d) => (
         <div
           key={d.date}
-          title={`${d.date}: ${d.value} review${d.value === 1 ? '' : 's'}`}
+          title={t('charts.heatmapCell', { date: d.date, count: d.value })}
           className="aspect-square rounded-[2px]"
           style={{ background: HEAT_COLORS[heatLevel(d.value)] }}
         />
@@ -88,10 +91,11 @@ export interface DayPoint {
 
 /** Reviews-per-day bars with an accuracy-% line overlaid. */
 export function ActivityChart({ data }: { data: DayPoint[] }) {
+  const { t } = useTranslation('stats');
   if (data.every((d) => d.reviews === 0)) {
     return (
       <div className="flex h-28 w-full items-center justify-center rounded-xl border border-dashed border-neutral-700 px-3 text-center text-sm text-neutral-400">
-        No activity yet — play a game or solve a puzzle to start the chart.
+        {t('charts.activityEmpty')}
       </div>
     );
   }

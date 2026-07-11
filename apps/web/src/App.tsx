@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useState, type ComponentType, type ReactNode, type SVGProps } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useGame } from './store/game';
 import { useAuth } from './store/auth';
 import { AccountButton } from './components/AccountPanel';
@@ -90,25 +91,26 @@ type View =
   | 'privacy'
   | 'terms';
 
-const TABS: { id: View; label: string; hint: string; icon: ComponentType<SVGProps<SVGSVGElement> & { size?: number }> }[] = [
-  { id: 'home', label: 'Today', hint: 'streak · daily quests · goals', icon: IconToday },
-  { id: 'play', label: 'Play', hint: 'vs bots & analysis', icon: IconPlay },
-  { id: 'learn', label: 'Learn', hint: 'rules & guided lessons', icon: IconLearn },
-  { id: 'masters', label: 'Masters', hint: 'annotated master games', icon: IconCrown },
-  { id: 'friends', label: 'Friends', hint: 'pass & play · online friend games', icon: IconFriends },
-  { id: 'openings', label: 'Openings', hint: 'repertoire drills', icon: IconOpenings },
-  { id: 'explorer', label: 'Explorer', hint: 'opening explorer · master & online games', icon: IconExplorer },
-  { id: 'tactics', label: 'Tactics', hint: 'tactics puzzles', icon: IconTactics },
-  { id: 'endgame', label: 'Endgame', hint: 'theory & technique', icon: IconEndgame },
-  { id: 'endgame-drills', label: 'Drills', hint: 'endgame drills · tablebase-checked', icon: IconBolt },
-  { id: 'train', label: 'Train', hint: 'vision · mates · anti-blunder', icon: IconTrain },
-  { id: 'coach', label: 'Coach', hint: 'your weaknesses · targeted training', icon: IconCoach },
-  { id: 'plan', label: 'Plan', hint: 'your weekly study plan', icon: IconSparkles },
-  { id: 'coordinates', label: 'Coords', hint: 'board-vision trainer', icon: IconCoords },
-  { id: 'archive', label: 'Archive', hint: 'your games · results & trends', icon: IconArchive },
-  { id: 'stats', label: 'Stats', hint: 'progress dashboard', icon: IconStats },
-  { id: 'leaders', label: 'Ranks', hint: 'leaderboards · weekly race', icon: IconTrophy },
-  { id: 'profile', label: 'Profile', hint: 'level · ratings · badges', icon: IconProfile },
+// Labels/hints live in the `nav` namespace under `tabs.<id>.{label,hint}`.
+const TABS: { id: View; icon: ComponentType<SVGProps<SVGSVGElement> & { size?: number }> }[] = [
+  { id: 'home', icon: IconToday },
+  { id: 'play', icon: IconPlay },
+  { id: 'learn', icon: IconLearn },
+  { id: 'masters', icon: IconCrown },
+  { id: 'friends', icon: IconFriends },
+  { id: 'openings', icon: IconOpenings },
+  { id: 'explorer', icon: IconExplorer },
+  { id: 'tactics', icon: IconTactics },
+  { id: 'endgame', icon: IconEndgame },
+  { id: 'endgame-drills', icon: IconBolt },
+  { id: 'train', icon: IconTrain },
+  { id: 'coach', icon: IconCoach },
+  { id: 'plan', icon: IconSparkles },
+  { id: 'coordinates', icon: IconCoords },
+  { id: 'archive', icon: IconArchive },
+  { id: 'stats', icon: IconStats },
+  { id: 'leaders', icon: IconTrophy },
+  { id: 'profile', icon: IconProfile },
 ];
 
 function Badge({ ok, children }: { ok: boolean; children: ReactNode }) {
@@ -120,6 +122,7 @@ function Badge({ ok, children }: { ok: boolean; children: ReactNode }) {
 }
 
 function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
+  const { t } = useTranslation('nav');
   const connected = useGame((s) => s.connected);
   const availability = useGame((s) => s.availability);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -129,25 +132,25 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
         <h1 className="flex items-center gap-2">
           <LogoMark size={30} />
           <Wordmark className="text-ink" />
-          <span className="sr-only">— play &amp; train chess</span>
+          <span className="sr-only">{t('srTagline')}</span>
         </h1>
         {/* On small screens the tabs scroll horizontally in one row (scrollbar hidden)
             instead of wrapping into cramped lines; from sm up they wrap as before. */}
         <nav
-          aria-label="Primary"
+          aria-label={t('primaryNav')}
           className="scrollbar-none order-3 flex w-full gap-1 overflow-x-auto sm:order-2 sm:w-auto sm:flex-wrap sm:overflow-x-visible"
         >
-          {TABS.map((t) => {
-            const Icon = t.icon;
-            const active = view === t.id;
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const active = view === tab.id;
             return (
               <button
-                key={t.id}
+                key={tab.id}
                 onClick={() => {
                   playSound('uiClick');
-                  setView(t.id);
+                  setView(tab.id);
                 }}
-                title={t.hint}
+                title={t(`tabs.${tab.id}.hint`)}
                 aria-current={active ? 'page' : undefined}
                 className={`btn-press flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold sm:min-h-0 ${
                   active
@@ -158,7 +161,7 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
                 {/* white/85, not brand-300: the active pill's gradient stays dark in
                     both themes, while brand-300 flips dark in light mode. */}
                 <Icon size={16} className={active ? 'text-white/85' : 'text-neutral-400'} />
-                {t.label}
+                {t(`tabs.${tab.id}.label`)}
               </button>
             );
           })}
@@ -175,22 +178,18 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
           )}
           <span
             role="status"
-            title={
-              connected
-                ? 'Connected to the engine server'
-                : 'Trying to reach the engine server — bot play and analysis resume once connected'
-            }
+            title={connected ? t('status.connectedTooltip') : t('status.connectingTooltip')}
             className={`flex items-center gap-1.5 font-semibold ${connected ? 'text-emerald-400' : 'text-rose-400'}`}
           >
             <span className={`h-2 w-2 rounded-full ${connected ? 'bg-emerald-400' : 'animate-pulse-soft bg-rose-400'}`} />
-            {connected ? 'online' : 'connecting…'}
+            {connected ? t('status.online') : t('status.connecting')}
           </span>
           <LevelBadge onClick={() => setView('profile')} />
           <InstallButton />
           <button
             onClick={() => setSettingsOpen(true)}
-            title="Settings"
-            aria-label="Settings"
+            title={t('settings')}
+            aria-label={t('settings')}
             className="btn-press flex min-h-11 min-w-11 items-center justify-center rounded-full bg-neutral-800 p-2 text-neutral-300 hover:bg-neutral-700 hover:text-ink sm:min-h-0 sm:min-w-0"
           >
             <IconGear size={16} />
@@ -208,6 +207,7 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
 }
 
 export default function App() {
+  const { t } = useTranslation('nav');
   const init = useGame((s) => s.init);
   const authInit = useAuth((s) => s.init);
   // A shared friend-game link (#/friend/CODE) lands straight on the Friends
@@ -303,7 +303,7 @@ export default function App() {
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded-full focus:bg-brand-600 focus:px-3 focus:py-1.5 focus:text-sm focus:text-white"
       >
-        Skip to content
+        {t('skipToContent')}
       </a>
       <Header view={view} setView={nav} />
       {/* key={view} remounts the content on tab switch so .page-fade replays

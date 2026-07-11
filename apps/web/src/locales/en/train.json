@@ -1,0 +1,211 @@
+{
+  "tabs": {
+    "vision": {
+      "label": "Vision",
+      "hint": "blindfold & calculation"
+    },
+    "mates": {
+      "label": "Checkmates",
+      "hint": "pattern library & drills"
+    },
+    "blunders": {
+      "label": "Anti-blunder",
+      "hint": "“are you sure?” trainer"
+    }
+  },
+  "buttons": {
+    "tryAgain": "Try again",
+    "reveal": "Reveal",
+    "reviewDue": "Review due",
+    "nextDrillArrow": "Next drill →",
+    "nextDrill": "Next drill",
+    "nextPuzzleArrow": "Next puzzle →",
+    "nextPuzzle": "Next puzzle",
+    "nextArrow": "Next →",
+    "restart": "Restart",
+    "hint": "Hint"
+  },
+  "toMove": {
+    "white": "White to move",
+    "black": "Black to move"
+  },
+  "yourMove": "· your move",
+  "solvedSession_one": "{{count}} solved this session",
+  "solvedSession_other": "{{count}} solved this session",
+  "colors": {
+    "white": "white",
+    "black": "black"
+  },
+  "colorsUpper": {
+    "white": "White",
+    "black": "Black"
+  },
+  "vision": {
+    "visualize": "Visualize",
+    "blindfoldSolve": "Blindfold solve",
+    "sessionScore": "{{correct}}/{{total}} this session",
+    "piecesHidden": "Pieces hidden — picture the position.",
+    "studyPrompt": "Study the position, then hide it and calculate the line below.",
+    "hideAndShow": "Hide pieces & show the line",
+    "theLine": "The line",
+    "calculated": "I’ve calculated it →",
+    "correct": "✓ Correct!",
+    "notQuite": "Not quite — the answer is “{{answer}}”.",
+    "showsFinal": "The board now shows the final position.",
+    "footer": "Calculating without moving the pieces is the engine of tactics and endgames. Start short, build up.",
+    "blindfold": {
+      "chip": "Blindfold",
+      "toPlayWin": {
+        "white": "White to play and win",
+        "black": "Black to play and win"
+      },
+      "findPrompt": "Find the winning move — click the piece, then its destination.",
+      "noPuzzles": "No easy puzzles available.",
+      "wellSeen": "✓ {{san}} — well seen! Board revealed.",
+      "notMove": "Not the move. Try again, peek, or reveal.",
+      "moveWas": "The move was {{san}}.",
+      "whiteLabel": "White:",
+      "blackLabel": "Black:",
+      "peek": "Peek",
+      "hidePieces": "Hide pieces",
+      "footer": "Holding the position in your mind’s eye and finding a move blind is the ultimate board-vision test."
+    }
+  },
+  "mates": {
+    "title": "Checkmate patterns",
+    "blurb": "Learn the classic mating nets, then drill them to recall.",
+    "toMateIn": {
+      "white": "White to mate in {{n}}.",
+      "black": "Black to mate in {{n}}."
+    },
+    "mateIn": "mate in {{n}}",
+    "solved": "✓ {{san}} — {{pattern}}!",
+    "wrong": "Not the mating move. Try again, or reveal.",
+    "tryAgain": "Try again.",
+    "keyMove": "The key move is {{san}}.",
+    "noDue": "No mate drills due right now — learn a new pattern!"
+  },
+  "blunders": {
+    "title": "Anti-blunder",
+    "blurb": "Find the strong move — but watch for the tempting one. Before you commit, the trainer asks: <em>are you sure?</em>",
+    "positions": "Positions",
+    "intro": {
+      "white": "White to move — find the safe, strong move.",
+      "black": "Black to move — find the safe, strong move."
+    },
+    "rightCall": "✓ {{san}} — the right call. {{explanation}}",
+    "dodged": "That dodges the trap. The model move was {{san}}. {{explanation}}",
+    "stillLoses": "{{san}}?? still loses — it allows {{mate}}. {{explanation}}",
+    "savedYou": "Good — a blunder-check just saved you. Now find a safe move.",
+    "safeMove": "The safe move is {{san}}. {{explanation}}",
+    "noDue": "No blunder drills due right now — try a new one!",
+    "areYouSure": "⚠️ Are you sure?",
+    "aboutToPlay": "You’re about to play <b>{{san}}</b>. {{warning}}",
+    "takeBack": "Take it back",
+    "playAnyway": "Play it anyway",
+    "counter": "Position {{current}}/{{total}}",
+    "nextPosition": "Next position"
+  },
+  "coordinates": {
+    "mode": {
+      "find": "Find square",
+      "name": "Name square",
+      "color": "Square colour",
+      "knight": "Knight's tour"
+    },
+    "blurbs": {
+      "find": "Click the named square as fast as you can.",
+      "name": "Name the highlighted square.",
+      "color": "Is the highlighted square light or dark?",
+      "knight": "Click every square the knight can jump to."
+    },
+    "click": "Click",
+    "namePrompt": "Name the highlighted square",
+    "colorPrompt": "Is the ringed square light or dark?",
+    "knightPrompt": "Click every knight move —",
+    "knightLeft_one": "{{count}} left",
+    "knightLeft_other": "{{count}} left",
+    "tagline": "Board vision: a 30-second sprint.",
+    "start": "Start",
+    "timeUp": "Time!",
+    "newBest": "🏆 New best!",
+    "again": "Again",
+    "light": "Light",
+    "dark": "Dark",
+    "time": "Time",
+    "score": "Score",
+    "best": "Best",
+    "bestFor": "best for “{{mode}}”",
+    "modeLabel": "Mode",
+    "side": "Side",
+    "sides": {
+      "white": "white",
+      "black": "black",
+      "random": "random"
+    },
+    "showCoords": "Show coordinates",
+    "showPieces": "Show pieces"
+  },
+  "endgame": {
+    "title": "Endgame studies",
+    "status": {
+      "won": "✓ Checkmate — solved!",
+      "heldDraw": "✓ Held the draw!",
+      "drawnSlipped": "½ Drawn — the win slipped away.",
+      "mated": "You got mated! Restart and try again.",
+      "engineDefending": "Engine defending…",
+      "yourMove": "Your move.",
+      "winningMate": "Winning — mate in {{n}}.",
+      "slipping": "Careful — your advantage is slipping.",
+      "keepConverting": "Your move — keep converting."
+    },
+    "goal": {
+      "win": "win",
+      "draw": "draw"
+    },
+    "goalLong": {
+      "win": "checkmate",
+      "draw": "hold the draw"
+    },
+    "youPlayGoal": "You play <color>{{color}}</color> — goal: <goal>{{goal}}</goal>.",
+    "nextStudy": "Next study →",
+    "tablebaseWord": "tablebase",
+    "evalReadout": "eval {{score}} · depth {{depth}}",
+    "syzygyLoaded": "♟ Syzygy {{n}}-man tablebases loaded — the defender is perfect."
+  },
+  "endgameDrills": {
+    "title": "Endgame drills",
+    "blurb": "Essential technique vs perfect defence — every move checked against the tablebase.",
+    "introWin": "You are {{color}} — convert the win against perfect defence.",
+    "introDraw": "You are {{color}} — hold the draw against perfect play.",
+    "bestWas": "{{verdict}} Best was {{san}}. Take-back — try again.",
+    "tbSuffix": "{{verdict}} (tablebase)",
+    "offlineBook": "Offline — can’t verify that against the tablebase. The book line plays {{san}} here. Take-back — try again.",
+    "bookMove": "{{san}} — book move ✓ (offline)",
+    "unverified": "{{san}} — unverified (offline, off the book line).",
+    "hintTb": "Hint: {{san}} — tablebase best.",
+    "hintBook": "Hint: {{san}} — the book move.",
+    "noHint": "No hint available here — trust the technique.",
+    "noDue": "No endgame drills due right now — pick any technique to learn!",
+    "status": {
+      "won": "✓ Converted — drill complete!",
+      "held": "✓ Held the draw — drill complete!",
+      "slippedWin": "The win slipped away — restart and try again.",
+      "slippedDraw": "The draw slipped away — restart and try again.",
+      "thinking": "Perfect defence thinking…",
+      "offline": "Your move — offline, judged against the book line."
+    },
+    "goalLong": {
+      "win": "convert the win",
+      "draw": "hold the draw"
+    },
+    "youPlayGoal": "You play <color>{{color}}</color> — goal: <goal>{{goal}}</goal>.",
+    "doneSession_one": "{{count}} done this session",
+    "doneSession_other": "{{count}} done this session",
+    "verdictTb": "verdict: {{source}} · {{category}}{{dtz}}",
+    "verdictSourceLichess": "lichess tablebase",
+    "verdictOffline": "verdict: offline — bundled book line",
+    "slips_one": "{{count}} slip taken back this attempt.",
+    "slips_other": "{{count}} slips taken back this attempt."
+  }
+}

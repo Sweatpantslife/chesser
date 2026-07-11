@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import '../../i18n'; // initialize i18next so t() serves the bundled English strings
 import type { MoveDetail } from '../../lib/analytics/types';
 import { MoveDetailPanel } from './MoveDetailPanel';
 

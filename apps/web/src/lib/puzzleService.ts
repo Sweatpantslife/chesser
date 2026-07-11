@@ -16,6 +16,7 @@
  * EXISTING SRS progress store (cards keyed `tactics:<id>`). No new stores.
  */
 import { Chess } from 'chess.js';
+import i18n from '../i18n';
 import {
   CORE_PUZZLES,
   PUZZLES,
@@ -107,19 +108,91 @@ export interface ThemeOption {
   label: string;
 }
 
+/** `label` resolves through the `motifs` namespace at access time (English
+ *  literal = defaultValue), so the filter chips follow the active language
+ *  without the pages changing how they read FILTER_THEMES. */
+const themeOption = (tag: string, english: string): ThemeOption => ({
+  tag,
+  get label() {
+    return i18n.t(`motifs:filterThemes.${tag}`, { defaultValue: english });
+  },
+});
+
 /** The tags offered in the UI filter (Lichess theme tags). */
 export const FILTER_THEMES: ThemeOption[] = [
-  { tag: 'mateIn1', label: 'Mate in 1' },
-  { tag: 'mateIn2', label: 'Mate in 2' },
-  { tag: 'mateIn3', label: 'Mate in 3' },
-  { tag: 'fork', label: 'Fork' },
-  { tag: 'pin', label: 'Pin' },
-  { tag: 'skewer', label: 'Skewer' },
-  { tag: 'discoveredAttack', label: 'Discovered attack' },
-  { tag: 'backRankMate', label: 'Back rank' },
-  { tag: 'hangingPiece', label: 'Hanging piece' },
-  { tag: 'endgame', label: 'Endgame' },
+  themeOption('mateIn1', 'Mate in 1'),
+  themeOption('mateIn2', 'Mate in 2'),
+  themeOption('mateIn3', 'Mate in 3'),
+  themeOption('fork', 'Fork'),
+  themeOption('pin', 'Pin'),
+  themeOption('skewer', 'Skewer'),
+  themeOption('discoveredAttack', 'Discovered attack'),
+  themeOption('backRankMate', 'Back rank'),
+  themeOption('hangingPiece', 'Hanging piece'),
+  themeOption('endgame', 'Endgame'),
 ];
+
+/**
+ * Display label for a puzzle's stored `theme` string.
+ *
+ * Puzzle themes are DATA: the dataset decodes them to English display strings
+ * (trainers/tactics THEME_PRIORITY) and user-generated puzzles persist them
+ * (store/customPuzzles) — so the stored English string is canonical and is
+ * also parsed by lib/motifs' `Mate in N` hint regex. Translation therefore
+ * happens here at DISPLAY time only: known English theme strings map to
+ * `motifs:themes.*`; unknown ones pass through unchanged (byte-identical
+ * English output).
+ */
+const THEME_STRING_KEYS: Record<string, string> = {
+  'Smothered mate': 'smotheredMate',
+  'Back-rank mate': 'backRankMate',
+  'Arabian mate': 'arabianMate',
+  "Anastasia's mate": 'anastasiaMate',
+  "Boden's mate": 'bodenMate',
+  'Two-bishop mate': 'doubleBishopMate',
+  'Hook mate': 'hookMate',
+  'Dovetail mate': 'dovetailMate',
+  'Kill-box mate': 'killBoxMate',
+  'Vukovic mate': 'vukovicMate',
+  Checkmate: 'mate',
+  'Double check': 'doubleCheck',
+  'Discovered attack': 'discoveredAttack',
+  Fork: 'fork',
+  Pin: 'pin',
+  Skewer: 'skewer',
+  Deflection: 'deflection',
+  Attraction: 'attraction',
+  Sacrifice: 'sacrifice',
+  Interference: 'interference',
+  Intermezzo: 'intermezzo',
+  Clearance: 'clearance',
+  'X-ray attack': 'xRayAttack',
+  'Capture the defender': 'capturingDefender',
+  'Hanging piece': 'hangingPiece',
+  'Trapped piece': 'trappedPiece',
+  Underpromotion: 'underPromotion',
+  Promotion: 'promotion',
+  'En passant': 'enPassant',
+  Zugzwang: 'zugzwang',
+  'Quiet move': 'quietMove',
+  'Defensive move': 'defensiveMove',
+  'Exposed king': 'exposedKing',
+  'Kingside attack': 'kingsideAttack',
+  'Queenside attack': 'queensideAttack',
+  'f2/f7 attack': 'attackingF2F7',
+  'Advanced pawn': 'advancedPawn',
+  Endgame: 'endgame',
+  Tactic: 'tactic',
+  'Winning tactic': 'winningTactic',
+};
+
+export function themeDisplayLabel(theme: string): string {
+  const key = THEME_STRING_KEYS[theme];
+  if (key) return i18n.t(`motifs:themes.${key}`, { defaultValue: theme });
+  const mate = /^Mate in (\d+)$/.exec(theme);
+  if (mate) return i18n.t('motifs:themes.mateInN', { n: Number(mate[1]), defaultValue: theme });
+  return theme;
+}
 
 /** Legacy/user-mined puzzles carry no Lichess tags — approximate the filter
  *  with the heuristic motif classifier where an equivalent motif exists. */

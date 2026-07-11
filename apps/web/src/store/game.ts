@@ -18,6 +18,11 @@ import { useRatings, type GameOutcome } from './ratings';
 // game review actually runs, and keeping them out of this module's static
 // graph keeps the whole analytics suite out of the initial bundle (this store
 // is loaded eagerly by the app shell).
+//
+// i18n NOTE: this module must NOT import src/i18n — its tests run under plain
+// `node --import tsx --test` (no import.meta.glob) and assert the exact
+// English strings below. The `status` / `endReason` strings are canonical
+// message ids; render sites translate them via lib/gameStatusText.ts.
 
 export type Color = 'white' | 'black';
 export type Mode = 'play' | 'analysis';

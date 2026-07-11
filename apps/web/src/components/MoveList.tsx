@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useGame, type MoveNode } from '../store/game';
 import { CLASSIFICATION_META } from '../lib/coach';
 
@@ -21,6 +22,7 @@ function isMainline(tree: Record<string, MoveNode>, rootId: string, id: string):
 }
 
 export function MoveList() {
+  const { t } = useTranslation('game');
   const tree = useGame((s) => s.tree);
   const rootId = useGame((s) => s.rootId);
   const currentId = useGame((s) => s.currentId);
@@ -84,7 +86,7 @@ export function MoveList() {
     const v = tree[startId];
     if (!v) return null;
     return (
-      <span role="group" aria-label="Variation" className="my-0.5 block rounded border-l-2 border-neutral-700 pl-2 text-neutral-400">
+      <span role="group" aria-label={t('moveList.variation')} className="my-0.5 block rounded border-l-2 border-neutral-700 pl-2 text-neutral-400">
         <span className="text-neutral-400">(</span>
         <Move node={v} withNumber />
         <Continuation from={v} />
@@ -102,23 +104,23 @@ export function MoveList() {
         <div className="mb-1 flex items-center justify-end gap-1 px-1">
           <button
             onClick={() => promote(currentId)}
-            title="Make this the main line"
+            title={t('moveList.promoteTitle')}
             className="min-h-11 rounded bg-neutral-700 px-2 py-0.5 text-xs text-neutral-200 hover:bg-neutral-600 sm:min-h-0"
           >
-            ⤴ Promote
+            ⤴ {t('moveList.promote')}
           </button>
           <button
             onClick={() => deleteVariation(currentId)}
-            title="Delete this variation"
+            title={t('moveList.deleteTitle')}
             className="min-h-11 rounded bg-neutral-700 px-2 py-0.5 text-xs text-neutral-300 hover:bg-rose-900/60 hover:text-rose-200 sm:min-h-0"
           >
-            🗑 Delete
+            🗑 {t('moveList.delete')}
           </button>
         </div>
       )}
-      <div ref={scrollRef} role="region" aria-label="Moves" className="scroll-thin max-h-56 overflow-y-auto px-1 leading-7">
+      <div ref={scrollRef} role="region" aria-label={t('moveList.moves')} className="scroll-thin max-h-56 overflow-y-auto px-1 leading-7">
         {!hasMoves ? (
-          <p className="p-2 text-xs text-neutral-400">No moves yet. Make moves on the board to build lines.</p>
+          <p className="p-2 text-xs text-neutral-400">{t('moveList.empty')}</p>
         ) : (
           <Continuation from={tree[rootId]!} />
         )}

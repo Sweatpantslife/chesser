@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { Chess } from 'chess.js';
 import { Board } from '../board/Board';
 import { engine } from '../lib/engine';
@@ -11,6 +12,7 @@ import type { Color } from '../store/game';
 type Phase = 'solving' | 'checking' | 'good' | 'bad';
 
 export function MistakesMode() {
+  const { t } = useTranslation('tactics');
   const cards = useMistakes((s) => s.cards);
   const remove = useMistakes((s) => s.remove);
   const game = useRef(new Chess());
@@ -38,7 +40,7 @@ export function MistakesMode() {
     setPhase('solving');
     setFen(card.fen);
     setLastMove(undefined);
-    setFeedback(`You played ${card.playedSan} here — find a stronger move.`);
+    setFeedback(t('mistakes.prompt', { san: card.playedSan }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [card?.id]);
 
@@ -75,23 +77,23 @@ export function MistakesMode() {
     // (which used to read as 50/50 and reject a mating answer as "still drops").
     if (game.current.isCheckmate()) {
       setPhase('good');
-      setFeedback(`✓ ${mv.san} — checkmate! Far better than ${card.playedSan}.`);
+      setFeedback(t('mistakes.checkmate', { san: mv.san, played: card.playedSan }));
       busy.current = false;
       return;
     }
     setPhase('checking');
-    setFeedback('checking…');
+    setFeedback(t('mistakes.checking'));
 
     const score = await engine.evalOnce(game.current.fen(), { movetimeMs: 350 });
     const moverWin = card.side === 'white' ? whiteWinPercent(score) : 100 - whiteWinPercent(score);
     const loss = card.expected - moverWin;
     if (loss <= 8) {
       setPhase('good');
-      setFeedback(`✓ ${mv.san} holds up — much better than ${card.playedSan}.`);
+      setFeedback(t('mistakes.holdsUp', { san: mv.san, played: card.playedSan }));
       busy.current = false;
     } else {
       setPhase('bad');
-      setFeedback(`✗ ${mv.san} still drops ~${Math.round(loss)}%. Try another.`);
+      setFeedback(t('mistakes.stillDrops', { san: mv.san, loss: Math.round(loss) }));
       if (resetTimer.current) clearTimeout(resetTimer.current);
       resetTimer.current = setTimeout(() => {
         resetTimer.current = null;
@@ -115,7 +117,7 @@ export function MistakesMode() {
   if (!card) {
     return (
       <div className="mx-auto max-w-md rounded-2xl bg-panel shadow-soft p-4 text-sm text-neutral-400">
-        No saved mistakes yet. On the <b className="text-neutral-300">Play</b> board, review a game and “Save mistakes to drill”.
+        <Trans t={t} i18nKey="mistakes.empty" components={{ b: <b className="text-neutral-300" /> }} />
       </div>
     );
   }
@@ -129,9 +131,9 @@ export function MistakesMode() {
           <span
             className={`rounded px-2 py-0.5 text-xs ${card.severity === 'blunder' ? 'bg-rose-900/60 text-rose-300' : 'bg-orange-900/50 text-orange-300'}`}
           >
-            {card.severity}
+            {t(`mistakes.severity.${card.severity}`)}
           </span>
-          <span className="text-neutral-400">{card.side === 'white' ? 'White' : 'Black'} to move</span>
+          <span className="text-neutral-400">{t(`mistakes.toMove.${card.side}`)}</span>
         </div>
         <div className="mx-auto w-full max-w-[520px]">
           <Board
@@ -150,7 +152,7 @@ export function MistakesMode() {
       <div className="space-y-3">
         <div className="rounded-2xl bg-panel shadow-soft p-3">
           <div className="mb-1 flex items-center justify-between text-sm">
-            <span className="font-semibold text-ink">Your mistakes</span>
+            <span className="font-semibold text-ink">{t('mistakes.title')}</span>
             <span className="text-xs text-neutral-400">{idx + 1}/{cards.length}</span>
           </div>
           <p
@@ -161,11 +163,11 @@ export function MistakesMode() {
           <div className="mt-3 flex flex-wrap gap-2">
             {phase === 'good' && (
               <button onClick={learned} className="rounded bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800">
-                Got it ✓
+                {t('mistakes.gotIt')}
               </button>
             )}
             <button onClick={next} className="rounded bg-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600">
-              Skip →
+              {t('mistakes.skip')}
             </button>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import type { TablebaseCategory, TablebaseResult } from '@chesser/shared';
+import i18n from '../i18n';
 
 const cache = new Map<string, TablebaseResult>();
 
@@ -19,22 +20,26 @@ export async function fetchTablebase(fen: string): Promise<TablebaseResult> {
   }
 }
 
+// Labels/feedback resolve through the `quality` namespace at call time; the
+// call sites re-run them per render/move, so a language switch shows up on
+// the next update.
 export function categoryLabel(cat: TablebaseCategory | undefined, dtm: number | null | undefined): string {
+  const t = i18n.getFixedT(null, 'quality');
   // dtm is a distance in plies (half-moves); "mate in N" is counted in moves.
   const mateIn = (d: number) => Math.ceil(Math.abs(d) / 2);
   switch (cat) {
     case 'win':
-      return dtm ? `Tablebase: win, mate in ${mateIn(dtm)}` : 'Tablebase: winning';
+      return dtm ? t('tablebase.winMate', { n: mateIn(dtm) }) : t('tablebase.win');
     case 'loss':
-      return dtm ? `Tablebase: loss, mated in ${mateIn(dtm)}` : 'Tablebase: losing';
+      return dtm ? t('tablebase.lossMate', { n: mateIn(dtm) }) : t('tablebase.loss');
     case 'draw':
-      return 'Tablebase: drawn';
+      return t('tablebase.draw');
     case 'cursed-win':
-      return 'Tablebase: win (50-move rule looms)';
+      return t('tablebase.cursedWin');
     case 'blessed-loss':
-      return 'Tablebase: loss (saved by 50-move rule)';
+      return t('tablebase.blessedLoss');
     default:
-      return 'Tablebase: unknown';
+      return t('tablebase.unknown');
   }
 }
 
@@ -50,18 +55,19 @@ export function judgeMove(
   goal: 'win' | 'draw',
 ): { kind: 'ok' | 'good' | 'bad'; text: string } | null {
   if (!before.available || !before.moves || before.moves.length === 0) return null;
+  const t = i18n.getFixedT(null, 'quality');
   const best = before.moves[0]!;
   const played = before.moves.find((m) => m.uci === uci);
   if (!played) return null;
 
   if (goal === 'win') {
-    if (!WIN_CATS.includes(played.category)) return { kind: 'bad', text: 'That throws away the win!' };
+    if (!WIN_CATS.includes(played.category)) return { kind: 'bad', text: t('tablebase.feedback.throwsWin') };
     // DTZ lets us rank speed (online proxy); local Syzygy gives category only.
-    if (best.dtz == null || played.dtz == null) return { kind: 'good', text: 'Winning move.' };
-    if (Math.abs(played.dtz) <= Math.abs(best.dtz)) return { kind: 'good', text: 'Optimal — fastest win.' };
-    return { kind: 'ok', text: 'Still winning, but not the quickest.' };
+    if (best.dtz == null || played.dtz == null) return { kind: 'good', text: t('tablebase.feedback.winning') };
+    if (Math.abs(played.dtz) <= Math.abs(best.dtz)) return { kind: 'good', text: t('tablebase.feedback.optimal') };
+    return { kind: 'ok', text: t('tablebase.feedback.slowWin') };
   }
   // draw
-  if (!DRAW_CATS.includes(played.category)) return { kind: 'bad', text: 'That loses — the draw is gone.' };
-  return { kind: 'good', text: 'Holds the draw.' };
+  if (!DRAW_CATS.includes(played.category)) return { kind: 'bad', text: t('tablebase.feedback.losesDraw') };
+  return { kind: 'good', text: t('tablebase.feedback.holdsDraw') };
 }

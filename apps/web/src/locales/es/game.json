@@ -1,0 +1,98 @@
+{
+  "controls": {
+    "first": "Primera",
+    "firstAria": "Primera jugada",
+    "previous": "Anterior",
+    "previousAria": "Jugada anterior",
+    "next": "Siguiente",
+    "nextAria": "Jugada siguiente",
+    "last": "Última",
+    "lastAria": "Última jugada",
+    "flip": "Girar",
+    "flipTitle": "Girar el tablero (f)",
+    "takeback": "Deshacer",
+    "takebackTitle": "Deshacer jugada",
+    "analyse": "Analizar",
+    "analyseTitle": "Tablero de análisis",
+    "pgn": "PGN",
+    "pgnTitle": "Copiar PGN",
+    "library": "Biblioteca",
+    "libraryTitle": "Abrir / importar / FEN",
+    "save": "Guardar",
+    "saved": "Guardada",
+    "saveTitle": "Guarda la partida en tu biblioteca",
+    "line": "Línea",
+    "lineTitle": "Guarda esta línea en un repertorio"
+  },
+  "colors": {
+    "white": "blancas",
+    "black": "negras"
+  },
+  "actions": {
+    "youPlay": "Juegas con <color>{{color}}</color>",
+    "thinking": "pensando…",
+    "resign": "Rendirse",
+    "confirmResign": "Confirmar rendición",
+    "offerDraw": "Ofrecer tablas",
+    "offerDrawTitle": "Ofrece tablas al bot",
+    "claimDraw": "Reclamar tablas",
+    "claimDrawTitle": "Reclama las tablas",
+    "claimDrawUnavailable": "Disponible por triple repetición o por la regla de las 50 jugadas",
+    "offeringDraw": "Ofreciendo tablas…",
+    "drawDeclined": "El bot rechaza las tablas.",
+    "youWon": "¡Has ganado! 🎉",
+    "youLost": "Has perdido — ¿revancha?",
+    "draw": "Tablas.",
+    "gameOver": "Fin de la partida.",
+    "ladderCleared": "Peldaño de la escalera superado — el siguiente rival está desbloqueado.",
+    "analyzeGame": "Analizar partida",
+    "rematch": "Revancha",
+    "switchColours": "Cambiar de color",
+    "summary": "Resumen"
+  },
+  "over": {
+    "victory": "Victoria",
+    "defeat": "Derrota",
+    "draw": "Tablas",
+    "opponent": "Rival",
+    "youPlayed": "Jugaste con <color>{{color}}</color>",
+    "ratingBlitz": "Puntuación de blitz",
+    "ratingBots": "Puntuación de bots",
+    "unrated": "sin puntuar",
+    "accuracy": "Precisión",
+    "analysingPercent": "analizando {{percent}}%",
+    "analysing": "analizando…",
+    "engineOffline": "motor sin conexión",
+    "you": "Tú",
+    "movesLabel": "Jugadas",
+    "openingLabel": "Apertura",
+    "walkthrough": "repaso jugada a jugada"
+  },
+  "promotion": {
+    "chooseTitle": "Elige la pieza de promoción",
+    "promoteTo": "Promocionar a {{piece}}",
+    "pieces": {
+      "q": "dama",
+      "r": "torre",
+      "b": "alfil",
+      "n": "caballo"
+    }
+  },
+  "moveList": {
+    "variation": "Variante",
+    "promote": "Promover",
+    "promoteTitle": "Convertir en línea principal",
+    "delete": "Eliminar",
+    "deleteTitle": "Eliminar esta variante",
+    "moves": "Jugadas",
+    "empty": "Aún no hay jugadas. Mueve en el tablero para crear líneas."
+  },
+  "evalBar": {
+    "evaluation": "Evaluación: {{score}} (perspectiva de las blancas)",
+    "none": "Sin evaluación"
+  },
+  "evalGraph": {
+    "title": "Haz clic para saltar a una jugada",
+    "aria": "Gráfico de evaluación, jugada {{current}} de {{total}}. Usa las flechas del teclado para recorrer las jugadas."
+  }
+}

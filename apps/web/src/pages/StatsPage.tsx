@@ -1,4 +1,5 @@
 import { useMemo, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useProgress } from '../store/progress';
 import { useRepertoire } from '../store/repertoire';
 import { useCoordinate } from '../store/coordinate';
@@ -55,6 +56,7 @@ function Section({ title, children, aside }: { title: string; children: ReactNod
 }
 
 export function StatsPage({ goto }: { goto: (target: DeckTarget) => void }) {
+  const { t } = useTranslation('stats');
   const history = useProgress((s) => s.history);
   const streak = useProgress((s) => s.streak);
   const bestStreak = useProgress((s) => s.bestStreak);
@@ -116,9 +118,8 @@ export function StatsPage({ goto }: { goto: (target: DeckTarget) => void }) {
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-neutral-700 bg-panel/60 p-6 text-center text-sm text-neutral-400 sm:flex-row sm:text-left">
           <EmptyStatsArt width={150} height={112} className="shrink-0" />
           <div>
-            <div className="mb-1 font-display text-base font-semibold text-ink">Your story starts here</div>
-            No training history yet. Solve tactics, drill openings, learn checkmate patterns or run the coordinate trainer — your
-            accuracy and volume will show up here.
+            <div className="mb-1 font-display text-base font-semibold text-ink">{t('empty.title')}</div>
+            {t('empty.body')}
           </div>
         </div>
       )}
@@ -126,21 +127,21 @@ export function StatsPage({ goto }: { goto: (target: DeckTarget) => void }) {
       <ReviewSummary goto={goto} />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-4">
-        <StatCard label="Level" value={<span>⭐ {level}</span>} hint={`${xp.toLocaleString()} XP`} />
-        <StatCard label="Puzzle rating" value={puzzleRating} hint={`peak ${puzzlePeak} · ${meter}`} />
-        <StatCard label="Review streak" value={<span>📚 {streak}</span>} hint={`best ${bestStreak}`} />
-        <StatCard label="Day streak" value={<span>🔥 {dayStreak}</span>} hint="active days" />
-        <StatCard label="Reviews" value={totals.reviews} hint={`${totals.activeDays} active days`} />
-        <StatCard label="Accuracy" value={`${totals.acc}%`} hint={`${totals.correct} correct`} />
-        <StatCard label="Today" value={todayReviews} hint="reviews" />
-        <StatCard label="Due now" value={review.totalDue} hint="all decks" />
+        <StatCard label={t('cards.level')} value={<span>⭐ {level}</span>} hint={t('cards.levelHint', { xp: xp.toLocaleString() })} />
+        <StatCard label={t('cards.puzzleRating')} value={puzzleRating} hint={t('cards.puzzleRatingHint', { peak: puzzlePeak, meter })} />
+        <StatCard label={t('cards.reviewStreak')} value={<span>📚 {streak}</span>} hint={t('cards.reviewStreakHint', { best: bestStreak })} />
+        <StatCard label={t('cards.dayStreak')} value={<span>🔥 {dayStreak}</span>} hint={t('cards.dayStreakHint')} />
+        <StatCard label={t('cards.reviews')} value={totals.reviews} hint={t('cards.reviewsHint', { count: totals.activeDays })} />
+        <StatCard label={t('cards.accuracy')} value={t('percent', { value: totals.acc })} hint={t('cards.accuracyHint', { count: totals.correct })} />
+        <StatCard label={t('cards.today')} value={todayReviews} hint={t('cards.todayHint')} />
+        <StatCard label={t('cards.dueNow')} value={review.totalDue} hint={t('cards.dueNowHint')} />
       </div>
 
       <Section
-        title="Ratings"
+        title={t('sections.ratings')}
         aside={
           <span className="text-xs text-neutral-400">
-            {puzzlesSolved} solved · {customPuzzles} from your games
+            {t('sections.ratingsAside', { solved: puzzlesSolved, custom: customPuzzles })}
           </span>
         }
       >
@@ -151,26 +152,26 @@ export function StatsPage({ goto }: { goto: (target: DeckTarget) => void }) {
         </div>
       </Section>
 
-      <Section title="Activity" aside={<span className="text-xs text-neutral-400">last {HEATMAP_WEEKS} weeks</span>}>
+      <Section title={t('sections.activity')} aside={<span className="text-xs text-neutral-400">{t('sections.activityAside', { weeks: HEATMAP_WEEKS })}</span>}>
         <Heatmap days={heat} />
         {/* colour legend only makes sense once the calendar has data */}
         {heat.some((d) => d.value > 0) && (
           <div className="mt-2 flex items-center justify-end gap-1.5 text-xs text-neutral-400">
-            less
+            {t('legend.less')}
             {HEAT_COLORS.map((c) => (
               <span key={c} className="h-2.5 w-2.5 rounded-[2px]" style={{ background: c }} />
             ))}
-            more
+            {t('legend.more')}
           </div>
         )}
       </Section>
 
-      <Section title="Last 30 days" aside={<span className="text-xs text-neutral-400">reviews ▮ · accuracy ▬</span>}>
+      <Section title={t('sections.last30')} aside={<span className="text-xs text-neutral-400">{t('sections.last30Aside')}</span>}>
         <ActivityChart data={series} />
       </Section>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Section title="Learning progress">
+        <Section title={t('sections.learning')}>
           <div className="space-y-3">
             {review.decks.map((d) => (
               <ProgressBar key={d.deck} label={DECK_META[d.deck].label} total={d.total} seen={d.seen} due={d.due} />
@@ -178,15 +179,15 @@ export function StatsPage({ goto }: { goto: (target: DeckTarget) => void }) {
           </div>
         </Section>
 
-        <Section title="Personal bests">
+        <Section title={t('sections.bests')}>
           <div className="grid grid-cols-3 gap-3 text-center sm:grid-cols-6">
             {[
-              { label: 'Puzzle rush', value: rushBest },
-              { label: 'Puzzle storm', value: stormBest },
-              { label: 'Coord. white', value: coordBest.white },
-              { label: 'Coord. black', value: coordBest.black },
-              { label: 'Sq. colour', value: coordByMode.color },
-              { label: "Knight's tour", value: coordByMode.knight },
+              { label: t('bests.puzzleRush'), value: rushBest },
+              { label: t('bests.puzzleStorm'), value: stormBest },
+              { label: t('bests.coordWhite'), value: coordBest.white },
+              { label: t('bests.coordBlack'), value: coordBest.black },
+              { label: t('bests.squareColour'), value: coordByMode.color },
+              { label: t('bests.knightsTour'), value: coordByMode.knight },
             ].map((b) => (
               <div key={b.label}>
                 <div className="font-display text-2xl font-bold text-brand-300">{b.value}</div>

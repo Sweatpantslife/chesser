@@ -1,0 +1,149 @@
+{
+  "percent": "{{value}}%",
+  "side": {
+    "both": "both",
+    "white": "white",
+    "black": "black"
+  },
+  "phase": {
+    "opening": "Opening",
+    "middlegame": "Middlegame",
+    "endgame": "Endgame"
+  },
+  "engine": {
+    "title": "Engine",
+    "offDuringGames": "off during games",
+    "disabledWhilePlaying": "Engine analysis is disabled while you play — it unlocks the moment the game ends.",
+    "badge": "Stockfish · depth {{depth}}",
+    "analyseToggle": "analyse",
+    "lines": "lines",
+    "gameOverNoMoves": "game over — no moves to analyse",
+    "thinking": "thinking…",
+    "playLineTitle": "Play the line up to here",
+    "off": "Analysis is off."
+  },
+  "coach": {
+    "title": "Coach",
+    "exitTitle": "Exit walkthrough",
+    "analysing": "Analysing the game… {{progress}}%",
+    "startingPosition": "Starting position. Press ▶ to walk through the game move by move.",
+    "eval": "eval <val>{{value}}</val>",
+    "engineChoice": "Engine's choice: <move>{{san}}</move>",
+    "noGrade": "No grade for this move.",
+    "transport": {
+      "start": "Start",
+      "goToStart": "Go to start",
+      "previous": "Previous",
+      "previousMove": "Previous move",
+      "play": "Play",
+      "pause": "Pause",
+      "next": "Next",
+      "nextMove": "Next move",
+      "end": "End",
+      "goToEnd": "Go to end"
+    }
+  },
+  "review": {
+    "title": "Game review",
+    "reviewGame": "Review game",
+    "rereview": "Re-review",
+    "progressPct": "{{progress}}%",
+    "walkthrough": "▶ Guided walkthrough",
+    "headers": {
+      "accuracy": "acc.",
+      "acpl": "acpl"
+    },
+    "savedToDrill_one": "✓ Added {{count}} to drill",
+    "savedToDrill_other": "✓ Added {{count}} to drill",
+    "saveMistakes_one": "Save {{count}} mistakes to drill →",
+    "saveMistakes_other": "Save {{count}} mistakes to drill →",
+    "emptyAnalysis": "Analyse a game, then review it for blunders and inaccuracies.",
+    "emptyOtherMode": "Switch to the analysis board to review a game."
+  },
+  "puzzles": {
+    "mining": "Mining… {{done}}/{{total}} · {{found}} found (click to stop)",
+    "make": "⚡ Make puzzles from this game",
+    "added_one": "✓ Added {{count}} puzzle — find them under Tactics → My games.",
+    "added_other": "✓ Added {{count}} puzzles — find them under Tactics → My games.",
+    "noneFound": "No new tactics found in this game."
+  },
+  "deckStats": {
+    "learned": "<count>{{seen}}</count>/{{total}} learned",
+    "due_one": "{{count}} due",
+    "due_other": "{{count}} due",
+    "streakTitle": "Daily streak"
+  },
+  "queue": {
+    "title": "Review queue",
+    "learned": "{{seen}}/{{total}} learned",
+    "cardsDue_one": "card due across all decks",
+    "cardsDue_other": "cards due across all decks",
+    "dueLabel_one": "due",
+    "dueLabel_other": "due"
+  },
+  "ai": {
+    "badge": "AI Coach",
+    "disclaimer": "AI-generated from engine analysis",
+    "noKeyHint": "Add an AI key in Settings to unlock richer coaching.",
+    "explainThis": "Explain this",
+    "explainTitle": "Ask the AI coach to explain this move in plain language",
+    "thinking": "Coach is thinking",
+    "summaryTitle": "Coach's summary"
+  },
+  "graph": {
+    "ariaInteractive": "Advantage graph — click or use arrow keys to jump to a move",
+    "aria": "Advantage graph",
+    "clickTitle": "Click to jump to a move",
+    "winWhite": "{{win}}% White"
+  },
+  "mistakes": {
+    "title": "Mistakes",
+    "sortTitle": "Toggle list order",
+    "worstFirst": "Worst first",
+    "gameOrder": "Game order",
+    "clean": "No mistakes — clean game!",
+    "chipShow": "{{label}} — click to show",
+    "chipHide": "{{label}} — click to hide",
+    "noMatch": "No moves match the current filters.",
+    "listAria": "Mistakes in this game",
+    "jumpTitle": "Jump to position",
+    "practice": "Practice",
+    "practiceTitle": "Practice vs engine from this position",
+    "winLost": "−{{lost}}%",
+    "best": "Best <line>{{line}}</line>",
+    "bestPunished": "Best <line>{{line}}</line> · {{san}} is punished by <reply>{{reply}}</reply>"
+  },
+  "detail": {
+    "title": "Move detail",
+    "previousMove": "Previous move",
+    "nextMove": "Next move",
+    "eval": "eval <from>{{before}}</from> → <to>{{after}}</to>",
+    "bestWas": "Best was <move>{{san}}</move>",
+    "bestWasTitle": "Play the engine's move on the board",
+    "engineLine": "Engine line",
+    "pvTitle": "Play the line up to here on the board",
+    "hideBest": "Hide best move",
+    "showBest": "Show best move",
+    "practicePosition": "Practice this position"
+  },
+  "report": {
+    "title": "Game report",
+    "exportPgn": "Export PGN",
+    "you": "you",
+    "acpl": "ACPL {{value}}",
+    "acplTitle": "Average centipawn loss",
+    "estRating": "~{{rating}} est. rating",
+    "estRatingTitle": "Heuristic estimate from accuracy and centipawn loss — not a real rating",
+    "showMoves": "Show {{label}} moves",
+    "header": {
+      "phase": "Phase",
+      "white": "White",
+      "black": "Black"
+    },
+    "theoryThroughout": "In theory throughout",
+    "theoryLeftAt": "Left theory at move {{move}}",
+    "noBookOpening": "No book opening detected.",
+    "phaseJumpTitle": "Jump to the start of this phase",
+    "keyMoments": "Key moments"
+  }
+}

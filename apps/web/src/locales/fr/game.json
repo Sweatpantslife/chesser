@@ -1,0 +1,98 @@
+{
+  "controls": {
+    "first": "Début",
+    "firstAria": "Premier coup",
+    "previous": "Précédent",
+    "previousAria": "Coup précédent",
+    "next": "Suivant",
+    "nextAria": "Coup suivant",
+    "last": "Fin",
+    "lastAria": "Dernier coup",
+    "flip": "Retourner",
+    "flipTitle": "Retourner l'échiquier (f)",
+    "takeback": "Reprendre",
+    "takebackTitle": "Reprendre le coup",
+    "analyse": "Analyser",
+    "analyseTitle": "Échiquier d'analyse",
+    "pgn": "PGN",
+    "pgnTitle": "Copier le PGN",
+    "library": "Bibliothèque",
+    "libraryTitle": "Ouvrir / importer / FEN",
+    "save": "Enregistrer",
+    "saved": "Enregistrée",
+    "saveTitle": "Enregistrer la partie dans votre bibliothèque",
+    "line": "Ligne",
+    "lineTitle": "Enregistrer cette ligne dans un répertoire"
+  },
+  "colors": {
+    "white": "blancs",
+    "black": "noirs"
+  },
+  "actions": {
+    "youPlay": "Vous jouez les <color>{{color}}</color>",
+    "thinking": "réflexion…",
+    "resign": "Abandonner",
+    "confirmResign": "Confirmer l'abandon",
+    "offerDraw": "Proposer nulle",
+    "offerDrawTitle": "Proposer la nulle au bot",
+    "claimDraw": "Réclamer la nulle",
+    "claimDrawTitle": "Réclamer la nulle",
+    "claimDrawUnavailable": "Disponible en cas de triple répétition ou de règle des 50 coups",
+    "offeringDraw": "Proposition de nulle…",
+    "drawDeclined": "Le bot refuse la nulle.",
+    "youWon": "Vous avez gagné ! 🎉",
+    "youLost": "Vous avez perdu — revanche ?",
+    "draw": "Nulle.",
+    "gameOver": "Partie terminée.",
+    "ladderCleared": "Barreau de l'échelle franchi — l'adversaire suivant est débloqué.",
+    "analyzeGame": "Analyser la partie",
+    "rematch": "Revanche",
+    "switchColours": "Changer de couleur",
+    "summary": "Résumé"
+  },
+  "over": {
+    "victory": "Victoire",
+    "defeat": "Défaite",
+    "draw": "Nulle",
+    "opponent": "Adversaire",
+    "youPlayed": "Vous jouiez les <color>{{color}}</color>",
+    "ratingBlitz": "Classement blitz",
+    "ratingBots": "Classement bots",
+    "unrated": "sans classement",
+    "accuracy": "Précision",
+    "analysingPercent": "analyse {{percent}} %",
+    "analysing": "analyse…",
+    "engineOffline": "moteur hors ligne",
+    "you": "Vous",
+    "movesLabel": "Coups",
+    "openingLabel": "Ouverture",
+    "walkthrough": "revue coup par coup"
+  },
+  "promotion": {
+    "chooseTitle": "Choisissez la pièce de promotion",
+    "promoteTo": "Promouvoir en {{piece}}",
+    "pieces": {
+      "q": "dame",
+      "r": "tour",
+      "b": "fou",
+      "n": "cavalier"
+    }
+  },
+  "moveList": {
+    "variation": "Variante",
+    "promote": "Promouvoir",
+    "promoteTitle": "En faire la ligne principale",
+    "delete": "Supprimer",
+    "deleteTitle": "Supprimer cette variante",
+    "moves": "Coups",
+    "empty": "Aucun coup pour l'instant. Jouez sur l'échiquier pour construire des lignes."
+  },
+  "evalBar": {
+    "evaluation": "Évaluation : {{score}} (du point de vue des Blancs)",
+    "none": "Pas d'évaluation"
+  },
+  "evalGraph": {
+    "title": "Cliquez pour sauter à un coup",
+    "aria": "Graphique d'évaluation, coup {{current}} sur {{total}}. Utilisez les flèches pour parcourir les coups."
+  }
+}

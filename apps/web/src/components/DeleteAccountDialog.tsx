@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { useAuth } from '../store/auth';
 import { apiDeleteAccount, clearLocalData } from '../lib/trustApi';
 import { Modal } from './Modal';
@@ -11,6 +12,7 @@ import { Modal } from './Modal';
  * not dismiss a destructive confirmation mid-thought.
  */
 export function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation('account');
   const token = useAuth((s) => s.token);
   const username = useAuth((s) => s.username);
   const [confirm, setConfirm] = useState('');
@@ -37,7 +39,7 @@ export function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
       clearLocalData();
       window.location.reload();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not delete the account — try again.');
+      setError(err instanceof Error ? err.message : t('deleteDialog.error'));
       setBusy(false);
     }
   };
@@ -51,17 +53,20 @@ export function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
       className="w-full max-w-sm rounded-2xl bg-panel p-4 shadow-soft"
     >
       <h3 id="delete-account-title" className="font-display text-base font-semibold text-rose-300">
-        Delete this account?
+        {t('deleteDialog.title')}
       </h3>
       <p className="mt-2 text-sm text-neutral-300">
-        This permanently erases <strong className="text-ink">{username}</strong> from Chesser&apos;s servers: your
-        sign-in, synced progress, saved games, sharing settings, leaderboard entries and friends. Your data in this
-        browser is cleared too. <strong>There is no undo.</strong>
+        <Trans
+          t={t}
+          i18nKey="deleteDialog.body"
+          values={{ username }}
+          components={{ name: <strong className="text-ink" />, b: <strong /> }}
+        />
       </p>
       <form onSubmit={submit} className="mt-3 space-y-3">
         <div>
           <label htmlFor="delete-confirm" className="mb-1 block text-xs font-semibold uppercase tracking-wide text-neutral-400">
-            Type DELETE to confirm
+            {t('deleteDialog.confirmLabel')}
           </label>
           <input
             id="delete-confirm"
@@ -84,14 +89,14 @@ export function DeleteAccountDialog({ onClose }: { onClose: () => void }) {
             disabled={busy}
             className="btn-press flex-1 rounded-full bg-neutral-700 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-600 disabled:opacity-50"
           >
-            Cancel
+            {t('deleteDialog.cancel')}
           </button>
           <button
             type="submit"
             disabled={!armed || busy}
             className="btn-press flex-1 rounded-full bg-rose-600 py-2 text-sm font-bold text-white hover:bg-rose-700 disabled:opacity-50"
           >
-            {busy ? 'Deleting…' : 'Delete forever'}
+            {busy ? t('deleteDialog.deleting') : t('deleteDialog.confirm')}
           </button>
         </div>
       </form>

@@ -1,0 +1,138 @@
+{
+  "title": "Profile",
+  "meterLabel": "Show ratings as",
+  "level": {
+    "badge": "level",
+    "xp": "{{xp, number}} XP",
+    "toNext": "{{xp}} XP to level {{level}}"
+  },
+  "suggested": {
+    "title": "Suggested next opponent",
+    "play": "Play",
+    "matched": "Matched to your Glicko-2 bots rating ({{rating}})."
+  },
+  "since": "Chesser player since {{date}}",
+  "categories": {
+    "puzzles": "Puzzles",
+    "bots": "Bots",
+    "blitz": "Blitz"
+  },
+  "copyLink": "Copy link",
+  "copied": "Copied!",
+  "linkCopied": "Profile link copied to the clipboard",
+  "downloadCard": "Download a shareable card image",
+  "share": {
+    "title": "Share your profile",
+    "signedOut": "Sign in (top right) to publish a shareable profile card and join the leaderboards. Sharing is opt-in, per stat.",
+    "loadError": "Couldn't load your share settings — {{error}}",
+    "retry": "Retry",
+    "loading": "Loading your share settings…",
+    "saving": "Saving…",
+    "intro": "Everything is private by default. Flip on what you want the world to see — only your display name plus the sections below are ever shown, nothing else.",
+    "profileToggle": {
+      "label": "Public profile page",
+      "desc": "Anyone with your link can view the shared sections"
+    },
+    "leaderboardsToggle": {
+      "label": "Leaderboards",
+      "desc": "Rank your ratings + Puzzle Rush best on the public boards"
+    },
+    "sections": {
+      "showRatings": { "label": "Ratings", "desc": "Puzzles · Bots · Blitz, with peaks" },
+      "showRush": { "label": "Puzzle Rush best", "desc": "Your top run" },
+      "showStreak": { "label": "Streak", "desc": "Current + best day streak" },
+      "showRecord": { "label": "W/D/L record", "desc": "Wins, draws, losses vs bots" },
+      "showAchievements": { "label": "Achievements", "desc": "Your latest badges" },
+      "showOpenings": { "label": "Favorite openings", "desc": "Most-played openings" }
+    },
+    "linkLabel": "Your profile link",
+    "copyTitle": "Copy your profile link",
+    "enableFirst": "Enable the public profile first",
+    "preview": "Preview",
+    "previewTitle": "See your profile as others do",
+    "rendering": "Rendering…",
+    "cardImage": "Card image"
+  },
+  "public": {
+    "loading": "Loading profile…",
+    "error": {
+      "title": "Couldn't load this profile",
+      "body": "Something went wrong reaching the server — check your connection and try again."
+    },
+    "missing": {
+      "title": "This profile is private or doesn't exist",
+      "body": "Players choose exactly what they share on Chesser. If this is your link, enable sharing on your Profile tab."
+    },
+    "card": "Card",
+    "nothingShared": "{{username}} keeps their stats to themselves. Respect.",
+    "ratings": {
+      "peakPlayed": "peak {{peak}} · {{played}} played",
+      "solved": "{{won}} solved · {{lost}} missed",
+      "wdl": "{{won}}W {{drawn}}D {{lost}}L"
+    },
+    "rush": {
+      "label": "Puzzle Rush",
+      "hint": "best run (5 min · 3 strikes)"
+    },
+    "streak": {
+      "label": "Streak",
+      "days_one": "day",
+      "days_other": "days",
+      "best_one": "best {{count}} day",
+      "best_other": "best {{count}} days"
+    },
+    "record": {
+      "label": "Record",
+      "none": "No games on record yet.",
+      "aria": "{{wins}} wins, {{draws}} draws, {{losses}} losses",
+      "wins_one": "{{count}}W",
+      "wins_other": "{{count}}W",
+      "draws_one": "{{count}}D",
+      "draws_other": "{{count}}D",
+      "losses_one": "{{count}}L",
+      "losses_other": "{{count}}L"
+    },
+    "achievements": "Latest achievements",
+    "openings": {
+      "title": "Favorite openings",
+      "row_one": "{{count}} game · {{wins}} won",
+      "row_other": "{{count}} games · {{wins}} won"
+    },
+    "footer": "Shared by {{username}} on Chesser — only opted-in stats are shown."
+  },
+  "report": {
+    "button": "Report this profile",
+    "title": "Report {{username}}",
+    "done": "Thanks — your report was recorded and will be reviewed.",
+    "signedOut": "Sign in (top right) to report a profile — reports need an account.",
+    "reasonLegend": "What's wrong?",
+    "reasons": {
+      "inappropriateName": "Inappropriate name",
+      "impersonation": "Impersonation",
+      "harassment": "Harassment",
+      "cheating": "Cheating",
+      "other": "Something else"
+    },
+    "details": "Details (optional)",
+    "error": "Could not send the report — try again.",
+    "sending": "Sending…",
+    "send": "Send report"
+  },
+  "card": {
+    "tagline": "play & train chess",
+    "labels": {
+      "puzzles": "Puzzles",
+      "bots": "Bots",
+      "blitz": "Blitz",
+      "rushBest": "Rush best",
+      "streak": "Streak",
+      "wdl": "W · D · L"
+    },
+    "streakValue": "{{current}}d (best {{best}})",
+    "noStats": "A Chesser player with more secrets than shared stats.",
+    "openings": "Favorite openings: {{openings}}",
+    "invite": "Play & train at your own pace — puzzles, bots, openings.",
+    "canvasError": "Canvas is unavailable.",
+    "renderError": "Could not render the card image."
+  }
+}

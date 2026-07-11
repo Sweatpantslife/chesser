@@ -5,6 +5,14 @@
  *
  * Pure and store-free on purpose: lib/gamify.ts builds the ctx from the stores
  * and calls `evaluateAchievements` after every relevant event.
+ *
+ * i18n: this module must NOT import src/i18n (it sits in store/game's static
+ * import graph, whose tests run under plain `node --test`). `name` / `desc` /
+ * ACHIEVEMENT_CATEGORY_LABELS are the CANONICAL ENGLISH strings; the UI
+ * resolves display text by id via the `progress` namespace —
+ * t(`progress:achievements.${id}.name` / `.desc`,
+ *   `progress:achievementCategories.${category}`) with these as defaultValue.
+ * Keep locales/<lng>/progress.json in sync when adding/renaming a badge.
  */
 import type { RatingCategory } from '../store/ratings';
 import { LESSON_COUNT } from '../learn/meta';

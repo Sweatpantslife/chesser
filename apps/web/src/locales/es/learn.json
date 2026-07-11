@@ -1,0 +1,95 @@
+{
+  "stars": {
+    "aria": "{{n}} de 3 estrellas"
+  },
+  "catalogue": {
+    "completedAria": "{{title}} (completada)",
+    "start": "Empezar →",
+    "heroTitle": "Aprende ajedrez de forma divertida",
+    "progress": "{{done}}/{{total}} lecciones completadas",
+    "heroBody": "Lecciones cortas y prácticas — cada idea la juegas tú en el tablero. ¿Nuevo en el ajedrez? Empieza por arriba y conocerás todas las reglas en minutos.",
+    "progressAria": "Lecciones completadas"
+  },
+  "player": {
+    "backAria": "Volver a todas las lecciones",
+    "backLabel": "← Lecciones",
+    "stepAria": "Paso {{step}} de {{total}}",
+    "yourMove": "● tu turno",
+    "moveProgress": "jugada {{i}} de {{n}}",
+    "gotIt": "Entendido →",
+    "exercise": "Ejercicio {{i}} de {{n}}",
+    "tryAgain": "Inténtalo de nuevo",
+    "continue": "Continuar →",
+    "showMe": "Muéstrame",
+    "tip": "¿Un error? Sin estrés — puedes reintentar cada ejercicio y repetir cualquier lección desde la página Aprender.",
+    "feedback": {
+      "nice": "¡Bien!",
+      "correct": "✓ {{san}}",
+      "correctKeepGoing": "✓ {{san}} — ¡sigue así!"
+    },
+    "done": {
+      "title": "¡Lección completada!",
+      "flawless": "Impecable — ni una sola jugada errónea.",
+      "solid": "¡Sólido! Repítela cuando quieras para conseguir 3 estrellas.",
+      "ok": "¡Hecho! Repítela cuando quieras para pulirla.",
+      "xpEarned": "XP ganados.",
+      "next": "Siguiente lección →",
+      "back": "Volver a las lecciones"
+    },
+    "wrongDefault": {
+      "move": "Esa no — vuelve a mirar e inténtalo otra vez.",
+      "line": "Es legal, pero no es el plan — inténtalo otra vez.",
+      "checkmate": "Eso no termina la partida — busca la jugada que no deja escapatoria.",
+      "capture": "Es legal, pero no has capturado nada. ¡Toma la pieza!",
+      "promotion": "Lleva el peón hasta la última fila.",
+      "any": "Inténtalo otra vez."
+    }
+  },
+  "masters": {
+    "title": "Partidas magistrales",
+    "subtitle": "Partidas famosas, comentadas jugada a jugada — reprodúcelas, salta a los momentos clave y lleva cualquier posición al tablero de análisis.",
+    "filters": {
+      "themeAria": "Filtrar por tema",
+      "allThemes": "Todos los temas",
+      "difficultyAria": "Filtrar por dificultad",
+      "anyLevel": "Cualquier nivel",
+      "opening": "Apertura",
+      "allOpenings": "Todas las aperturas"
+    },
+    "themes": {
+      "attack": "Ataque",
+      "sacrifice": "Sacrificio",
+      "tactics": "Táctica",
+      "endgame": "Final",
+      "positional": "Posicional"
+    },
+    "difficulty": {
+      "beginner": "Principiante",
+      "intermediate": "Intermedio",
+      "advanced": "Avanzado"
+    },
+    "noMatches": "Ninguna partida coincide con estos filtros — prueba a quitar alguno.",
+    "viewer": {
+      "back": "← Biblioteca",
+      "first": "Primera jugada",
+      "firstTitle": "Primera (Inicio)",
+      "previous": "Jugada anterior",
+      "previousTitle": "Anterior (←)",
+      "next": "Jugada siguiente",
+      "nextTitle": "Siguiente (→)",
+      "last": "Última jugada",
+      "lastTitle": "Última (Fin)",
+      "flip": "⇅ Girar",
+      "flipTitle": "Girar el tablero (f)",
+      "analyze": "Analizar desde aquí",
+      "analyzeTitle": "Abrir esta posición en el tablero de análisis",
+      "commentary": "Comentarios",
+      "about": "Sobre esta partida",
+      "noNote": "Avanza con las flechas del teclado — los comentarios aparecen en las jugadas anotadas.",
+      "keyMoments": "Momentos clave",
+      "moves": "Jugadas",
+      "movesAria": "Jugadas de la partida",
+      "start": "Inicio"
+    }
+  }
+}

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useAuth } from '../store/auth';
 import { useSocial } from '../store/social';
 import { apiFetchBoard, type BoardId, type BoardResponse, type BoardScope } from '../lib/socialApi';
@@ -10,30 +12,28 @@ import { IconTrophy } from '../components/icons';
  * against the account's synced progress, never trusted from the client.
  */
 
-const BOARD_TABS: { id: BoardId; label: string; icon: string; hint: string }[] = [
-  { id: 'puzzles', label: 'Puzzles', icon: '🧩', hint: 'Tactics rating' },
-  { id: 'bots', label: 'Bots', icon: '♟️', hint: 'Bot-game rating' },
-  { id: 'rush', label: 'Rush', icon: '🏃', hint: 'Puzzle Rush best' },
+const BOARD_TABS: { id: BoardId; icon: string }[] = [
+  { id: 'puzzles', icon: '🧩' },
+  { id: 'bots', icon: '♟️' },
+  { id: 'rush', icon: '🏃' },
 ];
 
-const SCOPES: { id: BoardScope; label: string }[] = [
-  { id: 'global', label: 'All-time' },
-  { id: 'weekly', label: 'This week' },
-];
+const SCOPES: BoardScope[] = ['global', 'weekly'];
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
-function valueHeading(board: BoardId): string {
-  return board === 'rush' ? 'Best score' : 'Rating';
+function valueHeading(board: BoardId, t: TFunction<'leaders'>): string {
+  return t(board === 'rush' ? 'value.best' : 'value.rating');
 }
 
 /** "2026-W28" → "Week 28, 2026". */
-function weekLabel(weekKey: string): string {
+function weekLabel(weekKey: string, t: TFunction<'leaders'>): string {
   const m = /^(\d{4})-W(\d{2})$/.exec(weekKey);
-  return m ? `Week ${Number(m[2])}, ${m[1]}` : weekKey;
+  return m ? t('week', { week: Number(m[2]), year: m[1] }) : weekKey;
 }
 
 function JoinCard({ signedIn, onJoined }: { signedIn: boolean; onJoined: () => void }) {
+  const { t } = useTranslation('leaders');
   const save = useSocial((s) => s.save);
   const busy = useSocial((s) => s.busy);
   const error = useSocial((s) => s.error);
@@ -42,11 +42,9 @@ function JoinCard({ signedIn, onJoined }: { signedIn: boolean; onJoined: () => v
       <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-brand-600/20 text-brand-300">
         <IconTrophy size={24} />
       </div>
-      <h3 className="font-display text-sm font-semibold text-ink">Join the leaderboards</h3>
+      <h3 className="font-display text-sm font-semibold text-ink">{t('join.title')}</h3>
       <p className="mx-auto mt-1 max-w-md text-xs text-neutral-400">
-        {signedIn
-          ? 'Leaderboards are opt-in. Joining shares your display name and your ratings/Puzzle Rush best on the public boards — nothing else.'
-          : 'Sign in (top right) and opt in to compete. Only your display name and scores are ever shown.'}
+        {signedIn ? t('join.signedIn') : t('join.signedOut')}
       </p>
       {signedIn && (
         <button
@@ -59,7 +57,7 @@ function JoinCard({ signedIn, onJoined }: { signedIn: boolean; onJoined: () => v
           disabled={busy}
           className="btn-press mt-3 rounded-full bg-brand-600 px-5 py-2 text-sm font-bold text-white hover:bg-brand-700 disabled:opacity-60"
         >
-          {busy ? 'Joining…' : 'Join & share my scores'}
+          {busy ? t('join.joining') : t('join.cta')}
         </button>
       )}
       {error && (
@@ -72,6 +70,7 @@ function JoinCard({ signedIn, onJoined }: { signedIn: boolean; onJoined: () => v
 }
 
 export function LeaderboardsPage({ onViewProfile }: { onViewProfile: (username: string) => void }) {
+  const { t } = useTranslation('leaders');
   const token = useAuth((s) => s.token);
   const username = useAuth((s) => s.username);
   const prefs = useSocial((s) => s.prefs);
@@ -111,40 +110,40 @@ export function LeaderboardsPage({ onViewProfile }: { onViewProfile: (username: 
     <div className="mx-auto w-full max-w-[860px] space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-display text-base font-semibold text-ink">Leaderboards</h2>
-          <p className="text-xs text-neutral-400">Global standings across every Chesser account that opted in.</p>
+          <h2 className="font-display text-base font-semibold text-ink">{t('title')}</h2>
+          <p className="text-xs text-neutral-400">{t('subtitle')}</p>
         </div>
-        <div className="inline-flex overflow-hidden rounded-full border border-neutral-700 text-xs" role="group" aria-label="Time range">
+        <div className="inline-flex overflow-hidden rounded-full border border-neutral-700 text-xs" role="group" aria-label={t('scopeAria')}>
           {SCOPES.map((s) => (
             <button
-              key={s.id}
-              onClick={() => setScope(s.id)}
-              aria-pressed={scope === s.id}
+              key={s}
+              onClick={() => setScope(s)}
+              aria-pressed={scope === s}
               className={`btn-press px-3 py-1.5 font-semibold ${
-                scope === s.id ? 'bg-brand-600 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+                scope === s ? 'bg-brand-600 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
               }`}
             >
-              {s.label}
+              {t(`scopes.${s}`)}
             </button>
           ))}
         </div>
       </div>
 
-      <nav aria-label="Leaderboard" className="flex gap-1 overflow-x-auto">
-        {BOARD_TABS.map((t) => (
+      <nav aria-label={t('navAria')} className="flex gap-1 overflow-x-auto">
+        {BOARD_TABS.map((tab) => (
           <button
-            key={t.id}
-            onClick={() => setBoard(t.id)}
-            title={t.hint}
-            aria-current={board === t.id ? 'true' : undefined}
+            key={tab.id}
+            onClick={() => setBoard(tab.id)}
+            title={t(`tabs.${tab.id}.hint`)}
+            aria-current={board === tab.id ? 'true' : undefined}
             className={`btn-press flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-semibold ${
-              board === t.id
+              board === tab.id
                 ? 'bg-gradient-to-br from-brand-600 to-brand-700 text-white shadow-glow'
                 : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700 hover:text-ink'
             }`}
           >
-            <span aria-hidden="true">{t.icon}</span>
-            {t.label}
+            <span aria-hidden="true">{tab.icon}</span>
+            {t(`tabs.${tab.id}.label`)}
           </button>
         ))}
       </nav>
@@ -157,12 +156,12 @@ export function LeaderboardsPage({ onViewProfile }: { onViewProfile: (username: 
           join CTA above never mounts, so surface the error + retry here. */}
       {token && prefs === null && prefsError && (
         <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-panel p-4 shadow-soft">
-          <p className="text-sm text-rose-400">Couldn't load your share settings — {prefsError}</p>
+          <p className="text-sm text-rose-400">{t('prefsError', { error: prefsError })}</p>
           <button
             onClick={() => void loadPrefs()}
             className="btn-press rounded-full bg-neutral-800 px-4 py-1.5 text-sm font-semibold text-neutral-300 hover:bg-neutral-700 hover:text-ink"
           >
-            Retry
+            {t('retry')}
           </button>
         </div>
       )}
@@ -170,30 +169,30 @@ export function LeaderboardsPage({ onViewProfile }: { onViewProfile: (username: 
       <div className="rounded-2xl bg-panel p-4 shadow-soft">
         <div className="mb-3 flex items-center justify-between gap-2">
           <h3 className="font-display text-sm font-semibold text-ink">
-            {BOARD_TABS.find((t) => t.id === board)!.hint}
-            {scope === 'weekly' && data && <span className="ml-2 font-normal text-neutral-400">· {weekLabel(data.weekKey)}</span>}
+            {t(`tabs.${board}.hint`)}
+            {scope === 'weekly' && data && <span className="ml-2 font-normal text-neutral-400">· {weekLabel(data.weekKey, t)}</span>}
           </h3>
           <button
             onClick={() => void refresh()}
             className="btn-press rounded-full bg-neutral-800 px-3 py-1 text-xs font-semibold text-neutral-300 hover:bg-neutral-700 hover:text-ink"
           >
-            Refresh
+            {t('refresh')}
           </button>
         </div>
 
         {state === 'loading' && (
           <p role="status" className="py-8 text-center text-sm text-neutral-400">
-            Loading standings…
+            {t('loading')}
           </p>
         )}
         {state === 'error' && (
           <p role="alert" className="py-8 text-center text-sm text-rose-400">
-            Couldn't reach the leaderboard server. Try refreshing.
+            {t('error')}
           </p>
         )}
         {state === 'ready' && data && data.entries.length === 0 && (
           <p className="py-8 text-center text-sm text-neutral-400">
-            {scope === 'weekly' ? 'Nobody has posted a score this week — be the first!' : 'No entries yet — be the first!'}
+            {scope === 'weekly' ? t('empty.weekly') : t('empty.global')}
           </p>
         )}
 
@@ -201,23 +200,26 @@ export function LeaderboardsPage({ onViewProfile }: { onViewProfile: (username: 
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <caption className="sr-only">
-                {valueHeading(board)} leaderboard, {scope === 'weekly' ? weekLabel(data.weekKey) : 'all time'} — {data.total} ranked
-                player{data.total === 1 ? '' : 's'}
+                {t('caption', {
+                  count: data.total,
+                  heading: valueHeading(board, t),
+                  scope: scope === 'weekly' ? weekLabel(data.weekKey, t) : t('allTime'),
+                })}
               </caption>
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-neutral-400">
                   <th scope="col" className="w-14 px-2 py-2">
-                    Rank
+                    {t('columns.rank')}
                   </th>
                   <th scope="col" className="px-2 py-2">
-                    Player
+                    {t('columns.player')}
                   </th>
                   <th scope="col" className="px-2 py-2 text-right">
-                    {valueHeading(board)}
+                    {valueHeading(board, t)}
                   </th>
                   {board !== 'rush' && (
                     <th scope="col" className="hidden px-2 py-2 text-right sm:table-cell">
-                      Games
+                      {t('columns.games')}
                     </th>
                   )}
                 </tr>
@@ -242,13 +244,13 @@ export function LeaderboardsPage({ onViewProfile }: { onViewProfile: (username: 
                         <button
                           onClick={() => onViewProfile(e.username)}
                           className="btn-press font-semibold text-brand-300 hover:text-brand-200 hover:underline"
-                          title={`View ${e.username}'s profile`}
+                          title={t('viewProfile', { username: e.username })}
                         >
                           {e.username}
                         </button>
                         {isMe && (
                           <span className="ml-2 rounded-full bg-brand-600/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-200">
-                            You
+                            {t('you')}
                           </span>
                         )}
                       </td>
@@ -265,7 +267,7 @@ export function LeaderboardsPage({ onViewProfile }: { onViewProfile: (username: 
                     <td className="px-2 py-2">
                       <span className="font-semibold text-ink">{username}</span>
                       <span className="ml-2 rounded-full bg-brand-600/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-200">
-                        You
+                        {t('you')}
                       </span>
                     </td>
                     <td className="px-2 py-2 text-right font-display font-bold text-ink">{meOutsideTop.value}</td>
@@ -279,15 +281,13 @@ export function LeaderboardsPage({ onViewProfile }: { onViewProfile: (username: 
 
         {state === 'ready' && data && optedIn && data.me?.rank === null && (
           <p className="mt-3 text-center text-xs text-neutral-400">
-            {board === 'rush'
-              ? 'Finish a Puzzle Rush run and your best lands here automatically.'
-              : 'Play a rated game or puzzle (and let it sync) to enter this board.'}
+            {board === 'rush' ? t('hint.rush') : t('hint.other')}
           </p>
         )}
       </div>
 
       <p className="text-center text-xs text-neutral-400">
-        Scores are checked server-side against your synced progress — see your Profile tab to manage what you share.
+        {t('footer')}
       </p>
     </div>
   );

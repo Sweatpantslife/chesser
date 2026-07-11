@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ACHIEVEMENTS,
   ACHIEVEMENT_CATEGORY_LABELS,
@@ -24,11 +25,16 @@ import { useCoach } from '../store/coach';
 const dateFmt = new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 
 function Badge({ a, earnedAt, ctx }: { a: Achievement; earnedAt: number | undefined; ctx: ReturnType<typeof buildAchievementCtx> }) {
+  const { t } = useTranslation('stats');
   const unlocked = earnedAt !== undefined;
   const { value, target, pct, done } = achievementProgress(a, ctx);
+  // Names/descriptions resolve via the stores group's id-keyed `progress` namespace;
+  // the English from lib/achievements is the fallback so en output never changes.
+  const name = t(`progress:achievements.${a.id}.name`, { defaultValue: a.name });
+  const desc = t(`progress:achievements.${a.id}.desc`, { defaultValue: a.desc });
   return (
     <div
-      title={a.desc}
+      title={desc}
       className={`card-lift rounded-2xl border p-3 ${
         unlocked ? 'border-gold-400/50 bg-gold-400/10' : 'border-neutral-800 bg-panel/60'
       }`}
@@ -36,8 +42,8 @@ function Badge({ a, earnedAt, ctx }: { a: Achievement; earnedAt: number | undefi
       <div className="flex items-start gap-2">
         <span className={`text-2xl ${unlocked ? 'pop-in' : 'opacity-50 grayscale'}`}>{a.icon}</span>
         <div className="min-w-0 flex-1">
-          <div className={`truncate text-sm font-semibold ${unlocked ? 'text-ink' : 'text-neutral-400'}`}>{a.name}</div>
-          <div className="truncate text-xs text-neutral-400">{a.desc}</div>
+          <div className={`truncate text-sm font-semibold ${unlocked ? 'text-ink' : 'text-neutral-400'}`}>{name}</div>
+          <div className="truncate text-xs text-neutral-400">{desc}</div>
         </div>
         {unlocked && <span className="text-emerald-400">✓</span>}
       </div>
@@ -51,14 +57,16 @@ function Badge({ a, earnedAt, ctx }: { a: Achievement; earnedAt: number | undefi
           </div>
           <div className="mt-1 text-right text-xs text-neutral-400">
             {Math.min(value, target)} / {target}
-            {a.xp > 0 && <span className="ml-2 text-gold-400/90">+{a.xp} XP</span>}
+            {a.xp > 0 && <span className="ml-2 text-gold-400/90">{t('achievements.xpReward', { xp: a.xp })}</span>}
           </div>
         </div>
       )}
       {unlocked && (
         <div className="mt-2 flex items-center justify-between text-xs">
-          <span className="text-neutral-400">{earnedAt > 0 ? `Earned ${dateFmt.format(earnedAt)}` : 'Earned'}</span>
-          {done && a.xp > 0 && <span className="text-gold-400/90">+{a.xp} XP</span>}
+          <span className="text-neutral-400">
+            {earnedAt > 0 ? t('achievements.earnedOn', { date: dateFmt.format(earnedAt) }) : t('achievements.earned')}
+          </span>
+          {done && a.xp > 0 && <span className="text-gold-400/90">{t('achievements.xpReward', { xp: a.xp })}</span>}
         </div>
       )}
     </div>
@@ -69,6 +77,7 @@ type Filter = 'all' | 'earned' | 'locked';
 
 /** The full badge wall, grouped by category, locked entries showing progress. */
 export function AchievementGrid() {
+  const { t } = useTranslation('stats');
   const unlocked = useAchievements((s) => s.unlocked);
   const [filter, setFilter] = useState<Filter>('all');
   // Subscribe to every source so progress bars stay live.
@@ -99,7 +108,7 @@ export function AchievementGrid() {
   return (
     <div className="rounded-2xl bg-panel p-4 shadow-soft">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="font-display text-sm font-semibold text-ink">Achievements</h3>
+        <h3 className="font-display text-sm font-semibold text-ink">{t('achievements.title')}</h3>
         <div className="flex items-center gap-2">
           <div className="inline-flex overflow-hidden rounded-full border border-neutral-700 text-xs">
             {(['all', 'earned', 'locked'] as const).map((f) => (
@@ -111,12 +120,12 @@ export function AchievementGrid() {
                   filter === f ? 'bg-brand-600 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
                 }`}
               >
-                {f}
+                {t(`achievements.filter.${f}`)}
               </button>
             ))}
           </div>
           <span className="text-xs text-neutral-400">
-            {earned} / {ACHIEVEMENTS.length} earned
+            {t('achievements.earnedCount', { earned, total: ACHIEVEMENTS.length })}
           </span>
         </div>
       </div>
@@ -126,7 +135,9 @@ export function AchievementGrid() {
           if (shown.length === 0) return null;
           return (
             <div key={cat}>
-              <div className="mb-2 text-xs uppercase tracking-wide text-neutral-400">{ACHIEVEMENT_CATEGORY_LABELS[cat]}</div>
+              <div className="mb-2 text-xs uppercase tracking-wide text-neutral-400">
+                {t(`progress:achievementCategories.${cat}`, { defaultValue: ACHIEVEMENT_CATEGORY_LABELS[cat] })}
+              </div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {shown.map((a) => (
                   <Badge key={a.id} a={a} earnedAt={unlocked[a.id]} ctx={ctx} />

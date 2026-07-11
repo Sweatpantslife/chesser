@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { STARTING_FEN } from '@chesser/shared';
 import { useGame } from '../store/game';
 import { detectOpening, searchOpenings, type OpeningEntry, type OpeningInfo } from '../lib/openings';
@@ -10,6 +11,7 @@ function toPgn(san: string[]): string {
 }
 
 export function OpeningName() {
+  const { t } = useTranslation('openings');
   const history = useGame((s) => s.history);
   const viewPly = useGame((s) => s.viewPly);
   const startFen = useGame((s) => s.startFen);
@@ -64,12 +66,12 @@ export function OpeningName() {
   return (
     <div className="rounded-lg bg-panel p-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-ink">Opening</h3>
+        <h3 className="text-sm font-semibold text-ink">{t('name.title')}</h3>
         <button
           onClick={() => setOpen((o) => !o)}
           className="rounded px-1.5 py-0.5 text-xs text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
         >
-          {open ? 'Close' : 'Look up'}
+          {open ? t('common:actions.close') : t('name.lookUp')}
         </button>
       </div>
 
@@ -80,9 +82,7 @@ export function OpeningName() {
             <span className="text-sm leading-tight text-neutral-200">{info.name}</span>
           </div>
         ) : (
-          <p className="text-xs text-neutral-400">
-            {fromStart ? 'No named opening yet — play a few moves.' : 'Opening names are shown from the standard start position.'}
-          </p>
+          <p className="text-xs text-neutral-400">{fromStart ? t('name.noneYet') : t('name.fromStartOnly')}</p>
         )}
       </div>
 
@@ -92,7 +92,7 @@ export function OpeningName() {
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search openings (e.g. Najdorf, C50)…"
+            placeholder={t('name.searchPlaceholder')}
             className="w-full rounded bg-neutral-800 px-2 py-1.5 text-sm text-ink outline-none placeholder:text-neutral-400"
           />
           {results.length > 0 && (
@@ -110,10 +110,8 @@ export function OpeningName() {
               ))}
             </div>
           )}
-          {query.trim() && results.length === 0 && <p className="mt-2 text-xs text-neutral-400">No matches.</p>}
-          {!query.trim() && (
-            <p className="mt-2 text-xs text-neutral-400">Find any opening by name or ECO code, then load it onto the board.</p>
-          )}
+          {query.trim() && results.length === 0 && <p className="mt-2 text-xs text-neutral-400">{t('name.noMatches')}</p>}
+          {!query.trim() && <p className="mt-2 text-xs text-neutral-400">{t('name.searchHint')}</p>}
         </div>
       )}
     </div>

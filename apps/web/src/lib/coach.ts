@@ -17,6 +17,7 @@
 import { Chess } from 'chess.js';
 import type { Score } from '@chesser/shared';
 import { formatScore } from '@chesser/shared';
+import i18n from '../i18n';
 import { whiteWinPercent } from './format';
 
 export type Classification =
@@ -45,17 +46,35 @@ export interface ClassMeta {
   brush: string;
 }
 
+/**
+ * `label` is a getter resolving through the `quality` namespace at ACCESS
+ * time, so every render site that reads `CLASSIFICATION_META[cls].label`
+ * shows the active language without changing its code (components re-render
+ * on language change via their own useTranslation subscription). The English
+ * literal doubles as the defaultValue, keeping English output byte-identical
+ * even if i18n resources were somehow unavailable.
+ */
+const classMeta = (key: Classification, english: string, rest: Omit<ClassMeta, 'label'>): ClassMeta => ({
+  get label() {
+    return i18n.t(`quality:labels.${key}`, { defaultValue: english });
+  },
+  ...rest,
+});
+
 export const CLASSIFICATION_META: Record<Classification, ClassMeta> = {
-  brilliant: { label: 'Brilliant', glyph: '!!', icon: '✦', text: 'text-cyan-300', bg: 'bg-cyan-500/15', ring: 'ring-cyan-400/50', brush: 'paleBlue' },
-  great: { label: 'Great move', glyph: '!', icon: '★', text: 'text-blue-300', bg: 'bg-blue-500/15', ring: 'ring-blue-400/50', brush: 'blue' },
-  best: { label: 'Best move', glyph: '', icon: '✓', text: 'text-emerald-300', bg: 'bg-emerald-500/15', ring: 'ring-emerald-400/50', brush: 'green' },
-  good: { label: 'Good', glyph: '', icon: '·', text: 'text-lime-300', bg: 'bg-lime-500/10', ring: 'ring-lime-400/30', brush: 'paleGreen' },
-  book: { label: 'Book', glyph: '', icon: '◫', text: 'text-amber-200', bg: 'bg-amber-500/10', ring: 'ring-amber-400/30', brush: 'paleGrey' },
-  inaccuracy: { label: 'Inaccuracy', glyph: '?!', icon: '?!', text: 'text-amber-300', bg: 'bg-amber-500/15', ring: 'ring-amber-400/50', brush: 'yellow' },
-  mistake: { label: 'Mistake', glyph: '?', icon: '?', text: 'text-orange-300', bg: 'bg-orange-500/15', ring: 'ring-orange-400/50', brush: 'paleRed' },
-  blunder: { label: 'Blunder', glyph: '??', icon: '??', text: 'text-rose-300', bg: 'bg-rose-500/15', ring: 'ring-rose-400/50', brush: 'red' },
-  miss: { label: 'Missed win', glyph: '×', icon: '⤬', text: 'text-rose-300', bg: 'bg-rose-500/10', ring: 'ring-rose-400/40', brush: 'red' },
+  brilliant: classMeta('brilliant', 'Brilliant', { glyph: '!!', icon: '✦', text: 'text-cyan-300', bg: 'bg-cyan-500/15', ring: 'ring-cyan-400/50', brush: 'paleBlue' }),
+  great: classMeta('great', 'Great move', { glyph: '!', icon: '★', text: 'text-blue-300', bg: 'bg-blue-500/15', ring: 'ring-blue-400/50', brush: 'blue' }),
+  best: classMeta('best', 'Best move', { glyph: '', icon: '✓', text: 'text-emerald-300', bg: 'bg-emerald-500/15', ring: 'ring-emerald-400/50', brush: 'green' }),
+  good: classMeta('good', 'Good', { glyph: '', icon: '·', text: 'text-lime-300', bg: 'bg-lime-500/10', ring: 'ring-lime-400/30', brush: 'paleGreen' }),
+  book: classMeta('book', 'Book', { glyph: '', icon: '◫', text: 'text-amber-200', bg: 'bg-amber-500/10', ring: 'ring-amber-400/30', brush: 'paleGrey' }),
+  inaccuracy: classMeta('inaccuracy', 'Inaccuracy', { glyph: '?!', icon: '?!', text: 'text-amber-300', bg: 'bg-amber-500/15', ring: 'ring-amber-400/50', brush: 'yellow' }),
+  mistake: classMeta('mistake', 'Mistake', { glyph: '?', icon: '?', text: 'text-orange-300', bg: 'bg-orange-500/15', ring: 'ring-orange-400/50', brush: 'paleRed' }),
+  blunder: classMeta('blunder', 'Blunder', { glyph: '??', icon: '??', text: 'text-rose-300', bg: 'bg-rose-500/15', ring: 'ring-rose-400/50', brush: 'red' }),
+  miss: classMeta('miss', 'Missed win', { glyph: '×', icon: '⤬', text: 'text-rose-300', bg: 'bg-rose-500/10', ring: 'ring-rose-400/40', brush: 'red' }),
 };
+// NOTE: the rule-based explanation sentences below (explain()) are
+// deliberately NOT extracted yet — deferred to phase 3 alongside
+// lib/analytics/explain.ts ("labels now, sentences later").
 
 /** Grades the auto-play walkthrough stops on so the user can take them in. */
 export const IMPORTANT: ReadonlySet<Classification> = new Set<Classification>(['brilliant', 'great', 'mistake', 'blunder', 'miss']);

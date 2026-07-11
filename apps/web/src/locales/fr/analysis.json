@@ -1,0 +1,155 @@
+{
+  "percent": "{{value}} %",
+  "side": {
+    "both": "les deux",
+    "white": "blancs",
+    "black": "noirs"
+  },
+  "phase": {
+    "opening": "Ouverture",
+    "middlegame": "Milieu de partie",
+    "endgame": "Finale"
+  },
+  "engine": {
+    "title": "Moteur",
+    "offDuringGames": "désactivé pendant les parties",
+    "disabledWhilePlaying": "L'analyse moteur est désactivée pendant que vous jouez — elle se débloque dès la fin de la partie.",
+    "badge": "Stockfish · profondeur {{depth}}",
+    "analyseToggle": "analyser",
+    "lines": "lignes",
+    "gameOverNoMoves": "partie terminée — aucun coup à analyser",
+    "thinking": "réflexion…",
+    "playLineTitle": "Jouer la ligne jusqu'ici",
+    "off": "L'analyse est désactivée."
+  },
+  "coach": {
+    "title": "Coach",
+    "exitTitle": "Quitter la revue guidée",
+    "analysing": "Analyse de la partie… {{progress}} %",
+    "startingPosition": "Position de départ. Appuyez sur ▶ pour parcourir la partie coup par coup.",
+    "eval": "éval <val>{{value}}</val>",
+    "engineChoice": "Choix du moteur : <move>{{san}}</move>",
+    "noGrade": "Pas d'évaluation pour ce coup.",
+    "transport": {
+      "start": "Début",
+      "goToStart": "Aller au début",
+      "previous": "Précédent",
+      "previousMove": "Coup précédent",
+      "play": "Lecture",
+      "pause": "Pause",
+      "next": "Suivant",
+      "nextMove": "Coup suivant",
+      "end": "Fin",
+      "goToEnd": "Aller à la fin"
+    }
+  },
+  "review": {
+    "title": "Analyse de partie",
+    "reviewGame": "Analyser la partie",
+    "rereview": "Réanalyser",
+    "progressPct": "{{progress}} %",
+    "walkthrough": "▶ Revue guidée",
+    "headers": {
+      "accuracy": "préc.",
+      "acpl": "acpl"
+    },
+    "savedToDrill_one": "✓ {{count}} ajouté aux exercices",
+    "savedToDrill_many": "✓ {{count}} ajoutés aux exercices",
+    "savedToDrill_other": "✓ {{count}} ajoutés aux exercices",
+    "saveMistakes_one": "Enregistrer {{count}} erreur à travailler →",
+    "saveMistakes_many": "Enregistrer {{count}} erreurs à travailler →",
+    "saveMistakes_other": "Enregistrer {{count}} erreurs à travailler →",
+    "emptyAnalysis": "Analysez une partie, puis passez-la en revue pour repérer gaffes et imprécisions.",
+    "emptyOtherMode": "Passez sur l'échiquier d'analyse pour revoir une partie."
+  },
+  "puzzles": {
+    "mining": "Extraction… {{done}}/{{total}} · {{found}} trouvés (cliquez pour arrêter)",
+    "make": "⚡ Créer des problèmes à partir de cette partie",
+    "added_one": "✓ {{count}} problème ajouté — retrouvez-les dans Tactique → Mes parties.",
+    "added_many": "✓ {{count}} problèmes ajoutés — retrouvez-les dans Tactique → Mes parties.",
+    "added_other": "✓ {{count}} problèmes ajoutés — retrouvez-les dans Tactique → Mes parties.",
+    "noneFound": "Aucune nouvelle tactique trouvée dans cette partie."
+  },
+  "deckStats": {
+    "learned": "<count>{{seen}}</count>/{{total}} appris",
+    "due_one": "{{count}} à revoir",
+    "due_many": "{{count}} à revoir",
+    "due_other": "{{count}} à revoir",
+    "streakTitle": "Série quotidienne"
+  },
+  "queue": {
+    "title": "File de révision",
+    "learned": "{{seen}}/{{total}} appris",
+    "cardsDue_one": "carte à revoir tous paquets confondus",
+    "cardsDue_many": "cartes à revoir tous paquets confondus",
+    "cardsDue_other": "cartes à revoir tous paquets confondus",
+    "dueLabel_one": "à revoir",
+    "dueLabel_many": "à revoir",
+    "dueLabel_other": "à revoir"
+  },
+  "ai": {
+    "badge": "Coach IA",
+    "disclaimer": "Généré par IA à partir de l'analyse du moteur",
+    "noKeyHint": "Ajoutez une clé d'IA dans les Paramètres pour débloquer un coaching plus riche.",
+    "explainThis": "Expliquer ce coup",
+    "explainTitle": "Demander au coach IA d'expliquer ce coup en langage clair",
+    "thinking": "Le coach réfléchit",
+    "summaryTitle": "Résumé du coach"
+  },
+  "graph": {
+    "ariaInteractive": "Graphique d'avantage — cliquez ou utilisez les flèches pour sauter à un coup",
+    "aria": "Graphique d'avantage",
+    "clickTitle": "Cliquez pour sauter à un coup",
+    "winWhite": "{{win}} % Blancs"
+  },
+  "mistakes": {
+    "title": "Erreurs",
+    "sortTitle": "Changer l'ordre de la liste",
+    "worstFirst": "Pires d'abord",
+    "gameOrder": "Ordre de la partie",
+    "clean": "Aucune erreur — partie propre !",
+    "chipShow": "{{label}} — cliquer pour afficher",
+    "chipHide": "{{label}} — cliquer pour masquer",
+    "noMatch": "Aucun coup ne correspond aux filtres actuels.",
+    "listAria": "Erreurs de cette partie",
+    "jumpTitle": "Aller à la position",
+    "practice": "S'exercer",
+    "practiceTitle": "S'exercer contre le moteur depuis cette position",
+    "winLost": "−{{lost}} %",
+    "best": "Meilleur <line>{{line}}</line>",
+    "bestPunished": "Meilleur <line>{{line}}</line> · {{san}} est puni par <reply>{{reply}}</reply>"
+  },
+  "detail": {
+    "title": "Détail du coup",
+    "previousMove": "Coup précédent",
+    "nextMove": "Coup suivant",
+    "eval": "éval <from>{{before}}</from> → <to>{{after}}</to>",
+    "bestWas": "Le meilleur était <move>{{san}}</move>",
+    "bestWasTitle": "Jouer le coup du moteur sur l'échiquier",
+    "engineLine": "Ligne du moteur",
+    "pvTitle": "Jouer la ligne jusqu'ici sur l'échiquier",
+    "hideBest": "Masquer le meilleur coup",
+    "showBest": "Afficher le meilleur coup",
+    "practicePosition": "S'exercer sur cette position"
+  },
+  "report": {
+    "title": "Rapport de partie",
+    "exportPgn": "Exporter le PGN",
+    "you": "vous",
+    "acpl": "ACPL {{value}}",
+    "acplTitle": "Perte moyenne en centipions",
+    "estRating": "~{{rating}} de classement estimé",
+    "estRatingTitle": "Estimation heuristique d'après la précision et la perte en centipions — pas un vrai classement",
+    "showMoves": "Afficher les coups de type {{label}}",
+    "header": {
+      "phase": "Phase",
+      "white": "Blancs",
+      "black": "Noirs"
+    },
+    "theoryThroughout": "Dans la théorie de bout en bout",
+    "theoryLeftAt": "Sortie de théorie au coup {{move}}",
+    "noBookOpening": "Aucune ouverture théorique détectée.",
+    "phaseJumpTitle": "Aller au début de cette phase",
+    "keyMoments": "Moments clés"
+  }
+}

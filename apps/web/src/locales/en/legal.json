@@ -1,0 +1,10 @@
+{
+  "consent": {
+    "aria": "Data storage notice",
+    "body": "Chesser saves your progress and settings in this browser — nothing leaves your device unless you create an account to sync. No ads, no tracking. <policyLink>Privacy Policy</policyLink>",
+    "dismiss": "Got it"
+  },
+  "lastUpdated": "Last updated: {{date}}",
+  "privacyTitle": "Privacy Policy",
+  "termsTitle": "Terms of Service"
+}

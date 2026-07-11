@@ -1,0 +1,95 @@
+{
+  "stars": {
+    "aria": "{{n}} of 3 stars"
+  },
+  "catalogue": {
+    "completedAria": "{{title}} (completed)",
+    "start": "Start →",
+    "heroTitle": "Learn chess, the fun way",
+    "progress": "{{done}}/{{total}} lessons complete",
+    "heroBody": "Short, hands-on lessons — every idea is something you play out on the board. New to chess? Start at the top and you’ll know all the rules in minutes.",
+    "progressAria": "Lessons completed"
+  },
+  "player": {
+    "backAria": "Back to all lessons",
+    "backLabel": "← Lessons",
+    "stepAria": "Step {{step}} of {{total}}",
+    "yourMove": "● your move",
+    "moveProgress": "move {{i}} of {{n}}",
+    "gotIt": "Got it →",
+    "exercise": "Exercise {{i}} of {{n}}",
+    "tryAgain": "Try again",
+    "continue": "Continue →",
+    "showMe": "Show me",
+    "tip": "Make a mistake? No stress — you can retry every exercise, and replay any lesson from the Learn page.",
+    "feedback": {
+      "nice": "Nice!",
+      "correct": "✓ {{san}}",
+      "correctKeepGoing": "✓ {{san}} — keep going!"
+    },
+    "done": {
+      "title": "Lesson complete!",
+      "flawless": "Flawless — not a single wrong move.",
+      "solid": "Solid! Replay it any time to earn 3 stars.",
+      "ok": "Done! Replay it any time to sharpen it up.",
+      "xpEarned": "XP earned.",
+      "next": "Next lesson →",
+      "back": "Back to lessons"
+    },
+    "wrongDefault": {
+      "move": "Not that one — have another look and try again.",
+      "line": "Legal, but it's not the plan — try again.",
+      "checkmate": "That doesn't finish the game — look for the move that leaves no escape.",
+      "capture": "Legal, but you didn't capture anything. Take the piece!",
+      "promotion": "Push the pawn all the way to the last rank.",
+      "any": "Try again."
+    }
+  },
+  "masters": {
+    "title": "Master games",
+    "subtitle": "Famous games, annotated move by move — replay them, jump to the key moments, and take any position to the analysis board.",
+    "filters": {
+      "themeAria": "Filter by theme",
+      "allThemes": "All themes",
+      "difficultyAria": "Filter by difficulty",
+      "anyLevel": "Any level",
+      "opening": "Opening",
+      "allOpenings": "All openings"
+    },
+    "themes": {
+      "attack": "Attack",
+      "sacrifice": "Sacrifice",
+      "tactics": "Tactics",
+      "endgame": "Endgame",
+      "positional": "Positional"
+    },
+    "difficulty": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    },
+    "noMatches": "No games match these filters — try clearing one.",
+    "viewer": {
+      "back": "← Library",
+      "first": "First move",
+      "firstTitle": "First (Home)",
+      "previous": "Previous move",
+      "previousTitle": "Previous (←)",
+      "next": "Next move",
+      "nextTitle": "Next (→)",
+      "last": "Last move",
+      "lastTitle": "Last (End)",
+      "flip": "⇅ Flip",
+      "flipTitle": "Flip board (f)",
+      "analyze": "Analyze from here",
+      "analyzeTitle": "Open this position on the analysis board",
+      "commentary": "Commentary",
+      "about": "About this game",
+      "noNote": "Step through with the arrow keys — commentary appears on the annotated moves.",
+      "keyMoments": "Key moments",
+      "moves": "Moves",
+      "movesAria": "Game moves",
+      "start": "Start"
+    }
+  }
+}

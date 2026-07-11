@@ -1,0 +1,52 @@
+{
+  "toMove": {
+    "white": "Trait aux Blancs",
+    "black": "Trait aux Noirs"
+  },
+  "toMoveCheck": {
+    "white": "Trait aux Blancs — échec",
+    "black": "Trait aux Noirs — échec"
+  },
+  "toMoveRepetition": {
+    "white": "Trait aux Blancs · triple répétition",
+    "black": "Trait aux Noirs · triple répétition"
+  },
+  "toMoveCheckRepetition": {
+    "white": "Trait aux Blancs — échec · triple répétition",
+    "black": "Trait aux Noirs — échec · triple répétition"
+  },
+  "claimDraw": {
+    "threefold": "Triple répétition — vous pouvez réclamer la nulle",
+    "fiftyMove": "Règle des cinquante coups — vous pouvez réclamer la nulle"
+  },
+  "checkmate": {
+    "white": "Échec et mat — les Blancs gagnent",
+    "black": "Échec et mat — les Noirs gagnent"
+  },
+  "resigned": {
+    "white": "Les Blancs gagnent — vous avez abandonné",
+    "black": "Les Noirs gagnent — vous avez abandonné"
+  },
+  "flagged": {
+    "white": "Le drapeau des Blancs est tombé — les Noirs gagnent au temps",
+    "black": "Le drapeau des Noirs est tombé — les Blancs gagnent au temps"
+  },
+  "draw": {
+    "stalemate": "Nulle — pat",
+    "insufficientMaterial": "Nulle — matériel insuffisant",
+    "fiftyMove": "Nulle — règle des cinquante coups",
+    "agreed": "Nulle — d'un commun accord",
+    "threefold": "Nulle — triple répétition"
+  },
+  "endReason": {
+    "youResigned": "Vous avez abandonné",
+    "drawAgreed": "Nulle d'un commun accord",
+    "threefold": "Triple répétition",
+    "fiftyMoveClaim": "Règle des cinquante coups",
+    "onTime": "au temps",
+    "checkmate": "échec et mat",
+    "stalemate": "pat",
+    "insufficientMaterial": "matériel insuffisant",
+    "fiftyMove": "règle des cinquante coups"
+  }
+}

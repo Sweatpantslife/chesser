@@ -13,6 +13,8 @@
  * the accepted challenge and auto-joins the open seat.
  */
 import { useEffect, useRef, useState } from 'react';
+import type { TFunction } from 'i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import type { FriendColor, FriendTimeControl } from '@chesser/shared';
 import type { TimeControl } from '../store/game';
 import { useAuth } from '../store/auth';
@@ -30,37 +32,38 @@ const smallBtn = 'btn-press rounded-full px-2.5 py-1 text-xs font-semibold disab
 const smallNeutral = `${smallBtn} bg-neutral-800 text-neutral-300 hover:bg-neutral-700 hover:text-ink`;
 const smallPrimary = `${smallBtn} bg-brand-600 text-white hover:bg-brand-700`;
 
-function ago(atMs: number): string {
+function ago(t: TFunction, atMs: number): string {
   const s = Math.max(0, Math.floor((Date.now() - atMs) / 1000));
-  if (s < 60) return 'just now';
-  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
-  if (s < 86_400) return `${Math.floor(s / 3600)}h ago`;
-  return `${Math.floor(s / 86_400)}d ago`;
+  if (s < 60) return t('time.justNow');
+  if (s < 3600) return t('time.minutesAgo', { count: Math.floor(s / 60) });
+  if (s < 86_400) return t('time.hoursAgo', { count: Math.floor(s / 3600) });
+  return t('time.daysAgo', { count: Math.floor(s / 86_400) });
 }
 
-function tcLabel(tc: FriendTimeControl | null): string {
-  return tc?.label ?? 'unlimited';
+function tcLabel(t: TFunction, tc: FriendTimeControl | null): string {
+  return tc?.label ?? t('timeControl.unlimitedShort');
 }
 
 /** The color YOU would play against a challenger who picked `their`. */
-function yourColor(their: FriendColor | 'random'): string {
-  return their === 'white' ? 'Black' : their === 'black' ? 'White' : 'random colors';
+function yourColor(t: TFunction, their: FriendColor | 'random'): string {
+  return their === 'white' ? t('colors.inlineBlack') : their === 'black' ? t('colors.inlineWhite') : t('colors.randomColors');
 }
 
-function feedLine(e: FeedEvent): { icon: string; text: string } {
+function feedLine(t: TFunction, e: FeedEvent): { icon: string; text: string } {
   switch (e.kind) {
     case 'rush':
-      return { icon: '🏃', text: `hit a Puzzle Rush best of ${e.value}` };
+      return { icon: '🏃', text: t('feed.rush', { value: e.value }) };
     case 'rating':
-      return { icon: '📈', text: `${e.board === 'bots' ? 'bot-game' : 'puzzle'} rating is now ${e.value}` };
+      return { icon: '📈', text: t(e.board === 'bots' ? 'feed.ratingBots' : 'feed.ratingPuzzle', { value: e.value }) };
     case 'achievement':
-      return { icon: '🏅', text: `unlocked “${(e.id ?? '').replace(/-/g, ' ')}”` };
+      return { icon: '🏅', text: t('feed.achievement', { name: (e.id ?? '').replace(/-/g, ' ') }) };
     case 'streak':
-      return { icon: '🔥', text: `is on a ${e.count}-day streak` };
+      return { icon: '🔥', text: t('feed.streak', { count: e.count }) };
   }
 }
 
 export function FriendsPanel({ active, onJoinGame }: { active: boolean; onJoinGame: (code: string, name: string) => void }) {
+  const { t } = useTranslation('friends');
   const token = useAuth((s) => s.token);
   const username = useAuth((s) => s.username) ?? '';
 
@@ -113,11 +116,8 @@ export function FriendsPanel({ active, onJoinGame }: { active: boolean; onJoinGa
   if (!token) {
     return (
       <section className="rounded-2xl bg-panel p-4 shadow-soft" data-testid="friends-signin-cta">
-        <h3 className="font-semibold text-ink">👥 Friends</h3>
-        <p className="mt-1 text-sm text-neutral-400">
-          Sign in (top right) to add friends, challenge them to games, and see what they've been up to. Sharing is opt-in — only
-          your display name is ever shown.
-        </p>
+        <h3 className="font-semibold text-ink">{t('headers.friends')}</h3>
+        <p className="mt-1 text-sm text-neutral-400">{t('signedOut.body')}</p>
       </section>
     );
   }
@@ -168,13 +168,13 @@ export function FriendsPanel({ active, onJoinGame }: { active: boolean; onJoinGa
   const visibleOut = challengesOut.filter((c) => !(c.status === 'accepted' && joinedRef.current.has(c.id)));
 
   return (
-    <section className="space-y-3" aria-label="Friends and challenges">
+    <section className="space-y-3" aria-label={t('panel.ariaLabel')}>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {/* --- left: your people ------------------------------------------- */}
         <div className="space-y-3 rounded-2xl bg-panel p-4 shadow-soft" data-testid="card-friends">
           <div>
-            <h3 className="font-semibold text-ink">👥 Friends</h3>
-            <p className="text-xs text-neutral-400">Add friends by username, or swap friend codes — no public profile needed.</p>
+            <h3 className="font-semibold text-ink">{t('headers.friends')}</h3>
+            <p className="text-xs text-neutral-400">{t('add.hint')}</p>
           </div>
 
           <form
@@ -185,17 +185,17 @@ export function FriendsPanel({ active, onJoinGame }: { active: boolean; onJoinGa
             }}
           >
             <label className="flex-1 space-y-1">
-              <span className={labelCls}>Username or friend code</span>
+              <span className={labelCls}>{t('add.label')}</span>
               <input
                 className={inputCls}
-                placeholder="e.g. magnus, or Q2ZKM7PW"
+                placeholder={t('add.placeholder')}
                 value={addValue}
                 onChange={(e) => setAddValue(e.target.value)}
                 data-testid="add-friend-input"
               />
             </label>
             <button type="submit" className={`${primaryBtn} mt-5 shrink-0`} disabled={addBusy || !addValue.trim()} data-testid="add-friend-submit">
-              Add friend
+              {t('add.submit')}
             </button>
           </form>
           {addNotice && (
@@ -206,38 +206,38 @@ export function FriendsPanel({ active, onJoinGame }: { active: boolean; onJoinGa
 
           {data && (
             <p className="text-xs text-neutral-400">
-              Your friend code:{' '}
+              {t('code.yours')}{' '}
               <code className="rounded bg-panelmute px-1.5 py-0.5 font-mono text-neutral-300" data-testid="friend-code">
                 {data.code}
               </code>{' '}
-              <button className={`${smallNeutral} ml-1`} onClick={() => void copyCode()} aria-label="Copy your friend code">
-                {codeCopied ? '✓ Copied' : 'Copy'}
+              <button className={`${smallNeutral} ml-1`} onClick={() => void copyCode()} aria-label={t('code.copyAria')}>
+                {codeCopied ? t('code.copied') : t('code.copy')}
               </button>
             </p>
           )}
 
           {incoming.length > 0 && (
             <div data-testid="incoming-requests">
-              <h4 className={labelCls}>Friend requests</h4>
+              <h4 className={labelCls}>{t('requests.incomingTitle')}</h4>
               <ul className="mt-1 space-y-1.5">
                 {incoming.map((r) => (
                   <li key={r.id} className="flex flex-wrap items-center gap-2 text-sm text-neutral-300">
                     <span className="font-semibold text-ink">{r.username}</span>
-                    <span className="text-xs text-neutral-400">{ago(r.at)}</span>
+                    <span className="text-xs text-neutral-400">{ago(t, r.at)}</span>
                     <span className="ml-auto flex gap-1.5">
                       <button
                         className={smallPrimary}
                         onClick={() => void useFriends.getState().respondRequest(r.id, true)}
-                        aria-label={`Accept friend request from ${r.username}`}
+                        aria-label={t('requests.acceptAria', { name: r.username })}
                       >
-                        Accept
+                        {t('actions.accept')}
                       </button>
                       <button
                         className={smallNeutral}
                         onClick={() => void useFriends.getState().respondRequest(r.id, false)}
-                        aria-label={`Decline friend request from ${r.username}`}
+                        aria-label={t('requests.declineAria', { name: r.username })}
                       >
-                        Decline
+                        {t('actions.decline')}
                       </button>
                     </span>
                   </li>
@@ -248,18 +248,18 @@ export function FriendsPanel({ active, onJoinGame }: { active: boolean; onJoinGa
 
           {outgoing.length > 0 && (
             <div data-testid="outgoing-requests">
-              <h4 className={labelCls}>Sent requests</h4>
+              <h4 className={labelCls}>{t('requests.outgoingTitle')}</h4>
               <ul className="mt-1 space-y-1.5">
                 {outgoing.map((r) => (
                   <li key={r.id} className="flex flex-wrap items-center gap-2 text-sm text-neutral-400">
                     <span>{r.username}</span>
-                    <span className="text-xs">· waiting</span>
+                    <span className="text-xs">{t('requests.waiting')}</span>
                     <button
                       className={`${smallNeutral} ml-auto`}
                       onClick={() => void useFriends.getState().cancelRequest(r.id)}
-                      aria-label={`Cancel friend request to ${r.username}`}
+                      aria-label={t('requests.cancelAria', { name: r.username })}
                     >
-                      Cancel
+                      {t('common:actions.cancel')}
                     </button>
                   </li>
                 ))}
@@ -268,10 +268,10 @@ export function FriendsPanel({ active, onJoinGame }: { active: boolean; onJoinGa
           )}
 
           <div>
-            <h4 className={labelCls}>Your friends {friends.length > 0 && `(${friends.length})`}</h4>
+            <h4 className={labelCls}>{t('list.title')} {friends.length > 0 && `(${friends.length})`}</h4>
             {friends.length === 0 ? (
               <p className="mt-1 text-sm text-neutral-400" data-testid="friends-empty">
-                No friends yet — send a request above.
+                {t('list.empty')}
               </p>
             ) : (
               <ul className="mt-1 space-y-1.5" data-testid="friends-list">
@@ -287,10 +287,10 @@ export function FriendsPanel({ active, onJoinGame }: { active: boolean; onJoinGa
                             setChNotice(null);
                           }}
                           aria-expanded={challenging === f.username}
-                          aria-label={`Challenge ${f.username} to a game`}
+                          aria-label={t('challenge.buttonAria', { name: f.username })}
                           data-testid={`challenge-${f.username}`}
                         >
-                          ⚔ Challenge
+                          {t('challenge.button')}
                         </button>
                         {removing === f.username ? (
                           <>
@@ -300,17 +300,17 @@ export function FriendsPanel({ active, onJoinGame }: { active: boolean; onJoinGa
                                 setRemoving(null);
                                 void useFriends.getState().removeFriend(f.username);
                               }}
-                              aria-label={`Confirm removing ${f.username}`}
+                              aria-label={t('remove.confirmAria', { name: f.username })}
                             >
-                              Confirm
+                              {t('remove.confirm')}
                             </button>
                             <button className={smallNeutral} onClick={() => setRemoving(null)}>
-                              Keep
+                              {t('remove.keep')}
                             </button>
                           </>
                         ) : (
-                          <button className={smallNeutral} onClick={() => setRemoving(f.username)} aria-label={`Remove ${f.username} from your friends`}>
-                            Remove
+                          <button className={smallNeutral} onClick={() => setRemoving(f.username)} aria-label={t('remove.buttonAria', { name: f.username })}>
+                            {t('remove.button')}
                           </button>
                         )}
                       </span>
@@ -318,12 +318,12 @@ export function FriendsPanel({ active, onJoinGame }: { active: boolean; onJoinGa
                     {challenging === f.username && (
                       <div className="space-y-2 rounded-xl bg-panelmute/60 p-2.5" data-testid="challenge-form">
                         <div className="space-y-1">
-                          <span className={labelCls}>Time control</span>
-                          <TimeControlPicker value={chTc} onChange={setChTc} label={`Time control for the challenge to ${f.username}`} />
+                          <span className={labelCls}>{t('timeControl.label')}</span>
+                          <TimeControlPicker value={chTc} onChange={setChTc} label={t('challenge.timeControlAria', { name: f.username })} />
                         </div>
                         <div className="space-y-1">
-                          <span className={labelCls}>You play</span>
-                          <div className="flex gap-1 rounded-lg bg-panelmute p-1" role="group" aria-label="Your color">
+                          <span className={labelCls}>{t('challenge.youPlay')}</span>
+                          <div className="flex gap-1 rounded-lg bg-panelmute p-1" role="group" aria-label={t('challenge.colorAria')}>
                             {(['white', 'random', 'black'] as const).map((c) => (
                               <button
                                 key={c}
@@ -334,17 +334,17 @@ export function FriendsPanel({ active, onJoinGame }: { active: boolean; onJoinGa
                                   chColor === c ? 'bg-brand-600 text-white' : 'text-neutral-300 hover:bg-neutral-800'
                                 }`}
                               >
-                                {c === 'random' ? '⚄ Random' : c === 'white' ? '□ White' : '■ Black'}
+                                {c === 'random' ? t('colors.pickRandom') : c === 'white' ? t('colors.pickWhite') : t('colors.pickBlack')}
                               </button>
                             ))}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <button className={primaryBtn} onClick={() => void sendChallenge(f.username)} data-testid="send-challenge">
-                            Send challenge
+                            {t('challenge.send')}
                           </button>
                           <button className={neutralBtn} onClick={() => setChallenging(null)}>
-                            Cancel
+                            {t('common:actions.cancel')}
                           </button>
                         </div>
                         {chNotice && (
@@ -370,13 +370,13 @@ export function FriendsPanel({ active, onJoinGame }: { active: boolean; onJoinGa
         {/* --- right: challenges + activity --------------------------------- */}
         <div className="space-y-3 rounded-2xl bg-panel p-4 shadow-soft" data-testid="card-challenges">
           <div>
-            <h3 className="font-semibold text-ink">⚔ Challenges</h3>
-            <p className="text-xs text-neutral-400">Accepting a challenge starts a live, unrated friend game.</p>
+            <h3 className="font-semibold text-ink">{t('headers.challenges')}</h3>
+            <p className="text-xs text-neutral-400">{t('challenge.cardHint')}</p>
           </div>
 
           {challengesIn.length === 0 && visibleOut.length === 0 && (
             <p className="text-sm text-neutral-400" data-testid="challenges-empty">
-              No open challenges. Pick a friend and hit ⚔ Challenge.
+              {t('challenge.empty')}
             </p>
           )}
 
@@ -385,19 +385,23 @@ export function FriendsPanel({ active, onJoinGame }: { active: boolean; onJoinGa
               {challengesIn.map((c) => (
                 <li key={c.id} className="flex flex-wrap items-center gap-2 rounded-xl bg-panelmute/60 p-2.5 text-sm text-neutral-300">
                   <span>
-                    <span className="font-semibold text-ink">{c.from}</span> challenges you — {tcLabel(c.timeControl)}, you play{' '}
-                    {yourColor(c.color)}
+                    <Trans
+                      t={t}
+                      i18nKey="challenge.incomingLine"
+                      values={{ from: c.from, tc: tcLabel(t, c.timeControl), color: yourColor(t, c.color) }}
+                      components={{ from: <span className="font-semibold text-ink" /> }}
+                    />
                   </span>
                   <span className="ml-auto flex gap-1.5">
-                    <button className={smallPrimary} onClick={() => void acceptChallenge(c)} aria-label={`Accept challenge from ${c.from}`} data-testid="accept-challenge">
-                      Accept & play
+                    <button className={smallPrimary} onClick={() => void acceptChallenge(c)} aria-label={t('challenge.acceptAria', { name: c.from })} data-testid="accept-challenge">
+                      {t('challenge.acceptPlay')}
                     </button>
                     <button
                       className={smallNeutral}
                       onClick={() => void useFriends.getState().respondChallenge(c.id, false)}
-                      aria-label={`Decline challenge from ${c.from}`}
+                      aria-label={t('challenge.declineAria', { name: c.from })}
                     >
-                      Decline
+                      {t('actions.decline')}
                     </button>
                   </span>
                 </li>
@@ -421,15 +425,17 @@ export function FriendsPanel({ active, onJoinGame }: { active: boolean; onJoinGa
                         }}
                         data-testid="join-accepted-challenge"
                       >
-                        Join game
+                        {t('challenge.join')}
                       </button>
                     )}
                     <button
                       className={smallNeutral}
                       onClick={() => void useFriends.getState().cancelChallenge(c.id)}
-                      aria-label={c.status === 'pending' ? `Cancel challenge to ${c.to}` : `Dismiss challenge to ${c.to}`}
+                      aria-label={
+                        c.status === 'pending' ? t('challenge.cancelAria', { name: c.to }) : t('challenge.dismissAria', { name: c.to })
+                      }
                     >
-                      {c.status === 'pending' ? 'Cancel' : 'Dismiss'}
+                      {c.status === 'pending' ? t('common:actions.cancel') : t('challenge.dismiss')}
                     </button>
                   </span>
                 </li>
@@ -438,28 +444,28 @@ export function FriendsPanel({ active, onJoinGame }: { active: boolean; onJoinGa
           )}
 
           <div>
-            <h4 className={labelCls}>Friend activity</h4>
+            <h4 className={labelCls}>{t('feed.title')}</h4>
             {feed.length === 0 ? (
               <p className="mt-1 text-sm text-neutral-400" data-testid="feed-empty">
-                Nothing yet — activity your friends share (scores, streaks, badges) shows up here.
+                {t('feed.empty')}
               </p>
             ) : (
               <ul className="mt-1 space-y-1.5" data-testid="friend-feed">
                 {feed.map((e, i) => {
-                  const line = feedLine(e);
+                  const line = feedLine(t, e);
                   return (
                     <li key={`${e.username}-${e.kind}-${e.at}-${i}`} className="flex items-baseline gap-2 text-sm text-neutral-300">
                       <span aria-hidden="true">{line.icon}</span>
                       <span>
                         <span className="font-semibold text-ink">{e.username}</span> {line.text}
                       </span>
-                      <span className="ml-auto shrink-0 text-xs text-neutral-400">{ago(e.at)}</span>
+                      <span className="ml-auto shrink-0 text-xs text-neutral-400">{ago(t, e.at)}</span>
                     </li>
                   );
                 })}
               </ul>
             )}
-            <p className="mt-2 text-[11px] text-neutral-400">Only what each friend chose to share (leaderboards / profile settings) appears here.</p>
+            <p className="mt-2 text-[11px] text-neutral-400">{t('feed.note')}</p>
           </div>
         </div>
       </div>
@@ -468,17 +474,21 @@ export function FriendsPanel({ active, onJoinGame }: { active: boolean; onJoinGa
 }
 
 function OutgoingChallengeLine({ c }: { c: OutgoingChallenge }) {
-  const detail = `${tcLabel(c.timeControl)}, you play ${c.color === 'random' ? 'random colors' : c.color}`;
+  const { t } = useTranslation('friends');
+  const detail = t('challenge.outDetail', {
+    tc: tcLabel(t, c.timeControl),
+    color: c.color === 'random' ? t('colors.randomColors') : c.color === 'white' ? t('colors.whiteLower') : t('colors.blackLower'),
+  });
   const text =
     c.status === 'pending'
-      ? `waiting for ${c.to}… (${detail})`
+      ? t('challenge.outPending', { name: c.to, detail })
       : c.status === 'accepted'
-        ? `${c.to} accepted your challenge!`
+        ? t('challenge.outAccepted', { name: c.to })
         : c.status === 'declined'
-          ? `${c.to} declined your challenge`
+          ? t('challenge.outDeclined', { name: c.to })
           : c.status === 'expired'
-            ? `your challenge to ${c.to} expired`
-            : `challenge to ${c.to} cancelled`;
+            ? t('challenge.outExpired', { name: c.to })
+            : t('challenge.outCancelled', { name: c.to });
   return (
     <span data-testid={`challenge-status-${c.status}`}>
       {c.status === 'accepted' ? <span className="font-semibold text-emerald-400">{text}</span> : text}

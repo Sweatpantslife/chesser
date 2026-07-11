@@ -1,0 +1,34 @@
+{
+  "auth": {
+    "registrationFailed": "Échec de l'inscription",
+    "loginFailed": "Échec de la connexion"
+  },
+  "friends": {
+    "unreachable": "Impossible de joindre le serveur",
+    "signInFirst": "Connectez-vous d'abord.",
+    "enterTarget": "Saisissez un nom d'utilisateur ou un code ami.",
+    "nowFriends": "Vous et {{username}} êtes désormais amis !",
+    "requestSent": "Demande envoyée à {{username}}.",
+    "sendRequestFailed": "Impossible d'envoyer la demande",
+    "respondFailed": "Impossible de répondre",
+    "removeFailed": "Impossible de retirer cet ami",
+    "sendChallengeFailed": "Impossible d'envoyer le défi",
+    "respondChallengeFailed": "Impossible de répondre au défi"
+  },
+  "social": {
+    "loadFailed": "Impossible de charger les réglages de partage",
+    "saveFailed": "Impossible d'enregistrer les réglages de partage"
+  },
+  "game": {
+    "botFailed": "Le bot n'a pas réussi à jouer — essayez un autre style de bot."
+  },
+  "byok": {
+    "keyRejected": "Le fournisseur a rejeté la clé. Vérifiez qu'elle a été collée en entier.",
+    "modelNotFound": "Le fournisseur n'a pas trouvé ce modèle (ou cette URL de base). Vérifiez le nom du modèle.",
+    "rateLimited": "Le fournisseur a limité le débit de la requête. La clé fonctionne — réessayez dans une minute.",
+    "providerServerError": "Le fournisseur a rencontré une erreur serveur. Réessayez sous peu.",
+    "callFailed": "L'appel au fournisseur a échoué.",
+    "unreachable": "Impossible de joindre le fournisseur ou le serveur de l'application. Vérifiez votre connexion.",
+    "relayedSuffix": " (relayé via le serveur de l'application — vérifiez la clé et le modèle)."
+  }
+}

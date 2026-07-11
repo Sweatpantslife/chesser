@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { LadderPanel } from './LadderPanel';
 import { BotPanel } from './BotPanel';
 
@@ -6,6 +7,7 @@ type Tab = 'ladder' | 'custom';
 
 /** Left-column play hub: climb the ladder, or configure a one-off custom game. */
 export function PlayPanel() {
+  const { t } = useTranslation('play');
   const [tab, setTab] = useState<Tab>('ladder');
 
   const tabBtn = (id: Tab, label: string) => (
@@ -23,8 +25,8 @@ export function PlayPanel() {
   return (
     <div className="space-y-3">
       <div className="flex gap-1 rounded-full bg-panel p-1 shadow-soft">
-        {tabBtn('ladder', '🪜 Ladder')}
-        {tabBtn('custom', '⚙ Custom')}
+        {tabBtn('ladder', t('tabs.ladder'))}
+        {tabBtn('custom', t('tabs.custom'))}
       </div>
       {tab === 'ladder' ? <LadderPanel /> : <BotPanel />}
     </div>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Chess } from 'chess.js';
 import { Board } from '../board/Board';
 import { type Puzzle } from '../trainers/tactics';
@@ -38,12 +39,10 @@ import type { Color } from '../store/game';
 
 type Phase = 'idle' | 'running' | 'over';
 
-const VARIANTS: { id: RushVariant; label: string; blurb: string }[] = [
-  { id: 'timed3', label: '3 minutes', blurb: 'Race the clock — 3 strikes still end the run.' },
-  { id: 'survival', label: 'Survival', blurb: 'No clock. Climb until three strikes end you.' },
-];
+const VARIANT_IDS: RushVariant[] = ['timed3', 'survival'];
 
 export function RushMode() {
+  const { t } = useTranslation('tactics');
   const game = useRef(new Chess());
   const busy = useRef(false);
   const rng = useRef<() => number>(() => 0);
@@ -193,9 +192,13 @@ export function RushMode() {
         <div className="flex h-7 items-center gap-3 text-sm">
           {phase === 'running' && puzzle && (
             <>
-              <span className="text-neutral-400">{puzzle.turn === 'white' ? 'White' : 'Black'} to move — find the win</span>
-              {flash === 'ok' && <span className="text-emerald-400">✓{run.streak >= 2 ? ` ${run.streak} in a row!` : ''}</span>}
-              {flash === 'bad' && <span className="text-rose-400">✗ strike!</span>}
+              <span className="text-neutral-400">{t(`sprint.toMove.${puzzle.turn}`)}</span>
+              {flash === 'ok' && (
+                <span className="text-emerald-400">
+                  ✓{run.streak >= 2 ? ` ${t('rush.inARow', { count: run.streak })}` : ''}
+                </span>
+              )}
+              {flash === 'bad' && <span className="text-rose-400">{t('rush.strike')}</span>}
             </>
           )}
         </div>
@@ -222,23 +225,23 @@ export function RushMode() {
         <div className="rounded-2xl bg-panel p-4 text-center shadow-soft" data-testid="rush-hud">
           {RUSH_DURATION_MS[variant] !== null ? (
             <>
-              <div className="text-xs uppercase tracking-wide text-neutral-400">Time</div>
+              <div className="text-xs uppercase tracking-wide text-neutral-400">{t('sprint.time')}</div>
               <div className={`font-mono text-3xl ${lowTime && phase === 'running' ? 'animate-pulse-soft text-rose-400' : 'text-ink'}`}>
                 {formatClock(timeLeft ?? RUSH_DURATION_MS[variant]!)}
               </div>
             </>
           ) : (
-            <div className="text-xs uppercase tracking-wide text-neutral-400">Survival</div>
+            <div className="text-xs uppercase tracking-wide text-neutral-400">{t('rush.variants.survival.label')}</div>
           )}
           <div className="mt-3 flex items-center justify-center gap-6">
             <div>
-              <div className="text-xs uppercase tracking-wide text-neutral-400">Score</div>
+              <div className="text-xs uppercase tracking-wide text-neutral-400">{t('sprint.score')}</div>
               <div className="text-2xl font-bold text-emerald-400" data-testid="rush-score">
                 {run.solved}
               </div>
             </div>
             <div>
-              <div className="text-xs uppercase tracking-wide text-neutral-400">Strikes</div>
+              <div className="text-xs uppercase tracking-wide text-neutral-400">{t('rush.strikes')}</div>
               <div className="text-2xl" data-testid="rush-strikes">
                 {Array.from({ length: RUSH_MAX_STRIKES }).map((_, i) => (
                   <span key={i} className={i < run.strikes ? 'text-rose-500' : 'text-neutral-700'}>
@@ -250,38 +253,38 @@ export function RushMode() {
           </div>
           {run.streak >= 2 && phase === 'running' && (
             <div className="mt-2 text-xs font-semibold text-gold-400" data-testid="rush-streak">
-              🔥 {run.streak} streak
+              {t('rush.streak', { count: run.streak })}
             </div>
           )}
           <div className="mt-3 text-xs text-neutral-400" data-testid="rush-best">
-            Best ({variant === 'timed3' ? '3 min' : 'survival'}): {best.score}
+            {t('rush.best', { variant: t(`rush.variantShort.${variant}`), score: best.score })}
           </div>
         </div>
 
         {phase === 'idle' && (
           <div className="rounded-2xl bg-panel p-4 text-sm text-neutral-300 shadow-soft">
             <div className="mb-2 flex gap-1">
-              {VARIANTS.map((v) => (
+              {VARIANT_IDS.map((v) => (
                 <button
-                  key={v.id}
-                  onClick={() => setVariant(v.id)}
+                  key={v}
+                  onClick={() => setVariant(v)}
                   className={`flex-1 rounded px-2 py-1 text-xs font-semibold ${
-                    variant === v.id ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                    variant === v ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                   }`}
                 >
-                  {v.label}
+                  {t(`rush.variants.${v}.label`)}
                 </button>
               ))}
             </div>
             <p className="mb-3">
-              Solve as many as you can — difficulty ramps up as you go. {VARIANTS.find((v) => v.id === variant)!.blurb}
+              {t('rush.idleIntro')} {t(`rush.variants.${variant}.blurb`)}
             </p>
             <button
               onClick={start}
               className="w-full rounded bg-emerald-700 py-2 font-semibold text-white hover:bg-emerald-800"
               data-testid="rush-start"
             >
-              Start rush
+              {t('rush.start')}
             </button>
           </div>
         )}
@@ -291,28 +294,28 @@ export function RushMode() {
             onClick={giveUp}
             className="w-full rounded bg-neutral-800 py-1.5 text-xs text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
           >
-            End run
+            {t('sprint.endRun')}
           </button>
         )}
 
         {phase === 'over' && (
           <div className="rounded-2xl bg-panel p-4 text-center shadow-soft" data-testid="rush-summary">
             <div className="text-sm text-neutral-400">
-              {run.endReason === 'strikes' ? 'Struck out!' : run.endReason === 'time' ? "Time's up!" : 'Run over'}
+              {run.endReason === 'strikes' ? t('rush.struckOut') : run.endReason === 'time' ? t('sprint.timesUp') : t('sprint.runOver')}
             </div>
             <div className="my-1 text-4xl font-bold text-emerald-400">{run.solved}</div>
             {isRecord && run.solved > 0 && (
               <div className="mb-2 text-xs font-semibold text-gold-400" data-testid="rush-record">
-                🏆 New best!
+                {t('sprint.newBest')}
               </div>
             )}
             <div className="mt-1 grid grid-cols-2 gap-2 text-xs text-neutral-300">
               <div className="rounded bg-panelmute px-2 py-1.5">
-                <div className="text-neutral-400">Missed</div>
+                <div className="text-neutral-400">{t('sprint.missed')}</div>
                 <div className="text-sm font-semibold text-rose-300">{run.strikes}</div>
               </div>
               <div className="rounded bg-panelmute px-2 py-1.5">
-                <div className="text-neutral-400">Best streak</div>
+                <div className="text-neutral-400">{t('rush.bestStreak')}</div>
                 <div className="text-sm font-semibold text-gold-400">{run.bestStreak}</div>
               </div>
             </div>
@@ -321,7 +324,7 @@ export function RushMode() {
               className="mt-3 w-full rounded bg-emerald-700 py-2 font-semibold text-white hover:bg-emerald-800"
               data-testid="rush-again"
             >
-              Play again
+              {t('sprint.playAgain')}
             </button>
           </div>
         )}

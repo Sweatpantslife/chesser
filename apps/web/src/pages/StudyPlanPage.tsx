@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { WEAKNESS_META } from '../lib/weakness';
-import { DIFFICULTY_LABELS } from '../data/masterGames';
 import { planProgress, type PlanItem, type PlanItemKind } from '../lib/studyPlan';
 import { initPlanTracking, usePlan } from '../store/plan';
 import { bootstrapFromReportCache } from '../store/coach';
@@ -19,12 +19,8 @@ export type PlanTarget = 'coach' | 'tactics' | 'learn' | 'openings' | 'masters';
 
 const KIND_ORDER: PlanItemKind[] = ['puzzle', 'lesson', 'opening', 'master'];
 
-const KIND_META: Record<PlanItemKind, { heading: string; blurb: string; icon: string; cta: string }> = {
-  puzzle: { heading: 'Daily puzzles', blurb: 'quota resets each day — solved coach drills count automatically', icon: '🧩', cta: 'Train' },
-  lesson: { heading: 'Lessons', blurb: 'finishing the lesson checks it off automatically', icon: '🎓', cta: 'Learn' },
-  opening: { heading: 'Opening drills', blurb: 'recall reps from your own repertoire', icon: '📖', cta: 'Drill' },
-  master: { heading: 'Master games', blurb: 'annotated classics matched to your focus', icon: '👑', cta: 'Watch' },
-};
+/** Icons per plan-item kind; headings/blurbs/CTAs live in the `plan` namespace (kinds.<kind>.*). */
+const KIND_ICONS: Record<PlanItemKind, string> = { puzzle: '🧩', lesson: '🎓', opening: '📖', master: '👑' };
 
 /** Where an item's Jump button lands (view-level, like the SRS deck targets). */
 function jumpTarget(item: PlanItem): PlanTarget {
@@ -60,6 +56,7 @@ function Bar({ value, max, label }: { value: number; max: number; label: string 
 }
 
 function ItemRow({ item, go }: { item: PlanItem; go: (v: PlanTarget) => void }) {
+  const { t } = useTranslation('plan');
   const done = usePlan((s) => Math.min(s.progress[item.id] ?? 0, item.target));
   const doneToday = usePlan((s) => (item.kind === 'puzzle' ? s.daily[item.id]?.[todayStr()] ?? 0 : 0));
   const complete = done >= item.target;
@@ -71,22 +68,25 @@ function ItemRow({ item, go }: { item: PlanItem; go: (v: PlanTarget) => void }) 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span aria-hidden className="text-lg">
-              {KIND_META[item.kind].icon}
+              {KIND_ICONS[item.kind]}
             </span>
             <h4 className={`text-sm font-semibold ${complete ? 'text-neutral-400 line-through' : 'text-ink'}`}>
               {item.title}
             </h4>
             {complete && (
-              <span className="rounded-full bg-emerald-900/60 px-2 py-0.5 text-xs font-semibold text-emerald-300">✓ done</span>
+              <span className="rounded-full bg-emerald-900/60 px-2 py-0.5 text-xs font-semibold text-emerald-300">{t('item.done')}</span>
             )}
           </div>
           <p className="mt-1 text-xs leading-relaxed text-neutral-400">{item.why}</p>
           <div className="mt-2 flex items-center gap-2">
-            <Bar value={done} max={item.target} label={`${item.title} — weekly progress`} />
+            <Bar value={done} max={item.target} label={t('item.progressAria', { title: item.title })} />
             <span className="shrink-0 text-xs tabular-nums text-neutral-400">
               {done}/{item.target}
               {item.kind === 'puzzle' && (
-                <span className={quotaMetToday ? 'text-emerald-400' : ''}> · today {Math.min(doneToday, item.perDay)}/{item.perDay}</span>
+                <span className={quotaMetToday ? 'text-emerald-400' : ''}>
+                  {' · '}
+                  {t('item.today', { done: Math.min(doneToday, item.perDay), target: item.perDay })}
+                </span>
               )}
             </span>
           </div>
@@ -99,26 +99,26 @@ function ItemRow({ item, go }: { item: PlanItem; go: (v: PlanTarget) => void }) 
             }}
             className="btn-press flex min-h-11 items-center gap-1 rounded-full bg-brand-600 px-3.5 py-1.5 text-sm font-bold text-white hover:bg-brand-700 sm:min-h-0"
           >
-            {KIND_META[item.kind].cta}
+            {t(`kinds.${item.kind}.cta`)}
             <IconArrowRight size={14} />
           </button>
           {item.kind === 'puzzle' ? (
             <button
               onClick={() => usePlan.getState().logItem(item.id)}
               disabled={complete || quotaMetToday}
-              aria-label={`Log one solved puzzle toward "${item.title}"`}
+              aria-label={t('item.logOneAria', { title: item.title })}
               className="btn-press min-h-11 rounded-full bg-neutral-800 px-3.5 py-1.5 text-sm font-semibold text-neutral-200 hover:bg-neutral-700 disabled:opacity-50 sm:min-h-0"
             >
-              +1 today
+              {t('item.logOne')}
             </button>
           ) : (
             <button
               onClick={() => usePlan.getState().completeItem(item.id)}
               disabled={complete}
-              aria-label={`Mark "${item.title}" as done`}
+              aria-label={t('item.markDoneAria', { title: item.title })}
               className="btn-press min-h-11 rounded-full bg-neutral-800 px-3.5 py-1.5 text-sm font-semibold text-neutral-200 hover:bg-neutral-700 disabled:opacity-50 sm:min-h-0"
             >
-              Mark done
+              {t('item.markDone')}
             </button>
           )}
         </div>
@@ -128,6 +128,7 @@ function ItemRow({ item, go }: { item: PlanItem; go: (v: PlanTarget) => void }) 
 }
 
 export function StudyPlanPage({ go }: { go: (v: PlanTarget) => void }) {
+  const { t } = useTranslation('plan');
   const plan = usePlan((s) => s.plan);
   const progress = usePlan((s) => s.progress);
 
@@ -147,7 +148,7 @@ export function StudyPlanPage({ go }: { go: (v: PlanTarget) => void }) {
       <div className="rounded-2xl bg-gradient-to-br from-brand-800/60 via-panel to-panel p-4 shadow-soft sm:p-5">
         <div className="flex flex-wrap items-center gap-2">
           <IconSparkles size={20} className="text-gold-400" />
-          <h2 className="font-display text-xl font-bold text-ink">This week's study plan</h2>
+          <h2 className="font-display text-xl font-bold text-ink">{t('page.title')}</h2>
           <span className="rounded-full bg-neutral-800 px-2 py-0.5 font-mono text-xs text-neutral-300">{plan.weekId}</span>
           <span className="text-xs text-neutral-400">{plan.weekLabel}</span>
           <button
@@ -157,32 +158,29 @@ export function StudyPlanPage({ go }: { go: (v: PlanTarget) => void }) {
             }}
             className="btn-press ml-auto min-h-11 rounded-full bg-neutral-800 px-3.5 py-1.5 text-sm font-semibold text-neutral-200 hover:bg-neutral-700 sm:min-h-0"
           >
-            ↻ Regenerate
+            {t('page.regenerate')}
           </button>
         </div>
         <p className="mt-2 text-sm text-neutral-300">
           {plan.personalized ? (
             <>
-              Built from your reviewed games — this week's focus:{' '}
+              {t('page.personalizedIntro')}{' '}
               {plan.focus.map((k, i) => (
                 <span key={k} className="font-semibold text-ink">
                   {i > 0 && ' · '}
-                  {WEAKNESS_META[k].icon} {WEAKNESS_META[k].label}
+                  {WEAKNESS_META[k].icon} {t(`insights:weaknesses.${k}.label`, { defaultValue: WEAKNESS_META[k].label })}
                 </span>
               ))}
-              . Regenerate any time — the plan re-reads your latest profile and rating.
+              {t('page.personalizedOutro')}
             </>
           ) : (
-            <>
-              A starter week at {DIFFICULTY_LABELS[plan.band].toLowerCase()} level. Play and review games on the Play tab
-              and the plan will re-target your actual weaknesses.
-            </>
+            <>{t('page.starter', { level: t(`difficulty.${plan.band}`) })}</>
           )}
         </p>
         <div className="mt-3 flex items-center gap-2">
-          <Bar value={summary.done} max={summary.target} label="Week progress" />
+          <Bar value={summary.done} max={summary.target} label={t('page.weekProgressAria')} />
           <span className="shrink-0 text-xs tabular-nums text-neutral-400">
-            {summary.pct}% · {summary.itemsDone}/{summary.itemsTotal} items
+            {t('page.progressSummary', { pct: summary.pct, done: summary.itemsDone, total: summary.itemsTotal })}
           </span>
         </div>
       </div>
@@ -191,10 +189,10 @@ export function StudyPlanPage({ go }: { go: (v: PlanTarget) => void }) {
         const items = plan.items.filter((i) => i.kind === kind);
         if (items.length === 0) return null;
         return (
-          <section key={kind} aria-label={KIND_META[kind].heading}>
+          <section key={kind} aria-label={t(`kinds.${kind}.heading`)}>
             <div className="mb-2 flex items-baseline gap-2">
-              <h3 className="font-display text-sm font-semibold text-ink">{KIND_META[kind].heading}</h3>
-              <span className="text-xs text-neutral-400">{KIND_META[kind].blurb}</span>
+              <h3 className="font-display text-sm font-semibold text-ink">{t(`kinds.${kind}.heading`)}</h3>
+              <span className="text-xs text-neutral-400">{t(`kinds.${kind}.blurb`)}</span>
             </div>
             <ul className="space-y-3">
               {items.map((item) => (

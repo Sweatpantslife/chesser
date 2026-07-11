@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { planProgress, remainingToday } from '../lib/studyPlan';
 import { initPlanTracking, usePlan } from '../store/plan';
 import { todayStr } from '../lib/clock';
@@ -11,6 +12,7 @@ import { IconArrowRight } from '../components/icons';
  * progress, linking to the full Study Plan page.
  */
 export function PlanCard({ onOpen }: { onOpen: () => void }) {
+  const { t } = useTranslation('plan');
   const plan = usePlan((s) => s.plan);
   const progress = usePlan((s) => s.progress);
   const daily = usePlan((s) => s.daily);
@@ -31,9 +33,9 @@ export function PlanCard({ onOpen }: { onOpen: () => void }) {
           🗓️
         </span>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold text-ink">This week's plan</div>
+          <div className="truncate text-sm font-semibold text-ink">{t('card.title')}</div>
           <div className="truncate text-xs text-neutral-400">
-            {plan.weekLabel} · {summary.itemsDone}/{summary.itemsTotal} items done
+            {t('card.subtitle', { weekLabel: plan.weekLabel, done: summary.itemsDone, total: summary.itemsTotal })}
           </div>
         </div>
         <button
@@ -43,7 +45,7 @@ export function PlanCard({ onOpen }: { onOpen: () => void }) {
           }}
           className="btn-press flex shrink-0 items-center gap-1 rounded-full bg-brand-600 px-3.5 py-1.5 text-sm font-bold text-white hover:bg-brand-700"
         >
-          Open
+          {t('card.open')}
           <IconArrowRight size={14} />
         </button>
       </div>
@@ -53,7 +55,7 @@ export function PlanCard({ onOpen }: { onOpen: () => void }) {
           aria-valuemin={0}
           aria-valuemax={summary.target}
           aria-valuenow={summary.done}
-          aria-label="Study plan week progress"
+          aria-label={t('card.progressAria')}
           className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-800"
         >
           <div
@@ -64,7 +66,7 @@ export function PlanCard({ onOpen }: { onOpen: () => void }) {
         <span className="shrink-0 text-xs tabular-nums text-neutral-400">{summary.pct}%</span>
       </div>
       {left.length === 0 ? (
-        <p className="mt-2 text-xs text-emerald-400">All caught up for today — see you tomorrow! 🎉</p>
+        <p className="mt-2 text-xs text-emerald-400">{t('card.allCaughtUp')}</p>
       ) : (
         <ul className="mt-2 space-y-1 text-xs text-neutral-300">
           {left.slice(0, 3).map(({ item, remaining }) => (
@@ -72,11 +74,11 @@ export function PlanCard({ onOpen }: { onOpen: () => void }) {
               <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-400" />
               <span className="truncate">
                 {item.title}
-                {item.kind === 'puzzle' && <span className="text-neutral-400"> — {remaining} left today</span>}
+                {item.kind === 'puzzle' && <span className="text-neutral-400"> — {t('card.leftToday', { count: remaining })}</span>}
               </span>
             </li>
           ))}
-          {left.length > 3 && <li className="text-neutral-400">…and {left.length - 3} more on the plan</li>}
+          {left.length > 3 && <li className="text-neutral-400">{t('card.more', { count: left.length - 3 })}</li>}
         </ul>
       )}
     </div>

@@ -14,6 +14,13 @@ import { MAIA_NET_TOLERANCE } from '@chesser/shared';
  *
  * NOTE: ladder progress (`useLadder.defeated`) is persisted by `id` — never
  * rename or reuse an id, or players lose their unlocks.
+ *
+ * i18n: this module must NOT import src/i18n (it sits in store/game's static
+ * import graph, whose tests run under plain `node --test`). Bot `name`s are
+ * proper nouns and never translate; `title` / `bio` here are the CANONICAL
+ * ENGLISH strings — render sites resolve display text by id via the `bots`
+ * namespace: t(`bots:roster.${id}.title` / `.bio`) with these as defaultValue.
+ * Keep locales/<lng>/bots.json in sync when adding a bot.
  */
 export interface RosterBot {
   id: string;

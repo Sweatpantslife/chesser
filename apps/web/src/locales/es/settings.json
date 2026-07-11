@@ -1,0 +1,69 @@
+{
+  "title": "Ajustes",
+  "appearance": {
+    "label": "Apariencia",
+    "themeGroupAria": "Tema de la aplicación",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "system": "Sistema"
+  },
+  "language": {
+    "label": "Idioma"
+  },
+  "toggles": {
+    "sounds": "Sonidos",
+    "premoves": "Prejugadas (contra bots)",
+    "arrows": "Flechas del motor (análisis)",
+    "aiCoach": "Explicaciones del Entrenador IA"
+  },
+  "aiCoachNote": "Consejos en lenguaje natural redactados por una IA a partir del análisis del motor. Si no está disponible, se usan las explicaciones integradas.",
+  "rating": {
+    "label": "Puntuación principal",
+    "note": "Glicko-2 siempre determina la dificultad y los emparejamientos internamente."
+  },
+  "boardTheme": {
+    "label": "Tema del tablero",
+    "aria": "Tema de tablero {{name}}",
+    "names": {
+      "brown": "marrón",
+      "blue": "azul",
+      "green": "verde",
+      "gray": "gris",
+      "candy": "caramelo",
+      "mint": "menta"
+    }
+  },
+  "pieces": {
+    "label": "Piezas"
+  },
+  "byok": {
+    "title": "Entrenador IA — tu propia clave",
+    "intro": "Usa tu propia clave de IA para desbloquear un entrenamiento más completo y el resumen semanal con IA. La clave se queda en este dispositivo (nunca se envía ni se guarda en nuestro servidor) y las llamadas van directas al proveedor que elijas — <rates>facturadas a tu clave según las tarifas de tu proveedor</rates>. El entrenador responde con mensajes cortos, así que el coste típico es una fracción de céntimo por explicación.",
+    "providerAria": "Proveedor de IA",
+    "providers": {
+      "anthropic": "Anthropic",
+      "openai": "Compatible con OpenAI"
+    },
+    "apiKey": "Clave de API",
+    "model": "Modelo (por defecto: {{model}})",
+    "modelHints": {
+      "claude-haiku-4-5": "el más rápido y económico — la opción por defecto",
+      "claude-sonnet-4-6": "prosa más cuidada, precio medio",
+      "claude-opus-4-8": "el más capaz, el más caro",
+      "gpt-4o-mini": "opción económica por defecto",
+      "gpt-4o": "más potente, más caro"
+    },
+    "baseUrl": "URL base (cualquier endpoint compatible con OpenAI)",
+    "testKey": "Probar clave",
+    "testing": "Probando…",
+    "clearKey": "Borrar clave",
+    "keyWorksDirect": "La clave funciona — {{model}} respondió directamente desde tu navegador.",
+    "keyWorksRelay": "La clave funciona — {{model}} respondió (retransmitido: tu endpoint bloquea las llamadas desde el navegador, así que las solicitudes pasan por el servidor de la aplicación sin almacenarse).",
+    "activeNote": "El entrenamiento con IA está activo con tu clave."
+  },
+  "links": {
+    "privacy": "Política de privacidad",
+    "terms": "Términos del servicio"
+  },
+  "done": "Listo"
+}

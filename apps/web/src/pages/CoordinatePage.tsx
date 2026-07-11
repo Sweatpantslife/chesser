@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CoordinateBoard, isLightSquare, type PieceMap } from '../components/CoordinateBoard';
 import { useCoordinate, type CoordMode, type CoordSide } from '../store/coordinate';
 
@@ -9,20 +10,6 @@ const randomSquare = () => `${FILES[rand(8)]}${rand(8) + 1}`;
 
 type Phase = 'idle' | 'running' | 'over';
 type SideOpt = CoordSide | 'random';
-
-const MODE_LABEL: Record<CoordMode, string> = {
-  find: 'Find square',
-  name: 'Name square',
-  color: 'Square colour',
-  knight: "Knight's tour",
-};
-
-const MODE_BLURB: Record<CoordMode, string> = {
-  find: 'Click the named square as fast as you can.',
-  name: 'Name the highlighted square.',
-  color: 'Is the highlighted square light or dark?',
-  knight: 'Click every square the knight can jump to.',
-};
 
 function distinctSquares(target: string, n: number): string[] {
   const set = new Set([target]);
@@ -54,6 +41,7 @@ function knightTargets(sq: string): string[] {
 }
 
 export function CoordinatePage() {
+  const { t } = useTranslation('train');
   const [mode, setMode] = useState<CoordMode>('find');
   const [sideOpt, setSideOpt] = useState<SideOpt>('white');
   const [showCoords, setShowCoords] = useState(false);
@@ -203,18 +191,19 @@ export function CoordinatePage() {
         <div className="flex h-8 items-center justify-center gap-2 text-sm">
           {running && mode === 'find' && (
             <>
-              <span className="text-neutral-400">Click</span>
+              <span className="text-neutral-400">{t('coordinates.click')}</span>
               <span className="rounded bg-emerald-700 px-3 py-0.5 font-mono text-lg font-bold text-white">{target}</span>
             </>
           )}
-          {running && mode === 'name' && <span className="text-neutral-400">Name the highlighted square</span>}
-          {running && mode === 'color' && <span className="text-neutral-400">Is the ringed square light or dark?</span>}
+          {running && mode === 'name' && <span className="text-neutral-400">{t('coordinates.namePrompt')}</span>}
+          {running && mode === 'color' && <span className="text-neutral-400">{t('coordinates.colorPrompt')}</span>}
           {running && mode === 'knight' && (
             <span className="text-neutral-400">
-              Click every knight move — <span className="text-emerald-400">{knightLeft.length} left</span>
+              {t('coordinates.knightPrompt')}{' '}
+              <span className="text-emerald-400">{t('coordinates.knightLeft', { count: knightLeft.length })}</span>
             </span>
           )}
-          {!running && <span className="text-neutral-400">Board vision: a 30-second sprint.</span>}
+          {!running && <span className="text-neutral-400">{t('coordinates.tagline')}</span>}
         </div>
 
         <div className="relative mx-auto w-full max-w-[520px]">
@@ -236,18 +225,18 @@ export function CoordinatePage() {
                   onClick={start}
                   className="rounded bg-emerald-700 px-5 py-2.5 font-semibold text-white hover:bg-emerald-800"
                 >
-                  Start
+                  {t('coordinates.start')}
                 </button>
               ) : (
                 <div className="text-center">
-                  <div className="text-xs uppercase tracking-wide text-neutral-300">Time!</div>
+                  <div className="text-xs uppercase tracking-wide text-neutral-300">{t('coordinates.timeUp')}</div>
                   <div className="my-1 text-5xl font-bold text-emerald-400">{score}</div>
-                  {score >= best && score > 0 && <div className="mb-1 text-xs text-amber-300">🏆 New best!</div>}
+                  {score >= best && score > 0 && <div className="mb-1 text-xs text-amber-300">{t('coordinates.newBest')}</div>}
                   <button
                     onClick={start}
                     className="mt-2 rounded bg-emerald-700 px-4 py-2 font-semibold text-white hover:bg-emerald-800"
                   >
-                    Again
+                    {t('coordinates.again')}
                   </button>
                 </div>
               )}
@@ -275,13 +264,13 @@ export function CoordinatePage() {
               onClick={() => answerColor(true)}
               className="rounded border border-neutral-600 bg-[#f0d9b5] py-3 text-base font-semibold text-chess-black hover:brightness-95"
             >
-              Light
+              {t('coordinates.light')}
             </button>
             <button
               onClick={() => answerColor(false)}
               className="rounded border border-neutral-600 bg-[#b58863] py-3 text-base font-semibold text-white hover:brightness-95"
             >
-              Dark
+              {t('coordinates.dark')}
             </button>
           </div>
         )}
@@ -289,25 +278,25 @@ export function CoordinatePage() {
 
       <div className="space-y-3">
         <div className="rounded-2xl bg-panel shadow-soft p-4 text-center">
-          <div className="text-xs uppercase tracking-wide text-neutral-400">Time</div>
+          <div className="text-xs uppercase tracking-wide text-neutral-400">{t('coordinates.time')}</div>
           <div className={`font-mono text-3xl ${timeLeft <= 5 && running ? 'text-rose-400' : 'text-ink'}`}>
             0:{String(timeLeft).padStart(2, '0')}
           </div>
           <div className="mt-2 flex items-center justify-center gap-6">
             <div>
-              <div className="text-xs uppercase tracking-wide text-neutral-400">Score</div>
+              <div className="text-xs uppercase tracking-wide text-neutral-400">{t('coordinates.score')}</div>
               <div className="text-2xl font-bold text-emerald-400">{score}</div>
             </div>
             <div>
-              <div className="text-xs uppercase tracking-wide text-neutral-400">Best</div>
+              <div className="text-xs uppercase tracking-wide text-neutral-400">{t('coordinates.best')}</div>
               <div className="text-2xl font-bold text-neutral-200">{best}</div>
             </div>
           </div>
-          <div className="mt-1 text-xs text-neutral-400">best for “{MODE_LABEL[mode]}”</div>
+          <div className="mt-1 text-xs text-neutral-400">{t('coordinates.bestFor', { mode: t(`coordinates.mode.${mode}`) })}</div>
         </div>
 
         <div className="rounded-2xl bg-panel shadow-soft p-3 text-sm">
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Mode</div>
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('coordinates.modeLabel')}</div>
           <div className="mb-3 grid grid-cols-2 gap-1">
             {(['find', 'name', 'color', 'knight'] as const).map((m) => (
               <button
@@ -319,12 +308,12 @@ export function CoordinatePage() {
                   mode === m ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                 }`}
               >
-                {MODE_LABEL[m]}
+                {t(`coordinates.mode.${m}`)}
               </button>
             ))}
           </div>
 
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Side</div>
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('coordinates.side')}</div>
           <div className="mb-3 flex gap-1">
             {(['white', 'black', 'random'] as const).map((sv) => (
               <button
@@ -335,24 +324,24 @@ export function CoordinatePage() {
                   sideOpt === sv ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                 }`}
               >
-                {sv}
+                {t(`coordinates.sides.${sv}`)}
               </button>
             ))}
           </div>
 
           <label className="flex cursor-pointer items-center justify-between py-1 text-neutral-300">
-            <span className="text-xs">Show coordinates</span>
+            <span className="text-xs">{t('coordinates.showCoords')}</span>
             <input type="checkbox" checked={showCoords} disabled={running} onChange={(e) => setShowCoords(e.target.checked)} />
           </label>
           {mode !== 'knight' && (
             <label className="flex cursor-pointer items-center justify-between py-1 text-neutral-300">
-              <span className="text-xs">Show pieces</span>
+              <span className="text-xs">{t('coordinates.showPieces')}</span>
               <input type="checkbox" checked={showPieces} disabled={running} onChange={(e) => setShowPieces(e.target.checked)} />
             </label>
           )}
         </div>
 
-        <p className="px-1 text-xs leading-snug text-neutral-400">{MODE_BLURB[mode]}</p>
+        <p className="px-1 text-xs leading-snug text-neutral-400">{t(`coordinates.blurbs.${mode}`)}</p>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { mainlineOf, useGame } from '../store/game';
 import { useAnalysisReport } from '../store/analysisReport';
 import { useMistakes, type NewMistake } from '../store/mistakes';
@@ -9,6 +10,7 @@ import { EvalGraph } from './EvalGraph';
 import { EvalGraphPro } from './analysis/EvalGraphPro';
 
 export function ReviewPanel() {
+  const { t } = useTranslation('analysis');
   const mode = useGame((s) => s.mode);
   const tree = useGame((s) => s.tree);
   const rootId = useGame((s) => s.rootId);
@@ -115,13 +117,13 @@ export function ReviewPanel() {
   return (
     <div className="rounded-lg bg-panel p-3">
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-ink">Game review</h3>
+        <h3 className="text-sm font-semibold text-ink">{t('review.title')}</h3>
         <button
           onClick={onReview}
           disabled={disabled}
           className="rounded bg-emerald-700 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
         >
-          {reviewing ? `${progress}%` : hasResults ? 'Re-review' : 'Review game'}
+          {reviewing ? t('review.progressPct', { progress }) : hasResults ? t('review.rereview') : t('review.reviewGame')}
         </button>
       </div>
 
@@ -136,7 +138,7 @@ export function ReviewPanel() {
               onClick={startCoach}
               className="w-full rounded bg-indigo-600 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
             >
-              ▶ Guided walkthrough
+              {t('review.walkthrough')}
             </button>
           )}
           {activeReport ? (
@@ -154,8 +156,8 @@ export function ReviewPanel() {
             <thead>
               <tr className="text-neutral-400">
                 <th className="text-left font-normal" />
-                <th className="font-normal text-neutral-400">acc.</th>
-                <th className="font-normal text-neutral-400">acpl</th>
+                <th className="font-normal text-neutral-400">{t('review.headers.accuracy')}</th>
+                <th className="font-normal text-neutral-400">{t('review.headers.acpl')}</th>
                 <th className="font-normal text-rose-400">??</th>
                 <th className="font-normal text-orange-400">?</th>
                 <th className="font-normal text-amber-300">?!</th>
@@ -164,12 +166,16 @@ export function ReviewPanel() {
             <tbody className="text-neutral-300">
               {(['white', 'black'] as const).map((side) => (
                 <tr key={side}>
-                  <td className="capitalize text-neutral-400">{side}</td>
+                  <td className="capitalize text-neutral-400">{t(`side.${side}`)}</td>
                   {/* When a report exists it is the single source of accuracy/ACPL —
                       the same figures as the Game report card, on the fresh AND the
                       cached path — so one game never shows two different accuracies. */}
                   <td className="text-center font-semibold text-emerald-300">
-                    {activeReport ? `${activeReport[side].accuracy}%` : stats ? `${stats[side].accuracy}%` : '—'}
+                    {activeReport
+                      ? t('percent', { value: activeReport[side].accuracy })
+                      : stats
+                        ? t('percent', { value: stats[side].accuracy })
+                        : '—'}
                   </td>
                   <td className="text-center">{activeReport ? activeReport[side].acpl : stats ? stats[side].acpl : '—'}</td>
                   <td className="text-center">{counts[side].blunder}</td>
@@ -184,13 +190,13 @@ export function ReviewPanel() {
               onClick={saveMistakes}
               className="w-full rounded bg-neutral-700 py-1.5 text-xs font-semibold text-neutral-100 hover:bg-neutral-600"
             >
-              {saved !== null ? `✓ Added ${saved} to drill` : `Save ${seriousCount} mistakes to drill →`}
+              {saved !== null ? t('review.savedToDrill', { count: saved }) : t('review.saveMistakes', { count: seriousCount })}
             </button>
           )}
         </div>
       ) : (
         <p className="text-xs text-neutral-400">
-          {mode === 'analysis' ? 'Analyse a game, then review it for blunders and inaccuracies.' : 'Switch to the analysis board to review a game.'}
+          {mode === 'analysis' ? t('review.emptyAnalysis') : t('review.emptyOtherMode')}
         </p>
       )}
 
@@ -202,8 +208,8 @@ export function ReviewPanel() {
             className="w-full rounded bg-neutral-700 py-1.5 text-xs font-semibold text-neutral-100 hover:bg-neutral-600 disabled:opacity-50"
           >
             {gen
-              ? `Mining… ${gen.done}/${gen.total} · ${gen.found} found (click to stop)`
-              : '⚡ Make puzzles from this game'}
+              ? t('puzzles.mining', { done: gen.done, total: gen.total, found: gen.found })
+              : t('puzzles.make')}
           </button>
           {gen && (
             <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded bg-neutral-800">
@@ -212,9 +218,7 @@ export function ReviewPanel() {
           )}
           {genResult !== null && !gen && (
             <p className="mt-1.5 text-xs text-emerald-300">
-              {genResult > 0
-                ? `✓ Added ${genResult} puzzle${genResult === 1 ? '' : 's'} — find them under Tactics → My games.`
-                : 'No new tactics found in this game.'}
+              {genResult > 0 ? t('puzzles.added', { count: genResult }) : t('puzzles.noneFound')}
             </p>
           )}
         </div>

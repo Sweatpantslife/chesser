@@ -1,0 +1,68 @@
+{
+  "roster": {
+    "tilly": {
+      "title": "Grande débutante",
+      "bio": "Vient tout juste d'apprendre comment bougent les pièces. Laisse des pièces en prise, rate des captures faciles — le premier barreau idéal."
+    },
+    "benny": {
+      "title": "Débutant",
+      "bio": "Sait distinguer un cavalier d'un fou, mais les menaces en un coup lui passent sous le nez. Adore lancer sa dame à l'assaut sans filet."
+    },
+    "cassie": {
+      "title": "Joueuse occasionnelle",
+      "bio": "Joue pour le plaisir entre deux cafés. Des coups d'ouverture sensés, mais se perd dès que la position devient tranchante."
+    },
+    "maya": {
+      "title": "Style humain · 1100",
+      "bio": "Joue comme une vraie 1100 : les coups naturels, légèrement inexacts, qu'un débutant joue réellement."
+    },
+    "patrick": {
+      "title": "Novice de club",
+      "bio": "Solide et têtu — il échange les pièces et s'accroche à ses pions. Il faudra vraiment jouer mieux que lui pour l'emporter."
+    },
+    "rosa": {
+      "title": "Joueuse de club",
+      "bio": "Une vraie habituée du club. Développe sainement, roque tôt et punit les erreurs évidentes."
+    },
+    "gus": {
+      "title": "Attaquant de café",
+      "bio": "Sacrifie d'abord, réfléchit ensuite. Roquez vite et gare aux réseaux de mat de pacotille."
+    },
+    "maxine": {
+      "title": "Style humain · 1500",
+      "bio": "Des coups humains et de principe, avec de temps en temps un oubli très humain."
+    },
+    "knox": {
+      "title": "Défenseur solide",
+      "bio": "Un mur de briques. Il échange les pièces, évite les faiblesses et use son adversaire dans des finales égales. Patience exigée."
+    },
+    "priya": {
+      "title": "Style humain · 1800",
+      "bio": "De solides réflexes de club : des plans sains, une tactique rapide et seulement quelques rares glissades sous pression."
+    },
+    "nora": {
+      "title": "Style humain · 1900",
+      "bio": "Un instinct de niveau expert et une technique propre, avec de très rares erreurs humaines."
+    },
+    "tess": {
+      "title": "Experte tactique",
+      "bio": "Voit les combinaisons trois coups à l'avance. Laissez une pièce en l'air et elle disparaît en un éclair."
+    },
+    "vera": {
+      "title": "Maître positionnelle",
+      "bio": "Vous étouffe lentement — de meilleures cases, de meilleurs pions, puis une finale gagnée. Stratège jusqu'au bout des ongles."
+    },
+    "ivan": {
+      "title": "Maître",
+      "bio": "Un joueur complet de force de maître, sans faiblesse évidente. Il vous faudra sortir votre meilleur jeu."
+    },
+    "nadia": {
+      "title": "Grand maître",
+      "bio": "Proche du sommet de l'échelle : précise, profonde et impitoyable. Les erreurs sont punies sans pitié."
+    },
+    "stockzilla": {
+      "title": "Force maximale",
+      "bio": "Stockfish à pleine puissance, sans handicap. Le boss final — le battre est un véritable exploit."
+    }
+  }
+}

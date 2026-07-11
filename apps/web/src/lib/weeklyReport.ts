@@ -16,6 +16,7 @@
  * {@link buildWeeklyReportFacts} + lib/coachApi when a key is available.
  */
 import type { CoachWeeklyReportFacts } from '@chesser/shared';
+import i18n from '../i18n';
 import { WEAKNESS_META, type WeaknessKind } from './weakness';
 
 // ---------------------------------------------------------------------------
@@ -31,7 +32,22 @@ function dayKeyOf(d: Date): string {
   return `${d.getFullYear()}-${mm}-${dd}`;
 }
 
+// Fallback month names for environments where Intl rejects the active locale.
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** "Jul 6"-style short label in the active UI language ('en' ⇒ byte-identical
+ *  to the old hand-rolled format, which remains the fallback). */
+function shortDayLabel(d: Date): string {
+  // The ACTIVE language, not resolvedLanguage: Intl needs no loaded resources,
+  // and resolvedLanguage lags on the English fallback until the active
+  // locale's lazy chunks land (it only updates when changeLanguage settles).
+  const lang = i18n.language || i18n.resolvedLanguage || 'en';
+  try {
+    return new Intl.DateTimeFormat(lang, { month: 'short', day: 'numeric' }).format(d);
+  } catch {
+    return `${MONTHS[d.getMonth()]} ${d.getDate()}`;
+  }
+}
 
 export interface WeekRange {
   /** Local Monday 00:00 of the week containing `now` (epoch ms). */
@@ -56,7 +72,7 @@ export function weekRangeOf(now: number): WeekRange {
   end.setDate(start.getDate() + DAY_NAMES_IN_WEEK);
   const sunday = new Date(start);
   sunday.setDate(start.getDate() + 6);
-  const label = `${MONTHS[start.getMonth()]} ${start.getDate()} – ${MONTHS[sunday.getMonth()]} ${sunday.getDate()}`;
+  const label = `${shortDayLabel(start)} – ${shortDayLabel(sunday)}`;
   return { startMs: start.getTime(), endMs: end.getTime(), startKey: dayKeyOf(start), endKey: dayKeyOf(sunday), label };
 }
 
@@ -212,6 +228,9 @@ export function buildWeeklyReport(inputs: WeeklyInputs, now: number): WeeklyRepo
     puzzles: { ratingStart, ratingEnd, delta },
     sprints: { newRushBest, newStormBest },
     training: { attempts, solved },
+    // `label` stays the CANONICAL English catalogue label (it feeds the
+    // server-validated LLM facts); the narrative below re-resolves the
+    // display label from `kind` in the active language.
     weakness: { kind: knownKind, label: knownKind ? WEAKNESS_META[knownKind].label : null, count: topCount },
     hasActivity,
   };
@@ -221,26 +240,27 @@ export function buildWeeklyReport(inputs: WeeklyInputs, now: number): WeeklyRepo
 // Rule-based narrative (the report must read well for everyone, key or not)
 // ---------------------------------------------------------------------------
 
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
-
-/** Template recap prose — 2-4 warm sentences built only from the stats. */
+/** Template recap prose — 2-4 warm sentences built only from the stats.
+ *  Sentences resolve through `insights:weekly.*` at call time (the component
+ *  rebuilds the narrative per render, so language switches apply live);
+ *  English output is byte-identical to the previous hand-built prose. */
 export function buildWeeklyNarrative(r: WeeklyReport): string {
-  if (!r.hasActivity) {
-    return 'A quiet week on the board so far — nothing logged yet. One puzzle or a quick lesson today is all it takes to get the week moving.';
-  }
+  const t = i18n.getFixedT(null, 'insights');
+  if (!r.hasActivity) return t('weekly.quiet');
 
   const parts: string[] = [];
+  const xp = r.xpEarned.toLocaleString();
 
-  if (r.activeDays >= 7) parts.push(`You showed up all 7 days this week and earned ${r.xpEarned.toLocaleString()} XP — that consistency is how players improve.`);
-  else if (r.activeDays >= 4) parts.push(`You trained on ${r.activeDays} of 7 days this week, earning ${r.xpEarned.toLocaleString()} XP.`);
-  else parts.push(`You got ${plural(r.activeDays, 'training day')} in this week for ${r.xpEarned.toLocaleString()} XP.`);
+  if (r.activeDays >= 7) parts.push(t('weekly.allDays', { xp }));
+  else if (r.activeDays >= 4) parts.push(t('weekly.mostDays', { days: r.activeDays, xp }));
+  else parts.push(t('weekly.someDays', { count: r.activeDays, xp }));
 
   if (r.games.played > 0) {
-    const wdl = `${r.games.wins}W–${r.games.losses}L–${r.games.draws}D`;
+    const wdl = t('weekly.wdl', { wins: r.games.wins, losses: r.games.losses, draws: r.games.draws });
     parts.push(
       r.games.bestAccuracy !== null
-        ? `Across ${plural(r.games.played, 'reviewed game')} you went ${wdl}, with a best accuracy of ${r.games.bestAccuracy}%.`
-        : `Across ${plural(r.games.played, 'reviewed game')} you went ${wdl}.`,
+        ? t('weekly.gamesAccuracy', { count: r.games.played, wdl, accuracy: r.games.bestAccuracy })
+        : t('weekly.games', { count: r.games.played, wdl }),
     );
   }
 
@@ -248,29 +268,33 @@ export function buildWeeklyNarrative(r: WeeklyReport): string {
   if (r.puzzles.delta !== null && r.puzzles.delta !== 0) {
     puzzleBits.push(
       r.puzzles.delta > 0
-        ? `your puzzle rating climbed ${r.puzzles.delta} points to ${r.puzzles.ratingEnd}`
-        : `your puzzle rating dipped ${Math.abs(r.puzzles.delta)} points — normal turbulence`,
+        ? t('weekly.ratingClimb', { delta: r.puzzles.delta, rating: r.puzzles.ratingEnd })
+        : t('weekly.ratingDip', { delta: Math.abs(r.puzzles.delta) }),
     );
   }
-  if (r.sprints.newRushBest !== null) puzzleBits.push(`you set a new Puzzle Rush best of ${r.sprints.newRushBest}`);
-  if (r.sprints.newStormBest !== null) puzzleBits.push(`a new Storm best of ${r.sprints.newStormBest}`);
+  if (r.sprints.newRushBest !== null) puzzleBits.push(t('weekly.newRushBest', { score: r.sprints.newRushBest }));
+  if (r.sprints.newStormBest !== null) puzzleBits.push(t('weekly.newStormBest', { score: r.sprints.newStormBest }));
   if (puzzleBits.length > 0) {
-    const joined = puzzleBits.join(', and ');
-    parts.push(`On the puzzle side, ${joined}.`);
+    parts.push(t('weekly.puzzleSide', { bits: puzzleBits.join(t('weekly.puzzleJoiner')) }));
   }
 
   if (r.lessons.completed > 0) {
-    parts.push(`You also finished ${plural(r.lessons.completed, 'lesson')}${r.lessons.stars > 0 ? ` (${r.lessons.stars} stars)` : ''}.`);
+    parts.push(
+      r.lessons.stars > 0
+        ? t('weekly.lessonsStars', { count: r.lessons.completed, stars: r.lessons.stars })
+        : t('weekly.lessons', { count: r.lessons.completed }),
+    );
   }
 
   if (r.training.attempts > 0) {
-    parts.push(`Weakness training: ${r.training.solved}/${r.training.attempts} drills solved.`);
+    parts.push(t('weekly.training', { solved: r.training.solved, attempts: r.training.attempts }));
   }
 
-  if (r.weakness.label && r.weakness.count > 0) {
-    parts.push(`The pattern to watch is ${r.weakness.label.toLowerCase()} (${r.weakness.count}× this week) — a good focus for next week.`);
+  if (r.weakness.kind && r.weakness.count > 0) {
+    const label = t(`weaknesses.${r.weakness.kind}.label`).toLowerCase();
+    parts.push(t('weekly.watchPattern', { label, count: r.weakness.count }));
   } else if (r.streak > 0) {
-    parts.push(`Your streak is at ${plural(r.streak, 'day')} — keep it alive.`);
+    parts.push(t('weekly.streak', { count: r.streak }));
   }
 
   return parts.slice(0, 5).join(' ');

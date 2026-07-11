@@ -1,0 +1,216 @@
+{
+  "panel": {
+    "ariaLabel": "Amigos y desafíos"
+  },
+  "headers": {
+    "friends": "👥 Amigos",
+    "challenges": "⚔ Desafíos"
+  },
+  "signedOut": {
+    "body": "Inicia sesión (arriba a la derecha) para añadir amigos, desafiarlos a partidas y ver qué han estado haciendo. Compartir es opcional — solo se muestra tu nombre público."
+  },
+  "add": {
+    "hint": "Añade amigos por nombre de usuario o intercambia códigos de amigo — sin necesidad de perfil público.",
+    "label": "Nombre de usuario o código de amigo",
+    "placeholder": "p. ej. magnus, o Q2ZKM7PW",
+    "submit": "Añadir amigo"
+  },
+  "code": {
+    "yours": "Tu código de amigo:",
+    "copy": "Copiar",
+    "copied": "✓ Copiado",
+    "copyAria": "Copia tu código de amigo"
+  },
+  "requests": {
+    "incomingTitle": "Solicitudes de amistad",
+    "outgoingTitle": "Solicitudes enviadas",
+    "waiting": "· esperando",
+    "acceptAria": "Aceptar la solicitud de amistad de {{name}}",
+    "declineAria": "Rechazar la solicitud de amistad de {{name}}",
+    "cancelAria": "Cancelar la solicitud de amistad a {{name}}"
+  },
+  "list": {
+    "title": "Tus amigos",
+    "empty": "Aún no tienes amigos — envía una solicitud arriba."
+  },
+  "remove": {
+    "button": "Eliminar",
+    "buttonAria": "Eliminar a {{name}} de tus amigos",
+    "confirm": "Confirmar",
+    "confirmAria": "Confirmar la eliminación de {{name}}",
+    "keep": "Mantener"
+  },
+  "challenge": {
+    "button": "⚔ Desafiar",
+    "buttonAria": "Desafiar a {{name}} a una partida",
+    "cardHint": "Aceptar un desafío inicia una partida amistosa en vivo, sin puntuar.",
+    "empty": "No hay desafíos abiertos. Elige un amigo y pulsa ⚔ Desafiar.",
+    "timeControlAria": "Control de tiempo para el desafío a {{name}}",
+    "youPlay": "Juegas con",
+    "colorAria": "Tu color",
+    "send": "Enviar desafío",
+    "incomingLine": "<from>{{from}}</from> te desafía — {{tc}}, juegas con {{color}}",
+    "acceptPlay": "Aceptar y jugar",
+    "acceptAria": "Aceptar el desafío de {{name}}",
+    "declineAria": "Rechazar el desafío de {{name}}",
+    "join": "Unirse a la partida",
+    "cancelAria": "Cancelar el desafío a {{name}}",
+    "dismissAria": "Descartar el desafío a {{name}}",
+    "dismiss": "Descartar",
+    "outDetail": "{{tc}}, juegas con {{color}}",
+    "outPending": "esperando a {{name}}… ({{detail}})",
+    "outAccepted": "¡{{name}} aceptó tu desafío!",
+    "outDeclined": "{{name}} rechazó tu desafío",
+    "outExpired": "tu desafío a {{name}} caducó",
+    "outCancelled": "desafío a {{name}} cancelado"
+  },
+  "feed": {
+    "title": "Actividad de amigos",
+    "empty": "Nada todavía — la actividad que compartan tus amigos (puntuaciones, rachas, insignias) aparecerá aquí.",
+    "note": "Aquí solo aparece lo que cada amigo eligió compartir (clasificaciones / ajustes de perfil).",
+    "rush": "logró un récord de {{value}} en Puzzle Rush",
+    "ratingBots": "ahora tiene {{value}} de puntuación contra bots",
+    "ratingPuzzle": "ahora tiene {{value}} de puntuación de táctica",
+    "achievement": "desbloqueó «{{name}}»",
+    "streak_one": "lleva una racha de {{count}} día",
+    "streak_other": "lleva una racha de {{count}} días"
+  },
+  "time": {
+    "justNow": "ahora mismo",
+    "minutesAgo_one": "hace {{count}} min",
+    "minutesAgo_other": "hace {{count}} min",
+    "hoursAgo_one": "hace {{count}} h",
+    "hoursAgo_other": "hace {{count}} h",
+    "daysAgo_one": "hace {{count}} día",
+    "daysAgo_other": "hace {{count}} días"
+  },
+  "colors": {
+    "white": "Blancas",
+    "black": "Negras",
+    "whiteLower": "blancas",
+    "blackLower": "negras",
+    "inlineWhite": "blancas",
+    "inlineBlack": "negras",
+    "randomColors": "colores al azar",
+    "pickWhite": "□ Blancas",
+    "pickBlack": "■ Negras",
+    "pickRandom": "⚄ Aleatorio"
+  },
+  "timeControl": {
+    "label": "Control de tiempo",
+    "unlimited": "Tiempo ilimitado",
+    "unlimitedShort": "ilimitado"
+  },
+  "menu": {
+    "title": "Juega contra una persona",
+    "subtitle": "Partidas casuales sin puntuar — en este dispositivo o en línea con un amigo."
+  },
+  "local": {
+    "title": "🤝 Pasar y jugar",
+    "hint": "Dos personas, un dispositivo. Pásalo entre jugadas.",
+    "autoFlip": "Girar el tablero automáticamente hacia quien mueve",
+    "start": "Empezar partida local",
+    "tag": "· pasar y jugar · sin puntuar"
+  },
+  "online": {
+    "title": "🔗 Juega con un amigo en línea",
+    "hint": "Crea una partida y comparte el enlace — sin necesidad de cuenta.",
+    "nameLabel": "Tu nombre (opcional)",
+    "namePlaceholder": "Anónimo",
+    "create": "Crear partida y obtener enlace",
+    "codePlaceholder": "¿Tienes un código? p. ej. QK7DPM",
+    "join": "Unirse"
+  },
+  "recent": {
+    "title": "Partidas casuales recientes",
+    "vs": "{{white}} vs {{black}}",
+    "whiteFallback": "Blancas",
+    "blackFallback": "Negras",
+    "modeLocal": "pasar y jugar",
+    "modeOnline": "enlace de amigo"
+  },
+  "connect": {
+    "connecting": "Conectando…",
+    "settingUp": "Preparando la partida…"
+  },
+  "invite": {
+    "lead": "Envía este enlace a tu amigo — la partida empieza cuando lo abra:",
+    "copyLink": "Copiar enlace",
+    "copied": "✓ Copiado",
+    "codeHint": "…o puede introducir el código <code>{{code}}</code> en Amigos → Unirse."
+  },
+  "players": {
+    "waiting": "Esperando…",
+    "you": "Tú",
+    "named": "{{name}} (tú)",
+    "opponent": "Tu rival",
+    "connected": "conectado",
+    "disconnected": "desconectado"
+  },
+  "status": {
+    "toMove": "{{player}} juegan",
+    "toMoveCheck": "{{player}} juegan — jaque",
+    "drawClaimable": "{{reason}} — se pueden reclamar tablas",
+    "winsReason": "{{player}} ganan — {{reason}}",
+    "drawReason": "Tablas — {{reason}}",
+    "waitingFriend": "Esperando a que tu amigo se una…",
+    "onlineTag": "· partida <code>{{code}}</code> · sin puntuar",
+    "reconnecting": "· reconectando…",
+    "oppDisconnected": "Tu rival se desconectó — la partida se reanuda cuando vuelva."
+  },
+  "draw": {
+    "promptLocal": "{{to}} — {{from}} ofrece tablas. ¿Aceptar?",
+    "promptOnline": "{{name}} ofrece tablas.",
+    "offeredWaiting": "Tablas ofrecidas — esperando a tu rival…"
+  },
+  "actions": {
+    "resign": "🏳 Rendirse",
+    "resignAs": "🏳 Rendirse ({{player}})",
+    "confirmResign": "Confirmar rendición",
+    "abort": "✕ Anular",
+    "offerDraw": "½ Ofrecer tablas",
+    "claimDraw": "Reclamar tablas",
+    "claimDrawTitle": "Reclama las tablas",
+    "claimDrawUnavailable": "Disponible por triple repetición o por la regla de las 50 jugadas",
+    "flipBoard": "⇅ Girar el tablero",
+    "accept": "Aceptar",
+    "decline": "Rechazar",
+    "rematch": "↻ Revancha",
+    "back": "← Atrás",
+    "leave": "← Salir de la partida"
+  },
+  "outcome": {
+    "drew": "Has hecho tablas.",
+    "won": "¡Has ganado! 🎉",
+    "lost": "Has perdido."
+  },
+  "result": {
+    "aborted": "Partida anulada",
+    "draw": "Tablas",
+    "wins": "{{player}} ganan"
+  },
+  "reasons": {
+    "checkmate": "jaque mate",
+    "stalemate": "ahogado",
+    "insufficientMaterial": "material insuficiente",
+    "threefoldRepetition": "triple repetición",
+    "fiftyMoveRule": "regla de las 50 jugadas",
+    "resignation": "rendición",
+    "agreement": "acuerdo",
+    "aborted": "anulada",
+    "onTime": "por tiempo",
+    "timeoutInsufficientMaterial": "tiempo agotado con material insuficiente",
+    "playerResigned": "{{name}} se rindió"
+  },
+  "moveList": {
+    "empty": "Aún no hay jugadas.",
+    "start": "Inicio",
+    "back": "Atrás",
+    "forward": "Adelante",
+    "live": "Ir a la posición en vivo"
+  },
+  "pgn": {
+    "copy": "⧉ Copiar PGN",
+    "copied": "✓ PGN copiado"
+  }
+}

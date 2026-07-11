@@ -1,0 +1,58 @@
+{
+  "card": {
+    "title": "El plan de esta semana",
+    "subtitle": "{{weekLabel}} · {{done}}/{{total}} tareas hechas",
+    "open": "Abrir",
+    "progressAria": "Progreso semanal del plan de estudio",
+    "allCaughtUp": "Todo al día por hoy — ¡hasta mañana! 🎉",
+    "leftToday_one": "queda {{count}} hoy",
+    "leftToday_other": "quedan {{count}} hoy",
+    "more_one": "…y {{count}} más en el plan",
+    "more_other": "…y {{count}} más en el plan"
+  },
+  "page": {
+    "title": "El plan de estudio de esta semana",
+    "regenerate": "↻ Regenerar",
+    "personalizedIntro": "Creado a partir de tus partidas revisadas — el enfoque de esta semana:",
+    "personalizedOutro": ". Regenéralo cuando quieras — el plan vuelve a leer tu perfil y tu puntuación más recientes.",
+    "starter": "Una semana inicial de nivel {{level}}. Juega y revisa partidas en la pestaña Jugar y el plan apuntará a tus debilidades reales.",
+    "weekProgressAria": "Progreso de la semana",
+    "progressSummary": "{{pct}}% · {{done}}/{{total}} tareas"
+  },
+  "difficulty": {
+    "beginner": "principiante",
+    "intermediate": "intermedio",
+    "advanced": "avanzado"
+  },
+  "kinds": {
+    "puzzle": {
+      "heading": "Problemas diarios",
+      "blurb": "la cuota se reinicia cada día — los ejercicios del entrenador resueltos cuentan automáticamente",
+      "cta": "Entrenar"
+    },
+    "lesson": {
+      "heading": "Lecciones",
+      "blurb": "terminar la lección la marca automáticamente",
+      "cta": "Aprender"
+    },
+    "opening": {
+      "heading": "Ejercicios de apertura",
+      "blurb": "repeticiones de memoria de tu propio repertorio",
+      "cta": "Practicar"
+    },
+    "master": {
+      "heading": "Partidas magistrales",
+      "blurb": "clásicos comentados según tu enfoque",
+      "cta": "Ver"
+    }
+  },
+  "item": {
+    "done": "✓ hecho",
+    "progressAria": "{{title}} — progreso semanal",
+    "today": "hoy {{done}}/{{target}}",
+    "logOne": "+1 hoy",
+    "logOneAria": "Registrar un problema resuelto para «{{title}}»",
+    "markDone": "Marcar como hecho",
+    "markDoneAria": "Marcar «{{title}}» como completado"
+  }
+}

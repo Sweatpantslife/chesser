@@ -8,13 +8,14 @@
  * (click a phase to jump to its first ply) and the clickable critical-moments
  * list. Shows a skeleton while a re-review is running.
  */
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 import { CLASSIFICATION_META } from '../../lib/coach';
 import { CLASSIFICATION_GLYPH } from '../../lib/analytics/types';
 import type {
   AnalysisReport,
   Classification,
   CriticalMomentKind,
-  PhaseName,
   PhaseStats,
   PlayerSummary,
   Side,
@@ -45,8 +46,6 @@ const CLASS_ORDER: Classification[] = [
   'miss',
 ];
 
-const PHASE_LABEL: Record<PhaseName, string> = { opening: 'Opening', middlegame: 'Middlegame', endgame: 'Endgame' };
-
 /**
  * Classes whose counts click through to the mistake list — only those the
  * MistakeReviewPanel can actually filter to (no dead buttons on best/good).
@@ -67,41 +66,48 @@ const KIND_META: Record<CriticalMomentKind, { icon: string; text: string }> = {
  * its move number is ceil((leftTheoryAtPly + 1) / 2). Empty games get ''.
  */
 export function theoryText(leftTheoryAtPly: number, totalPlies: number): string {
+  // Plain function (called from tests too) — resolve t at call time so the
+  // string follows the active language.
+  const t = i18n.getFixedT(null, 'analysis');
   if (totalPlies === 0) return '';
-  if (leftTheoryAtPly >= totalPlies) return 'In theory throughout';
-  return `Left theory at move ${Math.ceil((Math.max(0, leftTheoryAtPly) + 1) / 2)}`;
+  if (leftTheoryAtPly >= totalPlies) return t('report.theoryThroughout');
+  return t('report.theoryLeftAt', { move: Math.ceil((Math.max(0, leftTheoryAtPly) + 1) / 2) });
 }
 
 function PlayerCard({ side, summary, rating, isYou }: { side: Side; summary: PlayerSummary; rating: number; isYou: boolean }) {
+  const { t } = useTranslation('analysis');
   return (
     <div className="rounded-xl bg-neutral-800/60 p-2">
       <div className="flex items-center gap-1.5">
         <span
           className={`h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-neutral-600 ${side === 'white' ? 'bg-chess-white' : 'bg-chess-black'}`}
         />
-        <span className="text-xs font-semibold capitalize text-neutral-300">{side}</span>
-        {isYou && <span className="rounded-full bg-brand-500/20 px-1.5 text-[10px] font-semibold text-brand-300">you</span>}
+        <span className="text-xs font-semibold capitalize text-neutral-300">{t(`side.${side}`)}</span>
+        {isYou && (
+          <span className="rounded-full bg-brand-500/20 px-1.5 text-[10px] font-semibold text-brand-300">{t('report.you')}</span>
+        )}
       </div>
       <div className="mt-1.5 font-display text-2xl font-bold leading-none text-emerald-300">
         {summary.accuracy}
         <span className="text-sm font-semibold">%</span>
       </div>
       <div className="mt-1.5 text-[11px] leading-tight text-neutral-400">
-        <div title="Average centipawn loss">ACPL {summary.acpl}</div>
-        <div title="Heuristic estimate from accuracy and centipawn loss — not a real rating">~{rating} est. rating</div>
+        <div title={t('report.acplTitle')}>{t('report.acpl', { value: summary.acpl })}</div>
+        <div title={t('report.estRatingTitle')}>{t('report.estRating', { rating })}</div>
       </div>
     </div>
   );
 }
 
 function CountCell({ side, cls, count, onFilterClass }: { side: Side; cls: Classification; count: number; onFilterClass?: (cls: Classification) => void }) {
+  const { t } = useTranslation('analysis');
   if (!onFilterClass) return <span className="text-neutral-300">{count}</span>;
   return (
     <button
       data-count={`${side}-${cls}`}
       onClick={() => onFilterClass(cls)}
       disabled={count === 0}
-      title={count > 0 ? `Show ${CLASSIFICATION_META[cls].label.toLowerCase()} moves` : undefined}
+      title={count > 0 ? t('report.showMoves', { label: CLASSIFICATION_META[cls].label.toLowerCase() }) : undefined}
       className="btn-press w-full rounded px-1 py-0.5 text-neutral-300 enabled:hover:bg-neutral-700 enabled:hover:text-ink disabled:text-neutral-600"
     >
       {count}
@@ -110,6 +116,7 @@ function CountCell({ side, cls, count, onFilterClass }: { side: Side; cls: Class
 }
 
 export function ReviewSummary({ report, reviewing, onSelectPly, onFilterClass, onExportPgn }: ReviewSummaryProps): JSX.Element {
+  const { t } = useTranslation('analysis');
   const { white, black, opening, phases, criticalMoments, estimatedPerformanceRating: rating, meta } = report;
   const theory = theoryText(opening.leftTheoryAtPly, report.moves.length);
   const phaseEmpty = (p: PhaseStats) => p.endPly < p.startPly || p.white.moves + p.black.moves === 0;
@@ -117,13 +124,13 @@ export function ReviewSummary({ report, reviewing, onSelectPly, onFilterClass, o
   return (
     <div className="rounded-2xl bg-panel p-3 shadow-soft">
       <div className="flex items-center justify-between">
-        <h3 className="font-display text-sm font-semibold text-ink">Game report</h3>
+        <h3 className="font-display text-sm font-semibold text-ink">{t('report.title')}</h3>
         {onExportPgn && (
           <button
             onClick={onExportPgn}
             className="btn-press rounded-lg px-1.5 py-0.5 text-xs text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
           >
-            Export PGN
+            {t('report.exportPgn')}
           </button>
         )}
       </div>
@@ -177,7 +184,7 @@ export function ReviewSummary({ report, reviewing, onSelectPly, onFilterClass, o
                 {theory && <p className="mt-1 text-[11px] text-neutral-400">{theory}</p>}
               </>
             ) : (
-              <p className="text-xs text-neutral-400">No book opening detected.</p>
+              <p className="text-xs text-neutral-400">{t('report.noBookOpening')}</p>
             )}
           </div>
 
@@ -185,9 +192,9 @@ export function ReviewSummary({ report, reviewing, onSelectPly, onFilterClass, o
             <table className="w-full text-xs">
               <thead>
                 <tr className="text-neutral-400">
-                  <th className="text-left font-normal">Phase</th>
-                  <th className="w-14 text-center font-normal">White</th>
-                  <th className="w-14 text-center font-normal">Black</th>
+                  <th className="text-left font-normal">{t('report.header.phase')}</th>
+                  <th className="w-14 text-center font-normal">{t('report.header.white')}</th>
+                  <th className="w-14 text-center font-normal">{t('report.header.black')}</th>
                 </tr>
               </thead>
               <tbody className="text-neutral-300">
@@ -197,20 +204,20 @@ export function ReviewSummary({ report, reviewing, onSelectPly, onFilterClass, o
                     <tr key={p.phase}>
                       <td className="py-0.5">
                         {empty ? (
-                          <span className="text-neutral-400">{PHASE_LABEL[p.phase]}</span>
+                          <span className="text-neutral-400">{t(`phase.${p.phase}`)}</span>
                         ) : (
                           <button
                             data-phase={p.phase}
                             onClick={() => onSelectPly(p.startPly)}
-                            title="Jump to the start of this phase"
+                            title={t('report.phaseJumpTitle')}
                             className="text-left text-neutral-300 hover:text-ink hover:underline"
                           >
-                            {PHASE_LABEL[p.phase]}
+                            {t(`phase.${p.phase}`)}
                           </button>
                         )}
                       </td>
-                      <td className="text-center">{empty ? '—' : `${p.white.accuracy}%`}</td>
-                      <td className="text-center">{empty ? '—' : `${p.black.accuracy}%`}</td>
+                      <td className="text-center">{empty ? '—' : t('percent', { value: p.white.accuracy })}</td>
+                      <td className="text-center">{empty ? '—' : t('percent', { value: p.black.accuracy })}</td>
                     </tr>
                   );
                 })}
@@ -220,7 +227,7 @@ export function ReviewSummary({ report, reviewing, onSelectPly, onFilterClass, o
 
           {criticalMoments.length > 0 && (
             <div className="border-t border-neutral-800 pt-2">
-              <h4 className="text-[11px] uppercase tracking-wide text-neutral-400">Key moments</h4>
+              <h4 className="text-[11px] uppercase tracking-wide text-neutral-400">{t('report.keyMoments')}</h4>
               <div className="mt-1 space-y-0.5">
                 {criticalMoments.map((c) => (
                   <button

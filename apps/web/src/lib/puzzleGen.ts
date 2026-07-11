@@ -39,6 +39,10 @@ function toMoverInfo(line: AnalysisLine, moverIsWhite: boolean): MoverInfo {
   return { cp: line.score.value * sign, pv: line.pvUci };
 }
 
+// i18n: these theme strings are PERSISTED into store/customPuzzles (and the
+// 'Mate in N' form is parsed by lib/motifs' themeHint regex), so they stay
+// canonical English DATA. Translate at display time only — see
+// themeDisplayLabel() in lib/puzzleService.ts (`motifs:themes.*`).
 function classify(i: MoverInfo): string {
   if (i.mate !== undefined && i.mate > 0) return i.mate <= 1 ? 'Mate in 1' : `Mate in ${i.mate}`;
   return 'Winning tactic';

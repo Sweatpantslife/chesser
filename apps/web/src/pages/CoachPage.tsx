@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { Chess } from 'chess.js';
 import type { DrawShape } from 'chessground/draw';
 import { Board } from '../board/Board';
@@ -33,8 +34,6 @@ import type { Puzzle } from '../trainers/tactics';
  * "train your weaknesses" flow that serves theme-matched puzzles at the
  * player's rating via the existing puzzle service.
  */
-
-const PHASE_LABEL: Record<string, string> = { opening: 'Opening', middlegame: 'Middlegame', endgame: 'Endgame' };
 
 function Section({ title, children, aside }: { title: string; children: ReactNode; aside?: ReactNode }) {
   return (
@@ -77,12 +76,13 @@ function ExampleBoard({ example }: { example: WeaknessExample }) {
 }
 
 function TrendChip({ trend }: { trend: number | null }) {
+  const { t } = useTranslation('coach');
   if (trend === null) return null;
   if (trend <= -0.3)
-    return <span className="rounded-full bg-emerald-900/60 px-2 py-0.5 text-xs text-emerald-300">improving ↓</span>;
+    return <span className="rounded-full bg-emerald-900/60 px-2 py-0.5 text-xs text-emerald-300">{t('trend.improving')}</span>;
   if (trend >= 0.3)
-    return <span className="rounded-full bg-rose-900/50 px-2 py-0.5 text-xs text-rose-300">on the rise ↑</span>;
-  return <span className="rounded-full bg-neutral-800 px-2 py-0.5 text-xs text-neutral-400">steady</span>;
+    return <span className="rounded-full bg-rose-900/50 px-2 py-0.5 text-xs text-rose-300">{t('trend.rising')}</span>;
+  return <span className="rounded-full bg-neutral-800 px-2 py-0.5 text-xs text-neutral-400">{t('trend.steady')}</span>;
 }
 
 function WeaknessCard({
@@ -105,6 +105,7 @@ function WeaknessCard({
   /** AI Coach facts for this weakness (top entry only); null = rule-based text. */
   aiFacts?: CoachWeaknessFacts | null;
 }) {
+  const { t } = useTranslation('coach');
   // Subscribe to the raw log (stable reference) and derive stats memoized —
   // selecting trainingStats() directly would return a fresh object per render.
   const trainingLog = useCoach((s) => s.trainingLog);
@@ -123,7 +124,7 @@ function WeaknessCard({
         </h4>
         <TrendChip trend={entry.trend} />
         <span className="ml-auto text-xs text-neutral-400">
-          {entry.count}× in {entry.games} game{entry.games === 1 ? '' : 's'}
+          {t('weakness.occurrences', { times: entry.count, count: entry.games })}
         </span>
       </div>
       <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-neutral-800">
@@ -139,9 +140,9 @@ function WeaknessCard({
             <button
               onClick={() => onOpen(example)}
               className="btn-press mt-1.5 w-full rounded bg-neutral-800 py-1.5 text-xs text-neutral-300 hover:bg-neutral-700 hover:text-ink"
-              title="Load this position on the analysis board"
+              title={t('weakness.openAnalysisTitle')}
             >
-              Open in analysis →
+              {t('weakness.openAnalysis')}
             </button>
           </div>
         )}
@@ -152,7 +153,7 @@ function WeaknessCard({
               {entry.examples.slice(1).map((ex) => (
                 <li key={`${ex.gameKey}:${ex.ply}`}>
                   <button onClick={() => onOpen(ex)} className="text-left hover:text-neutral-200 hover:underline">
-                    Also: {describeExample(ex)}
+                    {t('weakness.also', { example: describeExample(ex) })}
                   </button>
                 </li>
               ))}
@@ -160,9 +161,9 @@ function WeaknessCard({
           )}
           {stats.attempts > 0 && (
             <p className="mt-2 text-xs text-neutral-400">
-              Trained {stats.attempts}× · {stats.solved} solved
-              {stats.recentRate !== null && <> · last 10: {Math.round(stats.recentRate * 100)}%</>}
-              {improved && <span className="text-emerald-400"> — up from {Math.round((stats.firstRate ?? 0) * 100)}%, nice!</span>}
+              {t('weakness.trained', { attempts: stats.attempts, count: stats.solved })}
+              {stats.recentRate !== null && <> · {t('weakness.lastTen', { pct: Math.round(stats.recentRate * 100) })}</>}
+              {improved && <span className="text-emerald-400"> — {t('weakness.improved', { pct: Math.round((stats.firstRate ?? 0) * 100) })}</span>}
             </p>
           )}
           <button
@@ -172,7 +173,7 @@ function WeaknessCard({
               training ? 'bg-gradient-to-br from-brand-600 to-brand-700 text-white shadow-glow' : 'bg-emerald-700 text-white hover:bg-emerald-800'
             }`}
           >
-            {training ? 'Training now' : 'Train this weakness'}
+            {training ? t('weakness.trainingNow') : t('weakness.train')}
           </button>
         </div>
       </div>
@@ -187,6 +188,7 @@ function WeaknessCard({
 type TrainPhase = 'solving' | 'solved' | 'failed';
 
 function WeaknessTrainer({ entry, onClose }: { entry: WeaknessEntry; onClose: () => void }) {
+  const { t } = useTranslation('coach');
   const game = useRef(new Chess());
   const attempt = useRef({ failed: false, rated: false });
   const served = useRef(new Set<string>());
@@ -219,7 +221,7 @@ function WeaknessTrainer({ entry, onClose }: { entry: WeaknessEntry; onClose: ()
     setPhase('solving');
     setFen(game.current.fen());
     setLastMove(undefined);
-    setFeedback(`${p.turn === 'white' ? 'White' : 'Black'} to move — find the ${entry.meta.label.toLowerCase()} idea.`);
+    setFeedback(t('trainer.toMove', { side: t(`side.${p.turn}`), theme: entry.meta.label.toLowerCase() }));
   };
 
   // Warm the rating bands, then serve the first puzzle for this weakness.
@@ -286,14 +288,14 @@ function WeaknessTrainer({ entry, onClose }: { entry: WeaknessEntry; onClose: ()
       playMoveSound(mv.san);
       sync();
       setPhase('solved');
-      setFeedback(check.altMate ? `✓ ${mv.san} — checkmate!` : `✓ ${mv.san} — exactly the pattern.`);
+      setFeedback(check.altMate ? t('trainer.solvedMate', { san: mv.san }) : t('trainer.solvedExact', { san: mv.san }));
       rateOnce(!attempt.current.failed);
       if (!check.altMate) demoRest(1);
     } else {
       attempt.current.failed = true;
       rateOnce(false);
       setPhase('failed');
-      setFeedback('Not it — the pattern is still on the board. Try again or reveal.');
+      setFeedback(t('trainer.wrong'));
       sync();
     }
   };
@@ -302,7 +304,7 @@ function WeaknessTrainer({ entry, onClose }: { entry: WeaknessEntry; onClose: ()
     if (!puzzle) return;
     game.current = new Chess(puzzle.fen);
     setPhase('solving');
-    setFeedback('Fresh look — take your time.');
+    setFeedback(t('trainer.fresh'));
     setFen(game.current.fen());
     setLastMove(undefined);
   };
@@ -314,7 +316,7 @@ function WeaknessTrainer({ entry, onClose }: { entry: WeaknessEntry; onClose: ()
     game.current = new Chess(puzzle.fen);
     const mv = game.current.move({ from: key.slice(0, 2), to: key.slice(2, 4), promotion: key[4] });
     setPhase('solved');
-    setFeedback(`Solution: ${mv.san}. Watch how it plays out.`);
+    setFeedback(t('trainer.solution', { san: mv.san }));
     sync();
     demoRest(1);
   };
@@ -329,17 +331,15 @@ function WeaknessTrainer({ entry, onClose }: { entry: WeaknessEntry; onClose: ()
 
   return (
     <Section
-      title={`Training: ${entry.meta.label}`}
+      title={t('trainer.title', { label: entry.meta.label })}
       aside={
         <span className="text-xs text-neutral-400" data-testid="trainer-session">
-          {session.solved}/{session.attempts} this session · themes: {entry.meta.puzzleThemes.join(', ')}
+          {t('trainer.session', { solved: session.solved, attempts: session.attempts, themes: entry.meta.puzzleThemes.join(', ') })}
         </span>
       }
     >
       {exhausted || !puzzle ? (
-        <p className="text-sm text-neutral-400">
-          No matching puzzles are loaded right now — check your connection and try again in a moment.
-        </p>
+        <p className="text-sm text-neutral-400">{t('trainer.empty')}</p>
       ) : (
         <div className="flex flex-col gap-3 lg:flex-row">
           <div className="mx-auto w-full max-w-[480px] lg:mx-0">
@@ -357,8 +357,8 @@ function WeaknessTrainer({ entry, onClose }: { entry: WeaknessEntry; onClose: ()
           <div className="min-w-0 flex-1 space-y-3">
             <div className="flex flex-wrap items-center gap-2 text-sm">
               <span className="rounded bg-neutral-700 px-2 py-0.5 text-xs text-neutral-200">{puzzle.theme}</span>
-              <span className="text-xs text-neutral-400">rated {puzzle.rating ?? '—'} · you {decisionRating}</span>
-              {solverToMove && <span className="animate-pulse-soft text-emerald-400">your move</span>}
+              <span className="text-xs text-neutral-400">{t('trainer.rated', { rating: puzzle.rating ?? '—', yours: decisionRating })}</span>
+              {solverToMove && <span className="animate-pulse-soft text-emerald-400">{t('trainer.yourMove')}</span>}
             </div>
             <p className="text-sm text-neutral-300" data-testid="trainer-feedback">
               {feedback}
@@ -366,19 +366,19 @@ function WeaknessTrainer({ entry, onClose }: { entry: WeaknessEntry; onClose: ()
             <div className="flex flex-wrap gap-2">
               {phase === 'failed' && (
                 <button onClick={retry} className="btn-press rounded bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800">
-                  Try again
+                  {t('trainer.tryAgain')}
                 </button>
               )}
               {phase !== 'solved' && (
                 <button onClick={reveal} className="btn-press rounded bg-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600">
-                  Reveal
+                  {t('trainer.reveal')}
                 </button>
               )}
               <button onClick={serveNext} className="btn-press rounded bg-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600">
-                Next puzzle →
+                {t('trainer.next')}
               </button>
               <button onClick={stop} className="btn-press rounded bg-neutral-800 px-3 py-1.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-300">
-                Done training
+                {t('trainer.done')}
               </button>
             </div>
             <p className="text-xs leading-relaxed text-neutral-400">{entry.meta.advice}</p>
@@ -394,6 +394,7 @@ function WeaknessTrainer({ entry, onClose }: { entry: WeaknessEntry; onClose: ()
 // ---------------------------------------------------------------------------
 
 export function CoachPage({ goPlay }: { goPlay: () => void }) {
+  const { t } = useTranslation('coach');
   const games = useCoach((s) => s.games);
   const loadFen = useGame((s) => s.loadFen);
   const aiCoach = useSettings((s) => s.aiCoach);
@@ -418,9 +419,8 @@ export function CoachPage({ goPlay }: { goPlay: () => void }) {
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-neutral-700 bg-panel/60 p-6 text-center text-sm text-neutral-400 sm:flex-row sm:text-left">
           <EmptyStatsArt width={150} height={112} className="shrink-0" />
           <div>
-            <div className="mb-1 font-display text-base font-semibold text-ink">Your coach is ready when you are</div>
-            Play a game against a bot on the <b>Play</b> tab and run a game review — the coach studies your reviewed games,
-            spots recurring patterns, and builds a training plan around them.
+            <div className="mb-1 font-display text-base font-semibold text-ink">{t('empty.title')}</div>
+            <Trans t={t} i18nKey="empty.body" components={{ b: <b /> }} />
           </div>
         </div>
       </div>
@@ -430,27 +430,26 @@ export function CoachPage({ goPlay }: { goPlay: () => void }) {
   return (
     <div className="mx-auto w-full max-w-[1000px] space-y-4">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Games studied" value={profile.games} hint="reviewed vs bots" />
-        <StatCard label="Your accuracy" value={`${profile.accuracy}%`} hint="across those games" />
+        <StatCard label={t('cards.gamesStudied')} value={profile.games} hint={t('cards.gamesStudiedHint')} />
+        <StatCard label={t('cards.accuracy')} value={t('percent', { value: profile.accuracy })} hint={t('cards.accuracyHint')} />
         <StatCard
-          label="Weakest phase"
-          value={profile.worstPhase ? PHASE_LABEL[profile.worstPhase] : '—'}
+          label={t('cards.weakestPhase')}
+          value={profile.worstPhase ? t(`phase.${profile.worstPhase}`) : '—'}
           hint={
             profile.worstPhase
-              ? `${profile.phases.find((p) => p.phase === profile.worstPhase)?.accuracy ?? '—'}% accuracy`
-              : 'not enough moves yet'
+              ? t('cards.weakestPhaseHint', { accuracy: profile.phases.find((p) => p.phase === profile.worstPhase)?.accuracy ?? '—' })
+              : t('cards.weakestPhaseEmpty')
           }
         />
-        <StatCard label="Focus areas" value={profile.weaknesses.length} hint="recurring patterns" />
+        <StatCard label={t('cards.focusAreas')} value={profile.weaknesses.length} hint={t('cards.focusAreasHint')} />
       </div>
 
       {training && <WeaknessTrainer entry={training} onClose={() => setTrainingKind(null)} />}
 
       {profile.weaknesses.length === 0 ? (
         <div className="rounded-2xl bg-panel p-6 text-center text-sm text-neutral-400 shadow-soft">
-          <div className="mb-1 font-display text-base font-semibold text-ink">Nothing recurring yet — great sign!</div>
-          No pattern has shown up twice across your reviewed games. Keep playing and reviewing; the coach re-measures after
-          every review.
+          <div className="mb-1 font-display text-base font-semibold text-ink">{t('noneRecurring.title')}</div>
+          {t('noneRecurring.body')}
         </div>
       ) : (
         <div className="space-y-4" data-testid="weakness-list">
@@ -471,11 +470,11 @@ export function CoachPage({ goPlay }: { goPlay: () => void }) {
       )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Section title="Phase accuracy" aside={<span className="text-xs text-neutral-400">your moves only</span>}>
+        <Section title={t('phaseAccuracy.title')} aside={<span className="text-xs text-neutral-400">{t('phaseAccuracy.aside')}</span>}>
           <div className="space-y-2">
             {profile.phases.map((p) => (
               <div key={p.phase} className="flex items-center gap-2 text-sm">
-                <span className="w-24 text-neutral-300">{PHASE_LABEL[p.phase]}</span>
+                <span className="w-24 text-neutral-300">{t(`phase.${p.phase}`)}</span>
                 <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-neutral-800">
                   <div
                     className={`h-full rounded-full ${p.phase === profile.worstPhase ? 'bg-rose-500/80' : 'bg-emerald-500/70'}`}
@@ -483,22 +482,24 @@ export function CoachPage({ goPlay }: { goPlay: () => void }) {
                   />
                 </div>
                 <span className="w-24 text-right text-xs text-neutral-400">
-                  {p.moves > 0 ? `${p.accuracy}% · ${p.moves} mv` : 'no moves'}
+                  {p.moves > 0 ? t('phaseAccuracy.row', { accuracy: p.accuracy, moves: p.moves }) : t('phaseAccuracy.noMoves')}
                 </span>
               </div>
             ))}
           </div>
         </Section>
 
-        <Section title="Tendencies">
+        <Section title={t('tendencies.title')}>
           <div className="space-y-2 text-sm text-neutral-300">
             {(['white', 'black'] as const).map((side) => {
               const c = profile.colors[side];
               return (
                 <div key={side} className="flex items-center justify-between">
-                  <span className="capitalize">As {side}</span>
+                  <span className="capitalize">{side === 'white' ? t('tendencies.asWhite') : t('tendencies.asBlack')}</span>
                   <span className="text-xs text-neutral-400">
-                    {c.games > 0 ? `${c.wins}W ${c.losses}L ${c.draws}D · ${c.accuracy}% accuracy` : 'no games yet'}
+                    {c.games > 0
+                      ? t('tendencies.record', { wins: c.wins, losses: c.losses, draws: c.draws, accuracy: c.accuracy })
+                      : t('tendencies.noGames')}
                   </span>
                 </div>
               );
@@ -507,7 +508,7 @@ export function CoachPage({ goPlay }: { goPlay: () => void }) {
               <div key={o.name} className="flex items-center justify-between border-t border-neutral-800 pt-2">
                 <span className="truncate">{o.name}</span>
                 <span className="ml-2 shrink-0 text-xs text-neutral-400">
-                  {o.games} games · {o.accuracy}%
+                  {t('tendencies.openingStats', { count: o.games, accuracy: o.accuracy })}
                 </span>
               </div>
             ))}

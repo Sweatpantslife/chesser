@@ -1,0 +1,93 @@
+{
+  "hero": {
+    "greeting": {
+      "midnight": "Burning the midnight oil",
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "dayUnit_one": "day",
+    "dayUnit_other": "days",
+    "freezeTitle": "A freeze saves your streak when you miss one day",
+    "freezesBanked_one": "🧊 {{count}} freeze banked",
+    "freezesBanked_other": "🧊 {{count}} freezes banked",
+    "levelXp": "Level {{level}} · {{xp}} XP",
+    "toNextLevel": "{{xp}} XP to level {{level}}",
+    "streakAtRisk": "Your streak is on ice — train today to save it (uses a freeze).",
+    "streakKeepAlive": "Keep the flame alive — any activity counts.",
+    "streakStart": "Do anything today — a puzzle, a lesson, a game — to light your streak."
+  },
+  "daily": {
+    "title": "Daily puzzle",
+    "body": "One hand-picked puzzle — same for everyone, new every day.",
+    "cta": "Solve"
+  },
+  "sprints": {
+    "title": "Puzzle sprints",
+    "body": "Race the clock, build combos.",
+    "bests": "Bests — Rush {{rush}} · Storm {{storm}}",
+    "firstRecord": "Set your first record.",
+    "rush": "Rush",
+    "storm": "Storm"
+  },
+  "openings": {
+    "dueTitle_one": "{{count}} opening line due today",
+    "dueTitle_other": "{{count}} opening lines due today",
+    "caughtUpTitle": "Openings: all caught up",
+    "startTitle": "Learn an opening repertoire",
+    "dueBody": "Spaced repetition says it’s time — drill them before they fade.",
+    "caughtUpBody": "Nothing due right now. Learn a new line to grow your repertoire.",
+    "startBody": "Pick openings for White and Black, drill them move by move.",
+    "ctaReview": "Review",
+    "ctaTrain": "Train",
+    "ctaBuild": "Build"
+  },
+  "lessons": {
+    "nextTitle": "Next lesson: {{title}}",
+    "cta": "Learn",
+    "allDoneTitle": "All lessons complete!",
+    "allDoneBody": "Replay any lesson to sharpen up — replays still earn XP.",
+    "ctaBrowse": "Browse"
+  },
+  "playCard": {
+    "title": "Play a game",
+    "body": "Face a bot at your level — wins count toward quests.",
+    "cta": "Play"
+  },
+  "goal": {
+    "title": "Daily goal",
+    "freezesTitle_one": "{{count}} streak freeze banked — a freeze saves your streak when you miss one day",
+    "freezesTitle_other": "{{count}} streak freezes banked — a freeze saves your streak when you miss one day",
+    "best": "best",
+    "streakLabel": "streak",
+    "todayLine": "<today>{{today}}</today><rest> / {{goal}} XP today</rest>",
+    "met": "✓ Goal met — nice work!",
+    "atRisk": "Train today to save your streak (uses a freeze)",
+    "toGo": "{{xp}} XP to today's goal",
+    "presetsLabel": "Goal"
+  },
+  "quests": {
+    "title": "Daily quests",
+    "doneCount": "{{done}} / {{total}} done",
+    "questDone": "✓ done",
+    "xpReward": "+{{xp}} XP",
+    "allDone": "🏅 All quests complete — +{{xp}} XP bonus earned. New quests tomorrow!",
+    "finishAll": "Finish all {{total}} for a +{{xp}} XP bonus. Fresh quests every day."
+  },
+  "weekly": {
+    "title": "Your week in chess",
+    "stats": {
+      "daysActive": "days active",
+      "xpEarned": "XP earned",
+      "games": "games (W–L–D)",
+      "bestAccuracy": "best accuracy",
+      "puzzleRating": "puzzle rating",
+      "newRushBest": "new Rush best",
+      "newStormBest": "new Storm best",
+      "lessons": "lessons",
+      "drills": "drills solved"
+    },
+    "aiDisclosure": "AI-generated from your verified weekly stats",
+    "byokHint": "Add your own AI key in Settings to unlock a personalised AI recap — this summary works without one."
+  }
+}

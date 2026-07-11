@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Chess } from 'chess.js';
 import { Board } from '../board/Board';
 import { ReviewStats } from '../components/ReviewStats';
@@ -6,12 +7,14 @@ import { MATE_PATTERNS, MATE_DRILLS, MATE_DRILL_IDS, type MatePattern } from '..
 import { useProgress } from '../store/progress';
 import { recordReview } from '../lib/gamify';
 import { dueLabel } from '../lib/srs';
+import { dueDisplayLabel } from '../lib/srsText';
 import { playMoveSound } from '../lib/sound';
 import type { Color } from '../store/game';
 
 type Phase = 'solving' | 'solved' | 'failed';
 
 export function MatesPage() {
+  const { t } = useTranslation('train');
   const game = useRef(new Chess());
   const attempt = useRef({ failed: false, revealed: false });
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -40,7 +43,7 @@ export function MatesPage() {
     setPhase('solving');
     setFeedback({
       kind: 'info',
-      text: `${d.turn === 'white' ? 'White' : 'Black'} to mate in ${d.mateIn}.`,
+      text: t(`mates.toMateIn.${d.turn}`, { n: d.mateIn }),
     });
     setFen(game.current.fen());
     setLastMove(undefined);
@@ -98,14 +101,14 @@ export function MatesPage() {
       sync();
       setPhase('solved');
       setSolvedCount((n) => n + 1);
-      setFeedback({ kind: 'ok', text: `✓ ${mv.san} — ${pattern.name}!` });
+      setFeedback({ kind: 'ok', text: t('mates.solved', { san: mv.san, pattern: pattern.name }) });
       grade('mates', drill.id, attempt.current.failed ? 'hard' : 'good');
       recordReview(true);
       demoRest(1);
     } else {
       attempt.current.failed = true;
       setPhase('failed');
-      setFeedback({ kind: 'bad', text: 'Not the mating move. Try again, or reveal.' });
+      setFeedback({ kind: 'bad', text: t('mates.wrong') });
       sync();
     }
   };
@@ -113,7 +116,7 @@ export function MatesPage() {
   const retry = () => {
     game.current = new Chess(drill.fen);
     setPhase('solving');
-    setFeedback({ kind: 'info', text: 'Try again.' });
+    setFeedback({ kind: 'info', text: t('mates.tryAgain') });
     setFen(game.current.fen());
     setLastMove(undefined);
   };
@@ -124,7 +127,7 @@ export function MatesPage() {
     game.current = new Chess(drill.fen);
     const mv = game.current.move({ from: key.slice(0, 2), to: key.slice(2, 4), promotion: key[4] });
     setPhase('solved');
-    setFeedback({ kind: 'info', text: `The key move is ${mv.san}.` });
+    setFeedback({ kind: 'info', text: t('mates.keyMove', { san: mv.san }) });
     grade('mates', drill.id, 'again');
     recordReview(false);
     sync();
@@ -136,7 +139,7 @@ export function MatesPage() {
   const reviewDue = () => {
     const due = dueIds('mates', MATE_DRILL_IDS);
     if (due.length === 0) {
-      setFeedback({ kind: 'info', text: 'No mate drills due right now — learn a new pattern!' });
+      setFeedback({ kind: 'info', text: t('mates.noDue') });
       return;
     }
     const i = MATE_DRILLS.findIndex((d) => d.id === due[0]);
@@ -152,14 +155,14 @@ export function MatesPage() {
       {/* pattern library */}
       <div className="order-2 space-y-3 lg:order-1">
         <div className="rounded-2xl bg-panel shadow-soft p-3">
-          <h3 className="mb-1 text-sm font-semibold text-ink">Checkmate patterns</h3>
-          <p className="mb-2 text-xs text-neutral-400">Learn the classic mating nets, then drill them to recall.</p>
+          <h3 className="mb-1 text-sm font-semibold text-ink">{t('mates.title')}</h3>
+          <p className="mb-2 text-xs text-neutral-400">{t('mates.blurb')}</p>
           <ReviewStats deck="mates" ids={MATE_DRILL_IDS} />
           <button
             onClick={reviewDue}
             className="mt-3 w-full rounded bg-emerald-700 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800"
           >
-            Review due
+            {t('buttons.reviewDue')}
           </button>
         </div>
 
@@ -190,7 +193,7 @@ export function MatesPage() {
                           cd === 'due' ? (active ? 'text-amber-100' : 'text-amber-300') : active ? 'text-emerald-100' : 'text-neutral-300'
                         }`}
                       >
-                        {cd}
+                        {dueDisplayLabel(cd)}
                       </span>
                     </button>
                   );
@@ -205,9 +208,9 @@ export function MatesPage() {
       <div className="order-1 space-y-3 lg:order-2">
         <div className="flex h-7 items-center gap-2 text-sm">
           <span className="rounded bg-neutral-700 px-2 py-0.5 text-xs text-neutral-200">{pattern.name}</span>
-          <span className="text-xs text-rose-300">mate in {drill.mateIn}</span>
-          <span className="text-neutral-400">{drill.turn === 'white' ? 'White' : 'Black'} to move</span>
-          {solverToMove && <span className="animate-pulse-soft text-emerald-400">· your move</span>}
+          <span className="text-xs text-rose-300">{t('mates.mateIn', { n: drill.mateIn })}</span>
+          <span className="text-neutral-400">{t(`toMove.${drill.turn}`)}</span>
+          {solverToMove && <span className="animate-pulse-soft text-emerald-400">{t('yourMove')}</span>}
         </div>
         <div className="mx-auto w-full max-w-[540px]">
           <Board
@@ -227,16 +230,16 @@ export function MatesPage() {
               onClick={retry}
               className="rounded bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800"
             >
-              Try again
+              {t('buttons.tryAgain')}
             </button>
           )}
           {phase !== 'solved' && (
             <button onClick={reveal} className="rounded bg-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600">
-              Reveal
+              {t('buttons.reveal')}
             </button>
           )}
           <button onClick={next} className="rounded bg-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600">
-            Next drill →
+            {t('buttons.nextDrillArrow')}
           </button>
         </div>
       </div>
@@ -248,7 +251,7 @@ export function MatesPage() {
             <span className="text-neutral-300">
               {pattern.name} #{drillNoInPattern}
             </span>
-            <span className="text-xs text-neutral-400">{solvedCount} solved this session</span>
+            <span className="text-xs text-neutral-400">{t('solvedSession', { count: solvedCount })}</span>
           </div>
           {feedback && (
             <p
@@ -265,7 +268,7 @@ export function MatesPage() {
               onClick={next}
               className="mt-3 w-full rounded bg-emerald-700 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
             >
-              Next drill
+              {t('buttons.nextDrill')}
             </button>
           )}
         </div>

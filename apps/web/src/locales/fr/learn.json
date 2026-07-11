@@ -1,0 +1,95 @@
+{
+  "stars": {
+    "aria": "{{n}} étoile(s) sur 3"
+  },
+  "catalogue": {
+    "completedAria": "{{title}} (terminée)",
+    "start": "Commencer →",
+    "heroTitle": "Apprenez les échecs en vous amusant",
+    "progress": "{{done}}/{{total}} leçons terminées",
+    "heroBody": "Des leçons courtes et pratiques — chaque idée se joue directement sur l'échiquier. Vous débutez aux échecs ? Commencez en haut : vous connaîtrez toutes les règles en quelques minutes.",
+    "progressAria": "Leçons terminées"
+  },
+  "player": {
+    "backAria": "Retour à toutes les leçons",
+    "backLabel": "← Leçons",
+    "stepAria": "Étape {{step}} sur {{total}}",
+    "yourMove": "● à vous de jouer",
+    "moveProgress": "coup {{i}} sur {{n}}",
+    "gotIt": "Compris →",
+    "exercise": "Exercice {{i}} sur {{n}}",
+    "tryAgain": "Réessayer",
+    "continue": "Continuer →",
+    "showMe": "Montrez-moi",
+    "tip": "Une erreur ? Pas de stress — chaque exercice peut être retenté, et chaque leçon rejouée depuis la page Apprendre.",
+    "feedback": {
+      "nice": "Joli !",
+      "correct": "✓ {{san}}",
+      "correctKeepGoing": "✓ {{san}} — continuez !"
+    },
+    "done": {
+      "title": "Leçon terminée !",
+      "flawless": "Sans faute — pas un seul mauvais coup.",
+      "solid": "Solide ! Rejouez-la quand vous voulez pour décrocher 3 étoiles.",
+      "ok": "Terminé ! Rejouez-la quand vous voulez pour la consolider.",
+      "xpEarned": "XP gagnés.",
+      "next": "Leçon suivante →",
+      "back": "Retour aux leçons"
+    },
+    "wrongDefault": {
+      "move": "Pas celui-là — regardez encore et réessayez.",
+      "line": "Légal, mais ce n'est pas le plan — réessayez.",
+      "checkmate": "Cela ne termine pas la partie — cherchez le coup qui ne laisse aucune échappatoire.",
+      "capture": "Légal, mais vous n'avez rien capturé. Prenez la pièce !",
+      "promotion": "Poussez le pion jusqu'à la dernière rangée.",
+      "any": "Réessayez."
+    }
+  },
+  "masters": {
+    "title": "Parties de maîtres",
+    "subtitle": "Des parties célèbres, commentées coup par coup — rejouez-les, sautez aux moments clés et envoyez n'importe quelle position sur l'échiquier d'analyse.",
+    "filters": {
+      "themeAria": "Filtrer par thème",
+      "allThemes": "Tous les thèmes",
+      "difficultyAria": "Filtrer par difficulté",
+      "anyLevel": "Tous niveaux",
+      "opening": "Ouverture",
+      "allOpenings": "Toutes les ouvertures"
+    },
+    "themes": {
+      "attack": "Attaque",
+      "sacrifice": "Sacrifice",
+      "tactics": "Tactique",
+      "endgame": "Finale",
+      "positional": "Positionnel"
+    },
+    "difficulty": {
+      "beginner": "Débutant",
+      "intermediate": "Intermédiaire",
+      "advanced": "Avancé"
+    },
+    "noMatches": "Aucune partie ne correspond à ces filtres — essayez d'en retirer un.",
+    "viewer": {
+      "back": "← Bibliothèque",
+      "first": "Premier coup",
+      "firstTitle": "Premier (Début)",
+      "previous": "Coup précédent",
+      "previousTitle": "Précédent (←)",
+      "next": "Coup suivant",
+      "nextTitle": "Suivant (→)",
+      "last": "Dernier coup",
+      "lastTitle": "Dernier (Fin)",
+      "flip": "⇅ Retourner",
+      "flipTitle": "Retourner l'échiquier (f)",
+      "analyze": "Analyser à partir d'ici",
+      "analyzeTitle": "Ouvrir cette position sur l'échiquier d'analyse",
+      "commentary": "Commentaires",
+      "about": "À propos de cette partie",
+      "noNote": "Avancez avec les flèches du clavier — les commentaires apparaissent sur les coups annotés.",
+      "keyMoments": "Moments clés",
+      "moves": "Coups",
+      "movesAria": "Coups de la partie",
+      "start": "Début"
+    }
+  }
+}

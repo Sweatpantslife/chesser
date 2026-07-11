@@ -1,8 +1,10 @@
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useGame } from '../store/game';
 
 /** A win-probability sparkline over the reviewed game. Click to jump to a ply. */
 export function EvalGraph() {
+  const { t } = useTranslation('game');
   const data = useGame((s) => s.evalGraph);
   const viewPly = useGame((s) => s.viewPly);
   const goToPly = useGame((s) => s.goToPly);
@@ -34,8 +36,8 @@ export function EvalGraph() {
       onClick={onClick}
       onKeyDown={onKeyDown}
       className="block w-full cursor-pointer"
-      title="Click to jump to a move"
-      aria-label={`Evaluation graph, move ${viewPly} of ${W}. Use arrow keys to step through moves.`}
+      title={t('evalGraph.title')}
+      aria-label={t('evalGraph.aria', { current: viewPly, total: W })}
     >
       <svg viewBox={`0 0 ${W} 100`} preserveAspectRatio="none" className="h-12 w-full rounded">
         <rect x={0} y={0} width={W} height={50} fill="#20242e" />

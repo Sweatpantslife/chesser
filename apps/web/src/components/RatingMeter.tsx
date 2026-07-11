@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { useRatings, ratingValue, ratingPeak, CATEGORY_LABELS, type RatingCategory } from '../store/ratings';
+import { useTranslation } from 'react-i18next';
+import { useRatings, ratingValue, ratingPeak, type RatingCategory } from '../store/ratings';
 import { useSettings } from '../store/settings';
 import { ratingInterval } from '../lib/glicko';
 import { RatingSparkline } from './Charts';
@@ -12,6 +13,7 @@ const ICONS: Record<RatingCategory, string> = { bots: '♟️', blitz: '⚡', pu
  * Glicko side carrying its ± confidence band.
  */
 export function RatingMeter({ category }: { category: RatingCategory }) {
+  const { t } = useTranslation('play');
   const c = useRatings((s) => s.categories[category]);
   const meter = useSettings((s) => s.ratingMeter);
 
@@ -28,17 +30,17 @@ export function RatingMeter({ category }: { category: RatingCategory }) {
 
   const record =
     category === 'puzzles'
-      ? `${c.won} solved · ${c.lost} missed`
-      : `${c.won}W ${c.drawn}D ${c.lost}L`;
+      ? t('meter.recordPuzzles', { solved: c.won, missed: c.lost })
+      : t('meter.recordGames', { won: c.won, drawn: c.drawn, lost: c.lost });
 
   return (
     <div className="card-lift rounded-2xl bg-panel p-4 shadow-soft">
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-lg">{ICONS[category]}</span>
-          <span className="font-display text-sm font-semibold text-ink">{CATEGORY_LABELS[category]}</span>
+          <span className="font-display text-sm font-semibold text-ink">{t(`meter.category.${category}`)}</span>
         </div>
-        <span className="text-xs uppercase tracking-wide text-neutral-400">peak {peak}</span>
+        <span className="text-xs uppercase tracking-wide text-neutral-400">{t('meter.peak', { value: peak })}</span>
       </div>
 
       <div className="flex items-end justify-between">
@@ -57,7 +59,7 @@ export function RatingMeter({ category }: { category: RatingCategory }) {
           <RatingSparkline data={series} />
         </div>
       ) : (
-        <p className="mt-3 text-xs text-neutral-400">{c.played === 0 ? 'No games yet.' : 'Play more to chart a trend.'}</p>
+        <p className="mt-3 text-xs text-neutral-400">{c.played === 0 ? t('meter.emptyNoGames') : t('meter.emptyTrend')}</p>
       )}
     </div>
   );

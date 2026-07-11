@@ -1,0 +1,52 @@
+{
+  "title": "Classements",
+  "subtitle": "Le classement mondial de tous les comptes Chesser qui ont choisi d'y participer.",
+  "scopeAria": "Période",
+  "navAria": "Classement",
+  "scopes": {
+    "global": "Général",
+    "weekly": "Cette semaine"
+  },
+  "tabs": {
+    "puzzles": { "label": "Problèmes", "hint": "Classement tactique" },
+    "bots": { "label": "Bots", "hint": "Classement contre les bots" },
+    "rush": { "label": "Rush", "hint": "Record Puzzle Rush" }
+  },
+  "join": {
+    "title": "Rejoindre les classements",
+    "signedIn": "Les classements sont facultatifs. En participant, vous partagez votre pseudonyme et vos classements / record Puzzle Rush sur les tableaux publics — rien d'autre.",
+    "signedOut": "Connectez-vous (en haut à droite) puis activez le partage pour concourir. Seuls votre pseudonyme et vos scores sont affichés.",
+    "joining": "Inscription…",
+    "cta": "Participer et partager mes scores"
+  },
+  "prefsError": "Impossible de charger vos réglages de partage — {{error}}",
+  "retry": "Réessayer",
+  "refresh": "Actualiser",
+  "week": "Semaine {{week}}, {{year}}",
+  "allTime": "général",
+  "value": {
+    "rating": "Classement",
+    "best": "Meilleur score"
+  },
+  "loading": "Chargement du classement…",
+  "error": "Impossible de joindre le serveur de classement. Essayez d'actualiser.",
+  "empty": {
+    "weekly": "Personne n'a publié de score cette semaine — soyez le premier !",
+    "global": "Aucune entrée pour l'instant — soyez le premier !"
+  },
+  "caption_one": "Classement {{heading}}, {{scope}} — {{count}} joueur classé",
+  "caption_many": "Classement {{heading}}, {{scope}} — {{count}} joueurs classés",
+  "caption_other": "Classement {{heading}}, {{scope}} — {{count}} joueurs classés",
+  "columns": {
+    "rank": "Rang",
+    "player": "Joueur",
+    "games": "Parties"
+  },
+  "viewProfile": "Voir le profil de {{username}}",
+  "you": "Vous",
+  "hint": {
+    "rush": "Terminez une session de Puzzle Rush et votre record apparaîtra ici automatiquement.",
+    "other": "Jouez une partie ou un problème classés (et laissez la synchronisation se faire) pour entrer dans ce tableau."
+  },
+  "footer": "Les scores sont vérifiés côté serveur à partir de votre progression synchronisée — gérez ce que vous partagez depuis l'onglet Profil."
+}

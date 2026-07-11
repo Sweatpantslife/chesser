@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Chess } from 'chess.js';
 import type { DrawShape } from 'chessground/draw';
 import { Board } from '../board/Board';
@@ -24,6 +25,7 @@ import type { Classification } from '../lib/analytics/types';
 import { engine } from '../lib/engine';
 import { CLASSIFICATION_META } from '../lib/coach';
 import { goToMainlinePly } from '../lib/mainlineNav';
+import { translateGameStatus } from '../lib/gameStatusText';
 import { annotatedPgn } from '../lib/analytics/pgnExport';
 import { useGame, type Color } from '../store/game';
 import { useAnalysisReport } from '../store/analysisReport';
@@ -44,20 +46,23 @@ function ClockRow({ side }: { side: Color }) {
 }
 
 function StatusLine() {
+  const { t } = useTranslation('play');
   const status = useGame((s) => s.status);
   const thinking = useGame((s) => s.thinking);
   const mode = useGame((s) => s.mode);
   const isGameOver = useGame((s) => s.isGameOver);
   return (
     <div className="flex h-7 items-center gap-2 text-sm">
-      <span className={isGameOver ? 'font-display font-semibold text-gold-400' : 'text-neutral-300'}>{status}</span>
+      <span className={isGameOver ? 'font-display font-semibold text-gold-400' : 'text-neutral-300'}>
+        {translateGameStatus(status)}
+      </span>
       {thinking && (
         <span className="flex items-center gap-1.5 text-brand-300">
-          · thinking
+          {t('status.thinking')}
           <ThinkingDots />
         </span>
       )}
-      {mode === 'analysis' && !isGameOver && <span className="text-neutral-400">· analysis board</span>}
+      {mode === 'analysis' && !isGameOver && <span className="text-neutral-400">{t('status.analysisBoard')}</span>}
     </div>
   );
 }

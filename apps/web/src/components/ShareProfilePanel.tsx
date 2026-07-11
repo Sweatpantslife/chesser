@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../store/auth';
 import { useSocial } from '../store/social';
 import { apiGetPublicProfile, profileUrl, type SocialPrefs } from '../lib/socialApi';
@@ -13,13 +14,13 @@ import { IconDownload } from './icons';
  * and never more than the display name + the chosen stats.
  */
 
-const SECTIONS: { key: keyof SocialPrefs; label: string; desc: string }[] = [
-  { key: 'showRatings', label: 'Ratings', desc: 'Puzzles · Bots · Blitz, with peaks' },
-  { key: 'showRush', label: 'Puzzle Rush best', desc: 'Your top run' },
-  { key: 'showStreak', label: 'Streak', desc: 'Current + best day streak' },
-  { key: 'showRecord', label: 'W/D/L record', desc: 'Wins, draws, losses vs bots' },
-  { key: 'showAchievements', label: 'Achievements', desc: 'Your latest badges' },
-  { key: 'showOpenings', label: 'Favorite openings', desc: 'Most-played openings' },
+const SECTION_KEYS: (keyof SocialPrefs)[] = [
+  'showRatings',
+  'showRush',
+  'showStreak',
+  'showRecord',
+  'showAchievements',
+  'showOpenings',
 ];
 
 function Toggle({
@@ -56,6 +57,7 @@ function Toggle({
 }
 
 export function ShareProfilePanel({ onPreview }: { onPreview: (username: string) => void }) {
+  const { t } = useTranslation('profile');
   const token = useAuth((s) => s.token);
   const username = useAuth((s) => s.username);
   const prefs = useSocial((s) => s.prefs);
@@ -68,9 +70,9 @@ export function ShareProfilePanel({ onPreview }: { onPreview: (username: string)
   if (!token || !username) {
     return (
       <div className="rounded-2xl bg-panel p-4 shadow-soft">
-        <h3 className="mb-1 font-display text-sm font-semibold text-ink">Share your profile</h3>
+        <h3 className="mb-1 font-display text-sm font-semibold text-ink">{t('share.title')}</h3>
         <p className="text-xs text-neutral-400">
-          Sign in (top right) to publish a shareable profile card and join the leaderboards. Sharing is opt-in, per stat.
+          {t('share.signedOut')}
         </p>
       </div>
     );
@@ -80,22 +82,22 @@ export function ShareProfilePanel({ onPreview }: { onPreview: (username: string)
     // failed fetch would otherwise leave "Loading…" up forever.
     return (
       <div className="rounded-2xl bg-panel p-4 shadow-soft">
-        <h3 className="mb-1 font-display text-sm font-semibold text-ink">Share your profile</h3>
+        <h3 className="mb-1 font-display text-sm font-semibold text-ink">{t('share.title')}</h3>
         {error ? (
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p role="alert" className="text-xs text-rose-400">
-              Couldn't load your share settings — {error}
+              {t('share.loadError', { error })}
             </p>
             <button
               onClick={() => void useSocial.getState().load()}
               className="btn-press rounded-full bg-neutral-800 px-3 py-1 text-xs font-semibold text-neutral-300 hover:bg-neutral-700 hover:text-ink"
             >
-              Retry
+              {t('share.retry')}
             </button>
           </div>
         ) : (
           <p role="status" className="text-xs text-neutral-400">
-            Loading your share settings…
+            {t('share.loading')}
           </p>
         )}
       </div>
@@ -141,39 +143,38 @@ export function ShareProfilePanel({ onPreview }: { onPreview: (username: string)
   return (
     <div className="rounded-2xl bg-panel p-4 shadow-soft">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <h3 className="font-display text-sm font-semibold text-ink">Share your profile</h3>
+        <h3 className="font-display text-sm font-semibold text-ink">{t('share.title')}</h3>
         {busy && (
           <span role="status" className="text-xs text-neutral-400">
-            Saving…
+            {t('share.saving')}
           </span>
         )}
       </div>
       <p className="mb-3 text-xs text-neutral-400">
-        Everything is private by default. Flip on what you want the world to see — only your display name plus the sections below are
-        ever shown, nothing else.
+        {t('share.intro')}
       </p>
 
       <div className="divide-y divide-neutral-800/70">
         <Toggle
           checked={prefs.profile}
           onChange={(v) => void save({ profile: v })}
-          label="Public profile page"
-          desc="Anyone with your link can view the shared sections"
+          label={t('share.profileToggle.label')}
+          desc={t('share.profileToggle.desc')}
         />
         <Toggle
           checked={prefs.leaderboards}
           onChange={(v) => void save({ leaderboards: v })}
-          label="Leaderboards"
-          desc="Rank your ratings + Puzzle Rush best on the public boards"
+          label={t('share.leaderboardsToggle.label')}
+          desc={t('share.leaderboardsToggle.desc')}
         />
-        {SECTIONS.map((s) => (
+        {SECTION_KEYS.map((key) => (
           <Toggle
-            key={s.key}
-            checked={prefs[s.key]}
-            onChange={(v) => void setPref(s.key)(v)}
+            key={key}
+            checked={prefs[key]}
+            onChange={(v) => void setPref(key)(v)}
             disabled={!prefs.profile}
-            label={s.label}
-            desc={s.desc}
+            label={t(`share.sections.${key}.label`)}
+            desc={t(`share.sections.${key}.desc`)}
           />
         ))}
       </div>
@@ -186,7 +187,7 @@ export function ShareProfilePanel({ onPreview }: { onPreview: (username: string)
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <label htmlFor="share-profile-link" className="sr-only">
-          Your profile link
+          {t('share.linkLabel')}
         </label>
         <input
           id="share-profile-link"
@@ -198,31 +199,31 @@ export function ShareProfilePanel({ onPreview }: { onPreview: (username: string)
         <button
           onClick={() => void copyLink()}
           disabled={!prefs.profile}
-          title={prefs.profile ? 'Copy your profile link' : 'Enable the public profile first'}
+          title={prefs.profile ? t('share.copyTitle') : t('share.enableFirst')}
           className="btn-press rounded-full bg-brand-600 px-4 py-1.5 text-sm font-bold text-white hover:bg-brand-700 disabled:opacity-50"
         >
-          {copied ? 'Copied!' : 'Copy link'}
+          {copied ? t('copied') : t('copyLink')}
         </button>
         <button
           onClick={() => onPreview(username)}
           disabled={!prefs.profile}
-          title={prefs.profile ? 'See your profile as others do' : 'Enable the public profile first'}
+          title={prefs.profile ? t('share.previewTitle') : t('share.enableFirst')}
           className="btn-press rounded-full bg-neutral-800 px-4 py-1.5 text-sm font-semibold text-neutral-300 hover:bg-neutral-700 hover:text-ink disabled:opacity-50"
         >
-          Preview
+          {t('share.preview')}
         </button>
         <button
           onClick={() => void shareCard()}
           disabled={!prefs.profile || cardBusy}
-          title={prefs.profile ? 'Download a shareable card image' : 'Enable the public profile first'}
+          title={prefs.profile ? t('downloadCard') : t('share.enableFirst')}
           className="btn-press flex items-center gap-1.5 rounded-full bg-neutral-800 px-4 py-1.5 text-sm font-semibold text-neutral-300 hover:bg-neutral-700 hover:text-ink disabled:opacity-50"
         >
           <IconDownload size={14} />
-          {cardBusy ? 'Rendering…' : 'Card image'}
+          {cardBusy ? t('share.rendering') : t('share.cardImage')}
         </button>
       </div>
       <span role="status" aria-live="polite" className="sr-only">
-        {copied ? 'Profile link copied to the clipboard' : ''}
+        {copied ? t('linkCopied') : ''}
       </span>
     </div>
   );
