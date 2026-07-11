@@ -1,13 +1,55 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
 import { Clock } from '../components/Clock';
-import type { Color } from '../store/game';
+import type { Color, TimeControl } from '../store/game';
 import { cap } from './chessUtil';
 
 export const btn = 'btn-press rounded-full px-3 py-1.5 text-sm font-semibold disabled:opacity-50';
 export const neutralBtn = `${btn} bg-neutral-700 text-neutral-200 hover:bg-neutral-600`;
 export const primaryBtn = `${btn} bg-brand-600 text-white hover:bg-brand-700`;
 export const dangerBtn = `${btn} bg-rose-600 text-white hover:bg-rose-500`;
+
+/** Casual-play presets (research: 5+0 / 10+0 / 15+10 cover most demand). */
+export const TIME_CONTROLS: (TimeControl | null)[] = [
+  null, // unlimited
+  { label: '3+2', initialMs: 180_000, incrementMs: 2_000 },
+  { label: '5+0', initialMs: 300_000, incrementMs: 0 },
+  { label: '10+0', initialMs: 600_000, incrementMs: 0 },
+  { label: '15+10', initialMs: 900_000, incrementMs: 10_000 },
+];
+
+/** Shared time-control segmented picker (pass & play, friend links, challenges). */
+export function TimeControlPicker({
+  value,
+  onChange,
+  label,
+}: {
+  value: TimeControl | null;
+  onChange: (tc: TimeControl | null) => void;
+  /** Accessible group label (defaults to "Time control"). */
+  label?: string;
+}) {
+  return (
+    <div className="flex gap-1 rounded-lg bg-panelmute p-1" role="group" aria-label={label ?? 'Time control'}>
+      {TIME_CONTROLS.map((tc) => {
+        const selected = (tc?.label ?? null) === (value?.label ?? null);
+        return (
+          <button
+            key={tc?.label ?? 'unlimited'}
+            onClick={() => onChange(tc)}
+            aria-pressed={selected}
+            aria-label={tc?.label ?? 'Unlimited time'}
+            className={`btn-press flex-1 rounded-full px-2 py-1 text-xs font-semibold ${
+              selected ? 'bg-brand-600 text-white' : 'text-neutral-300 hover:bg-neutral-800'
+            }`}
+          >
+            {tc?.label ?? '∞'}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 /** One player's row above/below the board: name, optional presence, clock. */
 export function PlayerBar({

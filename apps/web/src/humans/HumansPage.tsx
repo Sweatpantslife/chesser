@@ -10,16 +10,8 @@ import { LocalGame, type LocalGameConfig } from './LocalGame';
 import { OnlineGame } from './OnlineGame';
 import type { FriendIntent } from './friendClient';
 import { listCasualGames } from './casualHistory';
-import { neutralBtn, primaryBtn } from './bits';
-
-/** Casual-play presets (research: 5+0 / 10+0 / 15+10 cover most demand). */
-const TIME_CONTROLS: (TimeControl | null)[] = [
-  null, // unlimited
-  { label: '3+2', initialMs: 180_000, incrementMs: 2_000 },
-  { label: '5+0', initialMs: 300_000, incrementMs: 0 },
-  { label: '10+0', initialMs: 600_000, incrementMs: 0 },
-  { label: '15+10', initialMs: 900_000, incrementMs: 10_000 },
-];
+import { FriendsPanel } from './FriendsPanel';
+import { neutralBtn, primaryBtn, TimeControlPicker } from './bits';
 
 const NAME_KEY = 'chesser.friendName';
 
@@ -39,32 +31,11 @@ function loadName(): string {
   }
 }
 
-function TimeControlPicker({ value, onChange }: { value: TimeControl | null; onChange: (tc: TimeControl | null) => void }) {
-  return (
-    <div className="flex gap-1 rounded-lg bg-panelmute p-1">
-      {TIME_CONTROLS.map((tc) => {
-        const selected = (tc?.label ?? null) === (value?.label ?? null);
-        return (
-          <button
-            key={tc?.label ?? 'unlimited'}
-            onClick={() => onChange(tc)}
-            className={`btn-press flex-1 rounded-full px-2 py-1 text-xs font-semibold ${
-              selected ? 'bg-brand-600 text-white' : 'text-neutral-300 hover:bg-neutral-800'
-            }`}
-          >
-            {tc?.label ?? '∞'}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 const inputCls =
   'w-full rounded-lg bg-panelmute px-2.5 py-1.5 text-sm text-ink placeholder-neutral-500 outline-none focus:ring-2 focus:ring-brand-500';
 const labelCls = 'text-xs font-medium uppercase tracking-wide text-neutral-400';
 
-export function HumansPage() {
+export function HumansPage({ active = true }: { active?: boolean }) {
   const [screen, setScreen] = useState<Screen>(() => {
     const code = codeFromHash();
     return code ? { kind: 'online', intent: { kind: 'join', code, name: loadName() } } : { kind: 'menu' };
@@ -95,10 +66,10 @@ export function HumansPage() {
     const gameKey = screen.intent.kind === 'join' ? `join-${screen.intent.code}` : 'create';
     return <OnlineGame key={gameKey} intent={screen.intent} onExit={() => setScreen({ kind: 'menu' })} />;
   }
-  return <Menu start={setScreen} />;
+  return <Menu start={setScreen} active={active} />;
 }
 
-function Menu({ start }: { start: (s: Screen) => void }) {
+function Menu({ start, active }: { start: (s: Screen) => void; active: boolean }) {
   // Pass & play setup
   const [whiteName, setWhiteName] = useState('');
   const [blackName, setBlackName] = useState('');
@@ -258,6 +229,14 @@ function Menu({ start }: { start: (s: Screen) => void }) {
           </div>
         </section>
       </div>
+
+      {/* Account-based friends: requests, challenges and the activity feed.
+          Accepting (or having accepted) a challenge drops straight into an
+          ordinary friend-link online game via the same start() path. */}
+      <FriendsPanel
+        active={active}
+        onJoinGame={(code, name) => start({ kind: 'online', intent: { kind: 'join', code, name } })}
+      />
 
       {recent.length > 0 && (
         <section className="rounded-2xl bg-panel p-4 shadow-soft">

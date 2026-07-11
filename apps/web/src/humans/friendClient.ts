@@ -30,7 +30,9 @@ export function loadSeat(code: string): Seat | null {
   }
 }
 
-function saveSeat(seat: Seat): void {
+/** Persist a seat so a (re)join by code resumes it — also used when a
+ * challenge acceptance hands this client a pre-seated room. */
+export function saveSeat(seat: Seat): void {
   try {
     localStorage.setItem(SEAT_PREFIX + seat.code, JSON.stringify(seat));
   } catch {
