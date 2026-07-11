@@ -11,6 +11,7 @@ import { LearnPage } from './pages/LearnPage';
 import { OpeningsPage } from './pages/OpeningsPage';
 import { TacticsPage } from './pages/TacticsPage';
 import { EndgamePage } from './pages/EndgamePage';
+import { EndgameDrillsPage } from './pages/EndgameDrillsPage';
 import { CoordinatePage } from './pages/CoordinatePage';
 import { StatsPage } from './pages/StatsPage';
 import { ProfilePage } from './pages/ProfilePage';
@@ -29,6 +30,7 @@ import { playSound } from './lib/sound';
 import type { DeckTarget } from './lib/decks';
 import {
   IconArchive,
+  IconBolt,
   IconCoach,
   IconCoords,
   IconEndgame,
@@ -55,6 +57,7 @@ type View =
   | 'openings'
   | 'tactics'
   | 'endgame'
+  | 'endgame-drills'
   | 'train'
   | 'coach'
   | 'coordinates'
@@ -72,6 +75,7 @@ const TABS: { id: View; label: string; hint: string; icon: ComponentType<SVGProp
   { id: 'openings', label: 'Openings', hint: 'repertoire drills', icon: IconOpenings },
   { id: 'tactics', label: 'Tactics', hint: 'tactics puzzles', icon: IconTactics },
   { id: 'endgame', label: 'Endgame', hint: 'theory & technique', icon: IconEndgame },
+  { id: 'endgame-drills', label: 'Drills', hint: 'endgame drills · tablebase-checked', icon: IconBolt },
   { id: 'train', label: 'Train', hint: 'vision · mates · anti-blunder', icon: IconTrain },
   { id: 'coach', label: 'Coach', hint: 'your weaknesses · targeted training', icon: IconCoach },
   { id: 'coordinates', label: 'Coords', hint: 'board-vision trainer', icon: IconCoords },
@@ -282,6 +286,7 @@ export default function App() {
           <TacticsPage openDaily={tacticsDaily} onDailyOpened={() => setTacticsDaily(false)} openMode={tacticsMode} />
         )}
         {view === 'endgame' && <EndgamePage />}
+        {view === 'endgame-drills' && <EndgameDrillsPage />}
         {view === 'train' && <TrainPage tab={trainTab} setTab={setTrainTab} />}
         {view === 'coach' && <CoachPage goPlay={() => setView('play')} />}
         {view === 'coordinates' && <CoordinatePage />}

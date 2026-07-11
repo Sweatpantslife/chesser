@@ -8,15 +8,17 @@ import { useRepertoire, BUILTIN_REPERTOIRE } from '../store/repertoire';
 import { PUZZLES } from '../trainers/tactics';
 import { MATE_DRILL_IDS } from '../trainers/mates';
 import { BLUNDER_IDS } from '../trainers/blunders';
+import { ENDGAME_DRILL_IDS } from '../trainers/endgameDrills';
 
 /** Where a deck's "Review now" jumps to (a top-level view, optionally a Train sub-tab). */
-export type DeckTarget = { view: 'openings' | 'tactics' | 'train'; trainTab?: 'mates' | 'blunders' };
+export type DeckTarget = { view: 'openings' | 'tactics' | 'train' | 'endgame-drills'; trainTab?: 'mates' | 'blunders' };
 
 export const DECK_META: Record<Deck, { label: string; accent: string; target: DeckTarget }> = {
   openings: { label: 'Openings', accent: 'text-sky-300', target: { view: 'openings' } },
   tactics: { label: 'Tactics', accent: 'text-emerald-300', target: { view: 'tactics' } },
   mates: { label: 'Checkmates', accent: 'text-rose-300', target: { view: 'train', trainTab: 'mates' } },
   blunders: { label: 'Anti-blunder', accent: 'text-amber-300', target: { view: 'train', trainTab: 'blunders' } },
+  endgames: { label: 'Endgames', accent: 'text-purple-300', target: { view: 'endgame-drills' } },
 };
 
 export interface DeckReview {
@@ -35,6 +37,7 @@ export function useDeckIds(): Record<Deck, string[]> {
       tactics: PUZZLES.map((p) => p.id),
       mates: MATE_DRILL_IDS,
       blunders: BLUNDER_IDS,
+      endgames: ENDGAME_DRILL_IDS,
     }),
     [userReps],
   );

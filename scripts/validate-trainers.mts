@@ -25,6 +25,7 @@ import { BLUNDER_POSITIONS } from '../apps/web/src/trainers/blunders.ts';
 import { CALC_PUZZLES } from '../apps/web/src/trainers/calc.ts';
 import { PUZZLES } from '../apps/web/src/trainers/tactics.ts';
 import { ENDGAMES } from '../apps/web/src/trainers/endgames.ts';
+import { ENDGAME_DRILLS } from '../apps/web/src/trainers/endgameDrills.ts';
 import { OPENING_LINES } from '../apps/web/src/trainers/openings.ts';
 
 let failures = 0;
@@ -176,6 +177,79 @@ for (const s of ENDGAMES) {
   // Curated studies start from a quiet position — never with the trainee in
   // check (the old rook-draw FEN began in check with the checking rook en prise).
   if (game.inCheck()) fail(s.id, `study starts with ${sideToMove} in check (${s.fen})`);
+}
+
+// Endgame drills bundle a principal variation ("book line") for offline play,
+// so beyond the study checks the whole solution must replay legally with the
+// exact canonical SAN the page compares against, and the final position must
+// actually deliver the advertised goal.
+console.log(`\nEndgame drills (${ENDGAME_DRILLS.length})`);
+const drillIds = new Set<string>();
+for (const d of ENDGAME_DRILLS) {
+  if (drillIds.has(d.id)) fail(d.id, 'duplicate id');
+  drillIds.add(d.id);
+  if (d.goal !== 'win' && d.goal !== 'draw') fail(d.id, `goal must be 'win' or 'draw', got '${d.goal}'`);
+  if (!d.name || !d.technique) fail(d.id, 'missing name/technique');
+  if (!d.lesson || d.lesson.length < 20) fail(d.id, 'lesson blurb missing or too short');
+  let game: any;
+  try {
+    game = new Chess(d.fen);
+  } catch (e) {
+    fail(d.id, `illegal FEN: ${(e as Error).message}`);
+    continue;
+  }
+  if (game.isGameOver()) fail(d.id, `drill starts in a finished position (${d.fen})`);
+  const sideToMove = game.turn() === 'w' ? 'white' : 'black';
+  if (sideToMove !== d.youPlay) fail(d.id, `it must be your move at the start: FEN says ${sideToMove}, youPlay is ${d.youPlay}`);
+  if (game.inCheck()) fail(d.id, `drill starts with ${sideToMove} in check (${d.fen})`);
+  if (!d.solution.length) {
+    fail(d.id, 'empty solution');
+    continue;
+  }
+  // The bundled line must replay legally AND use canonical SAN — the page
+  // matches the player's chess.js SAN against these strings offline.
+  let ok = true;
+  for (const san of d.solution) {
+    let res: any;
+    try {
+      res = game.move(san);
+    } catch {
+      res = null;
+    }
+    if (!res) {
+      fail(d.id, `illegal solution move ${san} (after ${game.history().join(' ') || 'start'})`);
+      ok = false;
+      break;
+    }
+    if (res.san !== san) {
+      fail(d.id, `solution move ${san} is not canonical SAN (chess.js says ${res.san})`);
+      ok = false;
+      break;
+    }
+  }
+  if (!ok) continue;
+  const youChar = d.youPlay === 'white' ? 'w' : 'b';
+  const defChar = youChar === 'w' ? 'b' : 'w';
+  const endsOnPlayer = d.solution.length % 2 === 1; // solutions start with YOUR move
+  const defenderBare =
+    game
+      .board()
+      .flat()
+      .filter((p: any) => p && p.color === defChar).length === 1;
+  const lastSan = d.solution[d.solution.length - 1]!;
+  if (d.goal === 'win') {
+    const mated = game.isCheckmate() && game.turn() === defChar;
+    const queened = endsOnPlayer && lastSan.includes('=Q');
+    const bare = endsOnPlayer && defenderBare;
+    if (!mated && !queened && !bare)
+      fail(d.id, `win drill solution must end in mate, a promotion, or a bare defending king (final ${game.fen()})`);
+  } else {
+    if (game.isCheckmate()) fail(d.id, `draw drill solution ends in checkmate (final ${game.fen()})`);
+    const bookDraw = game.isStalemate() || game.isInsufficientMaterial() || game.isDraw();
+    const survival = endsOnPlayer && d.solution.length >= 7;
+    if (!bookDraw && !survival)
+      fail(d.id, `draw drill solution must end in a book draw or a ≥7-ply survival line ending on your move (final ${game.fen()})`);
+  }
 }
 
 console.log(`\nOpening lines (${OPENING_LINES.length})`);

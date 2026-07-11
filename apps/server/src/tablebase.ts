@@ -1,6 +1,7 @@
 import type { TablebaseCategory, TablebaseResult } from '@chesser/shared';
 import { syzygyInfo } from './config.js';
 import { probeLocalSyzygy } from './tablebase-local.js';
+import { LruCache } from './util/lru.js';
 
 /**
  * Syzygy tablebase access. The online proxy (default: the public Lichess
@@ -19,7 +20,10 @@ const TIMEOUT_MS = 4000;
 // long before paying the timeout again — keeps offline play snappy.
 const ONLINE_COOLDOWN_MS = 60_000;
 
-const cache = new Map<string, TablebaseResult>();
+// LRU-bounded so a long training session (or a hostile client) can't grow the
+// process without limit; ~5k entries is far more than one endgame ever visits.
+const CACHE_MAX = 5000;
+const cache = new LruCache<string, TablebaseResult>(CACHE_MAX);
 let onlineDownUntil = 0;
 
 function pieceCount(fen: string): number {
