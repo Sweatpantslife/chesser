@@ -24,10 +24,9 @@ export function Footer() {
           href="https://slikk.dev/"
           target="_blank"
           rel="nofollow noopener noreferrer"
-          title="Slikk.Dev (opens in a new tab)"
           className="underline decoration-neutral-600 underline-offset-2 hover:text-neutral-300"
         >
-          Built by Slikk.Dev
+          Built by Slikk.Dev<span className="sr-only"> (opens in a new tab)</span>
         </a>
       </p>
     </footer>
