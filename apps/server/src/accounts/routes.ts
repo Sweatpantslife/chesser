@@ -10,6 +10,7 @@ import {
 } from './auth.js';
 import { AuthGuard, type AuthGuardOptions } from './guard.js';
 import { validateProgress } from './progress-validator.js';
+import { moderateUsername } from '../trust/moderation.js';
 
 function bearer(req: FastifyRequest): string | null {
   const h = req.headers['authorization'];
@@ -50,6 +51,11 @@ export function registerAccountRoutes(app: FastifyInstance, opts: AccountRouteOp
     const { username, password } = (req.body ?? {}) as Creds;
     const err = validateCredentials(username, password);
     if (err) return reply.code(400).send({ error: err });
+    // Moderation on top of the charset/length rules: impersonation
+    // (admin/moderator/official-style names) and profanity are rejected with
+    // the human-readable reason (see trust/moderation.ts).
+    const modErr = moderateUsername(username);
+    if (modErr) return reply.code(400).send({ error: modErr });
     // Tradeoff, made deliberately: a 409 on a taken username does allow
     // enumeration, but the silent-success alternatives wreck signup UX. The
     // per-IP register bucket above bounds how fast anyone can probe.

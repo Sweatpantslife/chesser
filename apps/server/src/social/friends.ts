@@ -176,6 +176,28 @@ export function userIdByFriendCode(g: FriendGraph, code: string): string | null 
 }
 
 // ---------------------------------------------------------------------------
+// Right-to-erasure
+// ---------------------------------------------------------------------------
+
+/**
+ * Remove every trace of `uid` from the graph: friendships, requests (both
+ * directions), challenges, the friend code, and rate-limit/decline
+ * bookkeeping. Mutates g; call inside socialStore.updateGraph so it persists.
+ */
+export function purgeUser(g: FriendGraph, uid: string): void {
+  g.edges = g.edges.filter((e) => e.a !== uid && e.b !== uid);
+  g.requests = g.requests.filter((r) => r.from !== uid && r.to !== uid);
+  g.challenges = g.challenges.filter((c) => c.from !== uid && c.to !== uid);
+  delete g.codes[uid];
+  delete g.lastRequestAt[uid];
+  delete g.lastChallengeAt[uid];
+  for (const k of Object.keys(g.declinedAt)) {
+    const [from, to] = k.split(':');
+    if (from === uid || to === uid) delete g.declinedAt[k];
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Housekeeping (expiry + stale bookkeeping)
 // ---------------------------------------------------------------------------
 

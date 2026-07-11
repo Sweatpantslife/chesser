@@ -8,6 +8,7 @@ import { PlayPage } from './pages/PlayPage';
 import { HomePage } from './pages/HomePage';
 import { HumansPage } from './humans/HumansPage';
 import { LearnPage } from './pages/LearnPage';
+import { MastersPage } from './pages/MastersPage';
 import { OpeningsPage } from './pages/OpeningsPage';
 import { ExplorerPage } from './pages/ExplorerPage';
 import { TacticsPage } from './pages/TacticsPage';
@@ -18,9 +19,14 @@ import { StatsPage } from './pages/StatsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { TrainPage, type TrainTab } from './pages/TrainPage';
 import { CoachPage } from './pages/CoachPage';
+import { StudyPlanPage } from './pages/StudyPlanPage';
 import { ArchivePage } from './pages/ArchivePage';
 import { LeaderboardsPage } from './pages/LeaderboardsPage';
 import { PublicProfilePage } from './pages/PublicProfilePage';
+import { PrivacyPage } from './pages/PrivacyPage';
+import { TermsPage } from './pages/TermsPage';
+import { Footer } from './components/Footer';
+import { ConsentNotice } from './components/ConsentNotice';
 import { LevelBadge } from './components/LevelBadge';
 import { GamifyToasts } from './components/GamifyToasts';
 import { Celebration } from './components/Celebration';
@@ -34,6 +40,7 @@ import {
   IconBolt,
   IconCoach,
   IconCoords,
+  IconCrown,
   IconEndgame,
   IconExplorer,
   IconFriends,
@@ -42,6 +49,7 @@ import {
   IconOpenings,
   IconPlay,
   IconProfile,
+  IconSparkles,
   IconStats,
   IconTactics,
   IconToday,
@@ -55,6 +63,7 @@ type View =
   | 'home'
   | 'play'
   | 'learn'
+  | 'masters'
   | 'friends'
   | 'openings'
   | 'explorer'
@@ -63,17 +72,23 @@ type View =
   | 'endgame-drills'
   | 'train'
   | 'coach'
+  | 'plan'
   | 'coordinates'
   | 'archive'
   | 'stats'
   | 'leaders'
   | 'profile'
-  | 'shared-profile';
+  | 'shared-profile'
+  // Hash-only views (#/privacy, #/terms) — linked from the footer/settings,
+  // never in the tab bar.
+  | 'privacy'
+  | 'terms';
 
 const TABS: { id: View; label: string; hint: string; icon: ComponentType<SVGProps<SVGSVGElement> & { size?: number }> }[] = [
   { id: 'home', label: 'Today', hint: 'streak · daily quests · goals', icon: IconToday },
   { id: 'play', label: 'Play', hint: 'vs bots & analysis', icon: IconPlay },
   { id: 'learn', label: 'Learn', hint: 'rules & guided lessons', icon: IconLearn },
+  { id: 'masters', label: 'Masters', hint: 'annotated master games', icon: IconCrown },
   { id: 'friends', label: 'Friends', hint: 'pass & play · online friend games', icon: IconFriends },
   { id: 'openings', label: 'Openings', hint: 'repertoire drills', icon: IconOpenings },
   { id: 'explorer', label: 'Explorer', hint: 'opening explorer · master & online games', icon: IconExplorer },
@@ -82,6 +97,7 @@ const TABS: { id: View; label: string; hint: string; icon: ComponentType<SVGProp
   { id: 'endgame-drills', label: 'Drills', hint: 'endgame drills · tablebase-checked', icon: IconBolt },
   { id: 'train', label: 'Train', hint: 'vision · mates · anti-blunder', icon: IconTrain },
   { id: 'coach', label: 'Coach', hint: 'your weaknesses · targeted training', icon: IconCoach },
+  { id: 'plan', label: 'Plan', hint: 'your weekly study plan', icon: IconSparkles },
   { id: 'coordinates', label: 'Coords', hint: 'board-vision trainer', icon: IconCoords },
   { id: 'archive', label: 'Archive', hint: 'your games · results & trends', icon: IconArchive },
   { id: 'stats', label: 'Stats', hint: 'progress dashboard', icon: IconStats },
@@ -189,6 +205,7 @@ export default function App() {
   // everyone else starts the day on the Today page.
   const [view, setView] = useState<View>(() => {
     const route = parseHashRoute(window.location.hash);
+    if (route.kind === 'legal') return route.page;
     return route.kind === 'friend' ? 'friends' : route.kind === 'profile' ? 'shared-profile' : 'home';
   });
   const [profileUser, setProfileUser] = useState<string | null>(() => profileHashUser(window.location.hash));
@@ -208,11 +225,13 @@ export default function App() {
       } else if (route.kind === 'profile') {
         setProfileUser(route.user);
         setView('shared-profile');
+      } else if (route.kind === 'legal') {
+        setView(route.page);
       } else if (route.kind === 'exit-overlay') {
-        // The hash was cleared (Back out of a profile link). Normal tabs
-        // don't live in the hash, but a shared profile exists ONLY via its
+        // The hash was cleared (Back out of a profile/legal link). Normal
+        // tabs don't live in the hash, but these views exist ONLY via their
         // hash — so leaving the hash leaves the view too.
-        setView((v) => (v === 'shared-profile' ? 'home' : v));
+        setView((v) => (v === 'shared-profile' || v === 'privacy' || v === 'terms' ? 'home' : v));
       }
       // 'ignore' (in-page anchors like the #main skip link, foreign hashes):
       // never navigate — the skip link must move focus, not views.
@@ -240,8 +259,14 @@ export default function App() {
   const nav = (v: View) => {
     setTacticsDaily(false);
     setTacticsMode(null);
-    // Leaving a shared profile: drop its hash so the URL matches the new view.
-    if (v !== 'shared-profile' && window.location.hash.startsWith('#/profile/')) {
+    // Leaving a hash-driven view (shared profile, privacy, terms): drop its
+    // hash so the URL matches the new view.
+    const hash = window.location.hash;
+    const onHashView =
+      (v !== 'shared-profile' && hash.startsWith('#/profile/')) ||
+      (v !== 'privacy' && hash === '#/privacy') ||
+      (v !== 'terms' && hash === '#/terms');
+    if (onHashView) {
       window.history.replaceState(null, '', window.location.pathname + window.location.search);
     }
     setView(v);
@@ -281,6 +306,7 @@ export default function App() {
         )}
         {view === 'play' && <PlayPage />}
         {view === 'learn' && <LearnPage />}
+        {view === 'masters' && <MastersPage goPlay={() => setView('play')} />}
         {/* Kept mounted so a live human-vs-human game survives tab switches.
             `active` lets the friends panel poll (and auto-join accepted
             challenges) only while the tab is actually visible. */}
@@ -296,15 +322,20 @@ export default function App() {
         {view === 'endgame-drills' && <EndgameDrillsPage />}
         {view === 'train' && <TrainPage tab={trainTab} setTab={setTrainTab} />}
         {view === 'coach' && <CoachPage goPlay={() => setView('play')} />}
+        {view === 'plan' && <StudyPlanPage go={nav} />}
         {view === 'coordinates' && <CoordinatePage />}
         {view === 'archive' && <ArchivePage goPlay={() => setView('play')} />}
         {view === 'stats' && <StatsPage goto={goto} />}
         {view === 'leaders' && <LeaderboardsPage onViewProfile={openProfile} />}
         {view === 'profile' && <ProfilePage goPlay={() => setView('play')} onViewPublicProfile={openProfile} />}
         {view === 'shared-profile' && profileUser && <PublicProfilePage username={profileUser} />}
+        {view === 'privacy' && <PrivacyPage />}
+        {view === 'terms' && <TermsPage />}
       </main>
+      <Footer />
       <GamifyToasts />
       <Celebration />
+      <ConsentNotice />
     </div>
   );
 }

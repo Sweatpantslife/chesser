@@ -165,9 +165,29 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
+        {/* Legal pages are hash-routed; onClose keeps the dialog from
+            covering the page it just navigated to. */}
+        <p className="mt-3 text-center text-xs text-neutral-400">
+          <a
+            href="#/privacy"
+            onClick={onClose}
+            className="underline decoration-neutral-600 underline-offset-2 hover:text-neutral-200"
+          >
+            Privacy Policy
+          </a>
+          <span aria-hidden="true"> · </span>
+          <a
+            href="#/terms"
+            onClick={onClose}
+            className="underline decoration-neutral-600 underline-offset-2 hover:text-neutral-200"
+          >
+            Terms of Service
+          </a>
+        </p>
+
         <button
           onClick={onClose}
-          className="btn-press mt-4 w-full rounded-full bg-neutral-700 py-1.5 text-sm font-semibold text-neutral-200 hover:bg-neutral-600"
+          className="btn-press mt-3 w-full rounded-full bg-neutral-700 py-1.5 text-sm font-semibold text-neutral-200 hover:bg-neutral-600"
         >
           Done
         </button>

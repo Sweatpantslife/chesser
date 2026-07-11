@@ -149,6 +149,18 @@ class SocialStore {
     fn(this.db.graph);
     this.persist();
   }
+
+  /**
+   * Right-to-erasure: drop the user's social record (prefs, board entries,
+   * favorite openings). Graph removal is the caller's job via updateGraph +
+   * friends.purgeUser — kept separate so this store stays schema-agnostic
+   * about the graph's internals.
+   */
+  deleteUser(userId: string): void {
+    if (!(userId in this.db.users)) return;
+    delete this.db.users[userId];
+    this.persist();
+  }
 }
 
 export const socialStore = new SocialStore();

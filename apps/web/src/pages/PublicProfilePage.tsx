@@ -3,6 +3,7 @@ import { apiGetPublicProfile, classifyProfileError, profileUrl, type PublicProfi
 import { ACHIEVEMENTS_BY_ID } from '../lib/achievements';
 import { downloadProfileCard } from '../lib/profileCard';
 import { IconDownload } from '../components/icons';
+import { ReportProfileButton } from '../components/ReportProfileButton';
 
 /**
  * A player's public, shareable profile (#/profile/NAME) — renders exactly the
@@ -250,7 +251,10 @@ export function PublicProfilePage({ username }: { username: string }) {
         </div>
       )}
 
-      <p className="text-center text-xs text-neutral-500">Shared by {shared.username} on Chesser — only opted-in stats are shown.</p>
+      <div className="flex flex-col items-center gap-1">
+        <p className="text-center text-xs text-neutral-500">Shared by {shared.username} on Chesser — only opted-in stats are shown.</p>
+        <ReportProfileButton username={shared.username} />
+      </div>
     </div>
   );
 }

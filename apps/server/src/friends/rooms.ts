@@ -17,6 +17,7 @@ import type {
   FriendServerMessage,
   FriendTimeControl,
 } from '@chesser/shared';
+import { cleanDisplayName } from '../trust/moderation.js';
 
 /** A user-facing failure (bad move, wrong turn, room full, …). */
 export class RoomError extends Error {}
@@ -58,8 +59,10 @@ function hasMatingMaterial(chess: Chess, color: FriendColor): boolean {
 }
 
 function sanitizeName(name: string | undefined, fallback: string): string {
-  const n = (name ?? '').trim().slice(0, NAME_MAX);
-  return n || fallback;
+  // Moderated like every user-set display text (trust/moderation.ts): control
+  // chars stripped, length bounded, and profane/impersonating names degrade
+  // to the seat default instead of erroring mid-join.
+  return cleanDisplayName(name, NAME_MAX, fallback);
 }
 
 /** Clamp/validate a client-supplied time control (also used by challenges). */

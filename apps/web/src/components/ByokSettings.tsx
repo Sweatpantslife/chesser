@@ -86,7 +86,7 @@ export function ByokSettings(): JSX.Element {
 
       <label className="mb-2 block">
         <span className="mb-0.5 block text-xs text-neutral-400">
-          Model <span className="text-neutral-500">(default: {DEFAULT_BYOK_MODEL[provider]})</span>
+          Model (default: {DEFAULT_BYOK_MODEL[provider]})
         </span>
         <input
           type="text"
