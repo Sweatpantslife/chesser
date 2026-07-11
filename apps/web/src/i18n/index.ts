@@ -28,9 +28,42 @@ export const FALLBACK_LANGUAGE = 'en';
  *  delete-account local wipe and the privacy policy's claims still hold). */
 export const LANGUAGE_STORAGE_KEY = 'chesser-lang';
 
-/** Namespaces, one per surface. Phase 1 covers the app chrome; later phases
- *  add per-surface namespaces (game, tactics, coach, …) as they are extracted. */
-export const NAMESPACES = ['account', 'common', 'gamify', 'legal', 'nav', 'settings'] as const;
+/** Namespaces, one per surface. Phase 1 covers the app chrome; phase 2 adds
+ *  the per-surface namespaces below (pre-registered with placeholder JSON so
+ *  extraction can proceed per surface without touching this list again). */
+export const NAMESPACES = [
+  // phase 1
+  'account',
+  'common',
+  'gamify',
+  'legal',
+  'nav',
+  'settings',
+  // phase 2 — surfaces
+  'analysis',
+  'coach',
+  'explorer',
+  'friends',
+  'game',
+  'home',
+  'leaders',
+  'learn',
+  'openings',
+  'plan',
+  'play',
+  'profile',
+  'stats',
+  'tactics',
+  'train',
+  // phase 2 — strings produced outside React (stores/libs; see i18n README)
+  'bots',
+  'errors',
+  'insights',
+  'motifs',
+  'progress',
+  'quality',
+  'status',
+] as const;
 
 // Locale directories present at build time. `import.meta.glob` without `eager`
 // only records the matching paths — nothing is imported until requested.
