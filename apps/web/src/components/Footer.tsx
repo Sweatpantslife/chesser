@@ -19,6 +19,15 @@ export function Footer() {
         <a href="#/terms" className="underline decoration-neutral-600 underline-offset-2 hover:text-neutral-300">
           Terms
         </a>
+        <span aria-hidden="true">·</span>
+        <a
+          href="https://slikk.dev/"
+          target="_blank"
+          rel="nofollow noopener noreferrer"
+          className="underline decoration-neutral-600 underline-offset-2 hover:text-neutral-300"
+        >
+          Built by Slikk.Dev<span className="sr-only"> (opens in a new tab)</span>
+        </a>
       </p>
     </footer>
   );
