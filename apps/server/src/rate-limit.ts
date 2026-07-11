@@ -29,7 +29,9 @@ export class TokenBucketLimiter {
   take(key: string): boolean {
     const t = this.now();
     const b = this.buckets.get(key) ?? { tokens: this.capacity, last: t };
-    b.tokens = Math.min(this.capacity, b.tokens + ((t - b.last) / 60_000) * this.refillPerMinute);
+    // Clamp elapsed at 0: a backward clock step (NTP correction) must not
+    // produce negative elapsed and drain the bucket, 429-ing legit traffic.
+    b.tokens = Math.min(this.capacity, b.tokens + (Math.max(0, t - b.last) / 60_000) * this.refillPerMinute);
     b.last = t;
     if (b.tokens < 1) {
       this.buckets.set(key, b);
@@ -45,7 +47,7 @@ export class TokenBucketLimiter {
       this.lastSweep = t;
       for (const [k, v] of this.buckets) {
         if (k === key) continue;
-        const refilled = v.tokens + ((t - v.last) / 60_000) * this.refillPerMinute;
+        const refilled = v.tokens + (Math.max(0, t - v.last) / 60_000) * this.refillPerMinute;
         if (refilled >= this.capacity - 0.01) this.buckets.delete(k);
       }
     }

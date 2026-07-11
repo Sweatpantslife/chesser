@@ -32,16 +32,24 @@ export async function verifyPassword(password: string, salt: string, hash: strin
   return candidate.length === expected.length && crypto.timingSafeEqual(candidate, expected);
 }
 
-let dummyCreds: { salt: string; hash: string } | null = null;
+let dummyCredsPromise: Promise<{ salt: string; hash: string }> | null = null;
 
 /**
  * Burn the same scrypt cost as a real verification. Called when a login names
  * a nonexistent user, so response timing doesn't separate "no such user" from
- * "wrong password". (Concurrent first calls may both hash the dummy — harmless.)
+ * "wrong password". Memoises the in-flight PROMISE (not the resolved value) so
+ * a burst of nonexistent-user logins shares a single dummy hash instead of each
+ * spawning its own scrypt.
  */
 export async function fakeVerifyPassword(password: string): Promise<void> {
-  dummyCreds ??= await hashPassword('chesser.timing.dummy');
-  await verifyPassword(password, dummyCreds.salt, dummyCreds.hash);
+  dummyCredsPromise ??= hashPassword('chesser.timing.dummy').catch((err) => {
+    // Never cache a rejected promise: a transient scrypt failure would
+    // otherwise poison every future timing-equalisation call.
+    dummyCredsPromise = null;
+    throw err;
+  });
+  const dummy = await dummyCredsPromise;
+  await verifyPassword(password, dummy.salt, dummy.hash);
 }
 
 export function newToken(): string {

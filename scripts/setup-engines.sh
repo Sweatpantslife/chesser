@@ -100,7 +100,17 @@ known_sha256() { # $1 = <release-tag>/<filename> or maia/<filename>; echoes hash
 
 verify_sha256() { # $1 = file, $2 = expected hash, $3 = label. Removes $1 on mismatch.
   local actual
-  actual="$(sha256sum "$1" | awk '{print $1}')"
+  # sha256sum on Linux; macOS ships `shasum` instead. Fail closed if neither
+  # exists — never install an engine binary we couldn't checksum.
+  if command -v sha256sum >/dev/null 2>&1; then
+    actual="$(sha256sum "$1" | awk '{print $1}')"
+  elif command -v shasum >/dev/null 2>&1; then
+    actual="$(shasum -a 256 "$1" | awk '{print $1}')"
+  else
+    err "no sha256sum or shasum found — cannot verify $3"
+    rm -f "$1"
+    return 1
+  fi
   if [[ "$actual" == "$2" ]]; then
     ok "checksum verified: $3"
     return 0
