@@ -1,7 +1,10 @@
 import { useState, type FormEvent } from 'react';
 import { useAuth } from '../store/auth';
 import type { SyncState } from '../lib/sync';
+import { apiExportAccount, downloadJson } from '../lib/trustApi';
 import { Modal } from './Modal';
+import { DeleteAccountDialog } from './DeleteAccountDialog';
+import { IconDownload } from './icons';
 
 const SYNC_LABEL: Record<SyncState, { dot: string; text: string }> = {
   off: { dot: 'bg-neutral-500', text: 'not syncing' },
@@ -82,6 +85,67 @@ function AuthForm({ onClose }: { onClose: () => void }) {
   );
 }
 
+/** Export/delete — the privacy-policy promises, wired to trust/routes.ts. */
+function DataControls({ onClose }: { onClose: () => void }) {
+  const { token, username } = useAuth();
+  const [exporting, setExporting] = useState(false);
+  const [exportMsg, setExportMsg] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const exportData = async () => {
+    if (!token || exporting) return;
+    setExporting(true);
+    setExportMsg(null);
+    try {
+      const data = await apiExportAccount(token);
+      downloadJson(data, `chesser-export-${username ?? 'account'}.json`);
+      setExportMsg('Export downloaded.');
+    } catch (e) {
+      setExportMsg(e instanceof Error ? e.message : 'Export failed — try again.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  return (
+    <div className="border-t border-neutral-800/70 pt-3">
+      <div className="mb-1.5 text-xs uppercase tracking-wide text-neutral-400">Your data</div>
+      <button
+        onClick={() => void exportData()}
+        disabled={exporting}
+        className="flex w-full items-center justify-center gap-1.5 rounded bg-neutral-700 py-2 text-sm text-neutral-200 hover:bg-neutral-600 disabled:opacity-50"
+      >
+        <IconDownload size={14} />
+        {exporting ? 'Preparing export…' : 'Export my data'}
+      </button>
+      {exportMsg && (
+        <p role="status" className="mt-1.5 text-xs text-neutral-400">
+          {exportMsg}
+        </p>
+      )}
+      <button
+        onClick={() => setConfirmOpen(true)}
+        className="mt-2 w-full rounded bg-rose-900/40 py-2 text-sm font-semibold text-rose-300 hover:bg-rose-900/60"
+      >
+        Delete my account…
+      </button>
+      <p className="mt-1.5 text-xs text-neutral-400">
+        Everything stored for this account, as JSON — or erased for good. See the{' '}
+        {/* onClick closes the dialog so the policy page isn't hidden behind it */}
+        <a
+          href="#/privacy"
+          onClick={onClose}
+          className="text-brand-300 underline decoration-brand-300/50 underline-offset-2 hover:text-brand-200"
+        >
+          Privacy Policy
+        </a>
+        .
+      </p>
+      {confirmOpen && <DeleteAccountDialog onClose={() => setConfirmOpen(false)} />}
+    </div>
+  );
+}
+
 function AccountInfo({ onClose }: { onClose: () => void }) {
   const { username, sync, logout } = useAuth();
   const s = SYNC_LABEL[sync];
@@ -104,6 +168,7 @@ function AccountInfo({ onClose }: { onClose: () => void }) {
       >
         Sign out
       </button>
+      <DataControls onClose={onClose} />
     </div>
   );
 }

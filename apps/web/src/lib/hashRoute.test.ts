@@ -8,6 +8,12 @@ describe('parseHashRoute', () => {
     expect(parseHashRoute('#/profile/a%20b')).toEqual({ kind: 'profile', user: 'a b' });
   });
 
+  it('routes the legal pages', () => {
+    expect(parseHashRoute('#/privacy')).toEqual({ kind: 'legal', page: 'privacy' });
+    expect(parseHashRoute('#/terms')).toEqual({ kind: 'legal', page: 'terms' });
+    expect(parseHashRoute('#/privacy/extra')).toEqual({ kind: 'ignore' });
+  });
+
   it('treats a cleared hash as leaving a hash-driven view', () => {
     expect(parseHashRoute('')).toEqual({ kind: 'exit-overlay' });
     expect(parseHashRoute('#')).toEqual({ kind: 'exit-overlay' });
