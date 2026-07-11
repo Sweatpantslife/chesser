@@ -127,8 +127,16 @@ export async function bootstrapFromReportCache(): Promise<void> {
   // Dynamic import: lib/analytics/report (the whole report/classify/explain
   // suite) must stay out of the initial bundle — this store is loaded eagerly
   // via lib/gamify, but the backfill only runs from the lazy coach/archive/
-  // plan pages (fire-and-forget, callers never await it).
-  const { deserializeReport } = await import('../lib/analytics/report');
+  // plan pages (fire-and-forget, callers never await it). A failed chunk
+  // fetch un-latches the once-per-session flag so a later call can retry,
+  // and resolves (never rejects) since callers don't handle failures.
+  let deserializeReport: typeof import('../lib/analytics/report').deserializeReport;
+  try {
+    ({ deserializeReport } = await import('../lib/analytics/report'));
+  } catch {
+    bootstrapped = false;
+    return;
+  }
   let store: Storage | null = null;
   try {
     store = globalThis.localStorage ?? null;

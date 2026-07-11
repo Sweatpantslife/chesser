@@ -1007,9 +1007,19 @@ export const useGame = create<GameStore>((set, get) => ({
     // Lazy-loaded review machinery (see the import note at the top of the
     // file). Loaded in parallel before the eval loop; the per-position
     // `gameId !== myGame` guard below covers anything changing during the
-    // await exactly as it does during engine calls.
-    const [{ buildMoveReviews, checkmateWinner, cpOf }, { REVIEW_ENGINE_SETTINGS }, { useAnalysisReport }] =
-      await Promise.all([import('../lib/coach'), import('../lib/analytics/report'), import('./analysisReport')]);
+    // await exactly as it does during engine calls. A failed chunk fetch
+    // (e.g. offline before the SW finished precaching) must not latch
+    // `reviewing: true` forever — reset it so the user can simply retry.
+    const mods = await Promise.all([
+      import('../lib/coach'),
+      import('../lib/analytics/report'),
+      import('./analysisReport'),
+    ]).catch(() => null);
+    if (!mods) {
+      set({ reviewing: false });
+      return;
+    }
+    const [{ buildMoveReviews, checkmateWinner, cpOf }, { REVIEW_ENGINE_SETTINGS }, { useAnalysisReport }] = mods;
 
     // Evaluate every position with 2 lines, so we get the best move (and the
     // runner-up, for "only move" detection) at each step — not just the score.
