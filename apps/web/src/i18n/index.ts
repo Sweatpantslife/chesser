@@ -65,9 +65,18 @@ export const NAMESPACES = [
   'status',
 ] as const;
 
+// Under Vite (app build, vitest) `import.meta.glob` is compiled away. The
+// plain-node test runners (`node --import tsx --test`: apps/web store tests,
+// scripts/*.test.mts) import this module transitively through libs that
+// translate at display time — there no glob exists (detected via
+// `import.meta.env`, which only Vite defines) and no resources are bundled,
+// so every t() call serves its call site's English `defaultValue`, keeping
+// canonical strings byte-identical.
+const IS_VITE = typeof (import.meta as { env?: unknown }).env !== 'undefined';
+
 // Locale directories present at build time. `import.meta.glob` without `eager`
 // only records the matching paths — nothing is imported until requested.
-const localeDirs = import.meta.glob('../locales/*/common.json');
+const localeDirs = IS_VITE ? import.meta.glob('../locales/*/common.json') : {};
 
 /** Language codes with a `src/locales/<code>/` directory (includes 'en'). */
 export const SUPPORTED_LANGUAGES: readonly string[] = Object.keys(localeDirs)
@@ -76,7 +85,7 @@ export const SUPPORTED_LANGUAGES: readonly string[] = Object.keys(localeDirs)
   .sort();
 
 // English resources, bundled eagerly (see module comment).
-const enModules = import.meta.glob('../locales/en/*.json', { eager: true }) as Record<
+const enModules = (IS_VITE ? import.meta.glob('../locales/en/*.json', { eager: true }) : {}) as Record<
   string,
   { default: Record<string, unknown> }
 >;
@@ -139,10 +148,14 @@ export function setLanguage(lng: string): Promise<unknown> {
   return i18next.changeLanguage(lng);
 }
 
+// Any non-bundled locale/namespace resolves through a dynamic import that
+// Vite turns into one lazy chunk per locale JSON file. Skipped under plain
+// node (see IS_VITE above): only the English defaultValues are needed there.
+if (IS_VITE) {
+  i18next.use(resourcesToBackend((lng: string, ns: string) => import(`../locales/${lng}/${ns}.json`)));
+}
+
 void i18next
-  // Any non-bundled locale/namespace resolves through a dynamic import that
-  // Vite turns into one lazy chunk per locale JSON file.
-  .use(resourcesToBackend((lng: string, ns: string) => import(`../locales/${lng}/${ns}.json`)))
   .use(initReactI18next)
   .init({
     lng: detectLanguage(),
