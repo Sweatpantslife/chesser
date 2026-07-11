@@ -8,9 +8,9 @@
     "leftToday_one": "{{count}} restant aujourd'hui",
     "leftToday_many": "{{count}} restants aujourd'hui",
     "leftToday_other": "{{count}} restants aujourd'hui",
-    "more_one": "…et {{count}} de plus au plan",
-    "more_many": "…et {{count}} de plus au plan",
-    "more_other": "…et {{count}} de plus au plan"
+    "more_one": "…et {{count}} de plus au programme",
+    "more_many": "…et {{count}} de plus au programme",
+    "more_other": "…et {{count}} de plus au programme"
   },
   "page": {
     "title": "Le plan d'étude de la semaine",

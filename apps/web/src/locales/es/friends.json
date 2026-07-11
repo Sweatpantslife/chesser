@@ -69,8 +69,8 @@
     "empty": "Nada todavía — la actividad que compartan tus amigos (puntuaciones, rachas, insignias) aparecerá aquí.",
     "note": "Aquí solo aparece lo que cada amigo eligió compartir (clasificaciones / ajustes de perfil).",
     "rush": "logró un récord de {{value}} en Puzzle Rush",
-    "ratingBots": "su puntuación contra bots ahora es {{value}}",
-    "ratingPuzzle": "su puntuación de táctica ahora es {{value}}",
+    "ratingBots": "ahora tiene {{value}} de puntuación contra bots",
+    "ratingPuzzle": "ahora tiene {{value}} de puntuación de táctica",
     "achievement": "desbloqueó «{{name}}»",
     "streak_one": "lleva una racha de {{count}} día",
     "streak_other": "lleva una racha de {{count}} días"
@@ -178,7 +178,7 @@
     "leave": "← Salir de la partida"
   },
   "outcome": {
-    "drew": "Empataste.",
+    "drew": "Has hecho tablas.",
     "won": "¡Has ganado! 🎉",
     "lost": "Has perdido."
   },

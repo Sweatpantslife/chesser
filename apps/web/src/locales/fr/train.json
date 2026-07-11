@@ -115,15 +115,15 @@
       "knight": "Tour du cavalier"
     },
     "blurbs": {
-      "find": "Cliquez la case annoncée aussi vite que possible.",
+      "find": "Cliquez sur la case annoncée aussi vite que possible.",
       "name": "Nommez la case en surbrillance.",
       "color": "La case en surbrillance est-elle claire ou foncée ?",
-      "knight": "Cliquez toutes les cases où le cavalier peut sauter."
+      "knight": "Cliquez sur toutes les cases où le cavalier peut sauter."
     },
-    "click": "Cliquez",
+    "click": "Cliquez sur",
     "namePrompt": "Nommez la case en surbrillance",
     "colorPrompt": "La case entourée est-elle claire ou foncée ?",
-    "knightPrompt": "Cliquez chaque coup de cavalier —",
+    "knightPrompt": "Cliquez sur chaque coup de cavalier —",
     "knightLeft_one": "{{count}} restante",
     "knightLeft_many": "{{count}} restantes",
     "knightLeft_other": "{{count}} restantes",
@@ -208,8 +208,8 @@
     "verdictTb": "verdict : {{source}} · {{category}}{{dtz}}",
     "verdictSourceLichess": "table de finales Lichess",
     "verdictOffline": "verdict : hors ligne — ligne théorique embarquée",
-    "slips_one": "{{count}} glissade reprise dans cette tentative.",
-    "slips_many": "{{count}} glissades reprises dans cette tentative.",
-    "slips_other": "{{count}} glissades reprises dans cette tentative."
+    "slips_one": "{{count}} imprécision reprise dans cette tentative.",
+    "slips_many": "{{count}} imprécisions reprises dans cette tentative.",
+    "slips_other": "{{count}} imprécisions reprises dans cette tentative."
   }
 }

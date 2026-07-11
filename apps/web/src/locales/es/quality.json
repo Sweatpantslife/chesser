@@ -16,8 +16,8 @@
     "lossMate": "Base de finales: derrota, mate en {{n}}",
     "loss": "Base de finales: posición perdedora",
     "draw": "Base de finales: tablas",
-    "cursedWin": "Base de finales: victoria (la regla de los 50 movimientos acecha)",
-    "blessedLoss": "Base de finales: derrota (salvada por la regla de los 50 movimientos)",
+    "cursedWin": "Base de finales: victoria (la regla de las 50 jugadas acecha)",
+    "blessedLoss": "Base de finales: derrota (salvada por la regla de las 50 jugadas)",
     "unknown": "Base de finales: desconocido",
     "feedback": {
       "throwsWin": "¡Eso tira la victoria!",

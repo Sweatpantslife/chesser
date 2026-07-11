@@ -66,7 +66,7 @@
     "card": "Tarjeta",
     "nothingShared": "{{username}} se guarda sus estadísticas. Respeto.",
     "ratings": {
-      "peakPlayed": "máximo {{peak}} · {{played}} jugadas",
+      "peakPlayed": "máximo {{peak}} · {{played}} en total",
       "solved": "{{won}} resueltos · {{lost}} fallados",
       "wdl": "{{won}}V {{drawn}}T {{lost}}D"
     },

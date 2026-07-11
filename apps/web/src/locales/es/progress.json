@@ -16,8 +16,8 @@
     "learn-lesson-1": { "name": "Primeros pasos", "desc": "Completa lecciones interactivas." },
     "learn-lesson-10": { "name": "Estudiante aplicado", "desc": "Completa lecciones interactivas." },
     "learn-lesson-all": { "name": "Graduado", "desc": "Completa lecciones interactivas." },
-    "learn-reviews-50": { "name": "Chispa de memoria", "desc": "Repasa tarjetas en todos tus mazos (aperturas · mates · antierrores)." },
-    "learn-reviews-250": { "name": "Memoria de hierro", "desc": "Repasa tarjetas en todos tus mazos (aperturas · mates · antierrores)." },
+    "learn-reviews-50": { "name": "Chispa de memoria", "desc": "Repasa tarjetas en todos tus mazos (aperturas · mates · anti-errores)." },
+    "learn-reviews-250": { "name": "Memoria de hierro", "desc": "Repasa tarjetas en todos tus mazos (aperturas · mates · anti-errores)." },
     "tactics-solve-10": { "name": "Primera sangre", "desc": "Resuelve ejercicios de táctica puntuados." },
     "tactics-solve-50": { "name": "Ojo avizor", "desc": "Resuelve ejercicios de táctica puntuados." },
     "tactics-solve-200": { "name": "Táctico", "desc": "Resuelve ejercicios de táctica puntuados." },
@@ -87,7 +87,7 @@
     "openings": "Aperturas",
     "tactics": "Táctica",
     "mates": "Jaques mate",
-    "blunders": "Antierrores",
+    "blunders": "Anti-errores",
     "endgames": "Finales"
   },
   "repertoire": {

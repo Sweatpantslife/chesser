@@ -1,8 +1,8 @@
 {
   "tabs": {
     "practice": "Práctica",
-    "rush": "Ráfaga de problemas",
-    "storm": "Tormenta de problemas",
+    "rush": "Puzzle Rush",
+    "storm": "Puzzle Storm",
     "mistakes": "Mis errores",
     "mistakesCount": "Mis errores ({{n}})"
   },
@@ -17,7 +17,7 @@
     "themeCount_one": "{{count}} problema",
     "themeCount_other": "{{count}} problemas",
     "noThemes": "no hay temas aquí",
-    "ratedOrder": "Servir problemas cercanos a mi puntuación",
+    "ratedOrder": "Proponer problemas cercanos a mi puntuación",
     "reviewDue": "Repasar pendientes",
     "dailyPuzzle": "Problema del día"
   },
@@ -65,7 +65,7 @@
     "seenBefore": "Ya has visto este problema — recuerda la idea.",
     "empty": {
       "mineTitle": "Aún no hay problemas de tus partidas",
-      "mineBody": "Abre una partida en la pestaña <b>Jugar</b> y usa <b>«Crear problemas de esta partida»</b> en el panel de revisión de la partida.",
+      "mineBody": "Abre una partida en la pestaña <b>Jugar</b> y usa <b>«Crear problemas a partir de esta partida»</b> en el panel de revisión de la partida.",
       "filterTitle": "Nada coincide con este filtro",
       "filterBody": "No hay problemas para este filtro. Genera más con <code>pnpm gen:tactics</code>."
     },
@@ -114,7 +114,7 @@
     "streak_other": "🔥 racha de {{count}}",
     "best": "Récord ({{variant}}): {{score}}",
     "idleIntro": "Resuelve todos los que puedas — la dificultad sube sobre la marcha.",
-    "start": "Empezar la ráfaga",
+    "start": "Empezar Puzzle Rush",
     "struckOut": "¡Eliminado!",
     "bestStreak": "Mejor racha"
   },
@@ -124,7 +124,7 @@
     "multiplier": "⚡ ×{{multiplier}} puntos",
     "best": "Récord: {{score}}",
     "idleBlurb": "3 minutos de problemas que se adaptan a tu ritmo — resuelve rápido para subir la dificultad y encadena un combo que multiplica tus puntos. Un fallo rompe el combo, pero no cuesta nada más.",
-    "start": "Empezar la tormenta",
+    "start": "Empezar Puzzle Storm",
     "solved": "Resueltos",
     "accuracy": "{{accuracy}}% de acierto"
   },
@@ -143,7 +143,7 @@
     "checking": "comprobando…",
     "holdsUp": "✓ {{san}} se sostiene — mucho mejor que {{played}}.",
     "stillDrops": "✗ {{san}} sigue perdiendo ~{{loss}}%. Prueba otra jugada.",
-    "empty": "Aún no hay errores guardados. En el tablero de <b>Jugar</b>, revisa una partida y usa «Guardar errores para entrenar».",
+    "empty": "Aún no hay errores guardados. En el tablero de <b>Jugar</b>, revisa una partida y usa «Guardar errores para practicar».",
     "gotIt": "Entendido ✓",
     "skip": "Saltar →"
   }

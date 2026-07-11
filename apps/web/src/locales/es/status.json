@@ -17,15 +17,15 @@
   },
   "claimDraw": {
     "threefold": "Triple repetición — puedes reclamar tablas",
-    "fiftyMove": "Regla de los cincuenta movimientos — puedes reclamar tablas"
+    "fiftyMove": "Regla de las 50 jugadas — puedes reclamar tablas"
   },
   "checkmate": {
     "white": "Jaque mate — ganan las blancas",
     "black": "Jaque mate — ganan las negras"
   },
   "resigned": {
-    "white": "Ganan las blancas — abandonaste",
-    "black": "Ganan las negras — abandonaste"
+    "white": "Ganan las blancas — te rendiste",
+    "black": "Ganan las negras — te rendiste"
   },
   "flagged": {
     "white": "Las blancas agotaron su tiempo — las negras ganan por tiempo",
@@ -34,19 +34,19 @@
   "draw": {
     "stalemate": "Tablas — ahogado",
     "insufficientMaterial": "Tablas — material insuficiente",
-    "fiftyMove": "Tablas — regla de los cincuenta movimientos",
+    "fiftyMove": "Tablas — regla de las 50 jugadas",
     "agreed": "Tablas — de común acuerdo",
     "threefold": "Tablas — triple repetición"
   },
   "endReason": {
-    "youResigned": "Abandonaste",
+    "youResigned": "Te rendiste",
     "drawAgreed": "Tablas acordadas",
     "threefold": "Triple repetición",
-    "fiftyMoveClaim": "Regla de los cincuenta movimientos",
+    "fiftyMoveClaim": "Regla de las 50 jugadas",
     "onTime": "por tiempo",
     "checkmate": "jaque mate",
     "stalemate": "ahogado",
     "insufficientMaterial": "material insuficiente",
-    "fiftyMove": "regla de los cincuenta movimientos"
+    "fiftyMove": "regla de las 50 jugadas"
   }
 }

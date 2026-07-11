@@ -44,7 +44,7 @@
     "coordWhite": "Coord. blancas",
     "coordBlack": "Coord. negras",
     "squareColour": "Color de casilla",
-    "knightsTour": "Ruta del caballo"
+    "knightsTour": "Salto del caballo"
   },
   "charts": {
     "heatmapEmpty": "Aún no hay actividad — los problemas y ejercicios resueltos iluminarán este calendario.",
@@ -163,7 +163,7 @@
       "games": "Partidas",
       "inSlice": "en este segmento",
       "allTime": "en total",
-      "record": "Marcador",
+      "record": "Historial",
       "recordHint": "V-T-D",
       "winRate": "% de victorias",
       "noResult_one": "{{count}} sin resultado",
