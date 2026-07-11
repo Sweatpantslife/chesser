@@ -265,6 +265,21 @@ export interface TablebaseResult {
 
 export type ExplorerDb = 'masters' | 'lichess';
 
+/** Lichess-DB time controls the explorer can filter on. */
+export type ExplorerSpeed = 'ultraBullet' | 'bullet' | 'blitz' | 'rapid' | 'classical' | 'correspondence';
+
+export const EXPLORER_SPEEDS: readonly ExplorerSpeed[] = [
+  'ultraBullet',
+  'bullet',
+  'blitz',
+  'rapid',
+  'classical',
+  'correspondence',
+];
+
+/** Lichess-DB rating buckets the explorer can filter on (bucket lower bounds). */
+export const EXPLORER_RATINGS: readonly number[] = [0, 1000, 1200, 1400, 1600, 1800, 2000, 2200, 2500];
+
 export interface ExplorerMove {
   uci: string;
   san: string;
@@ -272,6 +287,23 @@ export interface ExplorerMove {
   draws: number;
   black: number;
   total: number;
+  /** Average rating of the players who reached this move (when the upstream provides it). */
+  averageRating?: number | null;
+}
+
+/** A notable game from the current position (masters "top games" / lichess "recent games"). */
+export interface ExplorerGame {
+  /** Lichess game id — the game lives at https://lichess.org/{id}. */
+  id: string;
+  winner: 'white' | 'black' | null;
+  white: { name: string; rating: number | null };
+  black: { name: string; rating: number | null };
+  year?: number | null;
+  month?: string | null;
+  speed?: string | null;
+  /** The move this game played from the queried position, when reported. */
+  uci?: string | null;
+  san?: string | null;
 }
 
 export interface ExplorerResult {
@@ -283,6 +315,8 @@ export interface ExplorerResult {
   total?: number;
   moves?: ExplorerMove[];
   opening?: { eco?: string; name?: string } | null;
+  topGames?: ExplorerGame[];
+  recentGames?: ExplorerGame[];
 }
 
 // ---------------------------------------------------------------------------

@@ -107,6 +107,16 @@ export function IconOpenings(p: IconProps) {
   );
 }
 
+/** "Explorer" tab: a compass — find your way through the opening jungle. */
+export function IconExplorer(p: IconProps) {
+  return (
+    <svg {...base(p)}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M15.5 8.5l-2 5-5 2 2-5z" />
+    </svg>
+  );
+}
+
 export function IconTactics(p: IconProps) {
   return (
     <svg {...base(p)}>
