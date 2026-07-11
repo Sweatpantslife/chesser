@@ -35,6 +35,14 @@ services:
       - NODE_ENV=production
       - HOST=0.0.0.0
       - PORT=8787
+      # One reverse proxy (Coolify's Traefik) in front: trust exactly one
+      # X-Forwarded-* hop so per-IP rate limits key on real client addresses
+      # and HSTS is emitted (the proxy terminates TLS). Remove this line if
+      # you publish the container port directly with no proxy.
+      - TRUST_PROXY=1
+      # Extra browser origins allowed to call the API cross-origin
+      # (comma-separated). Unset = same-origin only, the normal deployment.
+      # - CHESSER_ALLOWED_ORIGINS=
       # Engine resource budget per Stockfish process — tune to your host.
       - CHESSER_THREADS=2
       - CHESSER_HASH_MB=128

@@ -17,6 +17,9 @@
  * to the rule-based text".
  */
 
+import { isIP } from 'node:net';
+import dns from 'node:dns/promises';
+
 export interface CoachCompletionInput {
   system: string;
   user: string;
@@ -110,23 +113,91 @@ export function openAiProvider(apiKey: string, model: string, baseUrl: string): 
  * Hosts an OpenAI-compatible BYOK base URL must never point at. The server
  * makes ONE outbound call to this URL with the user's key, so a hostile
  * client could otherwise aim it at loopback/link-local/private services
- * (SSRF). Literal-address and well-known-name checks only — a public name
- * that DNS-resolves to a private address is out of scope for this app.
+ * (SSRF). This covers literal addresses and well-known names; a public name
+ * that DNS-resolves to a private address is caught by the async
+ * `byokBaseUrlDnsError` check the route runs before fetching.
  */
 function isForbiddenByokHost(hostname: string): boolean {
   const h = hostname.toLowerCase().replace(/^\[|\]$/g, '');
   if (h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.local') || h.endsWith('.internal')) return true;
-  // IPv6 loopback / link-local / unique-local.
-  if (h === '::1' || h === '::' || h.startsWith('fe80:') || h.startsWith('fc') || h.startsWith('fd')) return true;
-  // IPv4 literals in private / loopback / link-local / unspecified ranges.
-  const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(h);
-  if (m) {
-    const [a, b] = [Number(m[1]), Number(m[2])];
-    if (a === 0 || a === 10 || a === 127 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168)) {
-      return true;
-    }
-  }
+  if (isIP(h)) return isForbiddenIpAddress(h);
   return false;
+}
+
+/** True for a v4 dotted-quad in a non-public range (or not a dotted-quad at all). */
+function isForbiddenIpv4(ip: string): boolean {
+  const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(ip);
+  if (!m) return true;
+  const [a, b] = [Number(m[1]), Number(m[2])];
+  return (
+    a === 0 || // "this network" / unspecified
+    a === 10 || // private
+    a === 127 || // loopback
+    (a === 100 && b >= 64 && b <= 127) || // CGNAT 100.64.0.0/10
+    (a === 169 && b === 254) || // link-local (cloud metadata lives here)
+    (a === 172 && b >= 16 && b <= 31) || // private
+    (a === 192 && b === 0) || // IETF special-purpose 192.0.0.0/24 + TEST-NET-1
+    (a === 192 && b === 168) || // private
+    (a === 198 && (b === 18 || b === 19)) || // benchmarking 198.18.0.0/15
+    a >= 224 // multicast, reserved, broadcast
+  );
+}
+
+/**
+ * True when `address` is NOT a public unicast IP — loopback, private,
+ * link-local, CGNAT, multicast/reserved (v4), or anything outside global
+ * unicast 2000::/3 (v6, which excludes ::1, fe80::/10, fc00::/7, ::, …).
+ * IPv4-mapped IPv6 (::ffff:a.b.c.d) is unwrapped and checked as IPv4.
+ * Non-IP input is forbidden by definition (fail closed).
+ */
+export function isForbiddenIpAddress(address: string): boolean {
+  const ip = address.trim().toLowerCase().replace(/^\[|\]$/g, '');
+  const family = isIP(ip);
+  if (family === 4) return isForbiddenIpv4(ip);
+  if (family === 6) {
+    const mapped = /^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/.exec(ip);
+    if (mapped) return isForbiddenIpv4(mapped[1]!);
+    const firstGroup = Number.parseInt(ip.split(':', 1)[0] || '0', 16);
+    return !(firstGroup >= 0x2000 && firstGroup <= 0x3fff);
+  }
+  return true;
+}
+
+/** Injectable DNS resolver (tests stub this; production uses dns.lookup). */
+export type DnsLookupFn = (hostname: string, opts: { all: true }) => Promise<{ address: string; family: number }[]>;
+
+const defaultLookup: DnsLookupFn = (hostname, opts) => dns.lookup(hostname, opts);
+
+/**
+ * The DNS half of the BYOK SSRF guard: resolve the base URL's hostname and
+ * refuse it when ANY resolved address is non-public — a public DNS name
+ * pointing at 127.0.0.1 / 10.x / 169.254.x must not reach fetch(). Re-runs
+ * the syntax checks first so callers can use it as the single gate. Returns
+ * an error string for the client, or null when the URL is safe to fetch.
+ *
+ * Residual risk, accepted: the actual fetch() does its own lookup, so a DNS
+ * server flipping records between this check and the fetch (rebinding) could
+ * still slip through that one request. Closing that needs a pinned-address
+ * dispatcher; for a single JSON POST with the user's own key the
+ * resolve-then-check gate is the proportionate defense.
+ */
+export async function byokBaseUrlDnsError(raw: string, lookup: DnsLookupFn = defaultLookup): Promise<string | null> {
+  const syntaxErr = validateByokBaseUrl(raw);
+  if (syntaxErr) return syntaxErr;
+  const hostname = new URL(raw).hostname.replace(/^\[|\]$/g, '');
+  // A literal address was already fully vetted by the syntax checks above.
+  if (isIP(hostname)) return null;
+  let addresses: { address: string; family: number }[];
+  try {
+    addresses = await lookup(hostname, { all: true });
+  } catch {
+    return 'Base URL host could not be resolved.';
+  }
+  if (addresses.length === 0) return 'Base URL host could not be resolved.';
+  for (const a of addresses) {
+    if (isForbiddenIpAddress(a.address)) return 'Base URL host is not allowed.';
+  }
+  return null;
 }
 
 /** Error string when a user-supplied OpenAI-compatible base URL is unusable, else null. */

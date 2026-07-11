@@ -13,6 +13,9 @@ import { probeTablebase } from './tablebase.js';
 import { shutdownLocalTablebase } from './tablebase-local.js';
 import { probeExplorer } from './explorer.js';
 import { importGames } from './import.js';
+import { parseAllowedOrigins, registerSecurityHeaders } from './security-headers.js';
+import { registerProxyGuards } from './proxy-guard.js';
+import { clientIpFromUpgrade, WS_MAX_PAYLOAD_BYTES, WsSessionGuard } from './ws-hardening.js';
 import { registerAccountRoutes } from './accounts/routes.js';
 import { registerCoachRoutes } from './coach/routes.js';
 import { registerSocialRoutes } from './social/routes.js';
@@ -26,7 +29,14 @@ import type { ExplorerDb } from '@chesser/shared';
 // 1 MiB rather than relying on it) — the largest legitimate payloads are the
 // synced progress blob and saved PGNs, both far under it.
 const app = Fastify({ logger: LOG_ENABLED, trustProxy: TRUST_PROXY, bodyLimit: 1_048_576 });
-await app.register(cors, { origin: true });
+// Same-origin by default (no CORS headers at all — the SPA and API share an
+// origin); extra browser origins only via the CHESSER_ALLOWED_ORIGINS env.
+await app.register(cors, { origin: parseAllowedOrigins(process.env.CHESSER_ALLOWED_ORIGINS) });
+// Security headers (CSP, nosniff, frame denial, HSTS-behind-TLS, …) on every
+// response — API JSON and the served SPA alike. See security-headers.ts.
+registerSecurityHeaders(app, { webDir: WEB_DIR });
+// Per-IP budgets for the unauthenticated Lichess/chess.com proxy endpoints.
+registerProxyGuards(app);
 
 app.get('/api/health', async () => ({ ok: true, syzygy: !!engines.availability().syzygy }));
 app.get('/api/engines', async () => ({ engines: engines.availability(), styles: engines.styles() }));
@@ -88,11 +98,25 @@ if (WEB_DIR && fs.existsSync(path.join(WEB_DIR, 'index.html'))) {
 // Two WebSocket endpoints share the HTTP server, so upgrades are routed by
 // path here (two path-bound WebSocketServer instances would each try to answer
 // every upgrade): /ws is the engine session, /ws/friend the friend-game rooms.
-const wss = new WebSocketServer({ noServer: true });
-wss.on('connection', (ws) => {
+// maxPayload: ws's default is 100 MiB per message — cap it (protocol messages
+// are tiny). Engine sessions are additionally bounded per IP and globally,
+// because each one may spawn up to two Stockfish child processes.
+const wsGuard = new WsSessionGuard();
+const wss = new WebSocketServer({ noServer: true, maxPayload: WS_MAX_PAYLOAD_BYTES });
+wss.on('connection', (ws, req) => {
+  const release = wsGuard.acquire(clientIpFromUpgrade(req));
+  if (!release) {
+    // No Session is constructed for a refused socket, so nothing else will
+    // attach an error handler — and an unhandled 'error' event kills the
+    // process (e.g. a client blasting data while the close frame is in flight).
+    ws.on('error', () => {});
+    ws.close(1013, 'Server is busy — try again shortly.');
+    return;
+  }
+  ws.once('close', release);
   new Session(ws);
 });
-const friendWss = new WebSocketServer({ noServer: true });
+const friendWss = new WebSocketServer({ noServer: true, maxPayload: WS_MAX_PAYLOAD_BYTES });
 friendWss.on('connection', (ws) => {
   new FriendSession(ws, friendRooms);
 });

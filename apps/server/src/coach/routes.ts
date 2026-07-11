@@ -34,7 +34,15 @@ import crypto from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { CoachExplainFacts, CoachSkillLevel } from '@chesser/shared';
 import { buildSystemPrompt, buildUserPrompt, COACH_MAX_OUTPUT_TOKENS } from '@chesser/shared';
-import { byokProvider, providerFromEnv, validateByokBaseUrl, type ByokConfig, type CoachProvider } from './provider.js';
+import {
+  byokBaseUrlDnsError,
+  byokProvider,
+  providerFromEnv,
+  validateByokBaseUrl,
+  type ByokConfig,
+  type CoachProvider,
+  type DnsLookupFn,
+} from './provider.js';
 import { TokenBucketLimiter } from '../rate-limit.js';
 
 // Re-exported so callers/tests keep one import site for the coach pieces.
@@ -352,6 +360,8 @@ export interface CoachRouteOptions {
   rateCapacity?: number;
   rateRefillPerMinute?: number;
   now?: () => number;
+  /** DNS resolver for the BYOK SSRF guard (tests inject a stub). */
+  dnsLookup?: DnsLookupFn;
 }
 
 export function registerCoachRoutes(app: FastifyInstance, opts: CoachRouteOptions = {}): void {
@@ -386,6 +396,15 @@ export function registerCoachRoutes(app: FastifyInstance, opts: CoachRouteOption
 
     // ---- BYOK pass-through: one upstream call, no cache, key never stored.
     if (byok.config) {
+      // SSRF guard, DNS half: a custom base URL must not resolve to a
+      // private/loopback/link-local address (the syntax checks in
+      // byokConfigFromHeaders already rejected literal ones). Runs after the
+      // rate limiter so lookups can't be farmed, and only when a custom base
+      // URL was actually sent.
+      if (byok.config.baseUrl) {
+        const dnsErr = await byokBaseUrlDnsError(byok.config.baseUrl, opts.dnsLookup);
+        if (dnsErr) return reply.code(400).send({ error: dnsErr });
+      }
       const userProvider = byokProvider(byok.config);
       try {
         const explanation = await userProvider.complete({

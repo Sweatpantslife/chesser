@@ -76,7 +76,11 @@ export class Session {
         }
       }
     } catch (e) {
-      this.send({ t: 'error', reqId, message: e instanceof Error ? e.message : String(e) });
+      // Internal error text stays on the server (same pattern as friends/ws.ts)
+      // — engine failures often carry paths and setup details a client has no
+      // business seeing.
+      console.error('[ws] session error:', e);
+      this.send({ t: 'error', reqId, message: 'Engine request failed.' });
     }
   }
 
