@@ -26,7 +26,9 @@ setClock(() => t);
 const rooms = new FriendRoomManager({ now: () => t, schedule: () => () => {} });
 
 const app = Fastify();
-registerAccountRoutes(app);
+// Generous auth-guard limits: these suites register/login many accounts from one
+// inject IP; brute-force protection has its own suite (accounts/auth-hardening).
+registerAccountRoutes(app, { guard: { registerIpCapacity: 10_000, loginIpCapacity: 10_000 } });
 registerSocialRoutes(app);
 registerFriendRoutes(app, rooms);
 await app.ready();
