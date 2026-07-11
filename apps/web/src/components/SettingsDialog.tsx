@@ -56,7 +56,10 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const { t, i18n } = useTranslation('settings');
   const { sound, premove, arrows, aiCoach, boardTheme, pieceSet, ratingMeter, theme, setSound, setPremove, setArrows, setAiCoach, setBoardTheme, setPieceSet, setRatingMeter, setTheme } =
     useSettings();
-  const activeLanguage = i18n.resolvedLanguage ?? i18n.language;
+  // The user's ACTIVE choice, not resolvedLanguage — the latter reports the
+  // English fallback until the chosen locale's lazy chunks finish loading,
+  // which would briefly highlight the wrong language button.
+  const activeLanguage = i18n.language || i18n.resolvedLanguage;
 
   // Load every set's CSS so the previews below render.
   useEffect(() => loadAllPieceSets(), []);

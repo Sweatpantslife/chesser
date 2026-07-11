@@ -109,7 +109,11 @@ export function WeeklyReportCard(): JSX.Element {
         },
         atMs,
       ),
-    [days, streak, lessons, digests, trainingLog, rushBest, stormBest, puzzleHistory, atMs],
+    // `t` keys the memo to the language: the report bakes language-dependent
+    // strings (week label; the facts/narrative built from it downstream), and
+    // the hook hands out a new `t` both on a language switch and when a lazy
+    // locale's resources finish loading.
+    [days, streak, lessons, digests, trainingLog, rushBest, stormBest, puzzleHistory, atMs, t],
   );
 
   const facts = useMemo(() => buildWeeklyReportFacts(report), [report]);

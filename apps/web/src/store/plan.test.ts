@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import i18n from '../i18n';
 import { setClock } from '../lib/clock';
 import { isoWeekIdOf, type PuzzlePlanItem } from '../lib/studyPlan';
 import type { GameDigest } from '../lib/weakness';
@@ -153,6 +154,35 @@ describe('plan store (clock-injected)', () => {
 
     usePlan.getState().completeItem(lesson.id); // idempotent — no double pay
     expect(useGamify.getState().xp).toBe(xp0 + PLAN_ITEM_XP);
+  });
+
+  it('re-bakes an untouched plan when the locale arrives; a touched week keeps its language', async () => {
+    seedForkWeakness();
+    initPlanTracking();
+    const p1 = usePlan.getState().ensurePlan();
+    expect(usePlan.getState().planLang).toBe('en');
+    const enTitle = p1.items[0]!.title;
+
+    // Language switch with NO progress: the plan regenerates in the new
+    // language (same deterministic inputs — only the strings change).
+    try {
+      await i18n.changeLanguage('es');
+      const p2 = usePlan.getState().plan!;
+      expect(p2).not.toBe(p1);
+      expect(p2.weekId).toBe(p1.weekId);
+      expect(usePlan.getState().planLang).toBe('es');
+      expect(p2.items[0]!.id).toBe(p1.items[0]!.id);
+      expect(p2.items[0]!.title).not.toBe(enTitle);
+
+      // Once the week has progress, a switch keeps the baked language until
+      // the next regeneration (the documented trade-off).
+      usePlan.getState().logItem(p2.items[0]!.id);
+      await i18n.changeLanguage('en');
+      expect(usePlan.getState().plan).toBe(p2);
+      expect(usePlan.getState().planLang).toBe('es');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   it('auto-credits solved coach drills and finished lessons (read-only subscriptions)', () => {

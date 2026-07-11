@@ -34,6 +34,9 @@ import { type GameDifficulty, type GameTheme, type MasterGame } from '../data/ma
 // strings). The generated plan — including these strings — is persisted by
 // store/plan for the week, so a mid-week language switch shows the old
 // language until the next regeneration; ids/kinds stay language-neutral.
+// store/plan's initPlanTracking re-bakes an UNTOUCHED week's plan when the
+// active locale's strings arrive/change, so a fresh non-English session
+// doesn't lock in English fallbacks for the week.
 const tIns = () => i18n.getFixedT(null, 'insights');
 
 /** Weakness label in the active language (English catalogue label = fallback). */

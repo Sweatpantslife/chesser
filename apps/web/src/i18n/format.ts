@@ -40,7 +40,10 @@ export interface LocaleFormat {
 /** Intl formatters bound to the active locale; re-renders on language change. */
 export function useLocaleFormat(): LocaleFormat {
   const { i18n } = useTranslation();
-  const locale = i18n.resolvedLanguage ?? i18n.language ?? 'en';
+  // The ACTIVE language, not resolvedLanguage: Intl needs no loaded resources,
+  // and resolvedLanguage lags on the English fallback until the active
+  // locale's lazy chunks land (it only updates when changeLanguage settles).
+  const locale = i18n.language || i18n.resolvedLanguage || 'en';
   return useMemo(
     () => ({
       locale,

@@ -38,7 +38,10 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 /** "Jul 6"-style short label in the active UI language ('en' ⇒ byte-identical
  *  to the old hand-rolled format, which remains the fallback). */
 function shortDayLabel(d: Date): string {
-  const lang = i18n.resolvedLanguage ?? i18n.language ?? 'en';
+  // The ACTIVE language, not resolvedLanguage: Intl needs no loaded resources,
+  // and resolvedLanguage lags on the English fallback until the active
+  // locale's lazy chunks land (it only updates when changeLanguage settles).
+  const lang = i18n.language || i18n.resolvedLanguage || 'en';
   try {
     return new Intl.DateTimeFormat(lang, { month: 'short', day: 'numeric' }).format(d);
   } catch {
