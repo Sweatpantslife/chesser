@@ -125,7 +125,9 @@ describe('bootstrapFromReportCache', () => {
     // persist middleware bind to the stubbed storage.
     vi.resetModules();
     const { bootstrapFromReportCache, useCoach } = await import('./coach');
-    bootstrapFromReportCache();
+    // Async since the report deserializer became a dynamic import (kept out of
+    // the initial bundle); production callers stay fire-and-forget.
+    await bootstrapFromReportCache();
 
     // The first ingest writes the persisted 'chesser-coach' key, reordering
     // the storage — the second report must still be found and digested.

@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { deserializeReport } from '../lib/analytics/report';
 import type { AnalysisReport } from '../lib/analytics/types';
 import { digestReport, type GameDigest, type WeaknessKind } from '../lib/weakness';
 
@@ -122,9 +121,14 @@ let bootstrapped = false;
  * every cached vs-bot review that isn't digested yet gets ingested. Read-only
  * over the cache; storage errors degrade to "nothing found".
  */
-export function bootstrapFromReportCache(): void {
+export async function bootstrapFromReportCache(): Promise<void> {
   if (bootstrapped) return;
   bootstrapped = true;
+  // Dynamic import: lib/analytics/report (the whole report/classify/explain
+  // suite) must stay out of the initial bundle — this store is loaded eagerly
+  // via lib/gamify, but the backfill only runs from the lazy coach/archive/
+  // plan pages (fire-and-forget, callers never await it).
+  const { deserializeReport } = await import('../lib/analytics/report');
   let store: Storage | null = null;
   try {
     store = globalThis.localStorage ?? null;

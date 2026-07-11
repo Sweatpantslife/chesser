@@ -7,7 +7,7 @@
  * and calls `evaluateAchievements` after every relevant event.
  */
 import type { RatingCategory } from '../store/ratings';
-import { ALL_LESSONS } from '../learn';
+import { LESSON_COUNT } from '../learn/meta';
 
 export type AchievementCategory = 'learn' | 'tactics' | 'play' | 'ladder' | 'streak' | 'rating' | 'rush' | 'storm' | 'dedication' | 'quests' | 'coach';
 
@@ -61,7 +61,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     [
       { suffix: 'lesson-1', name: 'First Steps', target: 1, xp: 20 },
       { suffix: 'lesson-10', name: 'Eager Student', target: 10, xp: 60 },
-      { suffix: 'lesson-all', name: 'Graduate', target: ALL_LESSONS.length, xp: 150 },
+      { suffix: 'lesson-all', name: 'Graduate', target: LESSON_COUNT, xp: 150 },
     ],
   ),
   ...tiers(

@@ -1,30 +1,36 @@
-import { useEffect, useState, type ComponentType, type ReactNode, type SVGProps } from 'react';
+import { lazy, Suspense, useEffect, useState, type ComponentType, type ReactNode, type SVGProps } from 'react';
 import { useGame } from './store/game';
 import { useAuth } from './store/auth';
 import { AccountButton } from './components/AccountPanel';
 import { InstallButton } from './components/InstallButton';
-import { SettingsDialog } from './components/SettingsDialog';
-import { PlayPage } from './pages/PlayPage';
 import { HomePage } from './pages/HomePage';
-import { HumansPage } from './humans/HumansPage';
-import { LearnPage } from './pages/LearnPage';
-import { MastersPage } from './pages/MastersPage';
-import { OpeningsPage } from './pages/OpeningsPage';
-import { ExplorerPage } from './pages/ExplorerPage';
-import { TacticsPage } from './pages/TacticsPage';
-import { EndgamePage } from './pages/EndgamePage';
-import { EndgameDrillsPage } from './pages/EndgameDrillsPage';
-import { CoordinatePage } from './pages/CoordinatePage';
-import { StatsPage } from './pages/StatsPage';
-import { ProfilePage } from './pages/ProfilePage';
-import { TrainPage, type TrainTab } from './pages/TrainPage';
-import { CoachPage } from './pages/CoachPage';
-import { StudyPlanPage } from './pages/StudyPlanPage';
-import { ArchivePage } from './pages/ArchivePage';
-import { LeaderboardsPage } from './pages/LeaderboardsPage';
-import { PublicProfilePage } from './pages/PublicProfilePage';
-import { PrivacyPage } from './pages/PrivacyPage';
-import { TermsPage } from './pages/TermsPage';
+import type { TrainTab } from './pages/TrainPage';
+
+// Route-level code splitting: only the app shell + Today (home) page ship in
+// the initial chunk. Every other view — and the settings dialog — is a lazy
+// chunk fetched on first navigation (then cached; the service worker also
+// precaches them in the background, so offline still covers every view).
+const SettingsDialog = lazy(() => import('./components/SettingsDialog').then((m) => ({ default: m.SettingsDialog })));
+const PlayPage = lazy(() => import('./pages/PlayPage').then((m) => ({ default: m.PlayPage })));
+const HumansPage = lazy(() => import('./humans/HumansPage').then((m) => ({ default: m.HumansPage })));
+const LearnPage = lazy(() => import('./pages/LearnPage').then((m) => ({ default: m.LearnPage })));
+const MastersPage = lazy(() => import('./pages/MastersPage').then((m) => ({ default: m.MastersPage })));
+const OpeningsPage = lazy(() => import('./pages/OpeningsPage').then((m) => ({ default: m.OpeningsPage })));
+const ExplorerPage = lazy(() => import('./pages/ExplorerPage').then((m) => ({ default: m.ExplorerPage })));
+const TacticsPage = lazy(() => import('./pages/TacticsPage').then((m) => ({ default: m.TacticsPage })));
+const EndgamePage = lazy(() => import('./pages/EndgamePage').then((m) => ({ default: m.EndgamePage })));
+const EndgameDrillsPage = lazy(() => import('./pages/EndgameDrillsPage').then((m) => ({ default: m.EndgameDrillsPage })));
+const CoordinatePage = lazy(() => import('./pages/CoordinatePage').then((m) => ({ default: m.CoordinatePage })));
+const StatsPage = lazy(() => import('./pages/StatsPage').then((m) => ({ default: m.StatsPage })));
+const ProfilePage = lazy(() => import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
+const TrainPage = lazy(() => import('./pages/TrainPage').then((m) => ({ default: m.TrainPage })));
+const CoachPage = lazy(() => import('./pages/CoachPage').then((m) => ({ default: m.CoachPage })));
+const StudyPlanPage = lazy(() => import('./pages/StudyPlanPage').then((m) => ({ default: m.StudyPlanPage })));
+const ArchivePage = lazy(() => import('./pages/ArchivePage').then((m) => ({ default: m.ArchivePage })));
+const LeaderboardsPage = lazy(() => import('./pages/LeaderboardsPage').then((m) => ({ default: m.LeaderboardsPage })));
+const PublicProfilePage = lazy(() => import('./pages/PublicProfilePage').then((m) => ({ default: m.PublicProfilePage })));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then((m) => ({ default: m.PrivacyPage })));
+const TermsPage = lazy(() => import('./pages/TermsPage').then((m) => ({ default: m.TermsPage })));
 import { Footer } from './components/Footer';
 import { ConsentNotice } from './components/ConsentNotice';
 import { LevelBadge } from './components/LevelBadge';
@@ -192,7 +198,11 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
           <AccountButton />
         </div>
       </div>
-      {settingsOpen && <SettingsDialog onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && (
+        <Suspense fallback={null}>
+          <SettingsDialog onClose={() => setSettingsOpen(false)} />
+        </Suspense>
+      )}
     </header>
   );
 }
@@ -216,6 +226,12 @@ export default function App() {
   // Set by the Today page's sprint entries (Puzzle Rush / Storm), so the
   // Tactics page opens straight on that mode (cleared on any manual nav).
   const [tacticsMode, setTacticsMode] = useState<'rush' | 'storm' | null>(null);
+  // HumansPage stays mounted once visited (a live human-vs-human game must
+  // survive tab switches), but with code splitting we don't mount — or fetch —
+  // it at all until the Friends tab is first opened. Render-phase guarded
+  // update: flips exactly once, on the first render where view is 'friends'.
+  const [friendsVisited, setFriendsVisited] = useState(view === 'friends');
+  if (view === 'friends' && !friendsVisited) setFriendsVisited(true);
 
   useEffect(() => {
     const onHash = () => {
@@ -291,6 +307,9 @@ export default function App() {
       {/* key={view} remounts the content on tab switch so .page-fade replays
           its fade (disabled under prefers-reduced-motion in index.css). */}
       <main key={view} id="main" className="page-fade flex-1 p-4">
+        {/* Lazy route chunks resolve in a few ms from cache/SW; while one is
+            in flight the content area is simply empty (no spinner flash). */}
+        <Suspense fallback={null}>
         {view === 'home' && (
           <HomePage
             go={nav}
@@ -310,9 +329,11 @@ export default function App() {
         {/* Kept mounted so a live human-vs-human game survives tab switches.
             `active` lets the friends panel poll (and auto-join accepted
             challenges) only while the tab is actually visible. */}
+        {friendsVisited && (
         <div className={view === 'friends' ? undefined : 'hidden'}>
           <HumansPage active={view === 'friends'} />
         </div>
+        )}
         {view === 'openings' && <OpeningsPage />}
         {view === 'explorer' && <ExplorerPage goAnalyze={() => setView('play')} />}
         {view === 'tactics' && (
@@ -331,6 +352,7 @@ export default function App() {
         {view === 'shared-profile' && profileUser && <PublicProfilePage username={profileUser} />}
         {view === 'privacy' && <PrivacyPage />}
         {view === 'terms' && <TermsPage />}
+        </Suspense>
       </main>
       <Footer />
       <GamifyToasts />

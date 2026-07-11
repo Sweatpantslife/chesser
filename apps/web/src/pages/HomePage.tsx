@@ -6,10 +6,15 @@ import { useRepertoire } from '../store/repertoire';
 import { useSprints } from '../store/sprints';
 import { isDue } from '../lib/srs';
 import { now } from '../lib/clock';
-import { ALL_LESSONS } from '../learn';
+import { lazy, Suspense } from 'react';
+import { LESSON_META } from '../learn/meta';
 import { DailyQuests } from '../components/DailyQuests';
 import { DailyGoal } from '../components/DailyGoal';
-import { PlanCard } from '../components/PlanCard';
+// Lazy: the plan card drags in the study-plan generator and its whole
+// catalogue (annotated master games + the opening catalog). It already
+// renders null until the plan store hydrates on mount, so deferring the
+// chunk adds no extra layout shift.
+const PlanCard = lazy(() => import('../components/PlanCard').then((m) => ({ default: m.PlanCard })));
 import { WeeklyReportCard } from '../components/WeeklyReport';
 import { StreakFlame, IconArrowRight } from '../components/icons';
 import mascotUrl from '../assets/img/mascot.svg';
@@ -147,7 +152,7 @@ export function HomePage({
   onSprint: (mode: 'rush' | 'storm') => void;
 }) {
   const completed = useLessons((s) => s.completed);
-  const nextLesson = ALL_LESSONS.find((l) => !(l.id in completed));
+  const nextLesson = LESSON_META.find((l) => !(l.id in completed));
   // Opening lines due for spaced-repetition review today (any repertoire).
   const openingsDue = useProgress((s) => {
     const t = now();
@@ -162,7 +167,9 @@ export function HomePage({
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <DailyQuests />
         <div className="space-y-4">
-          <PlanCard onOpen={() => go('plan')} />
+          <Suspense fallback={null}>
+            <PlanCard onOpen={() => go('plan')} />
+          </Suspense>
           <DailyGoal />
           <ActionCard
             icon="🧩"

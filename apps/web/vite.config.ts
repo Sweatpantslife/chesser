@@ -42,19 +42,22 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Precache the app shell: JS/CSS (includes the bundled puzzle core,
-        // lessons and the lazy ECO openings chunk), fonts, piece-set CSS and
-        // icons/avatars — ~2.4 MB total. Deliberately NOT precached: the full
-        // puzzle dataset (public/puzzles/*.json, 6.6 MB) — it is runtime-cached
-        // below instead, so only the rating bands a user actually plays are
-        // stored offline.
+        // Precache the app shell AND every lazy route/data chunk (bundled
+        // puzzle core, lessons, the lazy ECO openings chunk, piece-set CSS,
+        // fonts, icons/avatars) — ~2.4 MB total. The initial page load only
+        // pulls the small entry chunk; the service worker tops up the rest in
+        // the background so every tab still works offline. Deliberately NOT
+        // precached: the full puzzle dataset (public/puzzles/*.json, 6.6 MB) —
+        // it is runtime-cached below instead, so only the rating bands a user
+        // actually plays are stored offline.
         globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
         // The big install-time icons (manifest 512s, apple-touch) are only
         // fetched by the OS when adding to the home screen — precaching them
         // would cost every client ~240 kB of offline storage for nothing.
         globIgnores: ['sw-legacy-cleanup.js', 'pwa-512x512.png', 'pwa-maskable-512x512.png', 'apple-touch-icon.png'],
-        // The main chunk is ~0.9 MB; leave headroom but keep a ceiling so a
-        // future multi-MB asset can't silently bloat every install.
+        // The largest chunk (lazy ECO openings) is ~0.6 MB; leave headroom but
+        // keep a ceiling so a future multi-MB asset can't silently bloat every
+        // install.
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         // SPA navigation fallback — but never for API/websocket routes: an
         // offline /api request must fail, not be answered with the app shell.
