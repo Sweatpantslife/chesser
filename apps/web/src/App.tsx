@@ -8,6 +8,7 @@ import { PlayPage } from './pages/PlayPage';
 import { HomePage } from './pages/HomePage';
 import { HumansPage } from './humans/HumansPage';
 import { LearnPage } from './pages/LearnPage';
+import { MastersPage } from './pages/MastersPage';
 import { OpeningsPage } from './pages/OpeningsPage';
 import { ExplorerPage } from './pages/ExplorerPage';
 import { TacticsPage } from './pages/TacticsPage';
@@ -34,6 +35,7 @@ import {
   IconBolt,
   IconCoach,
   IconCoords,
+  IconCrown,
   IconEndgame,
   IconExplorer,
   IconFriends,
@@ -55,6 +57,7 @@ type View =
   | 'home'
   | 'play'
   | 'learn'
+  | 'masters'
   | 'friends'
   | 'openings'
   | 'explorer'
@@ -74,6 +77,7 @@ const TABS: { id: View; label: string; hint: string; icon: ComponentType<SVGProp
   { id: 'home', label: 'Today', hint: 'streak · daily quests · goals', icon: IconToday },
   { id: 'play', label: 'Play', hint: 'vs bots & analysis', icon: IconPlay },
   { id: 'learn', label: 'Learn', hint: 'rules & guided lessons', icon: IconLearn },
+  { id: 'masters', label: 'Masters', hint: 'annotated master games', icon: IconCrown },
   { id: 'friends', label: 'Friends', hint: 'pass & play · online friend games', icon: IconFriends },
   { id: 'openings', label: 'Openings', hint: 'repertoire drills', icon: IconOpenings },
   { id: 'explorer', label: 'Explorer', hint: 'opening explorer · master & online games', icon: IconExplorer },
@@ -281,6 +285,7 @@ export default function App() {
         )}
         {view === 'play' && <PlayPage />}
         {view === 'learn' && <LearnPage />}
+        {view === 'masters' && <MastersPage goPlay={() => setView('play')} />}
         {/* Kept mounted so a live human-vs-human game survives tab switches.
             `active` lets the friends panel poll (and auto-join accepted
             challenges) only while the tab is actually visible. */}
