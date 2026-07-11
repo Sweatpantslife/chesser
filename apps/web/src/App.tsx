@@ -277,9 +277,11 @@ export default function App() {
         )}
         {view === 'play' && <PlayPage />}
         {view === 'learn' && <LearnPage />}
-        {/* Kept mounted so a live human-vs-human game survives tab switches. */}
+        {/* Kept mounted so a live human-vs-human game survives tab switches.
+            `active` lets the friends panel poll (and auto-join accepted
+            challenges) only while the tab is actually visible. */}
         <div className={view === 'friends' ? undefined : 'hidden'}>
-          <HumansPage />
+          <HumansPage active={view === 'friends'} />
         </div>
         {view === 'openings' && <OpeningsPage />}
         {view === 'tactics' && (

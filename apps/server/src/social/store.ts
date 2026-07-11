@@ -2,12 +2,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { REPO_ROOT } from '../config.js';
 import { DEFAULT_PREFS, type BoardEntry, type BoardId, type FavoriteOpening, type SocialPrefs } from './validation.js';
+import { freshGraph, type FriendGraph } from './friends.js';
 
 /**
- * JSON-file store for the social layer: leaderboard entries, share prefs and
- * the cosmetic profile extras. Kept in its own file (social.json) next to the
- * accounts db — same single-process atomic-write pattern as accounts/store.ts,
- * without touching that store's schema.
+ * JSON-file store for the social layer: leaderboard entries, share prefs, the
+ * cosmetic profile extras, and the friends/challenges graph. Kept in its own
+ * file (social.json) next to the accounts db — same single-process
+ * atomic-write pattern as accounts/store.ts, without touching that store's
+ * schema.
  */
 const DATA_DIR = process.env.CHESSER_DATA_DIR ?? path.join(REPO_ROOT, 'data');
 const DB_FILE = path.join(DATA_DIR, 'social.json');
@@ -20,9 +22,10 @@ export interface UserSocial {
 
 interface DbShape {
   users: Record<string, UserSocial>; // keyed by userId
+  graph: FriendGraph; // friends + requests + challenges
 }
 
-const EMPTY: DbShape = { users: {} };
+const emptyDb = (): DbShape => ({ users: {}, graph: freshGraph() });
 
 function freshUser(): UserSocial {
   return { prefs: { ...DEFAULT_PREFS }, boards: {}, favoriteOpenings: [] };
@@ -37,7 +40,7 @@ async function writeSnapshot(json: string): Promise<void> {
 }
 
 class SocialStore {
-  private db: DbShape = EMPTY;
+  private db: DbShape = emptyDb();
   /** Bumped on every mutation — read paths use it to cache derived views. */
   private mutations = 0;
   /** Latest not-yet-written snapshot; superseded in place by newer ones. */
@@ -49,7 +52,12 @@ class SocialStore {
   constructor() {
     // Startup-only sync read: no request path exists yet.
     try {
-      if (fs.existsSync(DB_FILE)) this.db = { ...EMPTY, ...JSON.parse(fs.readFileSync(DB_FILE, 'utf8')) };
+      if (fs.existsSync(DB_FILE)) {
+        const parsed = JSON.parse(fs.readFileSync(DB_FILE, 'utf8')) as Partial<DbShape>;
+        // Overlay onto fresh defaults so files that predate a section (e.g.
+        // `graph`) load cleanly — and never alias the shared EMPTY object.
+        this.db = { users: parsed.users ?? {}, graph: { ...freshGraph(), ...(parsed.graph ?? {}) } };
+      }
     } catch (e) {
       console.error('[social] failed to load db, starting fresh:', e);
     }
@@ -123,6 +131,22 @@ class SocialStore {
   /** Every (userId, record) pair — the leaderboard query walks this. */
   all(): [string, UserSocial][] {
     return Object.entries(this.db.users).map(([id, u]) => [id, { ...freshUser(), ...u, prefs: { ...DEFAULT_PREFS, ...u.prefs } }]);
+  }
+
+  // --- friends / challenges graph -------------------------------------------
+
+  /**
+   * The live friends/challenges graph. READ-ONLY by convention: mutate only
+   * through {@link updateGraph} so every change is persisted and versioned.
+   */
+  graph(): FriendGraph {
+    return this.db.graph;
+  }
+
+  /** Apply a mutation to the graph and persist it. */
+  updateGraph(fn: (g: FriendGraph) => void): void {
+    fn(this.db.graph);
+    this.persist();
   }
 }
 
