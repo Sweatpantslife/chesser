@@ -316,7 +316,7 @@ export function PlayPage() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
-      if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+      if (t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return;
       const s = useGame.getState();
       if (e.key === 'ArrowLeft') s.stepView(-1);
       else if (e.key === 'ArrowRight') s.stepView(1);

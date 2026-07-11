@@ -33,8 +33,18 @@ export function MoveList() {
   const deleteVariation = useGame((s) => s.deleteVariation);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Keep the active move visible by scrolling ONLY the list itself — never
+  // scrollIntoView(), which also scrolls every scrollable ancestor (including
+  // the document), yanking the whole page down on each move whenever this
+  // panel sits below the fold while stepping through a review.
   useEffect(() => {
-    scrollRef.current?.querySelector('[data-current="true"]')?.scrollIntoView({ block: 'nearest' });
+    const list = scrollRef.current;
+    const active = list?.querySelector<HTMLElement>('[data-current="true"]');
+    if (!list || !active) return;
+    const listRect = list.getBoundingClientRect();
+    const rect = active.getBoundingClientRect();
+    if (rect.top < listRect.top) list.scrollTop += rect.top - listRect.top;
+    else if (rect.bottom > listRect.bottom) list.scrollTop += rect.bottom - listRect.bottom;
   }, [currentId, tree]);
 
   const Move = ({ node, withNumber }: { node: MoveNode; withNumber: boolean }) => {
