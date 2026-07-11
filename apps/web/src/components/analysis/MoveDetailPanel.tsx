@@ -7,6 +7,7 @@
  * move via `onShowArrow` (cleared on move change, toggle-off and unmount).
  */
 import { useEffect, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import type { CoachMoveFacts } from '@chesser/shared';
 import { CLASSIFICATION_META } from '../../lib/coach';
 import { formatScore } from '../../lib/format';
@@ -68,6 +69,7 @@ const pvLabel = (pvPly: number, i: number): string | null =>
   pvPly % 2 === 1 ? `${Math.ceil(pvPly / 2)}.` : i === 0 ? `${Math.ceil(pvPly / 2)}…` : null;
 
 export function MoveDetailPanel({ move, onShowArrow, onPlayVariation, onPractice, onSelectPly, maxPly, aiFacts }: MoveDetailPanelProps): JSX.Element | null {
+  const { t } = useTranslation('analysis');
   const [showBest, setShowBest] = useState(true);
   const arrow = showBest ? bestMoveArrow(move?.bestMoveUci) : null;
   const from = arrow?.from;
@@ -99,16 +101,21 @@ export function MoveDetailPanel({ move, onShowArrow, onPlayVariation, onPractice
   return (
     <div className="rounded-2xl bg-panel p-3 shadow-soft">
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="font-display text-sm font-semibold text-ink">Move detail</h3>
+        <h3 className="font-display text-sm font-semibold text-ink">{t('detail.title')}</h3>
         {onSelectPly && (
           <div className="flex items-center gap-1">
-            <button onClick={() => onSelectPly(move.ply - 1)} disabled={move.ply <= 0} title="Previous move" className={ctrl}>
+            <button
+              onClick={() => onSelectPly(move.ply - 1)}
+              disabled={move.ply <= 0}
+              title={t('detail.previousMove')}
+              className={ctrl}
+            >
               ◀
             </button>
             <button
               onClick={() => onSelectPly(move.ply + 1)}
               disabled={maxPly !== undefined && move.ply >= maxPly}
-              title="Next move"
+              title={t('detail.nextMove')}
               className={ctrl}
             >
               ▶
@@ -133,8 +140,15 @@ export function MoveDetailPanel({ move, onShowArrow, onPlayVariation, onPractice
               </span>
             </div>
             <div className="text-xs text-neutral-400">
-              eval <span className="font-mono text-neutral-300">{evalBefore}</span> →{' '}
-              <span className="font-mono text-neutral-300">{evalAfter}</span>
+              <Trans
+                t={t}
+                i18nKey="detail.eval"
+                values={{ before: evalBefore, after: evalAfter }}
+                components={{
+                  from: <span className="font-mono text-neutral-300" />,
+                  to: <span className="font-mono text-neutral-300" />,
+                }}
+              />
             </div>
           </div>
         </div>
@@ -144,16 +158,21 @@ export function MoveDetailPanel({ move, onShowArrow, onPlayVariation, onPractice
         {showBestLine && (
           <button
             onClick={() => onPlayVariation([move.pv[0] ?? move.bestMoveSan!], move.ply)}
-            title="Play the engine's move on the board"
+            title={t('detail.bestWasTitle')}
             className="btn-press block w-full rounded-lg bg-emerald-500/10 px-2.5 py-1.5 text-left text-xs text-neutral-300 ring-1 ring-emerald-400/30 hover:bg-emerald-500/20"
           >
-            Best was <span className="font-mono font-semibold text-emerald-300">{move.bestMoveSan}</span>
+            <Trans
+              t={t}
+              i18nKey="detail.bestWas"
+              values={{ san: move.bestMoveSan }}
+              components={{ move: <span className="font-mono font-semibold text-emerald-300" /> }}
+            />
           </button>
         )}
 
         {move.pv.length > 0 && (
           <div>
-            <div className="mb-1 text-[11px] uppercase tracking-wide text-neutral-400">Engine line</div>
+            <div className="mb-1 text-[11px] uppercase tracking-wide text-neutral-400">{t('detail.engineLine')}</div>
             <div className="flex flex-wrap gap-x-1 gap-y-1 text-xs">
               {move.pv.map((san, i) => {
                 const label = pvLabel(move.ply + i, i);
@@ -161,7 +180,7 @@ export function MoveDetailPanel({ move, onShowArrow, onPlayVariation, onPractice
                   <button
                     key={`${i}-${san}`}
                     onClick={() => onPlayVariation(move.pv.slice(0, i + 1), move.ply)}
-                    title="Play the line up to here on the board"
+                    title={t('detail.pvTitle')}
                     className="btn-press rounded px-1 py-0.5 font-mono text-neutral-200 hover:bg-neutral-700 hover:text-emerald-300"
                   >
                     {label && <span className="mr-0.5 text-neutral-400">{label}</span>}
@@ -179,14 +198,14 @@ export function MoveDetailPanel({ move, onShowArrow, onPlayVariation, onPractice
               onClick={() => setShowBest((v) => !v)}
               className="btn-press rounded-lg bg-neutral-700 px-2 py-1 text-xs font-semibold text-neutral-100 hover:bg-neutral-600"
             >
-              {showBest ? 'Hide best move' : 'Show best move'}
+              {showBest ? t('detail.hideBest') : t('detail.showBest')}
             </button>
           )}
           <button
             onClick={() => onPractice(move.ply)}
             className="btn-press rounded-lg bg-brand-600 px-2 py-1 text-xs font-semibold text-white hover:bg-brand-500"
           >
-            Practice this position
+            {t('detail.practicePosition')}
           </button>
         </div>
       </div>

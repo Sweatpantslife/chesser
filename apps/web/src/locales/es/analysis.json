@@ -1,1 +1,149 @@
-{}
+{
+  "percent": "{{value}}%",
+  "side": {
+    "both": "ambos",
+    "white": "blancas",
+    "black": "negras"
+  },
+  "phase": {
+    "opening": "Apertura",
+    "middlegame": "Medio juego",
+    "endgame": "Final"
+  },
+  "engine": {
+    "title": "Motor",
+    "offDuringGames": "apagado durante las partidas",
+    "disabledWhilePlaying": "El análisis del motor está desactivado mientras juegas — se desbloquea en cuanto termina la partida.",
+    "badge": "Stockfish · profundidad {{depth}}",
+    "analyseToggle": "analizar",
+    "lines": "líneas",
+    "gameOverNoMoves": "partida terminada — no hay jugadas que analizar",
+    "thinking": "pensando…",
+    "playLineTitle": "Reproducir la línea hasta aquí",
+    "off": "El análisis está desactivado."
+  },
+  "coach": {
+    "title": "Entrenador",
+    "exitTitle": "Salir del recorrido",
+    "analysing": "Analizando la partida… {{progress}}%",
+    "startingPosition": "Posición inicial. Pulsa ▶ para recorrer la partida jugada a jugada.",
+    "eval": "eval <val>{{value}}</val>",
+    "engineChoice": "Elección del motor: <move>{{san}}</move>",
+    "noGrade": "Esta jugada no tiene valoración.",
+    "transport": {
+      "start": "Inicio",
+      "goToStart": "Ir al inicio",
+      "previous": "Anterior",
+      "previousMove": "Jugada anterior",
+      "play": "Reproducir",
+      "pause": "Pausa",
+      "next": "Siguiente",
+      "nextMove": "Jugada siguiente",
+      "end": "Final",
+      "goToEnd": "Ir al final"
+    }
+  },
+  "review": {
+    "title": "Revisión de la partida",
+    "reviewGame": "Revisar partida",
+    "rereview": "Revisar de nuevo",
+    "progressPct": "{{progress}}%",
+    "walkthrough": "▶ Recorrido guiado",
+    "headers": {
+      "accuracy": "prec.",
+      "acpl": "acpl"
+    },
+    "savedToDrill_one": "✓ {{count}} añadido a la práctica",
+    "savedToDrill_other": "✓ {{count}} añadidos a la práctica",
+    "saveMistakes_one": "Guardar {{count}} error para practicar →",
+    "saveMistakes_other": "Guardar {{count}} errores para practicar →",
+    "emptyAnalysis": "Analiza una partida y luego revísala en busca de errores graves e imprecisiones.",
+    "emptyOtherMode": "Cambia al tablero de análisis para revisar una partida."
+  },
+  "puzzles": {
+    "mining": "Buscando… {{done}}/{{total}} · {{found}} encontrados (clic para detener)",
+    "make": "⚡ Crear problemas a partir de esta partida",
+    "added_one": "✓ Añadido {{count}} problema — lo encontrarás en Táctica → Mis partidas.",
+    "added_other": "✓ Añadidos {{count}} problemas — los encontrarás en Táctica → Mis partidas.",
+    "noneFound": "No se encontraron nuevas tácticas en esta partida."
+  },
+  "deckStats": {
+    "learned": "<count>{{seen}}</count>/{{total}} aprendidas",
+    "due_one": "{{count}} pendiente",
+    "due_other": "{{count}} pendientes",
+    "streakTitle": "Racha diaria"
+  },
+  "queue": {
+    "title": "Cola de repaso",
+    "learned": "{{seen}}/{{total}} aprendidas",
+    "cardsDue_one": "tarjeta pendiente entre todos los mazos",
+    "cardsDue_other": "tarjetas pendientes entre todos los mazos",
+    "dueLabel_one": "pendiente",
+    "dueLabel_other": "pendientes"
+  },
+  "ai": {
+    "badge": "Entrenador IA",
+    "disclaimer": "Generado por IA a partir del análisis del motor",
+    "noKeyHint": "Añade una clave de IA en Ajustes para desbloquear un entrenamiento más completo.",
+    "explainThis": "Explicar esto",
+    "explainTitle": "Pide al entrenador IA que explique esta jugada en lenguaje sencillo",
+    "thinking": "El entrenador está pensando",
+    "summaryTitle": "Resumen del entrenador"
+  },
+  "graph": {
+    "ariaInteractive": "Gráfico de ventaja — haz clic o usa las teclas de flecha para saltar a una jugada",
+    "aria": "Gráfico de ventaja",
+    "clickTitle": "Haz clic para saltar a una jugada",
+    "winWhite": "{{win}}% blancas"
+  },
+  "mistakes": {
+    "title": "Errores",
+    "sortTitle": "Cambiar el orden de la lista",
+    "worstFirst": "Peores primero",
+    "gameOrder": "Orden de la partida",
+    "clean": "Sin errores — ¡partida impecable!",
+    "chipShow": "{{label}} — clic para mostrar",
+    "chipHide": "{{label}} — clic para ocultar",
+    "noMatch": "Ninguna jugada coincide con los filtros actuales.",
+    "listAria": "Errores en esta partida",
+    "jumpTitle": "Ir a la posición",
+    "practice": "Practicar",
+    "practiceTitle": "Practica contra el motor desde esta posición",
+    "winLost": "−{{lost}}%",
+    "best": "Mejor <line>{{line}}</line>",
+    "bestPunished": "Mejor <line>{{line}}</line> · {{san}} se castiga con <reply>{{reply}}</reply>"
+  },
+  "detail": {
+    "title": "Detalle de la jugada",
+    "previousMove": "Jugada anterior",
+    "nextMove": "Jugada siguiente",
+    "eval": "eval <from>{{before}}</from> → <to>{{after}}</to>",
+    "bestWas": "La mejor era <move>{{san}}</move>",
+    "bestWasTitle": "Reproducir la jugada del motor en el tablero",
+    "engineLine": "Línea del motor",
+    "pvTitle": "Reproducir la línea hasta aquí en el tablero",
+    "hideBest": "Ocultar la mejor jugada",
+    "showBest": "Mostrar la mejor jugada",
+    "practicePosition": "Practicar esta posición"
+  },
+  "report": {
+    "title": "Informe de la partida",
+    "exportPgn": "Exportar PGN",
+    "you": "tú",
+    "acpl": "ACPL {{value}}",
+    "acplTitle": "Pérdida media de centipeones",
+    "estRating": "~{{rating}} punt. estimada",
+    "estRatingTitle": "Estimación heurística a partir de la precisión y la pérdida de centipeones — no es una puntuación real",
+    "showMoves": "Mostrar jugadas de tipo {{label}}",
+    "header": {
+      "phase": "Fase",
+      "white": "Blancas",
+      "black": "Negras"
+    },
+    "theoryThroughout": "En teoría durante toda la partida",
+    "theoryLeftAt": "Salió de la teoría en la jugada {{move}}",
+    "noBookOpening": "No se detectó ninguna apertura de libro.",
+    "phaseJumpTitle": "Ir al inicio de esta fase",
+    "keyMoments": "Momentos clave"
+  }
+}

@@ -1,1 +1,92 @@
-{}
+{
+  "weaknesses": {
+    "hangingPieces": {
+      "label": "Piezas colgadas",
+      "summary": "Jugadas que dejaron una pieza donde podía capturarse sin más.",
+      "advice": "Antes de confirmar una jugada, haz un último repaso: «¿qué puede capturar mi rival?». Ese simple hábito elimina la mayoría de estas pérdidas."
+    },
+    "missedMates": {
+      "label": "Mates no vistos",
+      "summary": "Posiciones con un mate forzado disponible en las que se jugó algo más lento.",
+      "advice": "Cuando el rey rival parezca desabrigado, párate y busca primero los jaques — las jugadas forzadas se calculan gratis porque las respuestas son limitadas."
+    },
+    "missedForks": {
+      "label": "Horquillas no vistas",
+      "summary": "Oportunidades de atacar dos piezas a la vez que quedaron sin jugar.",
+      "advice": "Los caballos y los peones son los sospechosos habituales — cada vez que un caballo pueda saltar hacia delante, comprueba si la casilla de destino apunta a dos objetivos."
+    },
+    "missedTactics": {
+      "label": "Tácticas no vistas",
+      "summary": "Golpes ganadores — capturas, clavadas, enfiladas, ataques descubiertos — que pasaron de largo.",
+      "advice": "Las piezas sueltas y las piezas alineadas son combustible táctico. Busca objetivos indefensos y piezas que compartan línea antes de conformarte con una jugada tranquila."
+    },
+    "openingMistakes": {
+      "label": "Tropiezos en la apertura",
+      "summary": "Ventaja regalada en la primera fase, justo al salir (o nada más salir) de la teoría.",
+      "advice": "No necesitas memorizar más líneas — desarrolla hacia el centro, enroca pronto y no muevas dos veces la misma pieza sin motivo."
+    },
+    "endgameMistakes": {
+      "label": "Conversión de finales",
+      "summary": "Ventajas que menguaron o se escaparon cuando el tablero se vació.",
+      "advice": "En posiciones simples, la actividad del rey y los peones pasados deciden las partidas. Ve más despacio — los finales premian una comprobación cuidadosa más que el instinto rápido."
+    }
+  },
+  "phases": {
+    "opening": "apertura",
+    "middlegame": "medio juego",
+    "endgame": "final"
+  },
+  "weekly": {
+    "quiet": "Una semana tranquila en el tablero por ahora — nada registrado aún. Un ejercicio o una lección rápida hoy bastan para poner la semana en marcha.",
+    "allDays": "Apareciste los 7 días de esta semana y ganaste {{xp}} XP — esa constancia es la que hace mejorar a los jugadores.",
+    "mostDays": "Entrenaste {{days}} de 7 días esta semana y ganaste {{xp}} XP.",
+    "someDays_one": "Sumaste {{count}} día de entrenamiento esta semana, con {{xp}} XP.",
+    "someDays_other": "Sumaste {{count}} días de entrenamiento esta semana, con {{xp}} XP.",
+    "wdl": "{{wins}}V–{{losses}}D–{{draws}}T",
+    "games_one": "En {{count}} partida revisada firmaste {{wdl}}.",
+    "games_other": "En {{count}} partidas revisadas firmaste {{wdl}}.",
+    "gamesAccuracy_one": "En {{count}} partida revisada firmaste {{wdl}}, con una precisión máxima del {{accuracy}}%.",
+    "gamesAccuracy_other": "En {{count}} partidas revisadas firmaste {{wdl}}, con una precisión máxima del {{accuracy}}%.",
+    "ratingClimb": "tu puntuación de táctica subió {{delta}} puntos hasta {{rating}}",
+    "ratingDip": "tu puntuación de táctica bajó {{delta}} puntos — turbulencias normales",
+    "newRushBest": "lograste un nuevo récord de Puzzle Rush de {{score}}",
+    "newStormBest": "un nuevo récord de Storm de {{score}}",
+    "puzzleJoiner": ", y ",
+    "puzzleSide": "En el frente de los ejercicios, {{bits}}.",
+    "lessons_one": "También terminaste {{count}} lección.",
+    "lessons_other": "También terminaste {{count}} lecciones.",
+    "lessonsStars_one": "También terminaste {{count}} lección ({{stars}} estrellas).",
+    "lessonsStars_other": "También terminaste {{count}} lecciones ({{stars}} estrellas).",
+    "training": "Entrenamiento de debilidades: {{solved}}/{{attempts}} ejercicios resueltos.",
+    "watchPattern": "El patrón a vigilar es {{label}} ({{count}}× esta semana) — un buen foco para la próxima.",
+    "streak_one": "Tu racha está en {{count}} día — mantenla viva.",
+    "streak_other": "Tu racha está en {{count}} días — mantenla viva."
+  },
+  "plan": {
+    "puzzleTitle_one": "{{label}}: {{count}} ejercicio al día",
+    "puzzleTitle_other": "{{label}}: {{count}} ejercicios al día",
+    "puzzleWhyEntry": "{{label}} apareció {{count}}× en {{games}} de tus últimas {{total}} partidas revisadas — la repetición diaria reeduca el reflejo.",
+    "puzzleWhyPhase": "Tu {{phase}} es tu fase menos precisa — repeticiones diarias de {{label}} la apuntalan.",
+    "puzzleWhyDefault": "Aún no destaca ninguna debilidad recurrente — repeticiones diarias de {{label}} mantienen tu táctica afilada.",
+    "lessonTitle": "Lección: {{title}}",
+    "lessonWhy": "Apunta a tu foco n.º {{rank}} — {{label}}.",
+    "openingTitle": "Entrenamiento: {{name}}",
+    "openingWhyTendency": "Tus partidas de {{name}} rondan el {{accuracy}}% de precisión en {{games}} partidas — entrena las jugadas que de verdad juegas.",
+    "openingWhyRepertoire_one": "De tu repertorio — {{count}} repetición de memoria mantiene fresca la línea.",
+    "openingWhyRepertoire_other": "De tu repertorio — {{count}} repeticiones de memoria mantienen fresca la línea.",
+    "masterTitle": "Partida magistral: {{white}} – {{black}} ({{year}})",
+    "masterWhy": "Un clásico de {{theme}} de nivel {{difficulty}} — mira el patrón que estás entrenando jugado a la perfección.",
+    "difficulty": {
+      "beginner": "principiante",
+      "intermediate": "intermedio",
+      "advanced": "avanzado"
+    },
+    "gameThemes": {
+      "attack": "ataque",
+      "sacrifice": "sacrificio",
+      "tactics": "táctica",
+      "endgame": "finales",
+      "positional": "juego posicional"
+    }
+  }
+}

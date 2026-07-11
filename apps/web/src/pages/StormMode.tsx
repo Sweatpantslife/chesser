@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Chess } from 'chess.js';
 import { Board } from '../board/Board';
 import { type Puzzle } from '../trainers/tactics';
@@ -37,6 +38,7 @@ import type { Color } from '../store/game';
 type Phase = 'idle' | 'running' | 'over';
 
 export function StormMode() {
+  const { t } = useTranslation('tactics');
   const game = useRef(new Chess());
   const busy = useRef(false);
   const rng = useRef<() => number>(() => 0);
@@ -187,13 +189,13 @@ export function StormMode() {
         <div className="flex h-7 items-center gap-3 text-sm">
           {phase === 'running' && puzzle && (
             <>
-              <span className="text-neutral-400">{puzzle.turn === 'white' ? 'White' : 'Black'} to move — find the win</span>
+              <span className="text-neutral-400">{t(`sprint.toMove.${puzzle.turn}`)}</span>
               {flash === 'ok' && lastPoints !== null && (
                 <span className="font-semibold text-emerald-400" data-testid="storm-points-flash">
                   +{lastPoints}
                 </span>
               )}
-              {flash === 'bad' && <span className="text-rose-400">✗ combo lost</span>}
+              {flash === 'bad' && <span className="text-rose-400">{t('storm.comboLost')}</span>}
             </>
           )}
         </div>
@@ -218,19 +220,19 @@ export function StormMode() {
 
       <div className="space-y-3">
         <div className="rounded-2xl bg-panel p-4 text-center shadow-soft" data-testid="storm-hud">
-          <div className="text-xs uppercase tracking-wide text-neutral-400">Time</div>
+          <div className="text-xs uppercase tracking-wide text-neutral-400">{t('sprint.time')}</div>
           <div className={`font-mono text-3xl ${lowTime && phase === 'running' ? 'animate-pulse-soft text-rose-400' : 'text-ink'}`}>
             {formatClock(timeLeft)}
           </div>
           <div className="mt-3 flex items-center justify-center gap-6">
             <div>
-              <div className="text-xs uppercase tracking-wide text-neutral-400">Score</div>
+              <div className="text-xs uppercase tracking-wide text-neutral-400">{t('sprint.score')}</div>
               <div className="text-2xl font-bold text-emerald-400" data-testid="storm-score">
                 {run.score}
               </div>
             </div>
             <div>
-              <div className="text-xs uppercase tracking-wide text-neutral-400">Combo</div>
+              <div className="text-xs uppercase tracking-wide text-neutral-400">{t('storm.combo')}</div>
               <div
                 className={`text-2xl font-bold ${multiplier > 1 ? 'animate-pulse-soft text-gold-400' : 'text-neutral-500'}`}
                 data-testid="storm-combo"
@@ -241,26 +243,23 @@ export function StormMode() {
           </div>
           {multiplier > 1 && phase === 'running' && (
             <div className="mt-1 text-xs font-semibold text-gold-400" data-testid="storm-multiplier">
-              ⚡ ×{multiplier} points
+              {t('storm.multiplier', { multiplier })}
             </div>
           )}
           <div className="mt-3 text-xs text-neutral-400" data-testid="storm-best">
-            Best: {best.score}
+            {t('storm.best', { score: best.score })}
           </div>
         </div>
 
         {phase === 'idle' && (
           <div className="rounded-2xl bg-panel p-4 text-sm text-neutral-300 shadow-soft">
-            <p className="mb-3">
-              3 minutes of puzzles that adapt to your pace — solve fast to push the difficulty and build a combo that multiplies
-              your points. A miss breaks the combo but costs nothing else.
-            </p>
+            <p className="mb-3">{t('storm.idleBlurb')}</p>
             <button
               onClick={start}
               className="w-full rounded bg-emerald-700 py-2 font-semibold text-white hover:bg-emerald-800"
               data-testid="storm-start"
             >
-              Start storm
+              {t('storm.start')}
             </button>
           </div>
         )}
@@ -270,40 +269,40 @@ export function StormMode() {
             onClick={giveUp}
             className="w-full rounded bg-neutral-800 py-1.5 text-xs text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
           >
-            End run
+            {t('sprint.endRun')}
           </button>
         )}
 
         {phase === 'over' && (
           <div className="rounded-2xl bg-panel p-4 text-center shadow-soft" data-testid="storm-summary">
-            <div className="text-sm text-neutral-400">{run.endReason === 'time' ? "Time's up!" : 'Run over'}</div>
+            <div className="text-sm text-neutral-400">{run.endReason === 'time' ? t('sprint.timesUp') : t('sprint.runOver')}</div>
             <div className="my-1 text-4xl font-bold text-emerald-400">{run.score}</div>
             {isRecord && run.score > 0 && (
               <div className="mb-2 text-xs font-semibold text-gold-400" data-testid="storm-record">
-                🏆 New best!
+                {t('sprint.newBest')}
               </div>
             )}
             <div className="mt-1 grid grid-cols-3 gap-2 text-xs text-neutral-300">
               <div className="rounded bg-panelmute px-1.5 py-1.5">
-                <div className="text-neutral-400">Solved</div>
+                <div className="text-neutral-400">{t('storm.solved')}</div>
                 <div className="text-sm font-semibold text-emerald-300">{run.solved}</div>
               </div>
               <div className="rounded bg-panelmute px-1.5 py-1.5">
-                <div className="text-neutral-400">Missed</div>
+                <div className="text-neutral-400">{t('sprint.missed')}</div>
                 <div className="text-sm font-semibold text-rose-300">{run.missed}</div>
               </div>
               <div className="rounded bg-panelmute px-1.5 py-1.5">
-                <div className="text-neutral-400">Combo</div>
+                <div className="text-neutral-400">{t('storm.combo')}</div>
                 <div className="text-sm font-semibold text-gold-400">{run.bestCombo}</div>
               </div>
             </div>
-            <div className="mt-2 text-xs text-neutral-400">{accuracy}% accuracy</div>
+            <div className="mt-2 text-xs text-neutral-400">{t('storm.accuracy', { accuracy })}</div>
             <button
               onClick={start}
               className="mt-3 w-full rounded bg-emerald-700 py-2 font-semibold text-white hover:bg-emerald-800"
               data-testid="storm-again"
             >
-              Play again
+              {t('sprint.playAgain')}
             </button>
           </div>
         )}

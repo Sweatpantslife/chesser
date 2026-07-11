@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { FriendColor, FriendTimeControl } from '@chesser/shared';
+import i18n from '../i18n';
 import { useAuth } from './auth';
 import {
   apiCancelChallenge,
@@ -30,6 +31,11 @@ import {
  */
 
 const errMsg = (e: unknown, fallback: string) => (e instanceof Error ? e.message : fallback);
+// Notices/errors composed here (not server-sent) resolve through the errors
+// namespace at the moment they're produced; server Error messages pass
+// through untranslated (phase 3). `tf` is created per call so a language
+// switch mid-session picks up the new locale on the next action.
+const tf = () => i18n.getFixedT(null, 'errors');
 
 interface FriendsState {
   data: FriendsResponse | null; // null until first load per session
@@ -72,31 +78,31 @@ export const useFriends = create<FriendsState>()((set, get) => ({
       const [data, challenges, feed] = await Promise.all([apiGetFriends(t), apiGetChallenges(t), apiGetFriendFeed(t)]);
       set({ data, challengesIn: challenges.incoming, challengesOut: challenges.outgoing, feed: feed.events, error: null });
     } catch (e) {
-      set({ error: errMsg(e, 'Could not reach the server') });
+      set({ error: errMsg(e, tf()('friends.unreachable')) });
     }
   },
 
   async addFriend(raw) {
     const t = token();
-    if (!t) return { ok: false, message: 'Sign in first.' };
+    if (!t) return { ok: false, message: tf()('friends.signInFirst') };
     const trimmed = raw.trim();
-    if (!trimmed) return { ok: false, message: 'Enter a username or friend code.' };
+    if (!trimmed) return { ok: false, message: tf()('friends.enterTarget') };
     const target = FRIEND_CODE_RE.test(trimmed) ? { code: trimmed.toUpperCase() } : { username: trimmed };
     try {
       const res = await apiSendFriendRequest(t, target);
       await get().refresh();
       return res.accepted
-        ? { ok: true, message: `You and ${res.username} are now friends!` }
-        : { ok: true, message: `Request sent to ${res.username}.` };
+        ? { ok: true, message: tf()('friends.nowFriends', { username: res.username }) }
+        : { ok: true, message: tf()('friends.requestSent', { username: res.username }) };
     } catch (e) {
-      return { ok: false, message: errMsg(e, 'Could not send the request') };
+      return { ok: false, message: errMsg(e, tf()('friends.sendRequestFailed')) };
     }
   },
 
   async respondRequest(id, accept) {
     const t = token();
     if (!t) return;
-    await apiRespondFriendRequest(t, id, accept).catch((e) => set({ error: errMsg(e, 'Could not respond') }));
+    await apiRespondFriendRequest(t, id, accept).catch((e) => set({ error: errMsg(e, tf()('friends.respondFailed')) }));
     await get().refresh();
   },
 
@@ -110,19 +116,19 @@ export const useFriends = create<FriendsState>()((set, get) => ({
   async removeFriend(username) {
     const t = token();
     if (!t) return;
-    await apiRemoveFriend(t, username).catch((e) => set({ error: errMsg(e, 'Could not remove friend') }));
+    await apiRemoveFriend(t, username).catch((e) => set({ error: errMsg(e, tf()('friends.removeFailed')) }));
     await get().refresh();
   },
 
   async sendChallenge(username, tc, color) {
     const t = token();
-    if (!t) return 'Sign in first.';
+    if (!t) return tf()('friends.signInFirst');
     try {
       await apiSendChallenge(t, username, tc, color);
       await get().refresh();
       return null;
     } catch (e) {
-      return errMsg(e, 'Could not send the challenge');
+      return errMsg(e, tf()('friends.sendChallengeFailed'));
     }
   },
 
@@ -137,7 +143,7 @@ export const useFriends = create<FriendsState>()((set, get) => ({
       }
       return null;
     } catch (e) {
-      set({ error: errMsg(e, 'Could not respond to the challenge') });
+      set({ error: errMsg(e, tf()('friends.respondChallengeFailed')) });
       void get().refresh();
       return null;
     }

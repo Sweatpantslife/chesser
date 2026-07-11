@@ -1,1 +1,92 @@
-{}
+{
+  "tabs": {
+    "ladder": "🪜 Ladder",
+    "custom": "⚙ Custom"
+  },
+  "color": {
+    "label": "You play",
+    "white": "white",
+    "black": "black",
+    "random": "random"
+  },
+  "timeControl": {
+    "label": "Time control",
+    "unlimited": "∞"
+  },
+  "custom": {
+    "title": "Custom game",
+    "waitingForServer": "Waiting for the engine server… (run <cmd>pnpm dev:server</cmd>)",
+    "style": "Style",
+    "humanViaMaia": "Running the Maia neural net (trained on real games at each rating).",
+    "humanViaEngine": "The Maia engine is not available here — using the engine-based human model.",
+    "rating": "Rating",
+    "strength": "Strength",
+    "eloValue": "{{elo}} Elo",
+    "eloApprox": "~{{elo}} Elo",
+    "eloMax": "max",
+    "think": {
+      "label": "Think",
+      "fast": "Fast",
+      "normal": "Normal",
+      "slow": "Slow"
+    },
+    "subLadderHint": "For sub-1320 opponents, climb the Ladder tab.",
+    "startFrom": {
+      "label": "Start from",
+      "standard": "Standard",
+      "position": "Position",
+      "opening": "Opening"
+    },
+    "fenPlaceholder": "Paste a FEN…",
+    "fenError": "That FEN is not a legal position.",
+    "useCurrentPosition": "Use current board position",
+    "openingFilterPlaceholder": "Filter openings…",
+    "noOpeningsMatch": "No openings match.",
+    "openingStart_one": "Start after <b>{{count}}</b> moves of the {{name}}.",
+    "openingStart_other": "Start after <b>{{count}}</b> moves of the {{name}}.",
+    "start": "Start game",
+    "opponent": {
+      "maia": "Maia {{rating}}",
+      "humanLike": "Human-like ~{{elo}}",
+      "stockfish": "Stockfish {{styleName}} ({{strength}})"
+    }
+  },
+  "ladder": {
+    "title": "The ladder",
+    "cleared": "{{cleared}}/{{total}} cleared",
+    "intro": "Beat each bot to unlock the next. Cleared rungs stay open — replay them any time, with either colour.",
+    "backend": {
+      "maiaNet": "Maia neural net",
+      "engineHuman": "human-like (engine)",
+      "standIn": "Stockfish stand-in"
+    },
+    "clearedBadge": "· ✓ cleared",
+    "lockedHint": "🔒 Beat {{name}} to unlock",
+    "previousBot": "the previous bot",
+    "restart": "Restart",
+    "replay": "Replay",
+    "play": "Play ▶",
+    "reset": {
+      "prompt": "Reset ladder progress",
+      "confirm": "Reset all progress?",
+      "yes": "Yes",
+      "no": "No"
+    }
+  },
+  "meter": {
+    "category": {
+      "bots": "Bots",
+      "blitz": "Blitz",
+      "puzzles": "Puzzles"
+    },
+    "peak": "peak {{value}}",
+    "recordPuzzles": "{{solved}} solved · {{missed}} missed",
+    "recordGames": "{{won}}W {{drawn}}D {{lost}}L",
+    "emptyNoGames": "No games yet.",
+    "emptyTrend": "Play more to chart a trend."
+  },
+  "status": {
+    "thinking": "· thinking",
+    "analysisBoard": "· analysis board"
+  }
+}

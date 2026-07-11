@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import i18n from '../i18n';
 import { useAuth } from './auth';
 import { useRatings } from './ratings';
 import { getPuzzleRushBest, subscribePuzzleRushBest } from '../lib/rushBest';
@@ -53,7 +54,9 @@ export const useSocial = create<SocialState>()((set, get) => ({
       set({ prefs, favoriteOpenings, error: null });
       if (prefs.leaderboards) void get().submitScores();
     } catch (e) {
-      set({ error: e instanceof Error ? e.message : 'Could not load share settings' });
+      // Server-sent messages pass through untranslated (phase 3); only the
+      // client-side fallback is translated, resolved at failure time.
+      set({ error: e instanceof Error ? e.message : i18n.t('errors:social.loadFailed') });
     }
   },
 
@@ -70,7 +73,7 @@ export const useSocial = create<SocialState>()((set, get) => ({
       if (prefs.leaderboards) void get().submitScores();
       return true;
     } catch (e) {
-      set({ prefs: prev, error: e instanceof Error ? e.message : 'Could not save share settings' });
+      set({ prefs: prev, error: e instanceof Error ? e.message : i18n.t('errors:social.saveFailed') });
       return false;
     } finally {
       set({ busy: false });

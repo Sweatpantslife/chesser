@@ -1,1 +1,116 @@
-{}
+{
+  "title": "Opening explorer",
+  "gamesCount": "{{games}} games",
+  "db": {
+    "aria": "Database",
+    "masters": "Masters",
+    "lichess": "Lichess",
+    "mastersTitle": "Over-the-board master games",
+    "lichessTitle": "Online games played on Lichess"
+  },
+  "filters": {
+    "speedsAria": "Time controls",
+    "minRatingAria": "Minimum player rating",
+    "allRatings": "All ratings"
+  },
+  "speeds": {
+    "bullet": "Bullet",
+    "blitz": "Blitz",
+    "rapid": "Rapid",
+    "classical": "Classical"
+  },
+  "name": {
+    "noBookName": "No book name for this position.",
+    "startingPosition": "Starting position — pick a first move below."
+  },
+  "status": {
+    "loading": "Loading opening stats…",
+    "unavailableTitle": "Live stats unavailable",
+    "unavailableBody": "The opening database (<host>explorer.lichess.ovh</host>) can’t be reached right now. Opening names still work offline; move stats will return once the database is reachable.",
+    "noGames": "No games in this database from here."
+  },
+  "table": {
+    "move": "Move",
+    "games": "Games",
+    "wdl": "White · Draw · Black",
+    "all": "All"
+  },
+  "moves": {
+    "label": "{{san}} — {{games}} games: white wins {{white}}, draw {{draws}}, black wins {{black}}",
+    "playAria": "Play {{label}}",
+    "titleWithRating": "{{games}} games · average rating {{rating}}"
+  },
+  "games": {
+    "top": "Top games",
+    "recent": "Recent games",
+    "viewTitle": "View {{white}} vs {{black}} on Lichess (opens in a new tab)"
+  },
+  "page": {
+    "first": "First move",
+    "firstTitle": "First",
+    "previous": "Previous move",
+    "previousTitle": "Previous",
+    "next": "Next move",
+    "nextTitle": "Next",
+    "last": "Last move",
+    "lastTitle": "Last",
+    "flip": "⇅ Flip",
+    "flipTitle": "Flip board (f)",
+    "reset": "↺ Reset",
+    "resetTitle": "Back to the start position",
+    "analyse": "Analyse",
+    "analyseTitle": "Open this line on the analysis board",
+    "lineTitle": "Line",
+    "lineEmpty": "Play a move on the board — or pick one from the stats — to start exploring. Arrow keys step through the line.",
+    "movesAria": "Moves played",
+    "start": "Start"
+  },
+  "save": {
+    "addTo": "＋ to",
+    "targetAria": "Repertoire to save lines into",
+    "newRepOption": "My repertoire (new)",
+    "saveTitle": "Save this line to your repertoire",
+    "saveAria": "Save line with {{san}} to your repertoire"
+  },
+  "library": {
+    "title": "Game library",
+    "tabs": {
+      "saved": "My games",
+      "import": "Import",
+      "pgn": "Paste",
+      "fen": "FEN"
+    },
+    "vs": "vs",
+    "saved": {
+      "signIn": "Sign in to save and revisit your analyzed games.",
+      "empty": "No saved games yet — use “Save” on the board to add one.",
+      "deleteAria": "Delete game {{white}} vs {{black}}"
+    },
+    "import": {
+      "usernameAria": "{{site}} username",
+      "usernamePlaceholder": "username",
+      "fetch": "Fetch",
+      "fetching": "Fetching…"
+    },
+    "pgn": {
+      "hint": "Paste a PGN to review it on the analysis board.",
+      "aria": "PGN text",
+      "load": "Load game"
+    },
+    "fen": {
+      "hint": "Paste a FEN to analyze any position.",
+      "aria": "FEN position",
+      "analyze": "Analyze"
+    },
+    "errors": {
+      "load": "Could not load your saved games — check your connection and reopen the library.",
+      "readGame": "Could not read that game.",
+      "readPgn": "Could not read that PGN.",
+      "invalidFen": "Invalid FEN.",
+      "delete": "Could not delete game.",
+      "importUnavailable": "Import unavailable ({{reason}}). The {{site}} API host must be reachable from the server.",
+      "reasonFallback": "error",
+      "noneFound": "No games found for that username."
+    }
+  }
+}

@@ -17,15 +17,21 @@ let nextId = 0;
 // toast on a mid-flight language switch is fine.
 function toastFor(e: GamifyEvent): Toast | null {
   const t = i18n.getFixedT(null, 'gamify');
+  // Achievement/quest events carry the catalogue's canonical ENGLISH name
+  // (lib/achievements & lib/quests cannot import i18n — they sit in the
+  // node-test import graph), so display names are resolved here by id via
+  // the `progress` namespace, falling back to the canonical name.
   switch (e.kind) {
-    case 'achievement-unlocked':
+    case 'achievement-unlocked': {
+      const name = i18n.t(`progress:achievements.${e.id}.name`, { defaultValue: e.name });
       return {
         id: nextId++,
         icon: e.icon,
         title: t('toasts.achievement.title'),
-        body: e.xp > 0 ? t('toasts.achievement.bodyXp', { name: e.name, xp: e.xp }) : e.name,
+        body: e.xp > 0 ? t('toasts.achievement.bodyXp', { name, xp: e.xp }) : name,
         accent: 'border-gold-400/70 shadow-glow-gold',
       };
+    }
     case 'level-up':
       return {
         id: nextId++,
@@ -61,14 +67,16 @@ function toastFor(e: GamifyEvent): Toast | null {
         body: e.streak > 0 ? t('toasts.goal.bodyStreak', { count: e.streak }) : t('toasts.goal.body'),
         accent: 'border-accent-400/70 shadow-glow',
       };
-    case 'quest-complete':
+    case 'quest-complete': {
+      const name = i18n.t(`progress:quests.${e.id}.name`, { defaultValue: e.name });
       return {
         id: nextId++,
         icon: e.icon,
         title: t('toasts.quest.title'),
-        body: e.xp > 0 ? t('toasts.quest.bodyXp', { name: e.name, xp: e.xp }) : e.name,
+        body: e.xp > 0 ? t('toasts.quest.bodyXp', { name, xp: e.xp }) : name,
         accent: 'border-brand-400/70 shadow-glow',
       };
+    }
     case 'quests-all-done':
       return {
         id: nextId++,

@@ -1,1 +1,58 @@
-{}
+{
+  "card": {
+    "title": "This week's plan",
+    "subtitle": "{{weekLabel}} · {{done}}/{{total}} items done",
+    "open": "Open",
+    "progressAria": "Study plan week progress",
+    "allCaughtUp": "All caught up for today — see you tomorrow! 🎉",
+    "leftToday_one": "{{count}} left today",
+    "leftToday_other": "{{count}} left today",
+    "more_one": "…and {{count}} more on the plan",
+    "more_other": "…and {{count}} more on the plan"
+  },
+  "page": {
+    "title": "This week's study plan",
+    "regenerate": "↻ Regenerate",
+    "personalizedIntro": "Built from your reviewed games — this week's focus:",
+    "personalizedOutro": ". Regenerate any time — the plan re-reads your latest profile and rating.",
+    "starter": "A starter week at {{level}} level. Play and review games on the Play tab and the plan will re-target your actual weaknesses.",
+    "weekProgressAria": "Week progress",
+    "progressSummary": "{{pct}}% · {{done}}/{{total}} items"
+  },
+  "difficulty": {
+    "beginner": "beginner",
+    "intermediate": "intermediate",
+    "advanced": "advanced"
+  },
+  "kinds": {
+    "puzzle": {
+      "heading": "Daily puzzles",
+      "blurb": "quota resets each day — solved coach drills count automatically",
+      "cta": "Train"
+    },
+    "lesson": {
+      "heading": "Lessons",
+      "blurb": "finishing the lesson checks it off automatically",
+      "cta": "Learn"
+    },
+    "opening": {
+      "heading": "Opening drills",
+      "blurb": "recall reps from your own repertoire",
+      "cta": "Drill"
+    },
+    "master": {
+      "heading": "Master games",
+      "blurb": "annotated classics matched to your focus",
+      "cta": "Watch"
+    }
+  },
+  "item": {
+    "done": "✓ done",
+    "progressAria": "{{title}} — weekly progress",
+    "today": "today {{done}}/{{target}}",
+    "logOne": "+1 today",
+    "logOneAria": "Log one solved puzzle toward \"{{title}}\"",
+    "markDone": "Mark done",
+    "markDoneAria": "Mark \"{{title}}\" as done"
+  }
+}

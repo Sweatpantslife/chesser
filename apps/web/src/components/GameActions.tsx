@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { useGame } from '../store/game';
+import { translateEndReason } from '../lib/gameStatusText';
 import { BotAvatar } from './BotAvatar';
 
 const btn = 'btn-press rounded-full px-3 py-1.5 text-sm font-semibold disabled:opacity-50';
@@ -11,6 +13,7 @@ const neutralBtn = `${btn} bg-neutral-700 text-neutral-200 hover:bg-neutral-600`
  * colours once it's over.
  */
 export function GameActions() {
+  const { t } = useTranslation('game');
   const mode = useGame((s) => s.mode);
   const opponent = useGame((s) => s.opponent);
   const playerColor = useGame((s) => s.playerColor);
@@ -56,8 +59,13 @@ export function GameActions() {
             {opponent.rating != null && <span className="ml-1 font-normal text-neutral-400">· {opponent.rating}</span>}
           </div>
           <div className="text-xs text-neutral-400">
-            You play <span className="capitalize text-neutral-300">{playerColor}</span>
-            {thinking && <span className="ml-1 animate-pulse-soft text-emerald-400">· thinking…</span>}
+            <Trans
+              t={t}
+              i18nKey="actions.youPlay"
+              values={{ color: t(`colors.${playerColor}`) }}
+              components={{ color: <span className="capitalize text-neutral-300" /> }}
+            />
+            {thinking && <span className="ml-1 animate-pulse-soft text-emerald-400">· {t('actions.thinking')}</span>}
           </div>
         </div>
       </div>
@@ -67,15 +75,15 @@ export function GameActions() {
           <div className="flex flex-wrap gap-1.5">
             {!confirmResign ? (
               <button className={neutralBtn} onClick={() => setConfirmResign(true)}>
-                🏳 Resign
+                🏳 {t('actions.resign')}
               </button>
             ) : (
               <>
                 <button className={`${btn} bg-rose-600 text-white hover:bg-rose-500`} onClick={resign}>
-                  Confirm resign
+                  {t('actions.confirmResign')}
                 </button>
                 <button className={neutralBtn} onClick={() => setConfirmResign(false)}>
-                  Cancel
+                  {t('common:actions.cancel')}
                 </button>
               </>
             )}
@@ -83,21 +91,21 @@ export function GameActions() {
               className={neutralBtn}
               onClick={offerDraw}
               disabled={historyLen < 2 || thinking || !atLive || drawOffer === 'pending'}
-              title="Offer the bot a draw"
+              title={t('actions.offerDrawTitle')}
             >
-              ½ Offer draw
+              ½ {t('actions.offerDraw')}
             </button>
             <button
               className={neutralBtn}
               onClick={claimDraw}
               disabled={!drawClaimable}
-              title={drawClaimable ? 'Claim the draw' : 'Available on threefold repetition or the 50-move rule'}
+              title={drawClaimable ? t('actions.claimDrawTitle') : t('actions.claimDrawUnavailable')}
             >
-              Claim draw
+              {t('actions.claimDraw')}
             </button>
           </div>
-          {drawOffer === 'pending' && <p className="text-xs text-neutral-400">Offering a draw…</p>}
-          {drawOffer === 'declined' && <p className="text-xs text-amber-300">The bot declines the draw.</p>}
+          {drawOffer === 'pending' && <p className="text-xs text-neutral-400">{t('actions.offeringDraw')}</p>}
+          {drawOffer === 'declined' && <p className="text-xs text-amber-300">{t('actions.drawDeclined')}</p>}
         </div>
       ) : (
         <div className="space-y-2">
@@ -106,27 +114,27 @@ export function GameActions() {
               youWon ? 'bg-emerald-900/50 text-emerald-300' : youLost ? 'bg-rose-900/50 text-rose-300' : 'bg-neutral-700/60 text-neutral-200'
             }`}
           >
-            {youWon ? 'You won! 🎉' : youLost ? 'You lost — rematch?' : drew ? 'Draw.' : 'Game over.'}
-            {endReason && <span className="ml-1 font-normal opacity-80">· {endReason}</span>}
+            {youWon ? t('actions.youWon') : youLost ? t('actions.youLost') : drew ? t('actions.draw') : t('actions.gameOver')}
+            {endReason && <span className="ml-1 font-normal opacity-80">· {translateEndReason(endReason)}</span>}
           </div>
           {beatLadderBot && (
-            <p className="text-xs text-emerald-400">✓ Ladder rung cleared — the next opponent is unlocked.</p>
+            <p className="text-xs text-emerald-400">✓ {t('actions.ladderCleared')}</p>
           )}
           <div className="flex flex-wrap gap-1.5">
             {hasSummary && (
               <button className={`${btn} bg-brand-600 text-white hover:bg-brand-700`} onClick={() => void analyzeFinishedGame()}>
-                🔍 Analyze game
+                🔍 {t('actions.analyzeGame')}
               </button>
             )}
             <button className={`${btn} bg-emerald-700 text-white hover:bg-emerald-800`} onClick={rematch}>
-              ↻ Rematch
+              ↻ {t('actions.rematch')}
             </button>
             <button className={neutralBtn} onClick={switchColors}>
-              ⇄ Switch colours
+              ⇄ {t('actions.switchColours')}
             </button>
             {hasSummary && (
               <button className={neutralBtn} onClick={reopenSummary}>
-                📊 Summary
+                📊 {t('actions.summary')}
               </button>
             )}
           </div>

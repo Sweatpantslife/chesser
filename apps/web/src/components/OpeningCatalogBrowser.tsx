@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal } from './Modal';
 import { OPENING_CATALOG } from '../trainers/openingCatalog';
 import { useRepertoire } from '../store/repertoire';
@@ -9,6 +10,7 @@ import { useRepertoire } from '../store/repertoire';
  * store and sync with the rest of the account blob.
  */
 export function OpeningCatalogBrowser({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation('openings');
   const picked = useRepertoire((s) => s.picked);
   const togglePicked = useRepertoire((s) => s.togglePicked);
   const setPicked = useRepertoire((s) => s.setPicked);
@@ -21,17 +23,17 @@ export function OpeningCatalogBrowser({ onClose }: { onClose: () => void }) {
     <Modal onClose={onClose} labelledBy="catalog-title" className="w-full max-w-xl rounded-2xl bg-panel p-4 shadow-soft">
       <div className="mb-3 flex items-center justify-between gap-2">
         <h2 id="catalog-title" className="font-display text-lg font-bold text-ink">
-          Build your repertoire
+          {t('catalog.title')}
         </h2>
         <button
           onClick={onClose}
           className="btn-press rounded-full bg-brand-600 px-3.5 py-1.5 text-sm font-bold text-white hover:bg-brand-700"
         >
-          Done · {picked.length} line{picked.length === 1 ? '' : 's'}
+          {t('catalog.done', { count: picked.length })}
         </button>
       </div>
 
-      <div className="mb-3 flex gap-1 rounded-full bg-neutral-800 p-1 text-sm" role="tablist" aria-label="Side">
+      <div className="mb-3 flex gap-1 rounded-full bg-neutral-800 p-1 text-sm" role="tablist" aria-label={t('catalog.sideAria')}>
         {(['white', 'black'] as const).map((s) => (
           <button
             key={s}
@@ -42,7 +44,7 @@ export function OpeningCatalogBrowser({ onClose }: { onClose: () => void }) {
               side === s ? 'bg-brand-600 text-white' : 'text-neutral-300 hover:text-white'
             }`}
           >
-            As {s}
+            {s === 'white' ? t('side.asWhite') : t('side.asBlack')}
           </button>
         ))}
       </div>
@@ -64,7 +66,7 @@ export function OpeningCatalogBrowser({ onClose }: { onClose: () => void }) {
                   }}
                   className="shrink-0 rounded bg-neutral-700 px-2 py-1 text-xs text-neutral-200 hover:bg-neutral-600"
                 >
-                  {allIn ? 'Remove all' : 'Add all'}
+                  {allIn ? t('catalog.removeAll') : t('catalog.addAll')}
                 </button>
               </div>
               <p className="mb-2 text-xs leading-snug text-neutral-400">{o.summary}</p>

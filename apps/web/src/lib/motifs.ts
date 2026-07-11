@@ -129,6 +129,10 @@ export const MOTIF_ORDER = [
 
 export type Motif = (typeof MOTIF_ORDER)[number];
 
+// i18n: this module must NOT import src/i18n (lib/weakness → here sits in
+// store/game's static import graph, whose tests run under plain `node
+// --test`). These are the CANONICAL ENGLISH labels; render sites resolve
+// display text via t(`motifs:labels.${motif}`) with these as defaultValue.
 export const MOTIF_LABELS: Record<Motif, string> = {
   mateIn1: 'Mate in 1',
   mateIn2: 'Mate in 2',

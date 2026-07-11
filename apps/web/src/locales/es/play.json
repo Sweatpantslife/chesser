@@ -1,1 +1,92 @@
-{}
+{
+  "tabs": {
+    "ladder": "🪜 Escalera",
+    "custom": "⚙ Personalizada"
+  },
+  "color": {
+    "label": "Juegas con",
+    "white": "blancas",
+    "black": "negras",
+    "random": "aleatorio"
+  },
+  "timeControl": {
+    "label": "Control de tiempo",
+    "unlimited": "∞"
+  },
+  "custom": {
+    "title": "Partida personalizada",
+    "waitingForServer": "Esperando al servidor del motor… (ejecuta <cmd>pnpm dev:server</cmd>)",
+    "style": "Estilo",
+    "humanViaMaia": "Usando la red neuronal Maia (entrenada con partidas reales en cada nivel).",
+    "humanViaEngine": "El motor Maia no está disponible aquí — se usa el modelo humano basado en motor.",
+    "rating": "Puntuación",
+    "strength": "Fuerza",
+    "eloValue": "{{elo}} Elo",
+    "eloApprox": "~{{elo}} Elo",
+    "eloMax": "máx",
+    "think": {
+      "label": "Reflexión",
+      "fast": "Rápida",
+      "normal": "Normal",
+      "slow": "Lenta"
+    },
+    "subLadderHint": "Para rivales de menos de 1320, sube por la pestaña Escalera.",
+    "startFrom": {
+      "label": "Empezar desde",
+      "standard": "Estándar",
+      "position": "Posición",
+      "opening": "Apertura"
+    },
+    "fenPlaceholder": "Pega un FEN…",
+    "fenError": "Ese FEN no es una posición legal.",
+    "useCurrentPosition": "Usar la posición actual del tablero",
+    "openingFilterPlaceholder": "Filtrar aperturas…",
+    "noOpeningsMatch": "Ninguna apertura coincide.",
+    "openingStart_one": "Empieza tras <b>{{count}}</b> jugada de la apertura {{name}}.",
+    "openingStart_other": "Empieza tras <b>{{count}}</b> jugadas de la apertura {{name}}.",
+    "start": "Empezar partida",
+    "opponent": {
+      "maia": "Maia {{rating}}",
+      "humanLike": "Estilo humano ~{{elo}}",
+      "stockfish": "Stockfish {{styleName}} ({{strength}})"
+    }
+  },
+  "ladder": {
+    "title": "La escalera",
+    "cleared": "{{cleared}}/{{total}} superados",
+    "intro": "Vence a cada bot para desbloquear el siguiente. Los peldaños superados quedan abiertos: repítelos cuando quieras, con cualquier color.",
+    "backend": {
+      "maiaNet": "red neuronal Maia",
+      "engineHuman": "estilo humano (motor)",
+      "standIn": "Stockfish como sustituto"
+    },
+    "clearedBadge": "· ✓ superado",
+    "lockedHint": "🔒 Vence a {{name}} para desbloquear",
+    "previousBot": "el bot anterior",
+    "restart": "Reiniciar",
+    "replay": "Rejugar",
+    "play": "Jugar ▶",
+    "reset": {
+      "prompt": "Restablecer el progreso de la escalera",
+      "confirm": "¿Restablecer todo el progreso?",
+      "yes": "Sí",
+      "no": "No"
+    }
+  },
+  "meter": {
+    "category": {
+      "bots": "Bots",
+      "blitz": "Blitz",
+      "puzzles": "Problemas"
+    },
+    "peak": "máx. {{value}}",
+    "recordPuzzles": "{{solved}} resueltos · {{missed}} fallados",
+    "recordGames": "{{won}}V {{drawn}}T {{lost}}D",
+    "emptyNoGames": "Aún no hay partidas.",
+    "emptyTrend": "Juega más para trazar una tendencia."
+  },
+  "status": {
+    "thinking": "· pensando",
+    "analysisBoard": "· tablero de análisis"
+  }
+}

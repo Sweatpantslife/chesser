@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { useProgress, type Deck } from '../store/progress';
 
 /** Compact spaced-repetition stats for a deck: progress, due count, streak. */
 export function ReviewStats({ deck, ids }: { deck: Deck; ids: string[] }) {
+  const { t } = useTranslation('analysis');
   const cards = useProgress((s) => s.cards);
   const streak = useProgress((s) => s.streak);
 
@@ -31,10 +33,15 @@ export function ReviewStats({ deck, ids }: { deck: Deck; ids: string[] }) {
   return (
     <div className="flex items-center gap-3 text-xs text-neutral-400">
       <span>
-        <span className="text-neutral-200">{seen}</span>/{ids.length} learned
+        <Trans
+          t={t}
+          i18nKey="deckStats.learned"
+          values={{ seen, total: ids.length }}
+          components={{ count: <span className="text-neutral-200" /> }}
+        />
       </span>
-      <span className={due > 0 ? 'text-amber-300' : 'text-neutral-400'}>{due} due</span>
-      {streak > 0 && <span title="Daily streak">🔥 {streak}</span>}
+      <span className={due > 0 ? 'text-amber-300' : 'text-neutral-400'}>{t('deckStats.due', { count: due })}</span>
+      {streak > 0 && <span title={t('deckStats.streakTitle')}>🔥 {streak}</span>}
     </div>
   );
 }

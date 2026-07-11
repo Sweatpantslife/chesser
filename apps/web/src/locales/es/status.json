@@ -1,1 +1,52 @@
-{}
+{
+  "toMove": {
+    "white": "Juegan las blancas",
+    "black": "Juegan las negras"
+  },
+  "toMoveCheck": {
+    "white": "Juegan las blancas — jaque",
+    "black": "Juegan las negras — jaque"
+  },
+  "toMoveRepetition": {
+    "white": "Juegan las blancas · triple repetición",
+    "black": "Juegan las negras · triple repetición"
+  },
+  "toMoveCheckRepetition": {
+    "white": "Juegan las blancas — jaque · triple repetición",
+    "black": "Juegan las negras — jaque · triple repetición"
+  },
+  "claimDraw": {
+    "threefold": "Triple repetición — puedes reclamar tablas",
+    "fiftyMove": "Regla de los cincuenta movimientos — puedes reclamar tablas"
+  },
+  "checkmate": {
+    "white": "Jaque mate — ganan las blancas",
+    "black": "Jaque mate — ganan las negras"
+  },
+  "resigned": {
+    "white": "Ganan las blancas — abandonaste",
+    "black": "Ganan las negras — abandonaste"
+  },
+  "flagged": {
+    "white": "Las blancas agotaron su tiempo — las negras ganan por tiempo",
+    "black": "Las negras agotaron su tiempo — las blancas ganan por tiempo"
+  },
+  "draw": {
+    "stalemate": "Tablas — ahogado",
+    "insufficientMaterial": "Tablas — material insuficiente",
+    "fiftyMove": "Tablas — regla de los cincuenta movimientos",
+    "agreed": "Tablas — de común acuerdo",
+    "threefold": "Tablas — triple repetición"
+  },
+  "endReason": {
+    "youResigned": "Abandonaste",
+    "drawAgreed": "Tablas acordadas",
+    "threefold": "Triple repetición",
+    "fiftyMoveClaim": "Regla de los cincuenta movimientos",
+    "onTime": "por tiempo",
+    "checkmate": "jaque mate",
+    "stalemate": "ahogado",
+    "insufficientMaterial": "material insuficiente",
+    "fiftyMove": "regla de los cincuenta movimientos"
+  }
+}

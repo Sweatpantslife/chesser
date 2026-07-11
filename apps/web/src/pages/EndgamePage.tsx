@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { Chess } from 'chess.js';
 import type { EngineAvailability, TablebaseResult } from '@chesser/shared';
 import { Board } from '../board/Board';
@@ -19,6 +20,7 @@ const HOLD_PLIES = 20; // plies to survive before a draw study counts as held
 const pieceCount = (fen: string) => fen.split(' ')[0]!.replace(/[^a-zA-Z]/g, '').length;
 
 export function EndgamePage() {
+  const { t } = useTranslation('train');
   const game = useRef(new Chess());
   const gameId = useRef(0);
   // Tablebase data tagged with the position it belongs to. `tb` (state) drives
@@ -195,22 +197,23 @@ export function EndgamePage() {
   };
 
   const status = useMemo(() => {
-    if (phase === 'won') return { text: '✓ Checkmate — solved!', cls: 'text-emerald-300 font-semibold' };
+    if (phase === 'won') return { text: t('endgame.status.won'), cls: 'text-emerald-300 font-semibold' };
     if (phase === 'drawn')
       return {
-        text: study.goal === 'draw' ? '✓ Held the draw!' : '½ Drawn — the win slipped away.',
+        text: study.goal === 'draw' ? t('endgame.status.heldDraw') : t('endgame.status.drawnSlipped'),
         cls: 'text-amber-300 font-semibold',
       };
-    if (phase === 'lost') return { text: 'You got mated! Restart and try again.', cls: 'text-rose-300 font-semibold' };
+    if (phase === 'lost') return { text: t('endgame.status.mated'), cls: 'text-rose-300 font-semibold' };
     if (tb?.available) return { text: categoryLabel(tb.category, tb.dtm), cls: 'text-sky-300' };
     const sc = analysis.score;
-    if (!sc) return { text: thinking ? 'Engine defending…' : 'Your move.', cls: 'text-neutral-300' };
+    if (!sc) return { text: thinking ? t('endgame.status.engineDefending') : t('endgame.status.yourMove'), cls: 'text-neutral-300' };
     const yourPov = youPlay === 'white' ? sc : { ...sc, value: -sc.value };
-    if (yourPov.kind === 'mate' && yourPov.value > 0) return { text: `Winning — mate in ${yourPov.value}.`, cls: 'text-emerald-300' };
+    if (yourPov.kind === 'mate' && yourPov.value > 0)
+      return { text: t('endgame.status.winningMate', { n: yourPov.value }), cls: 'text-emerald-300' };
     if (study.goal === 'win' && (yourPov.kind === 'cp' ? yourPov.value < 200 : yourPov.value < 0))
-      return { text: 'Careful — your advantage is slipping.', cls: 'text-amber-300' };
-    return { text: thinking ? 'Engine defending…' : 'Your move — keep converting.', cls: 'text-neutral-300' };
-  }, [phase, analysis.score, thinking, youPlay, study.goal, tb]);
+      return { text: t('endgame.status.slipping'), cls: 'text-amber-300' };
+    return { text: thinking ? t('endgame.status.engineDefending') : t('endgame.status.keepConverting'), cls: 'text-neutral-300' };
+  }, [phase, analysis.score, thinking, youPlay, study.goal, tb, t]);
 
   const orientation: Color = youPlay;
 
@@ -218,7 +221,7 @@ export function EndgamePage() {
     <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
       <div className="order-2 space-y-3 lg:order-1">
         <div className="rounded-2xl bg-panel shadow-soft p-3">
-          <h3 className="mb-2 text-sm font-semibold text-ink">Endgame studies</h3>
+          <h3 className="mb-2 text-sm font-semibold text-ink">{t('endgame.title')}</h3>
           <div className="scroll-thin max-h-[60vh] space-y-1 overflow-y-auto">
             {ENDGAMES.map((s) => (
               <button
@@ -230,7 +233,7 @@ export function EndgamePage() {
               >
                 <span className="truncate">{s.name}</span>
                 <span className={`shrink-0 text-xs uppercase ${study.id === s.id ? 'text-emerald-100' : 'text-neutral-300'}`}>
-                  {s.goal}
+                  {t(`endgame.goal.${s.goal}`)}
                 </span>
               </button>
             ))}
@@ -266,13 +269,13 @@ export function EndgamePage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button onClick={() => load(study)} className="rounded bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800">
-            Restart
+            {t('buttons.restart')}
           </button>
           <button
             onClick={() => load(ENDGAMES[(ENDGAMES.findIndex((e) => e.id === study.id) + 1) % ENDGAMES.length]!)}
             className="rounded bg-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600"
           >
-            Next study →
+            {t('endgame.nextStudy')}
           </button>
         </div>
       </div>
@@ -281,22 +284,29 @@ export function EndgamePage() {
         <div className="rounded-2xl bg-panel shadow-soft p-3">
           <h4 className="mb-1 text-sm font-semibold text-ink">{study.name}</h4>
           <p className="mb-2 text-xs text-neutral-400">
-            You play <b className="capitalize text-neutral-200">{youPlay}</b> — goal:{' '}
-            <b className="text-neutral-200">{study.goal === 'win' ? 'checkmate' : 'hold the draw'}</b>.
+            <Trans
+              t={t}
+              i18nKey="endgame.youPlayGoal"
+              values={{ color: t(`colors.${youPlay}`), goal: t(`endgame.goalLong.${study.goal}`) }}
+              components={{
+                color: <b className="capitalize text-neutral-200" />,
+                goal: <b className="text-neutral-200" />,
+              }}
+            />
           </p>
           <p className="text-xs leading-snug text-neutral-400">{study.technique}</p>
           {phase === 'playing' && (
             <p className="mt-2 font-mono text-xs text-neutral-400">
               {tb?.available
-                ? `${tb.source === 'syzygy' ? 'syzygy' : 'tablebase'} · ${tb.category}${tb.dtz != null ? ` · dtz ${tb.dtz}` : ''}`
+                ? `${tb.source === 'syzygy' ? 'syzygy' : t('endgame.tablebaseWord')} · ${tb.category}${tb.dtz != null ? ` · dtz ${tb.dtz}` : ''}`
                 : analysis.score
-                  ? `eval ${formatScore(analysis.score)} · depth ${analysis.depth}`
+                  ? t('endgame.evalReadout', { score: formatScore(analysis.score), depth: analysis.depth })
                   : ''}
             </p>
           )}
           {syzygy.on && (
             <p className="mt-2 text-xs leading-snug text-emerald-400/80">
-              ♟ Syzygy {syzygy.max ?? 7}-man tablebases loaded — the defender is perfect.
+              {t('endgame.syzygyLoaded', { n: syzygy.max ?? 7 })}
             </p>
           )}
         </div>

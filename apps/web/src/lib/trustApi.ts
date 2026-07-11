@@ -60,12 +60,15 @@ export function clearLocalData(): void {
 
 // --- abuse reports ------------------------------------------------------------
 
-export const REPORT_REASONS: { id: string; label: string }[] = [
-  { id: 'inappropriate-name', label: 'Inappropriate name' },
-  { id: 'impersonation', label: 'Impersonation' },
-  { id: 'harassment', label: 'Harassment' },
-  { id: 'cheating', label: 'Cheating' },
-  { id: 'other', label: 'Something else' },
+/** Report reasons: stable wire ids + i18n keys (profile namespace) resolved
+ *  with t() at render time in ReportProfileButton — this module stays free of
+ *  UI strings and of the i18n import (it is exercised by plain unit tests). */
+export const REPORT_REASONS: { id: string; labelKey: string }[] = [
+  { id: 'inappropriate-name', labelKey: 'report.reasons.inappropriateName' },
+  { id: 'impersonation', labelKey: 'report.reasons.impersonation' },
+  { id: 'harassment', labelKey: 'report.reasons.harassment' },
+  { id: 'cheating', labelKey: 'report.reasons.cheating' },
+  { id: 'other', labelKey: 'report.reasons.other' },
 ];
 
 export function apiReportProfile(

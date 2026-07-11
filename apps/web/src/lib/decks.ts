@@ -3,6 +3,7 @@
 // all decks, so the Stats page and the review summary can show progress across
 // openings, tactics, checkmates and anti-blunder drills together.
 import { useMemo } from 'react';
+import i18n from '../i18n';
 import { useProgress, DECKS, type Deck } from '../store/progress';
 import { useRepertoire, BUILTIN_REPERTOIRE } from '../store/repertoire';
 import { PUZZLES } from '../trainers/tactics';
@@ -13,12 +14,22 @@ import { ENDGAME_DRILL_IDS } from '../trainers/endgameDrills';
 /** Where a deck's "Review now" jumps to (a top-level view, optionally a Train sub-tab). */
 export type DeckTarget = { view: 'openings' | 'tactics' | 'train' | 'endgame-drills'; trainTab?: 'mates' | 'blunders' };
 
+/** `label` resolves through the `progress` namespace at access time (the
+ *  English literal is the defaultValue), so render sites reading
+ *  `DECK_META[deck].label` follow the active language without code changes. */
+const deckMeta = (key: Deck, english: string, rest: { accent: string; target: DeckTarget }) => ({
+  get label() {
+    return i18n.t(`progress:decks.${key}`, { defaultValue: english });
+  },
+  ...rest,
+});
+
 export const DECK_META: Record<Deck, { label: string; accent: string; target: DeckTarget }> = {
-  openings: { label: 'Openings', accent: 'text-sky-300', target: { view: 'openings' } },
-  tactics: { label: 'Tactics', accent: 'text-emerald-300', target: { view: 'tactics' } },
-  mates: { label: 'Checkmates', accent: 'text-rose-300', target: { view: 'train', trainTab: 'mates' } },
-  blunders: { label: 'Anti-blunder', accent: 'text-amber-300', target: { view: 'train', trainTab: 'blunders' } },
-  endgames: { label: 'Endgames', accent: 'text-brand-300', target: { view: 'endgame-drills' } },
+  openings: deckMeta('openings', 'Openings', { accent: 'text-sky-300', target: { view: 'openings' } }),
+  tactics: deckMeta('tactics', 'Tactics', { accent: 'text-emerald-300', target: { view: 'tactics' } }),
+  mates: deckMeta('mates', 'Checkmates', { accent: 'text-rose-300', target: { view: 'train', trainTab: 'mates' } }),
+  blunders: deckMeta('blunders', 'Anti-blunder', { accent: 'text-amber-300', target: { view: 'train', trainTab: 'blunders' } }),
+  endgames: deckMeta('endgames', 'Endgames', { accent: 'text-brand-300', target: { view: 'endgame-drills' } }),
 };
 
 export interface DeckReview {

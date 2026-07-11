@@ -1,1 +1,68 @@
-{}
+{
+  "roster": {
+    "tilly": {
+      "title": "Absolute beginner",
+      "bio": "Just learned how the pieces move. Hangs pieces, misses easy captures — the perfect first rung."
+    },
+    "benny": {
+      "title": "Beginner",
+      "bio": "Knows a knight from a bishop, but one-move threats sail right past him. Loves a hopeful queen raid."
+    },
+    "cassie": {
+      "title": "Casual player",
+      "bio": "Plays for fun between coffees. Sensible opening moves, but gets lost once the position turns sharp."
+    },
+    "maya": {
+      "title": "Human-like · 1100",
+      "bio": "Plays like a real 1100: the natural, slightly-wrong moves a beginner actually makes."
+    },
+    "patrick": {
+      "title": "Club novice",
+      "bio": "Solid and stubborn — trades down and clings to pawns. You'll have to actually outplay him."
+    },
+    "rosa": {
+      "title": "Club player",
+      "bio": "A real club regular. Develops sensibly, castles early, and punishes obvious mistakes."
+    },
+    "gus": {
+      "title": "Coffeehouse attacker",
+      "bio": "Sacrifices first, asks questions later. Castle quickly and watch for cheap mating nets."
+    },
+    "maxine": {
+      "title": "Human-like · 1500",
+      "bio": "Principled, human moves with the occasional very human oversight."
+    },
+    "knox": {
+      "title": "Solid defender",
+      "bio": "A brick wall. Trades pieces, avoids weaknesses, and grinds equal endgames. Patience required."
+    },
+    "priya": {
+      "title": "Human-like · 1800",
+      "bio": "Strong club instincts: sound plans, quick tactics, and only the occasional slip under pressure."
+    },
+    "nora": {
+      "title": "Human-like · 1900",
+      "bio": "Expert-level instincts and clean technique, with only rare human slips."
+    },
+    "tess": {
+      "title": "Tactical expert",
+      "bio": "Sees combinations three moves deep. Leave a loose piece and it's gone in a flash."
+    },
+    "vera": {
+      "title": "Positional master",
+      "bio": "Squeezes you slowly — better squares, better pawns, then a won endgame. Strategic to the core."
+    },
+    "ivan": {
+      "title": "Master",
+      "bio": "A titled-strength all-rounder with no obvious weaknesses. You'll need your best chess."
+    },
+    "nadia": {
+      "title": "Grandmaster",
+      "bio": "Near the top of the ladder: precise, deep, and ruthless. Mistakes are punished without mercy."
+    },
+    "stockzilla": {
+      "title": "Maximum strength",
+      "bio": "Full-strength Stockfish, no handicap. The final boss — beating it is a genuine feat."
+    }
+  }
+}

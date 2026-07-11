@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Chess } from 'chess.js';
 import type { BotStyleId } from '@chesser/shared';
 import { STOCKFISH_ELO_MIN, STOCKFISH_ELO_MAX } from '@chesser/shared';
@@ -14,10 +16,10 @@ const TIME_CONTROLS: (TimeControl | null)[] = [
 ];
 
 const THINK_OPTIONS = [
-  { label: 'Fast', ms: 300 },
-  { label: 'Normal', ms: 700 },
-  { label: 'Slow', ms: 1500 },
-];
+  { id: 'fast', ms: 300 },
+  { id: 'normal', ms: 700 },
+  { id: 'slow', ms: 1500 },
+] as const;
 
 const ELO_PRESETS = [1320, 1600, 1900, 2200, 2500, 3190];
 // The human-like sampler covers any rating; sub-1320 lives here (not the ladder-only path).
@@ -27,13 +29,21 @@ const HUMAN_ELO_PRESETS = [600, 800, 1000, 1200, 1600, 2000];
 
 type StartFrom = 'standard' | 'position' | 'opening';
 
-function botLabel(style: BotStyleId, elo: number, maia: number, viaMaia: boolean): string {
-  if (style === 'human') return viaMaia ? `Maia ${maia}` : `Human-like ~${elo}`;
+// The generated opponent display name ("Maia 1500", "Human-like ~1200", …). It
+// is translated once at game start and stored in game state, like roster names.
+function botLabel(t: TFunction<'play'>, style: BotStyleId, elo: number, maia: number, viaMaia: boolean): string {
+  if (style === 'human') {
+    return viaMaia ? t('custom.opponent.maia', { rating: maia }) : t('custom.opponent.humanLike', { elo });
+  }
   const s = style.charAt(0).toUpperCase() + style.slice(1);
-  return `Stockfish ${s} (${elo >= STOCKFISH_ELO_MAX ? 'max' : elo})`;
+  return t('custom.opponent.stockfish', {
+    styleName: s,
+    strength: elo >= STOCKFISH_ELO_MAX ? t('custom.eloMax') : elo,
+  });
 }
 
 export function BotPanel() {
+  const { t } = useTranslation('play');
   const { styles, availability, botConfig, newGame, timeControl, setTimeControl } = useGame();
   const liveFen = useGame((s) => s.fen);
 
@@ -101,7 +111,7 @@ export function BotPanel() {
       ? { style, elo: humanElo, moveTimeMs } // no maiaRating: the sampler covers the whole range
       : { style, elo, maiaRating, moveTimeMs };
     const opponent = {
-      name: botLabel(style, humanViaEngine ? humanElo : elo, maiaRating, humanViaMaia),
+      name: botLabel(t, style, humanViaEngine ? humanElo : elo, maiaRating, humanViaMaia),
       rating: isHuman ? (humanViaEngine ? humanElo : maiaRating) : elo,
     };
 
@@ -110,7 +120,7 @@ export function BotPanel() {
       try {
         new Chess(fen);
       } catch {
-        setFenError('That FEN is not a legal position.');
+        setFenError(t('custom.fenError'));
         return;
       }
       newGame({ mode: 'play', playerColor, bot, opponent, startFen: fen });
@@ -126,7 +136,7 @@ export function BotPanel() {
   if (styles.length === 0) {
     return (
       <div className="rounded-2xl bg-panel shadow-soft p-3 text-sm text-neutral-400">
-        Waiting for the engine server… (run <code className="text-neutral-200">pnpm dev:server</code>)
+        <Trans t={t} i18nKey="custom.waitingForServer" components={{ cmd: <code className="text-neutral-200" /> }} />
       </div>
     );
   }
@@ -136,10 +146,10 @@ export function BotPanel() {
 
   return (
     <div className="rounded-2xl bg-panel shadow-soft p-3">
-      <h3 className="mb-2 text-sm font-semibold text-ink">Custom game</h3>
+      <h3 className="mb-2 text-sm font-semibold text-ink">{t('custom.title')}</h3>
 
       {/* style */}
-      <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Style</div>
+      <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('custom.style')}</div>
       <div className="mb-2 flex flex-wrap gap-1">
         {styles.map((s) => (
           <button key={s.id} onClick={() => setStyle(s.id)} aria-pressed={style === s.id} className={tab(style === s.id)}>
@@ -150,16 +160,14 @@ export function BotPanel() {
       {selStyle && <p className="mb-3 text-xs leading-snug text-neutral-400">{selStyle.description}</p>}
       {isHuman && availability && (
         <p className="-mt-2 mb-3 text-xs leading-snug text-neutral-400">
-          {humanViaMaia
-            ? 'Running the Maia neural net (trained on real games at each rating).'
-            : 'The Maia engine is not available here — using the engine-based human model.'}
+          {humanViaMaia ? t('custom.humanViaMaia') : t('custom.humanViaEngine')}
         </p>
       )}
 
       {/* strength */}
       {humanViaMaia ? (
         <div className="mb-3">
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Rating</div>
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('custom.rating')}</div>
           <div className="grid grid-cols-5 gap-1">
             {maiaNets.map((n) => (
               <button
@@ -177,9 +185,9 @@ export function BotPanel() {
       ) : (
         <div className="mb-3">
           <div className="mb-1 flex items-center justify-between text-xs">
-            <span className="uppercase tracking-wide text-neutral-400">Strength</span>
+            <span className="uppercase tracking-wide text-neutral-400">{t('custom.strength')}</span>
             <span className="font-mono text-neutral-300">
-              {humanViaEngine ? `~${elo} Elo` : elo >= 3190 ? 'max' : `${elo} Elo`}
+              {humanViaEngine ? t('custom.eloApprox', { elo }) : elo >= 3190 ? t('custom.eloMax') : t('custom.eloValue', { elo })}
             </span>
           </div>
           <input
@@ -194,37 +202,37 @@ export function BotPanel() {
           <div className="mt-1 flex justify-between">
             {(humanViaEngine ? HUMAN_ELO_PRESETS : ELO_PRESETS).map((p) => (
               <button key={p} onClick={() => setElo(p)} className="text-xs text-neutral-400 hover:text-neutral-200">
-                {!humanViaEngine && p === 3190 ? 'max' : p}
+                {!humanViaEngine && p === 3190 ? t('custom.eloMax') : p}
               </button>
             ))}
           </div>
           <div className="mt-2 flex items-center gap-1">
-            <span className="text-xs text-neutral-400">Think</span>
-            {THINK_OPTIONS.map((t) => (
+            <span className="text-xs text-neutral-400">{t('custom.think.label')}</span>
+            {THINK_OPTIONS.map((o) => (
               <button
-                key={t.ms}
-                onClick={() => setMoveTimeMs(t.ms)}
+                key={o.ms}
+                onClick={() => setMoveTimeMs(o.ms)}
                 className={`rounded px-2 py-0.5 text-xs ${
-                  moveTimeMs === t.ms ? 'bg-neutral-500 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                  moveTimeMs === o.ms ? 'bg-neutral-500 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                 }`}
               >
-                {t.label}
+                {t(`custom.think.${o.id}`)}
               </button>
             ))}
           </div>
-          {!humanViaEngine && <p className="mt-1 text-xs text-neutral-400">For sub-1320 opponents, climb the Ladder tab.</p>}
+          {!humanViaEngine && <p className="mt-1 text-xs text-neutral-400">{t('custom.subLadderHint')}</p>}
         </div>
       )}
 
       {/* time control */}
       <div className="mb-3">
-        <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Time control</div>
+        <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('timeControl.label')}</div>
         <div className="flex gap-1">
           {TIME_CONTROLS.map((tc) => {
             const selected = (timeControl?.label ?? 'unlimited') === (tc?.label ?? 'unlimited');
             return (
               <button key={tc?.label ?? 'unlimited'} onClick={() => setTimeControl(tc)} className={`flex-1 ${tab(selected)} py-1`}>
-                {tc?.label ?? '∞'}
+                {tc?.label ?? t('timeControl.unlimited')}
               </button>
             );
           })}
@@ -233,11 +241,11 @@ export function BotPanel() {
 
       {/* color */}
       <div className="mb-3">
-        <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">You play</div>
+        <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('color.label')}</div>
         <div className="flex gap-1">
           {(['white', 'black', 'random'] as const).map((c) => (
             <button key={c} onClick={() => setColor(c)} className={`flex-1 capitalize ${tab(color === c)} py-1`}>
-              {c}
+              {t(`color.${c}`)}
             </button>
           ))}
         </div>
@@ -245,12 +253,12 @@ export function BotPanel() {
 
       {/* start from */}
       <div className="mb-3">
-        <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Start from</div>
+        <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('custom.startFrom.label')}</div>
         <div className="flex gap-1">
           {([
-            ['standard', 'Standard'],
-            ['position', 'Position'],
-            ['opening', 'Opening'],
+            ['standard', t('custom.startFrom.standard')],
+            ['position', t('custom.startFrom.position')],
+            ['opening', t('custom.startFrom.opening')],
           ] as const).map(([id, label]) => (
             <button
               key={id}
@@ -273,7 +281,7 @@ export function BotPanel() {
                 setFenInput(e.target.value);
                 setFenError(null);
               }}
-              placeholder="Paste a FEN…"
+              placeholder={t('custom.fenPlaceholder')}
               rows={2}
               className="w-full resize-none rounded bg-neutral-900 p-2 font-mono text-xs text-neutral-200 outline-none ring-1 ring-neutral-700 focus:ring-emerald-600"
             />
@@ -285,7 +293,7 @@ export function BotPanel() {
                 }}
                 className="text-xs text-emerald-400 hover:text-emerald-300"
               >
-                Use current board position
+                {t('custom.useCurrentPosition')}
               </button>
               {fenError && <span className="text-xs text-rose-400">{fenError}</span>}
             </div>
@@ -297,7 +305,7 @@ export function BotPanel() {
             <input
               value={openingFilter}
               onChange={(e) => setOpeningFilter(e.target.value)}
-              placeholder="Filter openings…"
+              placeholder={t('custom.openingFilterPlaceholder')}
               className="mb-1 w-full rounded bg-neutral-900 px-2 py-1 text-xs text-neutral-200 outline-none ring-1 ring-neutral-700 focus:ring-emerald-600"
             />
             <div className="scroll-thin max-h-40 space-y-0.5 overflow-y-auto">
@@ -313,12 +321,19 @@ export function BotPanel() {
                   <span className="shrink-0 font-mono opacity-90">{o.eco}</span>
                 </button>
               ))}
-              {filteredOpenings.length === 0 && <p className="px-2 py-1 text-xs text-neutral-400">No openings match.</p>}
+              {filteredOpenings.length === 0 && (
+                <p className="px-2 py-1 text-xs text-neutral-400">{t('custom.noOpeningsMatch')}</p>
+              )}
             </div>
             {selectedOpening && (
               <p className="mt-1 text-xs text-neutral-400">
-                Start after <b className="text-neutral-200">{selectedOpening.moves.length}</b> moves of the{' '}
-                {selectedOpening.name}.
+                <Trans
+                  t={t}
+                  i18nKey="custom.openingStart"
+                  count={selectedOpening.moves.length}
+                  values={{ name: selectedOpening.name }}
+                  components={{ b: <b className="text-neutral-200" /> }}
+                />
               </p>
             )}
           </div>
@@ -330,7 +345,7 @@ export function BotPanel() {
         disabled={startDisabled}
         className="w-full rounded bg-emerald-700 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
       >
-        Start game
+        {t('custom.start')}
       </button>
     </div>
   );

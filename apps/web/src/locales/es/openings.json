@@ -1,1 +1,72 @@
-{}
+{
+  "myRepertoire": "Mi repertorio",
+  "side": {
+    "white": "blancas",
+    "black": "negras",
+    "asWhite": "Con blancas",
+    "asBlack": "Con negras"
+  },
+  "drill": {
+    "lineComplete": "Línea completada — ¡guardada en tu calendario de repaso!",
+    "correct": "✓ {{san}}",
+    "continuingAs": "✓ {{san}} — continúa como {{name}}",
+    "notInRepertoire": "No está en tu repertorio — inténtalo de nuevo o revela la jugada.",
+    "answer": "Respuesta: {{san}}"
+  },
+  "repertoire": {
+    "title": "Repertorio",
+    "browse": "Explorar aperturas",
+    "newPlaceholder": "nuevo repertorio",
+    "create": "Crear",
+    "new": "+ Nuevo",
+    "rename": "Renombrar",
+    "renamePrompt": "Renombrar repertorio",
+    "delete": "Eliminar",
+    "deleteConfirm": "¿Eliminar \"{{name}}\"?",
+    "reviewDue": "Repasar líneas pendientes",
+    "emptyMine": "Tu repertorio está vacío. Elige del catálogo aperturas para aprender con blancas y con negras.",
+    "emptyOther": "Aún no hay líneas. Crea una en el tablero de <playTab>Jugar</playTab> y luego «★ Guardar línea».",
+    "removeLine": "Quitar línea"
+  },
+  "board": {
+    "pickLine": "Elige una línea",
+    "youPlay": "juegas con <sideTag>{{side}}</sideTag>",
+    "yourMove": "· tu turno",
+    "startDrill": "Empezar ejercicio",
+    "repeatLine": "Repetir línea",
+    "revealMove": "Revelar jugada"
+  },
+  "info": {
+    "moveNo": "Jugada {{n}}",
+    "moves": "Jugadas"
+  },
+  "catalog": {
+    "title": "Construye tu repertorio",
+    "done_one": "Listo · {{count}} línea",
+    "done_other": "Listo · {{count}} líneas",
+    "sideAria": "Bando",
+    "addAll": "Añadir todas",
+    "removeAll": "Quitar todas"
+  },
+  "name": {
+    "title": "Apertura",
+    "lookUp": "Buscar",
+    "noneYet": "Aún no hay una apertura con nombre — juega algunas jugadas.",
+    "fromStartOnly": "Los nombres de las aperturas se muestran desde la posición inicial estándar.",
+    "searchPlaceholder": "Busca aperturas (p. ej. Najdorf, C50)…",
+    "noMatches": "Sin coincidencias.",
+    "searchHint": "Encuentra cualquier apertura por nombre o código ECO y cárgala en el tablero."
+  },
+  "save": {
+    "title": "Guardar línea en el repertorio",
+    "noMoves": "Haz primero algunas jugadas en el tablero y luego guarda la línea.",
+    "mustStartInitial": "Las líneas de repertorio deben empezar desde la posición inicial.",
+    "repertoire": "Repertorio",
+    "newRepOption": "+ Nuevo repertorio…",
+    "repNamePlaceholder": "nombre del repertorio",
+    "repNameAria": "Nombre del nuevo repertorio",
+    "lineName": "Nombre de la línea",
+    "youPlay": "Juegas con",
+    "saveCta": "Guardar línea"
+  }
+}

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../store/auth';
 import { useGame } from '../store/game';
 import { useAnalysisReport } from '../store/analysisReport';
@@ -11,7 +12,6 @@ import {
   applyReview,
   fromCasualGame,
   fromSavedGame,
-  KIND_LABELS,
   peekCachedReview,
   selfNames,
   storedFriendName,
@@ -61,28 +61,30 @@ function Section({ title, children, aside }: { title: string; children: ReactNod
   );
 }
 
-const RESULT_CHIP: Record<ArchiveResult, { label: string; cls: string; title: string }> = {
-  win: { label: 'W', cls: 'bg-emerald-900/60 text-emerald-300', title: 'Win' },
-  draw: { label: 'D', cls: 'bg-neutral-800 text-neutral-300', title: 'Draw' },
-  loss: { label: 'L', cls: 'bg-rose-900/60 text-rose-300', title: 'Loss' },
-  unknown: { label: '–', cls: 'bg-neutral-800 text-neutral-400', title: 'No result from your side' },
+const RESULT_CHIP_CLS: Record<ArchiveResult, string> = {
+  win: 'bg-emerald-900/60 text-emerald-300',
+  draw: 'bg-neutral-800 text-neutral-300',
+  loss: 'bg-rose-900/60 text-rose-300',
+  unknown: 'bg-neutral-800 text-neutral-400',
 };
 
 function ResultChip({ result }: { result: ArchiveResult }) {
-  const c = RESULT_CHIP[result];
+  const { t } = useTranslation('stats');
+  const title = t(`archive.result.${result}Title`);
   return (
-    <span title={c.title} className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${c.cls}`}>
-      {c.label}
-      <span className="sr-only">{c.title}</span>
+    <span title={title} className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${RESULT_CHIP_CLS[result]}`}>
+      {t(`archive.result.${result}`)}
+      <span className="sr-only">{title}</span>
     </span>
   );
 }
 
 /** "You played white/black" swatch — chess.* tokens, never the neutral ramp. */
 function ColorDot({ color }: { color: 'white' | 'black' }) {
+  const { t } = useTranslation('stats');
   return (
     <span
-      title={`You played ${color}`}
+      title={t(`archive.youPlayed.${color}`)}
       className={`h-3 w-3 shrink-0 rounded-[4px] ring-1 ring-neutral-600 ${color === 'white' ? 'bg-chess-white' : 'bg-chess-black'}`}
     />
   );
@@ -90,25 +92,36 @@ function ColorDot({ color }: { color: 'white' | 'black' }) {
 
 /** Win/draw/loss split: counts as text (never color alone) + a stacked bar. */
 function WdlBar({ counts, label }: { counts: WdlCounts; label: string }) {
+  const { t } = useTranslation('stats');
   const decided = counts.wins + counts.draws + counts.losses;
   return (
     <div>
       <div className="mb-1 flex items-center justify-between gap-2 text-xs">
         <span className="text-neutral-300">{label}</span>
         <span className="text-neutral-400">
-          <span className="font-semibold text-emerald-300">{counts.wins}W</span>
+          <span className="font-semibold text-emerald-300">{t('archive.wdl.winsShort', { count: counts.wins })}</span>
           {' · '}
-          <span className="text-neutral-300">{counts.draws}D</span>
+          <span className="text-neutral-300">{t('archive.wdl.drawsShort', { count: counts.draws })}</span>
           {' · '}
-          <span className="font-semibold text-rose-300">{counts.losses}L</span>
-          {counts.winRate != null && <span> · {counts.winRate}% wins</span>}
+          <span className="font-semibold text-rose-300">{t('archive.wdl.lossesShort', { count: counts.losses })}</span>
+          {counts.winRate != null && <span> · {t('archive.wdl.winRate', { rate: counts.winRate })}</span>}
         </span>
       </div>
       {decided > 0 ? (
-        <div className="flex h-2.5 w-full gap-0.5" role="img" aria-label={`${counts.wins} wins, ${counts.draws} draws, ${counts.losses} losses`}>
-          {counts.wins > 0 && <div title={`${counts.wins} wins`} className="rounded-full bg-emerald-600" style={{ flexGrow: counts.wins, flexBasis: 0 }} />}
-          {counts.draws > 0 && <div title={`${counts.draws} draws`} className="rounded-full bg-neutral-500" style={{ flexGrow: counts.draws, flexBasis: 0 }} />}
-          {counts.losses > 0 && <div title={`${counts.losses} losses`} className="rounded-full bg-rose-600" style={{ flexGrow: counts.losses, flexBasis: 0 }} />}
+        <div
+          className="flex h-2.5 w-full gap-0.5"
+          role="img"
+          aria-label={t('archive.wdl.splitAria', { wins: counts.wins, draws: counts.draws, losses: counts.losses })}
+        >
+          {counts.wins > 0 && (
+            <div title={t('archive.wdl.winsTitle', { count: counts.wins })} className="rounded-full bg-emerald-600" style={{ flexGrow: counts.wins, flexBasis: 0 }} />
+          )}
+          {counts.draws > 0 && (
+            <div title={t('archive.wdl.drawsTitle', { count: counts.draws })} className="rounded-full bg-neutral-500" style={{ flexGrow: counts.draws, flexBasis: 0 }} />
+          )}
+          {counts.losses > 0 && (
+            <div title={t('archive.wdl.lossesTitle', { count: counts.losses })} className="rounded-full bg-rose-600" style={{ flexGrow: counts.losses, flexBasis: 0 }} />
+          )}
         </div>
       ) : (
         <div className="h-2.5 w-full rounded-full bg-neutral-800" />
@@ -137,6 +150,7 @@ const shortDate = (t: number) => new Date(t).toLocaleDateString(undefined, { mon
  * each dot carries a native tooltip.
  */
 function TrendChart({ series }: { series: ChartSeries[] }) {
+  const { t } = useTranslation('stats');
   const drawn = series.filter((s) => s.points.length > 0);
   const all = drawn.flatMap((s) => s.points);
   if (all.length === 0) return null; // callers render their own empty state
@@ -159,7 +173,7 @@ function TrendChart({ series }: { series: ChartSeries[] }) {
   return (
     <div>
       <div className="flex items-stretch gap-3">
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-32 min-w-0 flex-1" role="img" aria-label="Trend chart">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-32 min-w-0 flex-1" role="img" aria-label={t('archive.trend.chartAria')}>
           <line x1={0} y1={y((v0 + v1) / 2)} x2={100} y2={y((v0 + v1) / 2)} stroke="var(--c-line)" strokeWidth={1} vectorEffect="non-scaling-stroke" />
           {drawn.map((s) => (
             <g key={s.label}>
@@ -177,7 +191,7 @@ function TrendChart({ series }: { series: ChartSeries[] }) {
               {s.points.length <= 60 &&
                 s.points.map((p) => (
                   <circle key={p.t} cx={x(p.t)} cy={y(p.value)} r={1.6} fill={s.color}>
-                    <title>{`${s.label} — ${shortDate(p.t)}: ${s.format(p.value)}`}</title>
+                    <title>{t('archive.trend.pointTitle', { label: s.label, date: shortDate(p.t), value: s.format(p.value) })}</title>
                   </circle>
                 ))}
             </g>
@@ -217,17 +231,19 @@ function EmptyChartNote({ children }: { children: ReactNode }) {
 
 function Pills<T extends string>({
   label,
+  ariaLabel,
   value,
   onChange,
   options,
 }: {
   label: string;
+  ariaLabel: string;
   value: T;
   onChange: (v: T) => void;
   options: { id: T; label: string }[];
 }) {
   return (
-    <div className="flex items-center gap-1.5" role="group" aria-label={`Filter by ${label.toLowerCase()}`}>
+    <div className="flex items-center gap-1.5" role="group" aria-label={ariaLabel}>
       <span className="text-xs text-neutral-400">{label}</span>
       <div className="flex gap-0.5 rounded-full bg-panelmute p-0.5">
         {options.map((o) => (
@@ -252,12 +268,15 @@ function Pills<T extends string>({
 // ---------------------------------------------------------------------------
 
 function GameRow({ game, onOpen }: { game: ArchiveGame; onOpen: (g: ArchiveGame) => void }) {
-  const title = game.userColor && game.opponent ? `You vs ${game.opponent}` : `${game.white} vs ${game.black}`;
+  const { t } = useTranslation('stats');
+  const title = game.userColor && game.opponent
+    ? t('archive.row.youVs', { opponent: game.opponent })
+    : t('archive.row.whiteVsBlack', { white: game.white, black: game.black });
   const subtitle = [
-    KIND_LABELS[game.kind],
-    game.moves > 0 ? `${game.moves} move${game.moves === 1 ? '' : 's'}` : null,
+    t(`archive.kind.${game.kind}`),
+    game.moves > 0 ? t('archive.row.moves', { count: game.moves }) : null,
     game.opening?.name ?? null,
-    game.resultRaw !== '*' ? game.resultRaw : 'unfinished',
+    game.resultRaw !== '*' ? game.resultRaw : t('archive.row.unfinished'),
   ]
     .filter(Boolean)
     .join(' · ');
@@ -271,8 +290,8 @@ function GameRow({ game, onOpen }: { game: ArchiveGame; onOpen: (g: ArchiveGame)
         <span className="block truncate text-xs text-neutral-400">{subtitle}</span>
       </span>
       {game.accuracy != null && (
-        <span title="Your accuracy in the saved review" className="shrink-0 rounded-full bg-neutral-800 px-2 py-0.5 text-xs font-semibold text-brand-300">
-          {game.accuracy.toFixed(1)}%
+        <span title={t('archive.row.accuracyTitle')} className="shrink-0 rounded-full bg-neutral-800 px-2 py-0.5 text-xs font-semibold text-brand-300">
+          {t('percent', { value: game.accuracy.toFixed(1) })}
         </span>
       )}
       {/* Deliberately LOCAL time (unlike the UTC-bucketed charts): the list
@@ -291,11 +310,7 @@ function GameRow({ game, onOpen }: { game: ArchiveGame; onOpen: (g: ArchiveGame)
   if (!game.pgn || !game.gameKey) {
     return (
       <div
-        title={
-          !game.pgn
-            ? "Casual games only log their result — the moves aren't stored, so there's nothing to review."
-            : "This game can't be opened — its saved PGN has no readable moves."
-        }
+        title={!game.pgn ? t('archive.row.casualNoMoves') : t('archive.row.unreadablePgn')}
         className="flex min-h-11 w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left"
       >
         {body}
@@ -305,7 +320,7 @@ function GameRow({ game, onOpen }: { game: ArchiveGame; onOpen: (g: ArchiveGame)
   return (
     <button
       onClick={() => onOpen(game)}
-      title="Open this game on the analysis board"
+      title={t('archive.row.openTitle')}
       className="btn-press flex min-h-11 w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left hover:bg-neutral-800"
     >
       {body}
@@ -314,8 +329,9 @@ function GameRow({ game, onOpen }: { game: ArchiveGame; onOpen: (g: ArchiveGame)
 }
 
 function LoadingRows() {
+  const { t } = useTranslation('stats');
   return (
-    <div className="space-y-1.5" role="status" aria-label="Loading your games">
+    <div className="space-y-1.5" role="status" aria-label={t('archive.loadingAria')}>
       {[0, 1, 2, 3, 4].map((i) => (
         <div key={i} className="flex animate-pulse items-center gap-2.5 rounded-xl px-2.5 py-2">
           <span className="h-7 w-7 rounded-full bg-neutral-800" />
@@ -337,6 +353,7 @@ function LoadingRows() {
 const LIST_PREVIEW = 30;
 
 export function ArchivePage({ goPlay }: { goPlay: () => void }) {
+  const { t } = useTranslation('stats');
   const token = useAuth((s) => s.token);
   const username = useAuth((s) => s.username);
 
@@ -467,10 +484,10 @@ export function ArchivePage({ goPlay }: { goPlay: () => void }) {
     const from = periodStart(filter.period, now);
     const pct = (v: number) => `${Math.round(v)}`;
     return [
-      { label: 'Bots', color: 'var(--c-brand-400)', points: ratingSeries(botsHistory, meter).filter((p) => p.t >= from), format: pct },
-      { label: 'Blitz', color: 'var(--c-gold-400)', points: ratingSeries(blitzHistory, meter).filter((p) => p.t >= from), format: pct },
+      { label: t('archive.series.bots'), color: 'var(--c-brand-400)', points: ratingSeries(botsHistory, meter).filter((p) => p.t >= from), format: pct },
+      { label: t('archive.series.blitz'), color: 'var(--c-gold-400)', points: ratingSeries(blitzHistory, meter).filter((p) => p.t >= from), format: pct },
     ].filter((l) => l.points.length > 0);
-  }, [botsHistory, blitzHistory, meter, filter.period, now]);
+  }, [botsHistory, blitzHistory, meter, filter.period, now, t]);
   // Coach digests carry the review's result / player colour / timestamp, so
   // the strengths & weaknesses card can honour the same Result/Color/Period
   // slice as every sibling Insights section (digest createdAt plays the role
@@ -488,20 +505,23 @@ export function ArchivePage({ goPlay }: { goPlay: () => void }) {
   const strengths = useMemo(() => {
     const out: string[] = [];
     const phases = profile.phases.filter((p) => p.moves > 0).sort((a, b) => b.accuracy - a.accuracy);
-    if (phases[0]) out.push(`Strongest phase: ${phases[0].phase} (${phases[0].accuracy}% accuracy)`);
+    if (phases[0]) {
+      out.push(t('archive.strengths.phase', { phase: t(`archive.phaseNames.${phases[0].phase}`), accuracy: phases[0].accuracy }));
+    }
     const w = profile.colors.white;
     const b = profile.colors.black;
     if (w.games > 0 && b.games > 0 && w.accuracy !== b.accuracy) {
       const better = w.accuracy > b.accuracy ? ('white' as const) : ('black' as const);
       const bt = better === 'white' ? w : b;
       const ot = better === 'white' ? b : w;
-      out.push(`More accurate as ${better === 'white' ? 'White' : 'Black'} (${bt.accuracy}% vs ${ot.accuracy}%)`);
+      out.push(t('archive.strengths.color', { side: t(`archive.sides.${better}`), better: bt.accuracy, other: ot.accuracy }));
     }
     for (const entry of profile.weaknesses) {
-      if (entry.trend != null && entry.trend < 0) out.push(`Improving: ${entry.meta.label.toLowerCase()} — fewer in your recent games`);
+      // entry.meta.label comes from lib/weakness (stores group) — passed through untranslated.
+      if (entry.trend != null && entry.trend < 0) out.push(t('archive.strengths.improving', { label: entry.meta.label.toLowerCase() }));
     }
     return out;
-  }, [profile]);
+  }, [profile, t]);
 
   const tabBtn = (id: 'games' | 'insights', label: string) => (
     <button
@@ -520,11 +540,11 @@ export function ArchivePage({ goPlay }: { goPlay: () => void }) {
   // Rating history lives in the ratings store, not the archive — the trend can
   // (and should) render even when no archived game matches the current slice.
   const ratingSection = (
-    <Section title="Rating trend" aside={`rated bot games · ${meter}`}>
+    <Section title={t('archive.sections.ratingTrend')} aside={t('archive.sections.ratingTrendAside', { meter })}>
       {ratingLines.length > 0 ? (
         <TrendChart series={ratingLines} />
       ) : (
-        <EmptyChartNote>No rated games in this period — finish a game against a bot to start your rating history.</EmptyChartNote>
+        <EmptyChartNote>{t('archive.sections.ratingTrendEmpty')}</EmptyChartNote>
       )}
     </Section>
   );
@@ -532,42 +552,45 @@ export function ArchivePage({ goPlay }: { goPlay: () => void }) {
   return (
     <div className="mx-auto w-full max-w-[1000px] space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-1 rounded-full bg-panelmute p-1" role="group" aria-label="Archive sections">
-          {tabBtn('games', 'Games')}
-          {tabBtn('insights', 'Insights')}
+        <div className="flex gap-1 rounded-full bg-panelmute p-1" role="group" aria-label={t('archive.tabs.aria')}>
+          {tabBtn('games', t('archive.tabs.games'))}
+          {tabBtn('insights', t('archive.tabs.insights'))}
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <Pills<ResultFilter>
-            label="Result"
+            label={t('archive.filters.resultLabel')}
+            ariaLabel={t('archive.filters.resultAria')}
             value={filter.result}
             onChange={(result) => setFilter((f) => ({ ...f, result }))}
             options={[
-              { id: 'all', label: 'All' },
-              { id: 'win', label: 'Wins' },
-              { id: 'draw', label: 'Draws' },
-              { id: 'loss', label: 'Losses' },
+              { id: 'all', label: t('archive.filters.all') },
+              { id: 'win', label: t('archive.filters.wins') },
+              { id: 'draw', label: t('archive.filters.draws') },
+              { id: 'loss', label: t('archive.filters.losses') },
             ]}
           />
           <Pills<ColorFilter>
-            label="Color"
+            label={t('archive.filters.colorLabel')}
+            ariaLabel={t('archive.filters.colorAria')}
             value={filter.color}
             onChange={(color) => setFilter((f) => ({ ...f, color }))}
             options={[
-              { id: 'all', label: 'Any' },
-              { id: 'white', label: 'White' },
-              { id: 'black', label: 'Black' },
+              { id: 'all', label: t('archive.filters.any') },
+              { id: 'white', label: t('archive.filters.white') },
+              { id: 'black', label: t('archive.filters.black') },
             ]}
           />
           <Pills<PeriodFilter>
-            label="Period"
+            label={t('archive.filters.periodLabel')}
+            ariaLabel={t('archive.filters.periodAria')}
             value={filter.period}
             onChange={(period) => setFilter((f) => ({ ...f, period }))}
             options={[
-              { id: 'all', label: 'All time' },
-              { id: '7d', label: '7d' },
-              { id: '30d', label: '30d' },
-              { id: '90d', label: '90d' },
-              { id: '365d', label: 'Year' },
+              { id: 'all', label: t('archive.filters.allTime') },
+              { id: '7d', label: t('archive.filters.7d') },
+              { id: '30d', label: t('archive.filters.30d') },
+              { id: '90d', label: t('archive.filters.90d') },
+              { id: '365d', label: t('archive.filters.year') },
             ]}
           />
         </div>
@@ -575,9 +598,9 @@ export function ArchivePage({ goPlay }: { goPlay: () => void }) {
 
       {loadError && (
         <p role="status" className="flex items-center justify-between gap-2 rounded-xl bg-panel px-3 py-2 text-sm text-amber-300">
-          Could not load your saved games — check your connection.
+          {t('archive.loadError')}
           <button onClick={() => setRetryNonce((n) => n + 1)} className="rounded-full bg-neutral-800 px-3 py-1 text-xs font-semibold text-neutral-200 hover:bg-neutral-700">
-            Retry
+            {t('archive.retry')}
           </button>
         </p>
       )}
@@ -590,30 +613,29 @@ export function ArchivePage({ goPlay }: { goPlay: () => void }) {
             <div className="flex flex-col items-center gap-3 p-4 text-center text-sm text-neutral-400 sm:flex-row sm:text-left">
               <EmptyBoardArt width={150} height={112} className="shrink-0" />
               <div>
-                <div className="mb-1 font-display text-base font-semibold text-ink">No games in your archive yet</div>
-                Finish a game against a bot and hit “Save” on the board — it lands here with its result, opening and (after a
-                review) accuracy.
-                {!token && <> Sign in first so your games follow your account; pass &amp; play results from this device also show here.</>}
+                <div className="mb-1 font-display text-base font-semibold text-ink">{t('archive.empty.title')}</div>
+                {t('archive.empty.body')}
+                {!token && <> {t('archive.empty.signIn')}</>}
               </div>
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center gap-2 p-6 text-center text-sm text-neutral-400">
-              No games match these filters.
+              {t('archive.noMatch')}
               <button
                 onClick={() => setFilter(DEFAULT_FILTER)}
                 className="rounded-full bg-neutral-800 px-3 py-1.5 text-xs font-semibold text-neutral-200 hover:bg-neutral-700"
               >
-                Clear filters
+                {t('archive.filters.clear')}
               </button>
             </div>
           ) : (
             <>
               <div className="mb-2 flex items-center justify-between px-1 text-xs text-neutral-400">
                 <span>
-                  {filtered.length} game{filtered.length === 1 ? '' : 's'}
-                  {filterActive ? ' (filtered)' : ''}
+                  {t('archive.count', { count: filtered.length })}
+                  {filterActive ? ` ${t('archive.filteredSuffix')}` : ''}
                 </span>
-                {!token && <span>Sign in to save bot games to your archive</span>}
+                {!token && <span>{t('archive.signInHint')}</span>}
               </div>
               <ul className="space-y-0.5">
                 {visible.map((g) => (
@@ -627,7 +649,7 @@ export function ArchivePage({ goPlay }: { goPlay: () => void }) {
                   onClick={() => setShowAll((v) => !v)}
                   className="mt-2 w-full rounded-full bg-neutral-800 px-3 py-1.5 text-xs font-semibold text-neutral-200 hover:bg-neutral-700"
                 >
-                  {showAll ? 'Show fewer' : `Show all ${filtered.length}`}
+                  {showAll ? t('archive.showFewer') : t('archive.showAll', { count: filtered.length })}
                 </button>
               )}
             </>
@@ -646,11 +668,9 @@ export function ArchivePage({ goPlay }: { goPlay: () => void }) {
               <EmptyStatsArt width={150} height={112} className="shrink-0" />
               <div>
                 <div className="mb-1 font-display text-base font-semibold text-ink">
-                  {games.length === 0 ? 'Your dashboard starts with a game' : 'Nothing in this slice'}
+                  {games.length === 0 ? t('archive.insightsEmpty.noGamesTitle') : t('archive.insightsEmpty.noSliceTitle')}
                 </div>
-                {games.length === 0
-                  ? 'Play and save games — win/loss trends, openings and accuracy charts grow from your archive.'
-                  : 'No archived games match the current filters — widen the period or clear the filters to see your trends.'}
+                {games.length === 0 ? t('archive.insightsEmpty.noGamesBody') : t('archive.insightsEmpty.noSliceBody')}
               </div>
             </div>
             {ratingLines.length > 0 && ratingSection}
@@ -658,32 +678,40 @@ export function ArchivePage({ goPlay }: { goPlay: () => void }) {
         ) : (
           <>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <StatCard label="Games" value={wdl.total} hint={filterActive ? 'in this slice' : 'all time'} />
-              <StatCard label="Record" value={`${wdl.wins}-${wdl.draws}-${wdl.losses}`} hint="W-D-L" />
-              <StatCard label="Win rate" value={wdl.winRate != null ? `${wdl.winRate}%` : '—'} hint={wdl.unknown > 0 ? `${wdl.unknown} without a result` : 'of games with a result'} />
-              <StatCard label="Accuracy" value={avgAcc != null ? `${avgAcc}%` : '—'} hint={reviewed > 0 ? `avg of ${reviewed} review${reviewed === 1 ? '' : 's'}` : 'no reviews yet'} />
+              <StatCard label={t('archive.stats.games')} value={wdl.total} hint={filterActive ? t('archive.stats.inSlice') : t('archive.stats.allTime')} />
+              <StatCard label={t('archive.stats.record')} value={`${wdl.wins}-${wdl.draws}-${wdl.losses}`} hint={t('archive.stats.recordHint')} />
+              <StatCard
+                label={t('archive.stats.winRate')}
+                value={wdl.winRate != null ? t('percent', { value: wdl.winRate }) : '—'}
+                hint={wdl.unknown > 0 ? t('archive.stats.noResult', { count: wdl.unknown }) : t('archive.stats.withResult')}
+              />
+              <StatCard
+                label={t('archive.stats.accuracy')}
+                value={avgAcc != null ? t('percent', { value: avgAcc }) : '—'}
+                hint={reviewed > 0 ? t('archive.stats.avgReviews', { count: reviewed }) : t('archive.stats.noReviews')}
+              />
             </div>
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <Section title="Win / draw / loss">
+              <Section title={t('archive.sections.wdl')}>
                 <div className="space-y-3">
-                  <WdlBar counts={wdl} label="All games" />
-                  <WdlBar counts={wdlWhite} label="As White" />
-                  <WdlBar counts={wdlBlack} label="As Black" />
+                  <WdlBar counts={wdl} label={t('archive.wdl.allGames')} />
+                  <WdlBar counts={wdlWhite} label={t('archive.wdl.asWhite')} />
+                  <WdlBar counts={wdlBlack} label={t('archive.wdl.asBlack')} />
                 </div>
               </Section>
 
               {ratingSection}
 
-              <Section title="Accuracy trend" aside="from your game reviews">
+              <Section title={t('archive.sections.accuracyTrend')} aside={t('archive.sections.accuracyTrendAside')}>
                 {accTrend.length > 0 ? (
-                  <TrendChart series={[{ label: 'Accuracy', color: 'var(--c-brand-400)', points: accTrend, format: (v) => `${v}%` }]} />
+                  <TrendChart series={[{ label: t('archive.series.accuracy'), color: 'var(--c-brand-400)', points: accTrend, format: (v) => `${v}%` }]} />
                 ) : (
-                  <EmptyChartNote>No reviewed games in this slice — open a game and run “Review” to chart your accuracy.</EmptyChartNote>
+                  <EmptyChartNote>{t('archive.sections.accuracyTrendEmpty')}</EmptyChartNote>
                 )}
               </Section>
 
-              <Section title="Most-played openings">
+              <Section title={t('archive.sections.openings')}>
                 {openingsTop.length > 0 ? (
                   <ul className="space-y-2">
                     {openingsTop.map((o) => (
@@ -693,30 +721,29 @@ export function ArchivePage({ goPlay }: { goPlay: () => void }) {
                           {o.name}
                         </span>
                         <span className="shrink-0 text-xs text-neutral-400">
-                          {o.games} game{o.games === 1 ? '' : 's'} ·{' '}
-                          <span className="font-semibold text-emerald-300">{o.wins}W</span> <span className="text-neutral-300">{o.draws}D</span>{' '}
-                          <span className="font-semibold text-rose-300">{o.losses}L</span>
+                          {t('archive.count', { count: o.games })} ·{' '}
+                          <span className="font-semibold text-emerald-300">{t('archive.wdl.winsShort', { count: o.wins })}</span>{' '}
+                          <span className="text-neutral-300">{t('archive.wdl.drawsShort', { count: o.draws })}</span>{' '}
+                          <span className="font-semibold text-rose-300">{t('archive.wdl.lossesShort', { count: o.losses })}</span>
                         </span>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <EmptyChartNote>No named openings yet — openings are detected from each saved game’s moves.</EmptyChartNote>
+                  <EmptyChartNote>{t('archive.sections.openingsEmpty')}</EmptyChartNote>
                 )}
               </Section>
             </div>
 
-            <Section title="Strengths & weaknesses" aside="from reviewed games · full detail on the Coach tab">
+            <Section title={t('archive.sections.sw')} aside={t('archive.sections.swAside')}>
               {profile.games === 0 ? (
                 <EmptyChartNote>
-                  {digestCount > 0
-                    ? 'No reviewed games match the current filters — widen the period or clear the filters to see this breakdown.'
-                    : 'Review a finished game (Play → Review) and the coach will chart what you do well and what keeps costing you.'}
+                  {digestCount > 0 ? t('archive.profileEmpty.filtered') : t('archive.profileEmpty.none')}
                 </EmptyChartNote>
               ) : (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-300">Strengths</h4>
+                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-300">{t('archive.strengths.title')}</h4>
                     {strengths.length > 0 ? (
                       <ul className="space-y-1.5 text-sm text-neutral-200">
                         {strengths.map((s) => (
@@ -727,11 +754,11 @@ export function ArchivePage({ goPlay }: { goPlay: () => void }) {
                         ))}
                       </ul>
                     ) : (
-                      <p className="text-sm text-neutral-400">Not enough reviewed games to call out strengths yet.</p>
+                      <p className="text-sm text-neutral-400">{t('archive.strengths.empty')}</p>
                     )}
                   </div>
                   <div>
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-rose-300">Weaknesses</h4>
+                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-rose-300">{t('archive.weaknesses.title')}</h4>
                     {profile.weaknesses.length > 0 ? (
                       <ul className="space-y-2">
                         {profile.weaknesses.slice(0, 3).map((w) => (
@@ -741,15 +768,15 @@ export function ArchivePage({ goPlay }: { goPlay: () => void }) {
                             </span>
                             {w.meta.label}
                             <span className="ml-1.5 text-xs text-neutral-400">
-                              ×{w.count} in {w.games} game{w.games === 1 ? '' : 's'}
-                              {w.trend != null && (w.trend < 0 ? ' · improving' : w.trend > 0 ? ' · rising' : '')}
+                              {t('archive.weaknesses.occurrences', { times: w.count, count: w.games })}
+                              {w.trend != null && (w.trend < 0 ? t('archive.weaknesses.improving') : w.trend > 0 ? t('archive.weaknesses.rising') : '')}
                             </span>
                             <span className="block text-xs text-neutral-400">{w.meta.summary}</span>
                           </li>
                         ))}
                       </ul>
                     ) : (
-                      <p className="text-sm text-neutral-400">No recurring weakness found in your recent reviews — keep it up.</p>
+                      <p className="text-sm text-neutral-400">{t('archive.weaknesses.empty')}</p>
                     )}
                   </div>
                 </div>

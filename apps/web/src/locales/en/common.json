@@ -7,5 +7,14 @@
   "install": {
     "label": "Install",
     "tooltip": "Install Chesser as an app"
+  },
+  "srs": {
+    "new": "new",
+    "due": "due",
+    "soon": "soon",
+    "days_one": "{{count}}d",
+    "days_other": "{{count}}d",
+    "hours_one": "{{count}}h",
+    "hours_other": "{{count}}h"
   }
 }

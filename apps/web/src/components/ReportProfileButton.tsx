@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../store/auth';
 import { apiReportProfile, REPORT_REASONS } from '../lib/trustApi';
 import { Modal } from './Modal';
@@ -11,6 +12,7 @@ import { Modal } from './Modal';
  * hint instead of a form.
  */
 export function ReportProfileButton({ username }: { username: string }) {
+  const { t } = useTranslation(['profile', 'common']);
   const token = useAuth((s) => s.token);
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState(REPORT_REASONS[0]!.id);
@@ -42,7 +44,7 @@ export function ReportProfileButton({ username }: { username: string }) {
       await apiReportProfile(token, username, reason, details.trim() || undefined);
       setDone(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not send the report — try again.');
+      setError(err instanceof Error ? err.message : t('report.error'));
     } finally {
       setBusy(false);
     }
@@ -54,40 +56,40 @@ export function ReportProfileButton({ username }: { username: string }) {
         onClick={openDialog}
         className="btn-press rounded-full px-3 py-1 text-xs font-semibold text-neutral-400 underline decoration-neutral-600 underline-offset-2 hover:text-neutral-200"
       >
-        Report this profile
+        {t('report.button')}
       </button>
       {open && (
         <Modal onClose={close} labelledBy="report-profile-title" className="w-full max-w-sm rounded-2xl bg-panel p-4 shadow-soft">
           <h3 id="report-profile-title" className="font-display text-base font-semibold text-ink">
-            Report {username}
+            {t('report.title', { username })}
           </h3>
           {done ? (
             <div className="mt-2 space-y-3">
               <p role="status" className="text-sm text-neutral-300">
-                Thanks — your report was recorded and will be reviewed.
+                {t('report.done')}
               </p>
               <button
                 onClick={close}
                 className="btn-press w-full rounded-full bg-neutral-700 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-600"
               >
-                Close
+                {t('common:actions.close')}
               </button>
             </div>
           ) : !token ? (
             <div className="mt-2 space-y-3">
-              <p className="text-sm text-neutral-300">Sign in (top right) to report a profile — reports need an account.</p>
+              <p className="text-sm text-neutral-300">{t('report.signedOut')}</p>
               <button
                 onClick={close}
                 className="btn-press w-full rounded-full bg-neutral-700 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-600"
               >
-                Close
+                {t('common:actions.close')}
               </button>
             </div>
           ) : (
             <form onSubmit={submit} className="mt-2 space-y-3">
               <fieldset>
                 <legend className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-neutral-400">
-                  What&apos;s wrong?
+                  {t('report.reasonLegend')}
                 </legend>
                 <div className="space-y-1">
                   {REPORT_REASONS.map((r) => (
@@ -100,14 +102,14 @@ export function ReportProfileButton({ username }: { username: string }) {
                         onChange={() => setReason(r.id)}
                         className="accent-brand-500"
                       />
-                      {r.label}
+                      {t(r.labelKey)}
                     </label>
                   ))}
                 </div>
               </fieldset>
               <div>
                 <label htmlFor="report-details" className="mb-1 block text-xs font-semibold uppercase tracking-wide text-neutral-400">
-                  Details (optional)
+                  {t('report.details')}
                 </label>
                 <textarea
                   id="report-details"
@@ -130,14 +132,14 @@ export function ReportProfileButton({ username }: { username: string }) {
                   disabled={busy}
                   className="btn-press flex-1 rounded-full bg-neutral-700 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-600 disabled:opacity-50"
                 >
-                  Cancel
+                  {t('common:actions.cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={busy}
                   className="btn-press flex-1 rounded-full bg-brand-600 py-2 text-sm font-bold text-white hover:bg-brand-700 disabled:opacity-50"
                 >
-                  {busy ? 'Sending…' : 'Send report'}
+                  {busy ? t('report.sending') : t('report.send')}
                 </button>
               </div>
             </form>

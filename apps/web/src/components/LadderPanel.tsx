@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useGame, type Color, type TimeControl } from '../store/game';
 import { useLadder } from '../store/ladder';
 import { BOT_ROSTER, humanBackendFor, resolveBotConfig, type RosterBot } from '../data/botRoster';
@@ -12,6 +13,7 @@ const TIME_CONTROLS: (TimeControl | null)[] = [
 ];
 
 export function LadderPanel() {
+  const { t } = useTranslation(['play', 'bots']);
   const availability = useGame((s) => s.availability);
   const newGame = useGame((s) => s.newGame);
   const timeControl = useGame((s) => s.timeControl);
@@ -49,18 +51,16 @@ export function LadderPanel() {
   return (
     <div className="rounded-2xl bg-panel p-3 shadow-soft">
       <div className="mb-2 flex items-baseline justify-between">
-        <h3 className="font-display text-sm font-semibold text-ink">The ladder</h3>
+        <h3 className="font-display text-sm font-semibold text-ink">{t('ladder.title')}</h3>
         <span className="text-xs text-neutral-400">
-          {cleared}/{BOT_ROSTER.length} cleared
+          {t('ladder.cleared', { cleared, total: BOT_ROSTER.length })}
         </span>
       </div>
-      <p className="mb-3 text-xs leading-snug text-neutral-400">
-        Beat each bot to unlock the next. Cleared rungs stay open — replay them any time, with either colour.
-      </p>
+      <p className="mb-3 text-xs leading-snug text-neutral-400">{t('ladder.intro')}</p>
 
       {/* play-as colour */}
       <div className="mb-2">
-        <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">You play</div>
+        <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('color.label')}</div>
         <div className="flex gap-1">
           {(['white', 'black', 'random'] as const).map((c) => (
             <button
@@ -71,7 +71,7 @@ export function LadderPanel() {
                 color === c ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
               }`}
             >
-              {c}
+              {t(`color.${c}`)}
             </button>
           ))}
         </div>
@@ -79,7 +79,7 @@ export function LadderPanel() {
 
       {/* time control */}
       <div className="mb-3">
-        <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Time control</div>
+        <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('timeControl.label')}</div>
         <div className="flex gap-1">
           {TIME_CONTROLS.map((tc) => {
             const selected = (timeControl?.label ?? 'unlimited') === (tc?.label ?? 'unlimited');
@@ -91,7 +91,7 @@ export function LadderPanel() {
                   selected ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                 }`}
               >
-                {tc?.label ?? '∞'}
+                {tc?.label ?? t('timeControl.unlimited')}
               </button>
             );
           })}
@@ -128,26 +128,30 @@ export function LadderPanel() {
                     <span className="shrink-0 font-mono text-xs text-neutral-400">{bot.rating}</span>
                   </div>
                   <div className="text-xs text-neutral-400">
-                    {bot.title}
+                    {t(`bots:roster.${bot.id}.title`, { defaultValue: bot.title })}
                     {isHuman && availability && (
                       // Honest backend label: what actually answers this persona's moves.
                       <span className="ml-1">
                         ·{' '}
                         {backend === 'maia'
-                          ? 'Maia neural net'
+                          ? t('ladder.backend.maiaNet')
                           : backend === 'stockfish'
-                            ? 'human-like (engine)'
-                            : 'Stockfish stand-in'}
+                            ? t('ladder.backend.engineHuman')
+                            : t('ladder.backend.standIn')}
                       </span>
                     )}
-                    {botCleared && <span className="ml-1 text-emerald-400">· ✓ cleared</span>}
+                    {botCleared && <span className="ml-1 text-emerald-400">{t('ladder.clearedBadge')}</span>}
                   </div>
-                  <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-neutral-400">{bot.bio}</p>
+                  <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-neutral-400">
+                    {t(`bots:roster.${bot.id}.bio`, { defaultValue: bot.bio })}
+                  </p>
                 </div>
               </div>
               <div className="mt-1.5 flex items-center justify-end">
                 {!unlocked ? (
-                  <span className="text-xs text-neutral-400">🔒 Beat {prev?.name ?? 'the previous bot'} to unlock</span>
+                  <span className="text-xs text-neutral-400">
+                    {t('ladder.lockedHint', { name: prev?.name ?? t('ladder.previousBot') })}
+                  </span>
                 ) : (
                   <button
                     onClick={() => start(bot)}
@@ -157,7 +161,7 @@ export function LadderPanel() {
                         : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                     }`}
                   >
-                    {isActive ? 'Restart' : botCleared ? 'Replay' : 'Play ▶'}
+                    {isActive ? t('ladder.restart') : botCleared ? t('ladder.replay') : t('ladder.play')}
                   </button>
                 )}
               </div>
@@ -170,11 +174,11 @@ export function LadderPanel() {
       <div className="mt-3 text-right">
         {!confirmReset ? (
           <button onClick={() => setConfirmReset(true)} className="text-xs text-neutral-400 hover:text-neutral-300">
-            Reset ladder progress
+            {t('ladder.reset.prompt')}
           </button>
         ) : (
           <span className="text-xs text-neutral-400">
-            Reset all progress?{' '}
+            {t('ladder.reset.confirm')}{' '}
             <button
               onClick={() => {
                 reset();
@@ -182,11 +186,11 @@ export function LadderPanel() {
               }}
               className="text-rose-400 hover:text-rose-300"
             >
-              Yes
+              {t('ladder.reset.yes')}
             </button>{' '}
             ·{' '}
             <button onClick={() => setConfirmReset(false)} className="text-neutral-300 hover:text-neutral-100">
-              No
+              {t('ladder.reset.no')}
             </button>
           </span>
         )}

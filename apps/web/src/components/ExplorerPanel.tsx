@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ExplorerMove } from '@chesser/shared';
 import { STARTING_FEN } from '@chesser/shared';
 import { OpeningExplorer } from './OpeningExplorer';
@@ -11,6 +12,7 @@ import { useRepertoire } from '../store/repertoire';
  * standard start — each row can also be saved into a repertoire.
  */
 export function ExplorerPanel() {
+  const { t } = useTranslation('explorer');
   const fen = useGame((s) => s.fen);
   const mode = useGame((s) => s.mode);
   const history = useGame((s) => s.history);
@@ -37,7 +39,7 @@ export function ExplorerPanel() {
   const saveMove = (m: ExplorerMove) => {
     const moves = [...pathSan, m.san];
     let repId = target || user.find((r) => r.id === target)?.id || '';
-    if (!repId) repId = createRepertoire('My repertoire');
+    if (!repId) repId = createRepertoire(t('openings:myRepertoire'));
     let name = '';
     for (let i = 0; i < moves.length; i++) name += (i % 2 === 0 ? `${i / 2 + 1}.` : '') + moves[i] + ' ';
     addLine(repId, { name: name.trim(), side: turnColor, moves });
@@ -56,8 +58,8 @@ export function ExplorerPanel() {
           ? (m) => (
               <button
                 onClick={() => saveMove(m)}
-                title="Save this line to your repertoire"
-                aria-label={`Save line with ${m.san} to your repertoire`}
+                title={t('save.saveTitle')}
+                aria-label={t('save.saveAria', { san: m.san })}
                 className={`shrink-0 rounded px-1.5 py-1 text-xs ${added === m.uci ? 'text-emerald-400' : 'text-neutral-400 hover:bg-neutral-700 hover:text-emerald-300'}`}
               >
                 {added === m.uci ? '✓' : '＋'}
@@ -68,14 +70,14 @@ export function ExplorerPanel() {
     >
       {canSave && (
         <div className="mb-2 flex items-center gap-1 text-xs text-neutral-400">
-          <span className="shrink-0">＋ to</span>
+          <span className="shrink-0">{t('save.addTo')}</span>
           <select
             value={target}
             onChange={(e) => setTarget(e.target.value)}
-            aria-label="Repertoire to save lines into"
+            aria-label={t('save.targetAria')}
             className="min-w-0 flex-1 rounded bg-neutral-800 px-1 py-0.5 text-xs text-ink outline-none"
           >
-            {user.length === 0 && <option value="">My repertoire (new)</option>}
+            {user.length === 0 && <option value="">{t('save.newRepOption')}</option>}
             {user.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.name}

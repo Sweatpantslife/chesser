@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { Chess } from 'chess.js';
 import type { TablebaseResult } from '@chesser/shared';
 import { Board } from '../board/Board';
@@ -10,6 +11,7 @@ import { ENDGAME_DRILLS, ENDGAME_DRILL_IDS, type EndgameDrill } from '../trainer
 import { useProgress } from '../store/progress';
 import { recordReview } from '../lib/gamify';
 import { dueLabel } from '../lib/srs';
+import { dueDisplayLabel } from '../lib/srsText';
 import type { Color } from '../store/game';
 
 type Phase = 'playing' | 'won' | 'held' | 'slipped';
@@ -27,6 +29,7 @@ const bareKing = (game: Chess, color: 'w' | 'b') =>
     .filter((p) => p && p.color === color).length === 1;
 
 export function EndgameDrillsPage() {
+  const { t } = useTranslation('train');
   const game = useRef(new Chess());
   const gameId = useRef(0);
   // Tablebase data tagged with the exact position it describes — judging a
@@ -193,8 +196,8 @@ export function EndgameDrillsPage() {
       kind: 'info',
       text:
         d.goal === 'win'
-          ? `You are ${d.youPlay === 'white' ? 'White' : 'Black'} — convert the win against perfect defence.`
-          : `You are ${d.youPlay === 'white' ? 'White' : 'Black'} — hold the draw against perfect play.`,
+          ? t('endgameDrills.introWin', { color: t(`colorsUpper.${d.youPlay}`) })
+          : t('endgameDrills.introDraw', { color: t(`colorsUpper.${d.youPlay}`) }),
     });
     setFen(game.current.fen());
     setLastMove(undefined);
@@ -238,12 +241,12 @@ export function EndgameDrillsPage() {
         const best = before!.moves?.[0];
         setFeedback({
           kind: 'bad',
-          text: `${verdict.text} Best was ${best?.san ?? '—'}. Take-back — try again.`,
+          text: t('endgameDrills.bestWas', { verdict: verdict.text, san: best?.san ?? '—' }),
         });
         setSyncKey((k) => k + 1);
         return;
       }
-      setFeedback({ kind: verdict.kind, text: `${verdict.text} (tablebase)` });
+      setFeedback({ kind: verdict.kind, text: t('endgameDrills.tbSuffix', { verdict: verdict.text }) });
       if (pvAt.current >= 0 && drill.solution[pvAt.current] === mv.san) pvAt.current += 1;
       else pvAt.current = -1;
     } else if (pvAt.current >= 0) {
@@ -254,16 +257,16 @@ export function EndgameDrillsPage() {
         setMistakes((n) => n + 1);
         setFeedback({
           kind: 'bad',
-          text: `Offline — can’t verify that against the tablebase. The book line plays ${expected} here. Take-back — try again.`,
+          text: t('endgameDrills.offlineBook', { san: expected }),
         });
         setSyncKey((k) => k + 1);
         return;
       }
       pvAt.current += 1;
-      setFeedback({ kind: 'good', text: `${mv.san} — book move ✓ (offline)` });
+      setFeedback({ kind: 'good', text: t('endgameDrills.bookMove', { san: mv.san }) });
     } else {
       // Off the book line with no tablebase: accept, but say we can't judge it.
-      setFeedback({ kind: 'info', text: `${mv.san} — unverified (offline, off the book line).` });
+      setFeedback({ kind: 'info', text: t('endgameDrills.unverified', { san: mv.san }) });
     }
 
     playMoveSound(mv.san);
@@ -279,8 +282,8 @@ export function EndgameDrillsPage() {
     const best = cur?.moves?.[0]?.san ?? (pvAt.current >= 0 ? drill.solution[pvAt.current] : undefined);
     setFeedback(
       best
-        ? { kind: 'info', text: `Hint: ${best} — ${cur ? 'tablebase best.' : 'the book move.'}` }
-        : { kind: 'info', text: 'No hint available here — trust the technique.' },
+        ? { kind: 'info', text: cur ? t('endgameDrills.hintTb', { san: best }) : t('endgameDrills.hintBook', { san: best }) }
+        : { kind: 'info', text: t('endgameDrills.noHint') },
     );
   };
 
@@ -292,7 +295,7 @@ export function EndgameDrillsPage() {
   const reviewDue = () => {
     const due = dueIds('endgames', ENDGAME_DRILL_IDS);
     if (due.length === 0) {
-      setFeedback({ kind: 'info', text: 'No endgame drills due right now — pick any technique to learn!' });
+      setFeedback({ kind: 'info', text: t('endgameDrills.noDue') });
       return;
     }
     const d = ENDGAME_DRILLS.find((x) => x.id === due[0]);
@@ -300,17 +303,17 @@ export function EndgameDrillsPage() {
   };
 
   const status = useMemo(() => {
-    if (phase === 'won') return { text: '✓ Converted — drill complete!', cls: 'text-emerald-300 font-semibold' };
-    if (phase === 'held') return { text: '✓ Held the draw — drill complete!', cls: 'text-emerald-300 font-semibold' };
+    if (phase === 'won') return { text: t('endgameDrills.status.won'), cls: 'text-emerald-300 font-semibold' };
+    if (phase === 'held') return { text: t('endgameDrills.status.held'), cls: 'text-emerald-300 font-semibold' };
     if (phase === 'slipped')
       return {
-        text: drill.goal === 'win' ? 'The win slipped away — restart and try again.' : 'The draw slipped away — restart and try again.',
+        text: drill.goal === 'win' ? t('endgameDrills.status.slippedWin') : t('endgameDrills.status.slippedDraw'),
         cls: 'text-rose-300 font-semibold',
       };
-    if (thinking) return { text: 'Perfect defence thinking…', cls: 'text-neutral-300' };
+    if (thinking) return { text: t('endgameDrills.status.thinking'), cls: 'text-neutral-300' };
     if (tb?.available) return { text: categoryLabel(tb.category, tb.dtm), cls: 'text-sky-300' };
-    return { text: 'Your move — offline, judged against the book line.', cls: 'text-neutral-300' };
-  }, [phase, thinking, tb, drill.goal]);
+    return { text: t('endgameDrills.status.offline'), cls: 'text-neutral-300' };
+  }, [phase, thinking, tb, drill.goal, t]);
 
   const orientation: Color = drill.youPlay;
 
@@ -319,16 +322,14 @@ export function EndgameDrillsPage() {
       {/* drill list */}
       <div className="order-2 space-y-3 lg:order-1">
         <div className="rounded-2xl bg-panel shadow-soft p-3">
-          <h3 className="mb-1 text-sm font-semibold text-ink">Endgame drills</h3>
-          <p className="mb-2 text-xs text-neutral-400">
-            Essential technique vs perfect defence — every move checked against the tablebase.
-          </p>
+          <h3 className="mb-1 text-sm font-semibold text-ink">{t('endgameDrills.title')}</h3>
+          <p className="mb-2 text-xs text-neutral-400">{t('endgameDrills.blurb')}</p>
           <ReviewStats deck="endgames" ids={ENDGAME_DRILL_IDS} />
           <button
             onClick={reviewDue}
             className="btn-press mt-3 min-h-11 w-full rounded bg-emerald-700 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800 sm:min-h-0"
           >
-            Review due
+            {t('buttons.reviewDue')}
           </button>
         </div>
         <div className="scroll-thin max-h-[60vh] space-y-1 overflow-y-auto rounded-2xl bg-panel shadow-soft p-3">
@@ -346,9 +347,11 @@ export function EndgameDrillsPage() {
               >
                 <span className="truncate">{d.name}</span>
                 <span className="flex shrink-0 items-center gap-1.5">
-                  <span className={`text-xs uppercase ${active ? 'text-emerald-100' : 'text-neutral-300'}`}>{d.goal}</span>
+                  <span className={`text-xs uppercase ${active ? 'text-emerald-100' : 'text-neutral-300'}`}>
+                    {t(`endgame.goal.${d.goal}`)}
+                  </span>
                   <span className={`text-xs ${cd === 'due' ? (active ? 'text-amber-100' : 'text-gold-300') : active ? 'text-emerald-100' : 'text-neutral-300'}`}>
-                    {cd}
+                    {dueDisplayLabel(cd)}
                   </span>
                 </span>
               </button>
@@ -381,21 +384,21 @@ export function EndgameDrillsPage() {
             onClick={() => load(drill)}
             className="btn-press min-h-11 rounded bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800 sm:min-h-0"
           >
-            Restart
+            {t('buttons.restart')}
           </button>
           {phase === 'playing' && (
             <button
               onClick={hint}
               className="btn-press min-h-11 rounded bg-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600 sm:min-h-0"
             >
-              Hint
+              {t('buttons.hint')}
             </button>
           )}
           <button
             onClick={next}
             className="btn-press min-h-11 rounded bg-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600 sm:min-h-0"
           >
-            Next drill →
+            {t('buttons.nextDrillArrow')}
           </button>
         </div>
       </div>
@@ -405,11 +408,18 @@ export function EndgameDrillsPage() {
         <div className="rounded-2xl bg-panel shadow-soft p-3">
           <div className="mb-2 flex items-center justify-between gap-2 text-sm">
             <h4 className="font-semibold text-ink">{drill.name}</h4>
-            <span className="shrink-0 text-xs text-neutral-400">{solvedCount} done this session</span>
+            <span className="shrink-0 text-xs text-neutral-400">{t('endgameDrills.doneSession', { count: solvedCount })}</span>
           </div>
           <p className="mb-2 text-xs text-neutral-400">
-            You play <b className="capitalize text-neutral-200">{drill.youPlay}</b> — goal:{' '}
-            <b className="text-neutral-200">{drill.goal === 'win' ? 'convert the win' : 'hold the draw'}</b>.
+            <Trans
+              t={t}
+              i18nKey="endgameDrills.youPlayGoal"
+              values={{ color: t(`colors.${drill.youPlay}`), goal: t(`endgameDrills.goalLong.${drill.goal}`) }}
+              components={{
+                color: <b className="capitalize text-neutral-200" />,
+                goal: <b className="text-neutral-200" />,
+              }}
+            />
           </p>
           {feedback && (
             <p
@@ -431,22 +441,24 @@ export function EndgameDrillsPage() {
           <p className="text-xs leading-snug text-neutral-400">{drill.lesson}</p>
           <p className="mt-2 font-mono text-xs text-neutral-400">
             {tb?.available
-              ? `verdict: ${tb.source === 'syzygy' ? 'syzygy' : 'lichess tablebase'} · ${tb.category}${tb.dtz != null ? ` · dtz ${tb.dtz}` : ''}`
+              ? t('endgameDrills.verdictTb', {
+                  source: tb.source === 'syzygy' ? 'syzygy' : t('endgameDrills.verdictSourceLichess'),
+                  category: tb.category,
+                  dtz: tb.dtz != null ? ` · dtz ${tb.dtz}` : '',
+                })
               : phase === 'playing'
-                ? 'verdict: offline — bundled book line'
+                ? t('endgameDrills.verdictOffline')
                 : ''}
           </p>
           {mistakes > 0 && phase === 'playing' && (
-            <p className="mt-1 text-xs text-amber-300">
-              {mistakes} slip{mistakes === 1 ? '' : 's'} taken back this attempt.
-            </p>
+            <p className="mt-1 text-xs text-amber-300">{t('endgameDrills.slips', { count: mistakes })}</p>
           )}
           {phase !== 'playing' && (
             <button
               onClick={next}
               className="btn-press mt-3 min-h-11 w-full rounded bg-emerald-700 py-2 text-sm font-semibold text-white hover:bg-emerald-800 sm:min-h-0"
             >
-              Next drill
+              {t('buttons.nextDrill')}
             </button>
           )}
         </div>

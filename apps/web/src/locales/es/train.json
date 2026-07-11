@@ -1,1 +1,211 @@
-{}
+{
+  "tabs": {
+    "vision": {
+      "label": "Visión",
+      "hint": "a ciegas y cálculo"
+    },
+    "mates": {
+      "label": "Mates",
+      "hint": "biblioteca de patrones y ejercicios"
+    },
+    "blunders": {
+      "label": "Anti-errores",
+      "hint": "entrenador de «¿estás seguro?»"
+    }
+  },
+  "buttons": {
+    "tryAgain": "Intentar de nuevo",
+    "reveal": "Revelar",
+    "reviewDue": "Repasar pendientes",
+    "nextDrillArrow": "Siguiente ejercicio →",
+    "nextDrill": "Siguiente ejercicio",
+    "nextPuzzleArrow": "Siguiente problema →",
+    "nextPuzzle": "Siguiente problema",
+    "nextArrow": "Siguiente →",
+    "restart": "Reiniciar",
+    "hint": "Pista"
+  },
+  "toMove": {
+    "white": "Mueven blancas",
+    "black": "Mueven negras"
+  },
+  "yourMove": "· tu jugada",
+  "solvedSession_one": "{{count}} resuelto en esta sesión",
+  "solvedSession_other": "{{count}} resueltos en esta sesión",
+  "colors": {
+    "white": "blancas",
+    "black": "negras"
+  },
+  "colorsUpper": {
+    "white": "blancas",
+    "black": "negras"
+  },
+  "vision": {
+    "visualize": "Visualizar",
+    "blindfoldSolve": "Resolver a ciegas",
+    "sessionScore": "{{correct}}/{{total}} en esta sesión",
+    "piecesHidden": "Piezas ocultas — imagina la posición.",
+    "studyPrompt": "Estudia la posición; luego ocúltala y calcula la línea de abajo.",
+    "hideAndShow": "Ocultar piezas y mostrar la línea",
+    "theLine": "La línea",
+    "calculated": "Ya la he calculado →",
+    "correct": "✓ ¡Correcto!",
+    "notQuite": "No exactamente — la respuesta es «{{answer}}».",
+    "showsFinal": "El tablero muestra ahora la posición final.",
+    "footer": "Calcular sin mover las piezas es el motor de la táctica y de los finales. Empieza con líneas cortas y ve subiendo.",
+    "blindfold": {
+      "chip": "A ciegas",
+      "toPlayWin": {
+        "white": "Juegan blancas y ganan",
+        "black": "Juegan negras y ganan"
+      },
+      "findPrompt": "Encuentra la jugada ganadora — pulsa la pieza y luego su casilla de destino.",
+      "noPuzzles": "No hay problemas fáciles disponibles.",
+      "wellSeen": "✓ {{san}} — ¡bien visto! Tablero revelado.",
+      "notMove": "No es la jugada. Inténtalo de nuevo, echa un vistazo o revela la solución.",
+      "moveWas": "La jugada era {{san}}.",
+      "whiteLabel": "Blancas:",
+      "blackLabel": "Negras:",
+      "peek": "Vistazo",
+      "hidePieces": "Ocultar piezas",
+      "footer": "Mantener la posición en la mente y encontrar una jugada a ciegas es la prueba definitiva de visión de tablero."
+    }
+  },
+  "mates": {
+    "title": "Patrones de jaque mate",
+    "blurb": "Aprende las redes de mate clásicas y practícalas hasta recordarlas.",
+    "toMateIn": {
+      "white": "Blancas dan mate en {{n}}.",
+      "black": "Negras dan mate en {{n}}."
+    },
+    "mateIn": "mate en {{n}}",
+    "solved": "✓ {{san}} — ¡{{pattern}}!",
+    "wrong": "No es la jugada de mate. Inténtalo de nuevo o revela la solución.",
+    "tryAgain": "Inténtalo de nuevo.",
+    "keyMove": "La jugada clave es {{san}}.",
+    "noDue": "No hay ejercicios de mate pendientes ahora mismo — ¡aprende un patrón nuevo!"
+  },
+  "blunders": {
+    "title": "Anti-errores",
+    "blurb": "Encuentra la jugada fuerte — pero cuidado con la tentadora. Antes de confirmar, el entrenador pregunta: <em>¿estás seguro?</em>",
+    "positions": "Posiciones",
+    "intro": {
+      "white": "Mueven blancas — encuentra la jugada segura y fuerte.",
+      "black": "Mueven negras — encuentra la jugada segura y fuerte."
+    },
+    "rightCall": "✓ {{san}} — la decisión correcta. {{explanation}}",
+    "dodged": "Esquivaste la trampa. La jugada modelo era {{san}}. {{explanation}}",
+    "stillLoses": "{{san}}?? sigue perdiendo — permite {{mate}}. {{explanation}}",
+    "savedYou": "Bien — una comprobación anti-error te acaba de salvar. Ahora encuentra una jugada segura.",
+    "safeMove": "La jugada segura es {{san}}. {{explanation}}",
+    "noDue": "No hay ejercicios anti-error pendientes ahora mismo — ¡prueba uno nuevo!",
+    "areYouSure": "⚠️ ¿Estás seguro?",
+    "aboutToPlay": "Estás a punto de jugar <b>{{san}}</b>. {{warning}}",
+    "takeBack": "Retirarla",
+    "playAnyway": "Jugarla igualmente",
+    "counter": "Posición {{current}}/{{total}}",
+    "nextPosition": "Siguiente posición"
+  },
+  "coordinates": {
+    "mode": {
+      "find": "Encontrar la casilla",
+      "name": "Nombrar la casilla",
+      "color": "Color de la casilla",
+      "knight": "Salto del caballo"
+    },
+    "blurbs": {
+      "find": "Pulsa la casilla indicada lo más rápido que puedas.",
+      "name": "Nombra la casilla resaltada.",
+      "color": "¿La casilla resaltada es clara u oscura?",
+      "knight": "Pulsa todas las casillas a las que puede saltar el caballo."
+    },
+    "click": "Pulsa",
+    "namePrompt": "Nombra la casilla resaltada",
+    "colorPrompt": "¿La casilla marcada es clara u oscura?",
+    "knightPrompt": "Pulsa cada salto del caballo —",
+    "knightLeft_one": "queda {{count}}",
+    "knightLeft_other": "quedan {{count}}",
+    "tagline": "Visión de tablero: un sprint de 30 segundos.",
+    "start": "Empezar",
+    "timeUp": "¡Tiempo!",
+    "newBest": "🏆 ¡Nuevo récord!",
+    "again": "Otra vez",
+    "light": "Clara",
+    "dark": "Oscura",
+    "time": "Tiempo",
+    "score": "Marcador",
+    "best": "Récord",
+    "bestFor": "récord en «{{mode}}»",
+    "modeLabel": "Modo",
+    "side": "Lado",
+    "sides": {
+      "white": "blancas",
+      "black": "negras",
+      "random": "aleatorio"
+    },
+    "showCoords": "Mostrar coordenadas",
+    "showPieces": "Mostrar piezas"
+  },
+  "endgame": {
+    "title": "Estudios de finales",
+    "status": {
+      "won": "✓ Jaque mate — ¡resuelto!",
+      "heldDraw": "✓ ¡Mantuviste las tablas!",
+      "drawnSlipped": "½ Tablas — la victoria se escapó.",
+      "mated": "¡Te dieron mate! Reinicia e inténtalo de nuevo.",
+      "engineDefending": "El motor defiende…",
+      "yourMove": "Tu jugada.",
+      "winningMate": "Ganando — mate en {{n}}.",
+      "slipping": "Cuidado — tu ventaja se está escapando.",
+      "keepConverting": "Tu jugada — sigue convirtiendo la ventaja."
+    },
+    "goal": {
+      "win": "ganar",
+      "draw": "tablas"
+    },
+    "goalLong": {
+      "win": "dar jaque mate",
+      "draw": "mantener las tablas"
+    },
+    "youPlayGoal": "Llevas las <color>{{color}}</color> — objetivo: <goal>{{goal}}</goal>.",
+    "nextStudy": "Siguiente estudio →",
+    "tablebaseWord": "tablebase",
+    "evalReadout": "eval {{score}} · profundidad {{depth}}",
+    "syzygyLoaded": "♟ Tablebases Syzygy de {{n}} piezas cargadas — el defensor es perfecto."
+  },
+  "endgameDrills": {
+    "title": "Ejercicios de finales",
+    "blurb": "Técnica esencial contra defensa perfecta — cada jugada se comprueba con la tablebase.",
+    "introWin": "Llevas las {{color}} — convierte la victoria contra una defensa perfecta.",
+    "introDraw": "Llevas las {{color}} — mantén las tablas contra un juego perfecto.",
+    "bestWas": "{{verdict}} La mejor era {{san}}. Jugada retirada — inténtalo de nuevo.",
+    "tbSuffix": "{{verdict}} (tablebase)",
+    "offlineBook": "Sin conexión — no se puede verificar con la tablebase. La línea del libro juega {{san}} aquí. Jugada retirada — inténtalo de nuevo.",
+    "bookMove": "{{san}} — jugada de libro ✓ (sin conexión)",
+    "unverified": "{{san}} — sin verificar (sin conexión, fuera de la línea del libro).",
+    "hintTb": "Pista: {{san}} — la mejor según la tablebase.",
+    "hintBook": "Pista: {{san}} — la jugada del libro.",
+    "noHint": "No hay pista disponible aquí — confía en la técnica.",
+    "noDue": "No hay ejercicios de finales pendientes ahora mismo — ¡elige cualquier técnica para aprender!",
+    "status": {
+      "won": "✓ Convertido — ¡ejercicio completado!",
+      "held": "✓ Tablas mantenidas — ¡ejercicio completado!",
+      "slippedWin": "La victoria se escapó — reinicia e inténtalo de nuevo.",
+      "slippedDraw": "Las tablas se escaparon — reinicia e inténtalo de nuevo.",
+      "thinking": "La defensa perfecta está pensando…",
+      "offline": "Tu jugada — sin conexión, se juzga con la línea del libro."
+    },
+    "goalLong": {
+      "win": "convertir la victoria",
+      "draw": "mantener las tablas"
+    },
+    "youPlayGoal": "Llevas las <color>{{color}}</color> — objetivo: <goal>{{goal}}</goal>.",
+    "doneSession_one": "{{count}} completado en esta sesión",
+    "doneSession_other": "{{count}} completados en esta sesión",
+    "verdictTb": "veredicto: {{source}} · {{category}}{{dtz}}",
+    "verdictSourceLichess": "tablebase de lichess",
+    "verdictOffline": "veredicto: sin conexión — línea de libro incluida",
+    "slips_one": "{{count}} desliz retirado en este intento.",
+    "slips_other": "{{count}} deslices retirados en este intento."
+  }
+}

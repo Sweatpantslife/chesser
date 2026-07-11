@@ -1,1 +1,31 @@
-{}
+{
+  "labels": {
+    "brilliant": "Brilliant",
+    "great": "Great move",
+    "best": "Best move",
+    "good": "Good",
+    "book": "Book",
+    "inaccuracy": "Inaccuracy",
+    "mistake": "Mistake",
+    "blunder": "Blunder",
+    "miss": "Missed win"
+  },
+  "tablebase": {
+    "winMate": "Tablebase: win, mate in {{n}}",
+    "win": "Tablebase: winning",
+    "lossMate": "Tablebase: loss, mated in {{n}}",
+    "loss": "Tablebase: losing",
+    "draw": "Tablebase: drawn",
+    "cursedWin": "Tablebase: win (50-move rule looms)",
+    "blessedLoss": "Tablebase: loss (saved by 50-move rule)",
+    "unknown": "Tablebase: unknown",
+    "feedback": {
+      "throwsWin": "That throws away the win!",
+      "winning": "Winning move.",
+      "optimal": "Optimal — fastest win.",
+      "slowWin": "Still winning, but not the quickest.",
+      "losesDraw": "That loses — the draw is gone.",
+      "holdsDraw": "Holds the draw."
+    }
+  }
+}

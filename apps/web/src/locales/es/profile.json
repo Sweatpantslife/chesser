@@ -1,1 +1,138 @@
-{}
+{
+  "title": "Perfil",
+  "meterLabel": "Mostrar puntuaciones como",
+  "level": {
+    "badge": "nivel",
+    "xp": "{{xp, number}} XP",
+    "toNext": "{{xp}} XP para el nivel {{level}}"
+  },
+  "suggested": {
+    "title": "Próximo rival sugerido",
+    "play": "Jugar",
+    "matched": "Elegido según tu puntuación Glicko-2 contra bots ({{rating}})."
+  },
+  "since": "Miembro de Chesser desde {{date}}",
+  "categories": {
+    "puzzles": "Problemas",
+    "bots": "Bots",
+    "blitz": "Blitz"
+  },
+  "copyLink": "Copiar enlace",
+  "copied": "¡Copiado!",
+  "linkCopied": "Enlace del perfil copiado al portapapeles",
+  "downloadCard": "Descarga una imagen de tarjeta para compartir",
+  "share": {
+    "title": "Comparte tu perfil",
+    "signedOut": "Inicia sesión (arriba a la derecha) para publicar una tarjeta de perfil compartible y unirte a las clasificaciones. Compartir es opcional, estadística por estadística.",
+    "loadError": "No se pudieron cargar tus ajustes para compartir — {{error}}",
+    "retry": "Reintentar",
+    "loading": "Cargando tus ajustes para compartir…",
+    "saving": "Guardando…",
+    "intro": "Todo es privado por defecto. Activa lo que quieras que vea el mundo — solo se muestran tu nombre público y las secciones de abajo, nada más.",
+    "profileToggle": {
+      "label": "Página de perfil pública",
+      "desc": "Cualquiera con tu enlace puede ver las secciones compartidas"
+    },
+    "leaderboardsToggle": {
+      "label": "Clasificaciones",
+      "desc": "Posiciona tus puntuaciones y tu récord de Puzzle Rush en las tablas públicas"
+    },
+    "sections": {
+      "showRatings": { "label": "Puntuaciones", "desc": "Problemas · Bots · Blitz, con máximos" },
+      "showRush": { "label": "Récord de Puzzle Rush", "desc": "Tu mejor ronda" },
+      "showStreak": { "label": "Racha", "desc": "Racha de días actual y mejor" },
+      "showRecord": { "label": "Historial V/T/D", "desc": "Victorias, tablas y derrotas contra bots" },
+      "showAchievements": { "label": "Logros", "desc": "Tus últimas insignias" },
+      "showOpenings": { "label": "Aperturas favoritas", "desc": "Las aperturas que más juegas" }
+    },
+    "linkLabel": "El enlace de tu perfil",
+    "copyTitle": "Copia el enlace de tu perfil",
+    "enableFirst": "Activa antes el perfil público",
+    "preview": "Vista previa",
+    "previewTitle": "Mira tu perfil como lo ven los demás",
+    "rendering": "Generando…",
+    "cardImage": "Imagen de tarjeta"
+  },
+  "public": {
+    "loading": "Cargando el perfil…",
+    "error": {
+      "title": "No se pudo cargar este perfil",
+      "body": "Algo salió mal al conectar con el servidor — comprueba tu conexión e inténtalo de nuevo."
+    },
+    "missing": {
+      "title": "Este perfil es privado o no existe",
+      "body": "En Chesser cada jugador elige exactamente qué comparte. Si este enlace es tuyo, activa el compartir en tu pestaña Perfil."
+    },
+    "card": "Tarjeta",
+    "nothingShared": "{{username}} se guarda sus estadísticas. Respeto.",
+    "ratings": {
+      "peakPlayed": "máximo {{peak}} · {{played}} jugadas",
+      "solved": "{{won}} resueltos · {{lost}} fallados",
+      "wdl": "{{won}}V {{drawn}}T {{lost}}D"
+    },
+    "rush": {
+      "label": "Puzzle Rush",
+      "hint": "mejor ronda (5 min · 3 fallos)"
+    },
+    "streak": {
+      "label": "Racha",
+      "days_one": "día",
+      "days_other": "días",
+      "best_one": "mejor: {{count}} día",
+      "best_other": "mejor: {{count}} días"
+    },
+    "record": {
+      "label": "Historial",
+      "none": "Aún no hay partidas registradas.",
+      "aria": "{{wins}} victorias, {{draws}} tablas, {{losses}} derrotas",
+      "wins_one": "{{count}}V",
+      "wins_other": "{{count}}V",
+      "draws_one": "{{count}}T",
+      "draws_other": "{{count}}T",
+      "losses_one": "{{count}}D",
+      "losses_other": "{{count}}D"
+    },
+    "achievements": "Últimos logros",
+    "openings": {
+      "title": "Aperturas favoritas",
+      "row_one": "{{count}} partida · {{wins}} ganadas",
+      "row_other": "{{count}} partidas · {{wins}} ganadas"
+    },
+    "footer": "Compartido por {{username}} en Chesser — solo se muestran las estadísticas que eligió compartir."
+  },
+  "report": {
+    "button": "Denunciar este perfil",
+    "title": "Denunciar a {{username}}",
+    "done": "Gracias — tu denuncia quedó registrada y será revisada.",
+    "signedOut": "Inicia sesión (arriba a la derecha) para denunciar un perfil — las denuncias requieren una cuenta.",
+    "reasonLegend": "¿Qué ocurre?",
+    "reasons": {
+      "inappropriateName": "Nombre inapropiado",
+      "impersonation": "Suplantación de identidad",
+      "harassment": "Acoso",
+      "cheating": "Trampas",
+      "other": "Otra cosa"
+    },
+    "details": "Detalles (opcional)",
+    "error": "No se pudo enviar la denuncia — inténtalo de nuevo.",
+    "sending": "Enviando…",
+    "send": "Enviar denuncia"
+  },
+  "card": {
+    "tagline": "juega y entrena ajedrez",
+    "labels": {
+      "puzzles": "Problemas",
+      "bots": "Bots",
+      "blitz": "Blitz",
+      "rushBest": "Récord Rush",
+      "streak": "Racha",
+      "wdl": "V · T · D"
+    },
+    "streakValue": "{{current}}d (mejor {{best}})",
+    "noStats": "Un jugador de Chesser con más secretos que estadísticas compartidas.",
+    "openings": "Aperturas favoritas: {{openings}}",
+    "invite": "Juega y entrena a tu ritmo — problemas, bots, aperturas.",
+    "canvasError": "El lienzo de dibujo no está disponible.",
+    "renderError": "No se pudo generar la imagen de la tarjeta."
+  }
+}

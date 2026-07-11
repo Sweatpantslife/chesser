@@ -10,6 +10,8 @@
  * re-bills the user's key for an unchanged week.
  */
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { now } from '../lib/clock';
 import {
   buildWeeklyNarrative,
@@ -58,24 +60,25 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function statsOf(r: WeeklyReport): { label: string; value: string }[] {
+function statsOf(r: WeeklyReport, t: TFunction<'home'>): { label: string; value: string }[] {
   const stats: { label: string; value: string }[] = [
-    { label: 'days active', value: `${r.activeDays}/7` },
-    { label: 'XP earned', value: r.xpEarned.toLocaleString() },
+    { label: t('weekly.stats.daysActive'), value: `${r.activeDays}/7` },
+    { label: t('weekly.stats.xpEarned'), value: r.xpEarned.toLocaleString() },
   ];
-  if (r.games.played > 0) stats.push({ label: 'games (W–L–D)', value: `${r.games.wins}–${r.games.losses}–${r.games.draws}` });
-  if (r.games.bestAccuracy !== null) stats.push({ label: 'best accuracy', value: `${r.games.bestAccuracy}%` });
+  if (r.games.played > 0) stats.push({ label: t('weekly.stats.games'), value: `${r.games.wins}–${r.games.losses}–${r.games.draws}` });
+  if (r.games.bestAccuracy !== null) stats.push({ label: t('weekly.stats.bestAccuracy'), value: `${r.games.bestAccuracy}%` });
   if (r.puzzles.delta !== null && r.puzzles.delta !== 0) {
-    stats.push({ label: 'puzzle rating', value: `${r.puzzles.delta > 0 ? '+' : ''}${r.puzzles.delta}` });
+    stats.push({ label: t('weekly.stats.puzzleRating'), value: `${r.puzzles.delta > 0 ? '+' : ''}${r.puzzles.delta}` });
   }
-  if (r.sprints.newRushBest !== null) stats.push({ label: 'new Rush best', value: String(r.sprints.newRushBest) });
-  if (r.sprints.newStormBest !== null) stats.push({ label: 'new Storm best', value: String(r.sprints.newStormBest) });
-  if (r.lessons.completed > 0) stats.push({ label: 'lessons', value: String(r.lessons.completed) });
-  if (r.training.attempts > 0) stats.push({ label: 'drills solved', value: `${r.training.solved}/${r.training.attempts}` });
+  if (r.sprints.newRushBest !== null) stats.push({ label: t('weekly.stats.newRushBest'), value: String(r.sprints.newRushBest) });
+  if (r.sprints.newStormBest !== null) stats.push({ label: t('weekly.stats.newStormBest'), value: String(r.sprints.newStormBest) });
+  if (r.lessons.completed > 0) stats.push({ label: t('weekly.stats.lessons'), value: String(r.lessons.completed) });
+  if (r.training.attempts > 0) stats.push({ label: t('weekly.stats.drills'), value: `${r.training.solved}/${r.training.attempts}` });
   return stats.slice(0, 6);
 }
 
 export function WeeklyReportCard(): JSX.Element {
+  const { t } = useTranslation('home');
   // One reference time per mount — the report is deterministic given it.
   const [atMs] = useState(() => now());
 
@@ -133,14 +136,14 @@ export function WeeklyReportCard(): JSX.Element {
     <section data-testid="weekly-report" className="rounded-2xl bg-panel p-4 shadow-soft">
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="font-display text-sm font-semibold text-ink">
-          Your week in chess <span className="ml-1 text-xs font-normal text-neutral-400">{report.label}</span>
+          {t('weekly.title')} <span className="ml-1 text-xs font-normal text-neutral-400">{report.label}</span>
         </h2>
         {aiText && <AiCoachBadge />}
       </div>
 
       {report.hasActivity && (
         <div className="mb-3 flex flex-wrap gap-2">
-          {statsOf(report).map((s) => (
+          {statsOf(report, t).map((s) => (
             <Stat key={s.label} label={s.label} value={s.value} />
           ))}
         </div>
@@ -149,10 +152,10 @@ export function WeeklyReportCard(): JSX.Element {
       <p data-testid="weekly-narrative" className="text-sm leading-relaxed text-neutral-200">
         {aiText ?? fallback}
       </p>
-      {aiText && <p className="mt-1 text-[10px] text-neutral-400">AI-generated from your verified weekly stats</p>}
+      {aiText && <p className="mt-1 text-[10px] text-neutral-400">{t('weekly.aiDisclosure')}</p>}
       {available === false && (
         <p data-testid="weekly-ai-hint" className="mt-1.5 text-xs text-neutral-400">
-          Add your own AI key in Settings to unlock a personalised AI recap — this summary works without one.
+          {t('weekly.byokHint')}
         </p>
       )}
     </section>

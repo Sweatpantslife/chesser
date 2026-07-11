@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { mainlineOf, useGame } from '../store/game';
 import { CLASSIFICATION_META, IMPORTANT } from '../lib/coach';
 
@@ -17,6 +18,7 @@ const moveLabel = (ply: number) => `${Math.ceil(ply / 2)}${ply % 2 === 1 ? '.' :
  * the player can take in the explanation, and offering full manual control.
  */
 export function AnalysisCoach() {
+  const { t } = useTranslation('analysis');
   const coachActive = useGame((s) => s.coachActive);
   const coachPlaying = useGame((s) => s.coachPlaying);
   const currentId = useGame((s) => s.currentId);
@@ -66,15 +68,15 @@ export function AnalysisCoach() {
       <div className="mb-2 flex items-center justify-between">
         {/* ReviewPanel is also titled "Game review" and can be stacked with this
             panel during a walkthrough — keep the two titles distinct. */}
-        <h3 className="text-sm font-semibold text-ink">Coach</h3>
+        <h3 className="text-sm font-semibold text-ink">{t('coach.title')}</h3>
         <div className="flex items-center gap-2">
           <span className="text-xs text-neutral-400">
             {Math.min(viewPly, len)} / {len}
           </span>
           <button
             onClick={() => useGame.getState().stopCoach()}
-            title="Exit walkthrough"
-            aria-label="Exit walkthrough"
+            title={t('coach.exitTitle')}
+            aria-label={t('coach.exitTitle')}
             className="rounded px-1.5 py-0.5 text-xs text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
           >
             ✕
@@ -84,13 +86,13 @@ export function AnalysisCoach() {
 
       {reviewing ? (
         <div className="space-y-2 py-2">
-          <p className="text-xs text-neutral-400">Analysing the game… {progress}%</p>
+          <p className="text-xs text-neutral-400">{t('coach.analysing', { progress })}</p>
           <div className="h-1.5 w-full overflow-hidden rounded bg-neutral-800">
             <div className="h-full bg-emerald-500 transition-[width]" style={{ width: `${progress}%` }} />
           </div>
         </div>
       ) : atStart ? (
-        <p className="py-3 text-sm text-neutral-400">Starting position. Press ▶ to walk through the game move by move.</p>
+        <p className="py-3 text-sm text-neutral-400">{t('coach.startingPosition')}</p>
       ) : review && meta ? (
         <div className="space-y-2.5">
           <div className="flex items-center gap-2.5">
@@ -105,7 +107,12 @@ export function AnalysisCoach() {
                 <span className={`text-sm font-semibold ${meta.text}`}>{meta.label}</span>
               </div>
               <div className="text-xs text-neutral-400">
-                eval <span className="font-mono text-neutral-300">{review.evalText}</span>
+                <Trans
+                  t={t}
+                  i18nKey="coach.eval"
+                  values={{ value: review.evalText }}
+                  components={{ val: <span className="font-mono text-neutral-300" /> }}
+                />
               </div>
             </div>
           </div>
@@ -114,35 +121,64 @@ export function AnalysisCoach() {
 
           {review.bestSan && review.bestSan !== review.san && (
             <div className="rounded-md bg-neutral-800/60 px-2.5 py-1.5 text-xs text-neutral-300">
-              Engine's choice: <span className="font-mono font-semibold text-emerald-300">{review.bestSan}</span>
+              <Trans
+                t={t}
+                i18nKey="coach.engineChoice"
+                values={{ san: review.bestSan }}
+                components={{ move: <span className="font-mono font-semibold text-emerald-300" /> }}
+              />
             </div>
           )}
         </div>
       ) : (
-        <p className="py-3 text-sm text-neutral-400">No grade for this move.</p>
+        <p className="py-3 text-sm text-neutral-400">{t('coach.noGrade')}</p>
       )}
 
       {/* transport controls */}
       <div className="mt-3 flex items-center justify-center gap-1">
-        <button onClick={() => nav((s) => s.goToPly(0))} disabled={atStart} className={ctrl} title="Start" aria-label="Go to start">
+        <button
+          onClick={() => nav((s) => s.goToPly(0))}
+          disabled={atStart}
+          className={ctrl}
+          title={t('coach.transport.start')}
+          aria-label={t('coach.transport.goToStart')}
+        >
           ⏮
         </button>
-        <button onClick={() => nav((s) => s.stepView(-1))} disabled={atStart} className={ctrl} title="Previous" aria-label="Previous move">
+        <button
+          onClick={() => nav((s) => s.stepView(-1))}
+          disabled={atStart}
+          className={ctrl}
+          title={t('coach.transport.previous')}
+          aria-label={t('coach.transport.previousMove')}
+        >
           ◀
         </button>
         <button
           onClick={() => useGame.getState().setCoachPlaying(!coachPlaying)}
           disabled={atEnd && !coachPlaying}
           className={ctrlPrimary}
-          title={coachPlaying ? 'Pause' : 'Play'}
-          aria-label={coachPlaying ? 'Pause' : 'Play'}
+          title={coachPlaying ? t('coach.transport.pause') : t('coach.transport.play')}
+          aria-label={coachPlaying ? t('coach.transport.pause') : t('coach.transport.play')}
         >
           {coachPlaying ? '⏸' : '▶'}
         </button>
-        <button onClick={() => nav((s) => s.stepView(1))} disabled={atEnd} className={ctrl} title="Next" aria-label="Next move">
+        <button
+          onClick={() => nav((s) => s.stepView(1))}
+          disabled={atEnd}
+          className={ctrl}
+          title={t('coach.transport.next')}
+          aria-label={t('coach.transport.nextMove')}
+        >
           ▶
         </button>
-        <button onClick={() => nav((s) => s.goToPly(len))} disabled={atEnd} className={ctrl} title="End" aria-label="Go to end">
+        <button
+          onClick={() => nav((s) => s.goToPly(len))}
+          disabled={atEnd}
+          className={ctrl}
+          title={t('coach.transport.end')}
+          aria-label={t('coach.transport.goToEnd')}
+        >
           ⏭
         </button>
       </div>

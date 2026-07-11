@@ -1,1 +1,231 @@
-{}
+{
+  "percent": "{{value}}%",
+  "empty": {
+    "title": "Tu historia empieza aquí",
+    "body": "Aún no hay historial de entrenamiento. Resuelve problemas de táctica, practica aperturas, aprende patrones de mate o usa el entrenador de coordenadas — tu precisión y tu volumen aparecerán aquí."
+  },
+  "cards": {
+    "level": "Nivel",
+    "levelHint": "{{xp}} XP",
+    "puzzleRating": "Puntuación de problemas",
+    "puzzleRatingHint": "máx. {{peak}} · {{meter}}",
+    "reviewStreak": "Racha de repasos",
+    "reviewStreakHint": "mejor {{best}}",
+    "dayStreak": "Racha de días",
+    "dayStreakHint": "días activos",
+    "reviews": "Repasos",
+    "reviewsHint_one": "{{count}} día activo",
+    "reviewsHint_other": "{{count}} días activos",
+    "accuracy": "Precisión",
+    "accuracyHint_one": "{{count}} correcto",
+    "accuracyHint_other": "{{count}} correctos",
+    "today": "Hoy",
+    "todayHint": "repasos",
+    "dueNow": "Pendientes",
+    "dueNowHint": "todos los mazos"
+  },
+  "sections": {
+    "ratings": "Puntuaciones",
+    "ratingsAside": "{{solved}} resueltos · {{custom}} de tus partidas",
+    "activity": "Actividad",
+    "activityAside": "últimas {{weeks}} semanas",
+    "last30": "Últimos 30 días",
+    "last30Aside": "repasos ▮ · precisión ▬",
+    "learning": "Progreso de aprendizaje",
+    "bests": "Mejores marcas"
+  },
+  "legend": {
+    "less": "menos",
+    "more": "más"
+  },
+  "bests": {
+    "puzzleRush": "Puzzle Rush",
+    "puzzleStorm": "Puzzle Storm",
+    "coordWhite": "Coord. blancas",
+    "coordBlack": "Coord. negras",
+    "squareColour": "Color de casilla",
+    "knightsTour": "Ruta del caballo"
+  },
+  "charts": {
+    "heatmapEmpty": "Aún no hay actividad — los problemas y ejercicios resueltos iluminarán este calendario.",
+    "heatmapCell_one": "{{date}}: {{count}} repaso",
+    "heatmapCell_other": "{{date}}: {{count}} repasos",
+    "activityEmpty": "Aún no hay actividad — juega una partida o resuelve un problema para iniciar el gráfico.",
+    "learned": "<seen>{{seen}}</seen>/{{total}} aprendidas",
+    "due_one": "{{count}} pendiente",
+    "due_other": "{{count}} pendientes"
+  },
+  "archive": {
+    "result": {
+      "win": "V",
+      "draw": "T",
+      "loss": "D",
+      "unknown": "–",
+      "winTitle": "Victoria",
+      "drawTitle": "Tablas",
+      "lossTitle": "Derrota",
+      "unknownTitle": "Sin resultado por tu parte"
+    },
+    "youPlayed": {
+      "white": "Jugaste con blancas",
+      "black": "Jugaste con negras"
+    },
+    "wdl": {
+      "winsShort": "{{count}}V",
+      "drawsShort": "{{count}}T",
+      "lossesShort": "{{count}}D",
+      "winRate": "{{rate}}% de victorias",
+      "splitAria": "{{wins}} victorias, {{draws}} tablas, {{losses}} derrotas",
+      "winsTitle_one": "{{count}} victoria",
+      "winsTitle_other": "{{count}} victorias",
+      "drawsTitle_one": "{{count}} tablas",
+      "drawsTitle_other": "{{count}} tablas",
+      "lossesTitle_one": "{{count}} derrota",
+      "lossesTitle_other": "{{count}} derrotas",
+      "allGames": "Todas las partidas",
+      "asWhite": "Con blancas",
+      "asBlack": "Con negras"
+    },
+    "trend": {
+      "chartAria": "Gráfico de tendencia",
+      "pointTitle": "{{label}} — {{date}}: {{value}}"
+    },
+    "series": {
+      "bots": "Bots",
+      "blitz": "Blitz",
+      "accuracy": "Precisión"
+    },
+    "filters": {
+      "resultLabel": "Resultado",
+      "resultAria": "Filtrar por resultado",
+      "colorLabel": "Color",
+      "colorAria": "Filtrar por color",
+      "periodLabel": "Periodo",
+      "periodAria": "Filtrar por periodo",
+      "all": "Todas",
+      "wins": "Victorias",
+      "draws": "Tablas",
+      "losses": "Derrotas",
+      "any": "Cualquiera",
+      "white": "Blancas",
+      "black": "Negras",
+      "allTime": "Todo",
+      "7d": "7 d",
+      "30d": "30 d",
+      "90d": "90 d",
+      "year": "Año",
+      "clear": "Quitar filtros"
+    },
+    "kind": {
+      "bot": "contra bot",
+      "analysis": "tablero de análisis",
+      "local": "mismo dispositivo",
+      "online": "partida con amigo"
+    },
+    "row": {
+      "youVs": "Tú vs {{opponent}}",
+      "whiteVsBlack": "{{white}} vs {{black}}",
+      "moves_one": "{{count}} jugada",
+      "moves_other": "{{count}} jugadas",
+      "unfinished": "sin terminar",
+      "accuracyTitle": "Tu precisión en la revisión guardada",
+      "casualNoMoves": "Las partidas informales solo registran el resultado — las jugadas no se guardan, así que no hay nada que revisar.",
+      "unreadablePgn": "Esta partida no se puede abrir — su PGN guardado no tiene jugadas legibles.",
+      "openTitle": "Abrir esta partida en el tablero de análisis"
+    },
+    "loadingAria": "Cargando tus partidas",
+    "tabs": {
+      "aria": "Secciones del archivo",
+      "games": "Partidas",
+      "insights": "Tendencias"
+    },
+    "loadError": "No se pudieron cargar tus partidas guardadas — comprueba tu conexión.",
+    "retry": "Reintentar",
+    "empty": {
+      "title": "Aún no hay partidas en tu archivo",
+      "body": "Termina una partida contra un bot y pulsa «Guardar» en el tablero — aparecerá aquí con su resultado, su apertura y (tras una revisión) su precisión.",
+      "signIn": "Inicia sesión primero para que tus partidas sigan a tu cuenta; los resultados en el mismo dispositivo también aparecen aquí."
+    },
+    "noMatch": "Ninguna partida coincide con estos filtros.",
+    "count_one": "{{count}} partida",
+    "count_other": "{{count}} partidas",
+    "filteredSuffix": "(filtradas)",
+    "signInHint": "Inicia sesión para guardar en tu archivo las partidas contra bots",
+    "showFewer": "Mostrar menos",
+    "showAll": "Mostrar las {{count}}",
+    "insightsEmpty": {
+      "noGamesTitle": "Tu panel empieza con una partida",
+      "noSliceTitle": "Nada en este segmento",
+      "noGamesBody": "Juega y guarda partidas — las tendencias de resultados, las aperturas y los gráficos de precisión crecen con tu archivo.",
+      "noSliceBody": "Ninguna partida archivada coincide con los filtros actuales — amplía el periodo o quita los filtros para ver tus tendencias."
+    },
+    "stats": {
+      "games": "Partidas",
+      "inSlice": "en este segmento",
+      "allTime": "en total",
+      "record": "Marcador",
+      "recordHint": "V-T-D",
+      "winRate": "% de victorias",
+      "noResult_one": "{{count}} sin resultado",
+      "noResult_other": "{{count}} sin resultado",
+      "withResult": "de las partidas con resultado",
+      "accuracy": "Precisión",
+      "avgReviews_one": "media de {{count}} revisión",
+      "avgReviews_other": "media de {{count}} revisiones",
+      "noReviews": "aún sin revisiones"
+    },
+    "sections": {
+      "wdl": "Victorias / tablas / derrotas",
+      "ratingTrend": "Tendencia de puntuación",
+      "ratingTrendAside": "partidas puntuadas contra bots · {{meter}}",
+      "ratingTrendEmpty": "No hay partidas puntuadas en este periodo — termina una partida contra un bot para empezar tu historial de puntuación.",
+      "accuracyTrend": "Tendencia de precisión",
+      "accuracyTrendAside": "de tus revisiones de partidas",
+      "accuracyTrendEmpty": "No hay partidas revisadas en este segmento — abre una partida y usa «Revisar» para graficar tu precisión.",
+      "openings": "Aperturas más jugadas",
+      "openingsEmpty": "Aún no hay aperturas identificadas — las aperturas se detectan a partir de las jugadas de cada partida guardada.",
+      "sw": "Fortalezas y debilidades",
+      "swAside": "de las partidas revisadas · todo el detalle en la pestaña Entrenador"
+    },
+    "profileEmpty": {
+      "filtered": "Ninguna partida revisada coincide con los filtros actuales — amplía el periodo o quita los filtros para ver este desglose.",
+      "none": "Revisa una partida terminada (Jugar → Revisar) y el entrenador graficará lo que haces bien y lo que te sigue costando puntos."
+    },
+    "strengths": {
+      "title": "Fortalezas",
+      "phase": "Fase más fuerte: {{phase}} ({{accuracy}}% de precisión)",
+      "color": "Más precisión con {{side}} ({{better}}% vs {{other}}%)",
+      "improving": "Mejorando: {{label}} — menos en tus partidas recientes",
+      "empty": "Aún no hay suficientes partidas revisadas para señalar fortalezas."
+    },
+    "phaseNames": {
+      "opening": "apertura",
+      "middlegame": "medio juego",
+      "endgame": "final"
+    },
+    "sides": {
+      "white": "blancas",
+      "black": "negras"
+    },
+    "weaknesses": {
+      "title": "Debilidades",
+      "occurrences_one": "×{{times}} en {{count}} partida",
+      "occurrences_other": "×{{times}} en {{count}} partidas",
+      "improving": " · mejorando",
+      "rising": " · en aumento",
+      "empty": "No se han encontrado debilidades recurrentes en tus revisiones recientes — sigue así."
+    }
+  },
+  "achievements": {
+    "title": "Logros",
+    "filter": {
+      "all": "todos",
+      "earned": "conseguidos",
+      "locked": "bloqueados"
+    },
+    "earnedCount": "{{earned}} / {{total}} conseguidos",
+    "earnedOn": "Conseguido el {{date}}",
+    "earned": "Conseguido",
+    "xpReward": "+{{xp}} XP"
+  }
+}

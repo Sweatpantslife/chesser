@@ -1,1 +1,81 @@
-{}
+{
+  "percent": "{{value}}%",
+  "phase": {
+    "opening": "Apertura",
+    "middlegame": "Medio juego",
+    "endgame": "Final"
+  },
+  "side": {
+    "white": "blancas",
+    "black": "negras"
+  },
+  "trend": {
+    "improving": "mejorando ↓",
+    "rising": "en aumento ↑",
+    "steady": "estable"
+  },
+  "empty": {
+    "title": "Tu entrenador está listo cuando tú lo estés",
+    "body": "Juega una partida contra un bot en la pestaña <b>Jugar</b> y ejecuta una revisión — el entrenador estudia tus partidas revisadas, detecta patrones recurrentes y construye un plan de entrenamiento en torno a ellos."
+  },
+  "cards": {
+    "gamesStudied": "Partidas estudiadas",
+    "gamesStudiedHint": "revisadas contra bots",
+    "accuracy": "Tu precisión",
+    "accuracyHint": "en esas partidas",
+    "weakestPhase": "Fase más débil",
+    "weakestPhaseHint": "{{accuracy}}% de precisión",
+    "weakestPhaseEmpty": "aún faltan jugadas",
+    "focusAreas": "Áreas de enfoque",
+    "focusAreasHint": "patrones recurrentes"
+  },
+  "noneRecurring": {
+    "title": "Nada recurrente todavía — ¡buena señal!",
+    "body": "Ningún patrón se ha repetido en tus partidas revisadas. Sigue jugando y revisando; el entrenador vuelve a medir tras cada revisión."
+  },
+  "weakness": {
+    "occurrences_one": "{{times}}× en {{count}} partida",
+    "occurrences_other": "{{times}}× en {{count}} partidas",
+    "openAnalysis": "Abrir en análisis →",
+    "openAnalysisTitle": "Cargar esta posición en el tablero de análisis",
+    "also": "También: {{example}}",
+    "trained_one": "Entrenado {{attempts}}× · {{count}} resuelto",
+    "trained_other": "Entrenado {{attempts}}× · {{count}} resueltos",
+    "lastTen": "últimos 10: {{pct}}%",
+    "improved": "has subido desde el {{pct}}%, ¡genial!",
+    "trainingNow": "Entrenando ahora",
+    "train": "Entrenar esta debilidad"
+  },
+  "trainer": {
+    "title": "Entrenamiento: {{label}}",
+    "session": "{{solved}}/{{attempts}} en esta sesión · temas: {{themes}}",
+    "empty": "No hay problemas de este tipo cargados ahora mismo — comprueba tu conexión y vuelve a intentarlo en un momento.",
+    "toMove": "Juegan {{side}} — encuentra la idea de {{theme}}.",
+    "solvedMate": "✓ {{san}} — ¡jaque mate!",
+    "solvedExact": "✓ {{san}} — exactamente el patrón.",
+    "wrong": "No es esa — el patrón sigue en el tablero. Vuelve a intentarlo o revela la solución.",
+    "fresh": "Un vistazo nuevo — tómate tu tiempo.",
+    "solution": "Solución: {{san}}. Mira cómo continúa.",
+    "rated": "puntuación {{rating}} · tú {{yours}}",
+    "yourMove": "tu turno",
+    "tryAgain": "Inténtalo de nuevo",
+    "reveal": "Revelar",
+    "next": "Siguiente problema →",
+    "done": "Terminar entrenamiento"
+  },
+  "phaseAccuracy": {
+    "title": "Precisión por fase",
+    "aside": "solo tus jugadas",
+    "row": "{{accuracy}}% · {{moves}} jug.",
+    "noMoves": "sin jugadas"
+  },
+  "tendencies": {
+    "title": "Tendencias",
+    "asWhite": "Con blancas",
+    "asBlack": "Con negras",
+    "record": "{{wins}}V {{losses}}D {{draws}}T · {{accuracy}}% de precisión",
+    "noGames": "aún sin partidas",
+    "openingStats_one": "{{count}} partida · {{accuracy}}%",
+    "openingStats_other": "{{count}} partidas · {{accuracy}}%"
+  }
+}

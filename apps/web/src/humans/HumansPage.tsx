@@ -4,14 +4,16 @@
  * there is no matchmaking pool, so playing people you know needs no liquidity.
  */
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { FriendColor } from '@chesser/shared';
+import { useLocaleFormat } from '../i18n/format';
 import type { TimeControl } from '../store/game';
 import { LocalGame, type LocalGameConfig } from './LocalGame';
 import { OnlineGame } from './OnlineGame';
 import type { FriendIntent } from './friendClient';
 import { listCasualGames } from './casualHistory';
 import { FriendsPanel } from './FriendsPanel';
-import { neutralBtn, primaryBtn, TimeControlPicker } from './bits';
+import { neutralBtn, primaryBtn, reasonText, TimeControlPicker } from './bits';
 
 const NAME_KEY = 'chesser.friendName';
 
@@ -70,6 +72,8 @@ export function HumansPage({ active = true }: { active?: boolean }) {
 }
 
 function Menu({ start, active }: { start: (s: Screen) => void; active: boolean }) {
+  const { t } = useTranslation('friends');
+  const fmt = useLocaleFormat();
   // Pass & play setup
   const [whiteName, setWhiteName] = useState('');
   const [blackName, setBlackName] = useState('');
@@ -96,8 +100,8 @@ function Menu({ start, active }: { start: (s: Screen) => void; active: boolean }
     start({
       kind: 'local',
       config: {
-        white: whiteName.trim() || 'White',
-        black: blackName.trim() || 'Black',
+        white: whiteName.trim() || t('colors.white'),
+        black: blackName.trim() || t('colors.black'),
         timeControl: localTc,
         autoFlip,
       },
@@ -127,8 +131,8 @@ function Menu({ start, active }: { start: (s: Screen) => void; active: boolean }
     <div className="mx-auto w-full max-w-[900px] space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="font-display text-xl font-bold text-ink">Play a human</h2>
-          <p className="text-sm text-neutral-400">Casual, unrated games — on this device or online with a friend.</p>
+          <h2 className="font-display text-xl font-bold text-ink">{t('menu.title')}</h2>
+          <p className="text-sm text-neutral-400">{t('menu.subtitle')}</p>
         </div>
         {/* Generated avatar crew (docs/design-refresh/README.md) — pure vibes. */}
         <div className="hidden items-center sm:flex" aria-hidden="true">
@@ -148,54 +152,54 @@ function Menu({ start, active }: { start: (s: Screen) => void; active: boolean }
         {/* Pass & play */}
         <section className="space-y-3 rounded-2xl bg-panel p-4 shadow-soft" data-testid="card-local">
           <div>
-            <h3 className="font-semibold text-ink">🤝 Pass &amp; play</h3>
-            <p className="text-xs text-neutral-400">Two players, one device. Hand it over between moves.</p>
+            <h3 className="font-semibold text-ink">{t('local.title')}</h3>
+            <p className="text-xs text-neutral-400">{t('local.hint')}</p>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <label className="space-y-1">
-              <span className={labelCls}>White</span>
-              <input className={inputCls} placeholder="White" value={whiteName} onChange={(e) => setWhiteName(e.target.value)} />
+              <span className={labelCls}>{t('colors.white')}</span>
+              <input className={inputCls} placeholder={t('colors.white')} value={whiteName} onChange={(e) => setWhiteName(e.target.value)} />
             </label>
             <label className="space-y-1">
-              <span className={labelCls}>Black</span>
-              <input className={inputCls} placeholder="Black" value={blackName} onChange={(e) => setBlackName(e.target.value)} />
+              <span className={labelCls}>{t('colors.black')}</span>
+              <input className={inputCls} placeholder={t('colors.black')} value={blackName} onChange={(e) => setBlackName(e.target.value)} />
             </label>
           </div>
           <div className="space-y-1">
-            <span className={labelCls}>Time control</span>
+            <span className={labelCls}>{t('timeControl.label')}</span>
             <TimeControlPicker value={localTc} onChange={setLocalTc} />
           </div>
           <label className="flex items-center gap-2 text-sm text-neutral-300">
             <input type="checkbox" checked={autoFlip} onChange={(e) => setAutoFlip(e.target.checked)} className="accent-brand-500" />
-            Auto-flip the board to face the player to move
+            {t('local.autoFlip')}
           </label>
           <button className={`${primaryBtn} w-full`} onClick={startLocal} data-testid="start-local">
-            Start pass &amp; play
+            {t('local.start')}
           </button>
         </section>
 
         {/* Friend link */}
         <section className="space-y-3 rounded-2xl bg-panel p-4 shadow-soft" data-testid="card-online">
           <div>
-            <h3 className="font-semibold text-ink">🔗 Play a friend online</h3>
-            <p className="text-xs text-neutral-400">Create a game and share the link — no account needed.</p>
+            <h3 className="font-semibold text-ink">{t('online.title')}</h3>
+            <p className="text-xs text-neutral-400">{t('online.hint')}</p>
           </div>
           <label className="block space-y-1">
-            <span className={labelCls}>Your name (optional)</span>
+            <span className={labelCls}>{t('online.nameLabel')}</span>
             <input
               className={inputCls}
-              placeholder="Anonymous"
+              placeholder={t('online.namePlaceholder')}
               value={myName}
               onChange={(e) => setMyName(e.target.value)}
               data-testid="online-name"
             />
           </label>
           <div className="space-y-1">
-            <span className={labelCls}>Time control</span>
+            <span className={labelCls}>{t('timeControl.label')}</span>
             <TimeControlPicker value={onlineTc} onChange={setOnlineTc} />
           </div>
           <div className="space-y-1">
-            <span className={labelCls}>You play</span>
+            <span className={labelCls}>{t('challenge.youPlay')}</span>
             <div className="flex gap-1 rounded-lg bg-panelmute p-1">
               {(['white', 'random', 'black'] as const).map((c) => (
                 <button
@@ -206,25 +210,25 @@ function Menu({ start, active }: { start: (s: Screen) => void; active: boolean }
                     myColor === c ? 'bg-brand-600 text-white' : 'text-neutral-300 hover:bg-neutral-800'
                   }`}
                 >
-                  {c === 'random' ? '⚄ Random' : c === 'white' ? '□ White' : '■ Black'}
+                  {c === 'random' ? t('colors.pickRandom') : c === 'white' ? t('colors.pickWhite') : t('colors.pickBlack')}
                 </button>
               ))}
             </div>
           </div>
           <button className={`${primaryBtn} w-full`} onClick={createOnline} data-testid="create-online">
-            Create game &amp; get link
+            {t('online.create')}
           </button>
           <div className="flex items-center gap-2 pt-1">
             <input
               className={inputCls}
-              placeholder="Have a code? e.g. QK7DPM"
+              placeholder={t('online.codePlaceholder')}
               value={joinCode}
               onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
               onKeyDown={(e) => e.key === 'Enter' && joinOnline()}
               data-testid="join-code"
             />
             <button className={neutralBtn} onClick={joinOnline} disabled={!joinCode.trim()} data-testid="join-online">
-              Join
+              {t('online.join')}
             </button>
           </div>
         </section>
@@ -240,17 +244,15 @@ function Menu({ start, active }: { start: (s: Screen) => void; active: boolean }
 
       {recent.length > 0 && (
         <section className="rounded-2xl bg-panel p-4 shadow-soft">
-          <h3 className="mb-2 font-display text-sm font-semibold text-ink">Recent casual games</h3>
+          <h3 className="mb-2 font-display text-sm font-semibold text-ink">{t('recent.title')}</h3>
           <ul className="space-y-1 text-sm text-neutral-400">
             {recent.map((g, i) => (
               <li key={`${g.at}-${i}`} className="flex flex-wrap items-center gap-x-2">
-                <span className="text-neutral-400">{new Date(g.at).toLocaleDateString()}</span>
-                <span className="text-neutral-300">
-                  {g.white} vs {g.black}
-                </span>
+                <span className="text-neutral-400">{fmt.date(g.at)}</span>
+                <span className="text-neutral-300">{t('recent.vs', { white: g.white, black: g.black })}</span>
                 <span>{g.winner === 'draw' ? '½–½' : g.winner === 'white' ? '1–0' : '0–1'}</span>
                 <span className="text-neutral-400">
-                  · {g.reason} · {g.mode === 'local' ? 'pass & play' : 'friend link'}
+                  · {reasonText(t, g.reason)} · {g.mode === 'local' ? t('recent.modeLocal') : t('recent.modeOnline')}
                 </span>
               </li>
             ))}

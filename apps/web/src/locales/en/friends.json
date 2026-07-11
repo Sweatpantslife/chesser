@@ -1,1 +1,214 @@
-{}
+{
+  "panel": {
+    "ariaLabel": "Friends and challenges"
+  },
+  "headers": {
+    "friends": "👥 Friends",
+    "challenges": "⚔ Challenges"
+  },
+  "signedOut": {
+    "body": "Sign in (top right) to add friends, challenge them to games, and see what they've been up to. Sharing is opt-in — only your display name is ever shown."
+  },
+  "add": {
+    "hint": "Add friends by username, or swap friend codes — no public profile needed.",
+    "label": "Username or friend code",
+    "placeholder": "e.g. magnus, or Q2ZKM7PW",
+    "submit": "Add friend"
+  },
+  "code": {
+    "yours": "Your friend code:",
+    "copy": "Copy",
+    "copied": "✓ Copied",
+    "copyAria": "Copy your friend code"
+  },
+  "requests": {
+    "incomingTitle": "Friend requests",
+    "outgoingTitle": "Sent requests",
+    "waiting": "· waiting",
+    "acceptAria": "Accept friend request from {{name}}",
+    "declineAria": "Decline friend request from {{name}}",
+    "cancelAria": "Cancel friend request to {{name}}"
+  },
+  "list": {
+    "title": "Your friends",
+    "empty": "No friends yet — send a request above."
+  },
+  "remove": {
+    "button": "Remove",
+    "buttonAria": "Remove {{name}} from your friends",
+    "confirm": "Confirm",
+    "confirmAria": "Confirm removing {{name}}",
+    "keep": "Keep"
+  },
+  "challenge": {
+    "button": "⚔ Challenge",
+    "buttonAria": "Challenge {{name}} to a game",
+    "cardHint": "Accepting a challenge starts a live, unrated friend game.",
+    "empty": "No open challenges. Pick a friend and hit ⚔ Challenge.",
+    "timeControlAria": "Time control for the challenge to {{name}}",
+    "youPlay": "You play",
+    "colorAria": "Your color",
+    "send": "Send challenge",
+    "incomingLine": "<from>{{from}}</from> challenges you — {{tc}}, you play {{color}}",
+    "acceptPlay": "Accept & play",
+    "acceptAria": "Accept challenge from {{name}}",
+    "declineAria": "Decline challenge from {{name}}",
+    "join": "Join game",
+    "cancelAria": "Cancel challenge to {{name}}",
+    "dismissAria": "Dismiss challenge to {{name}}",
+    "dismiss": "Dismiss",
+    "outDetail": "{{tc}}, you play {{color}}",
+    "outPending": "waiting for {{name}}… ({{detail}})",
+    "outAccepted": "{{name}} accepted your challenge!",
+    "outDeclined": "{{name}} declined your challenge",
+    "outExpired": "your challenge to {{name}} expired",
+    "outCancelled": "challenge to {{name}} cancelled"
+  },
+  "feed": {
+    "title": "Friend activity",
+    "empty": "Nothing yet — activity your friends share (scores, streaks, badges) shows up here.",
+    "note": "Only what each friend chose to share (leaderboards / profile settings) appears here.",
+    "rush": "hit a Puzzle Rush best of {{value}}",
+    "ratingBots": "bot-game rating is now {{value}}",
+    "ratingPuzzle": "puzzle rating is now {{value}}",
+    "achievement": "unlocked “{{name}}”",
+    "streak_one": "is on a {{count}}-day streak",
+    "streak_other": "is on a {{count}}-day streak"
+  },
+  "time": {
+    "justNow": "just now",
+    "minutesAgo_one": "{{count}}m ago",
+    "minutesAgo_other": "{{count}}m ago",
+    "hoursAgo_one": "{{count}}h ago",
+    "hoursAgo_other": "{{count}}h ago",
+    "daysAgo_one": "{{count}}d ago",
+    "daysAgo_other": "{{count}}d ago"
+  },
+  "colors": {
+    "white": "White",
+    "black": "Black",
+    "whiteLower": "white",
+    "blackLower": "black",
+    "inlineWhite": "White",
+    "inlineBlack": "Black",
+    "randomColors": "random colors",
+    "pickWhite": "□ White",
+    "pickBlack": "■ Black",
+    "pickRandom": "⚄ Random"
+  },
+  "timeControl": {
+    "label": "Time control",
+    "unlimited": "Unlimited time",
+    "unlimitedShort": "unlimited"
+  },
+  "menu": {
+    "title": "Play a human",
+    "subtitle": "Casual, unrated games — on this device or online with a friend."
+  },
+  "local": {
+    "title": "🤝 Pass & play",
+    "hint": "Two players, one device. Hand it over between moves.",
+    "autoFlip": "Auto-flip the board to face the player to move",
+    "start": "Start pass & play",
+    "tag": "· pass & play · unrated"
+  },
+  "online": {
+    "title": "🔗 Play a friend online",
+    "hint": "Create a game and share the link — no account needed.",
+    "nameLabel": "Your name (optional)",
+    "namePlaceholder": "Anonymous",
+    "create": "Create game & get link",
+    "codePlaceholder": "Have a code? e.g. QK7DPM",
+    "join": "Join"
+  },
+  "recent": {
+    "title": "Recent casual games",
+    "vs": "{{white}} vs {{black}}",
+    "modeLocal": "pass & play",
+    "modeOnline": "friend link"
+  },
+  "connect": {
+    "connecting": "Connecting…",
+    "settingUp": "Setting up the game…"
+  },
+  "invite": {
+    "lead": "Send this link to your friend — the game starts when they open it:",
+    "copyLink": "Copy link",
+    "copied": "✓ Copied",
+    "codeHint": "…or they can enter the code <code>{{code}}</code> under Friends → Join."
+  },
+  "players": {
+    "waiting": "Waiting…",
+    "you": "You",
+    "named": "{{name}} (you)",
+    "opponent": "Your opponent",
+    "connected": "connected",
+    "disconnected": "disconnected"
+  },
+  "status": {
+    "toMove": "{{player}} to move",
+    "toMoveCheck": "{{player}} to move — check",
+    "drawClaimable": "{{reason}} — a draw can be claimed",
+    "winsReason": "{{player}} wins — {{reason}}",
+    "drawReason": "Draw — {{reason}}",
+    "waitingFriend": "Waiting for your friend to join…",
+    "onlineTag": "· game <code>{{code}}</code> · unrated",
+    "reconnecting": "· reconnecting…",
+    "oppDisconnected": "Your opponent disconnected — the game resumes when they come back."
+  },
+  "draw": {
+    "promptLocal": "{{to}} — {{from}} offers a draw. Accept?",
+    "promptOnline": "{{name}} offers a draw.",
+    "offeredWaiting": "Draw offered — waiting for your opponent…"
+  },
+  "actions": {
+    "resign": "🏳 Resign",
+    "resignAs": "🏳 Resign ({{player}})",
+    "confirmResign": "Confirm resign",
+    "abort": "✕ Abort",
+    "offerDraw": "½ Offer draw",
+    "claimDraw": "Claim draw",
+    "claimDrawTitle": "Claim the draw",
+    "claimDrawUnavailable": "Available on threefold repetition or the 50-move rule",
+    "flipBoard": "⇅ Flip board",
+    "accept": "Accept",
+    "decline": "Decline",
+    "rematch": "↻ Rematch",
+    "back": "← Back",
+    "leave": "← Leave game"
+  },
+  "outcome": {
+    "drew": "You drew.",
+    "won": "You won! 🎉",
+    "lost": "You lost."
+  },
+  "result": {
+    "aborted": "Game aborted",
+    "draw": "Draw",
+    "wins": "{{player}} wins"
+  },
+  "reasons": {
+    "checkmate": "checkmate",
+    "stalemate": "stalemate",
+    "insufficientMaterial": "insufficient material",
+    "threefoldRepetition": "threefold repetition",
+    "fiftyMoveRule": "fifty-move rule",
+    "resignation": "resignation",
+    "agreement": "agreement",
+    "aborted": "aborted",
+    "onTime": "on time",
+    "timeoutInsufficientMaterial": "timeout vs insufficient material",
+    "playerResigned": "{{name}} resigned"
+  },
+  "moveList": {
+    "empty": "No moves yet.",
+    "start": "Start",
+    "back": "Back",
+    "forward": "Forward",
+    "live": "Jump to the live position"
+  },
+  "pgn": {
+    "copy": "⧉ Copy PGN",
+    "copied": "✓ PGN copied"
+  }
+}

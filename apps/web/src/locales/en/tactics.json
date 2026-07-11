@@ -1,1 +1,150 @@
-{}
+{
+  "tabs": {
+    "practice": "Practice",
+    "rush": "Puzzle rush",
+    "storm": "Puzzle storm",
+    "mistakes": "My mistakes",
+    "mistakesCount": "My mistakes ({{n}})"
+  },
+  "sidebar": {
+    "title": "Tactics",
+    "blurb": "Find the one winning move — every puzzle is engine-verified.",
+    "yourRating": "Your rating",
+    "source": "Source",
+    "difficulty": "Difficulty",
+    "theme": "Theme",
+    "allThemes": "All",
+    "themeCount_one": "{{count}} puzzles",
+    "themeCount_other": "{{count}} puzzles",
+    "noThemes": "no themes here",
+    "ratedOrder": "Serve puzzles near my rating",
+    "reviewDue": "Review due",
+    "dailyPuzzle": "Daily puzzle"
+  },
+  "difficulty": {
+    "all": "all",
+    "easy": "easy",
+    "medium": "medium",
+    "hard": "hard"
+  },
+  "source": {
+    "builtin": "Curated",
+    "mine": "My games",
+    "mineCount": "My games ({{n}})",
+    "all": "All"
+  },
+  "practice": {
+    "toPlayWin": {
+      "white": "White to play and win.",
+      "black": "Black to play and win."
+    },
+    "toMove": {
+      "white": "White to move",
+      "black": "Black to move"
+    },
+    "yourMove": "· your move",
+    "rated": "rated {{rating}}",
+    "feedback": {
+      "checkmate": "✓ {{san}} — checkmate!",
+      "solvedTheme": "✓ {{san}} — {{theme}}!",
+      "wrong": "Not the winning move. Try again, or reveal.",
+      "tryAgain": "Try again.",
+      "solution": "Solution: {{san}}",
+      "noReviews": "No reviews due right now — try new puzzles!",
+      "removed": "Removed from your puzzles."
+    },
+    "override": {
+      "rated": "Rated pick",
+      "review": "Review"
+    },
+    "counter": "Puzzle {{current}}/{{total}}",
+    "solvedSession_one": "{{count}} solved this session",
+    "solvedSession_other": "{{count}} solved this session",
+    "ratingDelta": "{{delta}} rating",
+    "fromSource": "from {{source}}",
+    "seenBefore": "You’ve seen this one before — recall the idea.",
+    "empty": {
+      "mineTitle": "No puzzles from your games yet",
+      "mineBody": "Open a game on the <b>Play</b> tab, then use <b>“Make puzzles from this game”</b> in the Game-review panel.",
+      "filterTitle": "Nothing matches this filter",
+      "filterBody": "No puzzles for this filter. Generate more with <code>pnpm gen:tactics</code>."
+    },
+    "buttons": {
+      "tryAgain": "Try again",
+      "reveal": "Reveal",
+      "nextPuzzleArrow": "Next puzzle →",
+      "nextPuzzle": "Next puzzle",
+      "deletePuzzle": "Delete this puzzle"
+    }
+  },
+  "sprint": {
+    "toMove": {
+      "white": "White to move — find the win",
+      "black": "Black to move — find the win"
+    },
+    "time": "Time",
+    "score": "Score",
+    "missed": "Missed",
+    "timesUp": "Time's up!",
+    "runOver": "Run over",
+    "newBest": "🏆 New best!",
+    "endRun": "End run",
+    "playAgain": "Play again"
+  },
+  "rush": {
+    "variants": {
+      "timed3": {
+        "label": "3 minutes",
+        "blurb": "Race the clock — 3 strikes still end the run."
+      },
+      "survival": {
+        "label": "Survival",
+        "blurb": "No clock. Climb until three strikes end you."
+      }
+    },
+    "variantShort": {
+      "timed3": "3 min",
+      "survival": "survival"
+    },
+    "inARow_one": "{{count}} in a row!",
+    "inARow_other": "{{count}} in a row!",
+    "strike": "✗ strike!",
+    "strikes": "Strikes",
+    "streak_one": "🔥 {{count}} streak",
+    "streak_other": "🔥 {{count}} streak",
+    "best": "Best ({{variant}}): {{score}}",
+    "idleIntro": "Solve as many as you can — difficulty ramps up as you go.",
+    "start": "Start rush",
+    "struckOut": "Struck out!",
+    "bestStreak": "Best streak"
+  },
+  "storm": {
+    "comboLost": "✗ combo lost",
+    "combo": "Combo",
+    "multiplier": "⚡ ×{{multiplier}} points",
+    "best": "Best: {{score}}",
+    "idleBlurb": "3 minutes of puzzles that adapt to your pace — solve fast to push the difficulty and build a combo that multiplies your points. A miss breaks the combo but costs nothing else.",
+    "start": "Start storm",
+    "solved": "Solved",
+    "accuracy": "{{accuracy}}% accuracy"
+  },
+  "mistakes": {
+    "title": "Your mistakes",
+    "severity": {
+      "mistake": "mistake",
+      "blunder": "blunder"
+    },
+    "toMove": {
+      "white": "White to move",
+      "black": "Black to move"
+    },
+    "prompt": "You played {{san}} here — find a stronger move.",
+    "checkmate": "✓ {{san}} — checkmate! Far better than {{played}}.",
+    "checking": "checking…",
+    "holdsUp": "✓ {{san}} holds up — much better than {{played}}.",
+    "stillDrops": "✗ {{san}} still drops ~{{loss}}%. Try another.",
+    "empty": "No saved mistakes yet. On the <b>Play</b> board, review a game and “Save mistakes to drill”.",
+    "gotIt": "Got it ✓",
+    "skip": "Skip →"
+  }
+}

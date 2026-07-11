@@ -1,1 +1,52 @@
-{}
+{
+  "toMove": {
+    "white": "White to move",
+    "black": "Black to move"
+  },
+  "toMoveCheck": {
+    "white": "White to move — check",
+    "black": "Black to move — check"
+  },
+  "toMoveRepetition": {
+    "white": "White to move · threefold repetition",
+    "black": "Black to move · threefold repetition"
+  },
+  "toMoveCheckRepetition": {
+    "white": "White to move — check · threefold repetition",
+    "black": "Black to move — check · threefold repetition"
+  },
+  "claimDraw": {
+    "threefold": "Threefold repetition — you can claim a draw",
+    "fiftyMove": "Fifty-move rule — you can claim a draw"
+  },
+  "checkmate": {
+    "white": "Checkmate — White wins",
+    "black": "Checkmate — Black wins"
+  },
+  "resigned": {
+    "white": "White wins — you resigned",
+    "black": "Black wins — you resigned"
+  },
+  "flagged": {
+    "white": "White flagged — Black wins on time",
+    "black": "Black flagged — White wins on time"
+  },
+  "draw": {
+    "stalemate": "Draw — stalemate",
+    "insufficientMaterial": "Draw — insufficient material",
+    "fiftyMove": "Draw — fifty-move rule",
+    "agreed": "Draw — draw agreed",
+    "threefold": "Draw — threefold repetition"
+  },
+  "endReason": {
+    "youResigned": "You resigned",
+    "drawAgreed": "Draw agreed",
+    "threefold": "Threefold repetition",
+    "fiftyMoveClaim": "Fifty-move rule",
+    "onTime": "on time",
+    "checkmate": "checkmate",
+    "stalemate": "stalemate",
+    "insufficientMaterial": "insufficient material",
+    "fiftyMove": "fifty-move rule"
+  }
+}

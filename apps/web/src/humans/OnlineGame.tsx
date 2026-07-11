@@ -5,17 +5,31 @@
  * rejoins the same seat and the game resumes where it was.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import type { FriendGameState } from '@chesser/shared';
 import { Board } from '../board/Board';
 import { playMoveSound } from '../lib/sound';
 import type { Color } from '../store/game';
-import { boardEnd, buildPgn, cap, colorOfFen, destsOf, needsPromotion, opposite } from './chessUtil';
+import { boardEnd, buildPgn, colorOfFen, destsOf, needsPromotion, opposite } from './chessUtil';
 import { Promotion } from './Promotion';
-import { CopyPgnButton, HumanMoveList, PlayerBar, ResultBanner, btn, dangerBtn, neutralBtn, primaryBtn, useReplay } from './bits';
+import {
+  CopyPgnButton,
+  HumanMoveList,
+  PlayerBar,
+  ResultBanner,
+  btn,
+  colorName,
+  dangerBtn,
+  neutralBtn,
+  primaryBtn,
+  reasonText,
+  useReplay,
+} from './bits';
 import { recordCasualGame } from './casualHistory';
 import { FriendClient, type FriendIntent, type Seat } from './friendClient';
 
 export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: () => void }) {
+  const { t } = useTranslation('friends');
   const [seat, setSeat] = useState<Seat | null>(null);
   const [state, setState] = useState<FriendGameState | null>(null);
   const [connected, setConnected] = useState(false);
@@ -148,7 +162,7 @@ export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: (
           {fatal}
         </p>
         <button className={neutralBtn} onClick={leave}>
-          ← Back
+          {t('actions.back')}
         </button>
       </div>
     );
@@ -157,10 +171,10 @@ export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: (
   if (!state || !seat) {
     return (
       <div className="mx-auto max-w-md space-y-3 rounded-2xl bg-panel shadow-soft p-4">
-        <p className="animate-pulse-soft text-sm text-neutral-400">{connected ? 'Setting up the game…' : 'Connecting…'}</p>
+        <p className="animate-pulse-soft text-sm text-neutral-400">{connected ? t('connect.settingUp') : t('connect.connecting')}</p>
         {error && <p className="text-sm text-rose-300">{error}</p>}
         <button className={neutralBtn} onClick={leave}>
-          ← Back
+          {t('actions.back')}
         </button>
       </div>
     );
@@ -168,13 +182,15 @@ export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: (
 
   const me = state.players[myColor];
   const opp = state.players[oppColor];
+  // Reasons arrive as canonical English identifiers from the server;
+  // `reasonText` localizes known ones at display time (English is byte-identical).
   const status = over
     ? state.result!.winner === 'draw'
-      ? `Draw — ${state.result!.reason}`
-      : `${cap(state.result!.winner)} wins — ${state.result!.reason}`
+      ? t('status.drawReason', { reason: reasonText(t, state.result!.reason) })
+      : t('status.winsReason', { player: colorName(t, state.result!.winner), reason: reasonText(t, state.result!.reason) })
     : state.status === 'waiting'
-      ? 'Waiting for your friend to join…'
-      : `${cap(state.turn)} to move${end?.check ? ' — check' : ''}`;
+      ? t('status.waitingFriend')
+      : t(end?.check ? 'status.toMoveCheck' : 'status.toMove', { player: colorName(t, state.turn) });
 
   return (
     <div className="mx-auto grid w-full max-w-[1000px] grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
@@ -184,24 +200,34 @@ export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: (
             {status}
           </span>
           <span className="text-neutral-400">
-            · game <span className="font-mono text-neutral-300" data-testid="game-code">{state.code}</span> · unrated
+            <Trans
+              t={t}
+              i18nKey="status.onlineTag"
+              values={{ code: state.code }}
+              components={{ code: <span className="font-mono text-neutral-300" data-testid="game-code" /> }}
+            />
           </span>
-          {!connected && <span className="animate-pulse-soft text-rose-400">· reconnecting…</span>}
+          {!connected && <span className="animate-pulse-soft text-rose-400">{t('status.reconnecting')}</span>}
         </div>
 
         {state.status === 'waiting' && (
           <div className="space-y-2 rounded-2xl bg-panel shadow-soft p-3" data-testid="invite-box">
-            <p className="text-sm text-neutral-300">Send this link to your friend — the game starts when they open it:</p>
+            <p className="text-sm text-neutral-300">{t('invite.lead')}</p>
             <div className="flex flex-wrap items-center gap-2">
               <code className="max-w-full overflow-x-auto rounded bg-panelmute px-2 py-1 text-xs text-emerald-300" data-testid="invite-link">
                 {shareLink}
               </code>
               <button className={primaryBtn} onClick={() => void copyLink()}>
-                {copied ? '✓ Copied' : 'Copy link'}
+                {copied ? t('invite.copied') : t('invite.copyLink')}
               </button>
             </div>
             <p className="text-xs text-neutral-400">
-              …or they can enter the code <span className="font-mono text-neutral-300">{state.code}</span> under Friends → Join.
+              <Trans
+                t={t}
+                i18nKey="invite.codeHint"
+                values={{ code: state.code }}
+                components={{ code: <span className="font-mono text-neutral-300" /> }}
+              />
             </p>
           </div>
         )}
@@ -209,7 +235,7 @@ export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: (
         <div className="mx-auto w-full max-w-[560px] space-y-2">
           <PlayerBar
             side={oppColor}
-            name={opp?.name ?? 'Waiting…'}
+            name={opp?.name ?? t('players.waiting')}
             active={!over && state.status === 'active' && state.turn === oppColor}
             connected={opp ? opp.connected : undefined}
             clockMs={clockOf(oppColor)}
@@ -254,7 +280,7 @@ export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: (
           </div>
           <PlayerBar
             side={myColor}
-            name={me ? `${me.name} (you)` : 'You'}
+            name={me ? t('players.named', { name: me.name }) : t('players.you')}
             active={!over && state.status === 'active' && state.turn === myColor}
             connected={me ? me.connected : undefined}
             clockMs={clockOf(myColor)}
@@ -264,7 +290,7 @@ export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: (
 
         {state.status === 'active' && opp && !opp.connected && (
           <p className="text-sm text-amber-300" data-testid="opp-disconnected">
-            Your opponent disconnected — the game resumes when they come back.
+            {t('status.oppDisconnected')}
           </p>
         )}
         {error && (
@@ -280,11 +306,11 @@ export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: (
                 {state.status === 'waiting' || state.sans.length < 2 ? (
                   // Standard no-fault escape hatch before the game really starts.
                   <button className={neutralBtn} onClick={() => clientRef.current?.abort()} data-testid="abort">
-                    ✕ Abort
+                    {t('actions.abort')}
                   </button>
                 ) : !confirmResign ? (
                   <button className={neutralBtn} onClick={() => setConfirmResign(true)} data-testid="resign">
-                    🏳 Resign
+                    {t('actions.resign')}
                   </button>
                 ) : (
                   <>
@@ -296,10 +322,10 @@ export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: (
                         clientRef.current?.resign();
                       }}
                     >
-                      Confirm resign
+                      {t('actions.confirmResign')}
                     </button>
                     <button className={neutralBtn} onClick={() => setConfirmResign(false)}>
-                      Cancel
+                      {t('common:actions.cancel')}
                     </button>
                   </>
                 )}
@@ -309,18 +335,18 @@ export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: (
                   disabled={state.status !== 'active' || state.drawOffer !== null || state.sans.length < 2}
                   data-testid="offer-draw"
                 >
-                  ½ Offer draw
+                  {t('actions.offerDraw')}
                 </button>
               </div>
-              {state.drawOffer === myColor && <p className="text-xs text-neutral-400">Draw offered — waiting for your opponent…</p>}
+              {state.drawOffer === myColor && <p className="text-xs text-neutral-400">{t('draw.offeredWaiting')}</p>}
               {state.drawOffer === oppColor && (
                 <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-300" data-testid="draw-prompt">
-                  <span>{opp?.name ?? 'Your opponent'} offers a draw.</span>
+                  <span>{t('draw.promptOnline', { name: opp?.name ?? t('players.opponent') })}</span>
                   <button className={primaryBtn} onClick={() => clientRef.current?.respondDraw(true)} data-testid="accept-draw">
-                    Accept
+                    {t('actions.accept')}
                   </button>
                   <button className={neutralBtn} onClick={() => clientRef.current?.respondDraw(false)}>
-                    Decline
+                    {t('actions.decline')}
                   </button>
                 </div>
               )}
@@ -330,11 +356,11 @@ export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: (
               <ResultBanner winner={state.result!.winner} reason={state.result!.reason} />
               {state.result!.reason !== 'aborted' && (
                 <p className="text-sm text-neutral-400" data-testid="online-outcome">
-                  {state.result!.winner === 'draw' ? 'You drew.' : state.result!.winner === myColor ? 'You won! 🎉' : 'You lost.'}
+                  {state.result!.winner === 'draw' ? t('outcome.drew') : state.result!.winner === myColor ? t('outcome.won') : t('outcome.lost')}
                 </p>
               )}
               <button className={neutralBtn} onClick={leave}>
-                ← Back
+                {t('actions.back')}
               </button>
             </div>
           )}
@@ -355,7 +381,7 @@ export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: (
           />
         )}
         <button className={`${btn} w-full bg-neutral-800 text-neutral-400 hover:bg-neutral-700 hover:text-neutral-300`} onClick={leave}>
-          ← Leave game
+          {t('actions.leave')}
         </button>
       </div>
     </div>

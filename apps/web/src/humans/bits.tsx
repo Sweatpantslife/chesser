@@ -1,8 +1,40 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Chess } from 'chess.js';
+import type { TFunction } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { Clock } from '../components/Clock';
 import type { Color, TimeControl } from '../store/game';
-import { cap } from './chessUtil';
+
+/** Localized color name ("White"/"Black"); `t` must be bound to the friends ns. */
+export function colorName(t: TFunction, c: Color): string {
+  return t(c === 'white' ? 'colors.white' : 'colors.black');
+}
+
+/**
+ * Game-end reasons are canonical English identifiers — produced by the friend
+ * server and by LocalGame, compared literally (e.g. `reason === 'aborted'`) and
+ * stored raw in the casual-game history. Map the known ones to translations at
+ * DISPLAY time; anything unknown (server additions, per-player "X resigned"
+ * strings, old stored records) falls back to the raw text.
+ */
+const REASON_KEYS: Record<string, string> = {
+  checkmate: 'reasons.checkmate',
+  stalemate: 'reasons.stalemate',
+  'insufficient material': 'reasons.insufficientMaterial',
+  'threefold repetition': 'reasons.threefoldRepetition',
+  'fifty-move rule': 'reasons.fiftyMoveRule',
+  resignation: 'reasons.resignation',
+  agreement: 'reasons.agreement',
+  aborted: 'reasons.aborted',
+  'on time': 'reasons.onTime',
+  'timeout vs insufficient material': 'reasons.timeoutInsufficientMaterial',
+};
+
+/** Localized game-end reason; `t` must be bound to the friends ns. */
+export function reasonText(t: TFunction, reason: string): string {
+  const key = REASON_KEYS[reason];
+  return key ? t(key) : reason;
+}
 
 export const btn = 'btn-press rounded-full px-3 py-1.5 text-sm font-semibold disabled:opacity-50';
 export const neutralBtn = `${btn} bg-neutral-700 text-neutral-200 hover:bg-neutral-600`;
@@ -29,8 +61,9 @@ export function TimeControlPicker({
   /** Accessible group label (defaults to "Time control"). */
   label?: string;
 }) {
+  const { t } = useTranslation('friends');
   return (
-    <div className="flex gap-1 rounded-lg bg-panelmute p-1" role="group" aria-label={label ?? 'Time control'}>
+    <div className="flex gap-1 rounded-lg bg-panelmute p-1" role="group" aria-label={label ?? t('timeControl.label')}>
       {TIME_CONTROLS.map((tc) => {
         const selected = (tc?.label ?? null) === (value?.label ?? null);
         return (
@@ -38,7 +71,7 @@ export function TimeControlPicker({
             key={tc?.label ?? 'unlimited'}
             onClick={() => onChange(tc)}
             aria-pressed={selected}
-            aria-label={tc?.label ?? 'Unlimited time'}
+            aria-label={tc?.label ?? t('timeControl.unlimited')}
             className={`btn-press flex-1 rounded-full px-2 py-1 text-xs font-semibold ${
               selected ? 'bg-brand-600 text-white' : 'text-neutral-300 hover:bg-neutral-800'
             }`}
@@ -68,6 +101,7 @@ export function PlayerBar({
   clockMs: number | null;
   flagged: boolean;
 }) {
+  const { t } = useTranslation('friends');
   return (
     <div className="flex items-center justify-between gap-2" data-testid={`player-${side}`}>
       <div className="flex min-w-0 items-center gap-2">
@@ -76,7 +110,7 @@ export function PlayerBar({
         {connected !== undefined && (
           <span
             className={`h-2 w-2 shrink-0 rounded-full ${connected ? 'bg-emerald-400' : 'bg-rose-400'}`}
-            title={connected ? 'connected' : 'disconnected'}
+            title={connected ? t('players.connected') : t('players.disconnected')}
             data-testid={`presence-${side}`}
           />
         )}
@@ -140,6 +174,7 @@ export function useReplay(sans: string[]): Replay {
 
 /** Numbered SAN move list with click-to-navigate. */
 export function HumanMoveList({ sans, replay }: { sans: string[]; replay?: Replay }) {
+  const { t } = useTranslation('friends');
   const endRef = useRef<HTMLDivElement>(null);
   const atLive = replay?.atLive ?? true;
   useEffect(() => {
@@ -148,7 +183,7 @@ export function HumanMoveList({ sans, replay }: { sans: string[]; replay?: Repla
   if (sans.length === 0) {
     return (
       <p className="text-sm text-neutral-400" data-testid="human-movelist">
-        No moves yet.
+        {t('moveList.empty')}
       </p>
     );
   }
@@ -182,19 +217,19 @@ export function HumanMoveList({ sans, replay }: { sans: string[]; replay?: Repla
       </div>
       {replay && (
         <div className="flex gap-1">
-          <button className={`${neutralBtn} flex-1`} onClick={() => replay.goTo(0)} title="Start">
+          <button className={`${neutralBtn} flex-1`} onClick={() => replay.goTo(0)} title={t('moveList.start')}>
             ⏮
           </button>
-          <button className={`${neutralBtn} flex-1`} onClick={() => replay.step(-1)} title="Back">
+          <button className={`${neutralBtn} flex-1`} onClick={() => replay.step(-1)} title={t('moveList.back')}>
             ◀
           </button>
-          <button className={`${neutralBtn} flex-1`} onClick={() => replay.step(1)} title="Forward">
+          <button className={`${neutralBtn} flex-1`} onClick={() => replay.step(1)} title={t('moveList.forward')}>
             ▶
           </button>
           <button
             className={`${replay.atLive ? primaryBtn : neutralBtn} flex-1`}
             onClick={replay.goLive}
-            title="Jump to the live position"
+            title={t('moveList.live')}
           >
             ⏭
           </button>
@@ -206,6 +241,7 @@ export function HumanMoveList({ sans, replay }: { sans: string[]; replay?: Repla
 
 /** Copy the game as PGN to the clipboard. */
 export function CopyPgnButton({ pgn }: { pgn: string }) {
+  const { t } = useTranslation('friends');
   const [copied, setCopied] = useState(false);
   return (
     <button
@@ -221,13 +257,14 @@ export function CopyPgnButton({ pgn }: { pgn: string }) {
           .catch(() => {});
       }}
     >
-      {copied ? '✓ PGN copied' : '⧉ Copy PGN'}
+      {copied ? t('pgn.copied') : t('pgn.copy')}
     </button>
   );
 }
 
 /** Big end-of-game banner. */
 export function ResultBanner({ winner, reason }: { winner: Color | 'draw'; reason: string }) {
+  const { t } = useTranslation('friends');
   const aborted = reason === 'aborted';
   return (
     <div
@@ -236,8 +273,8 @@ export function ResultBanner({ winner, reason }: { winner: Color | 'draw'; reaso
         winner === 'draw' ? 'bg-neutral-700/60 text-neutral-200' : 'bg-emerald-900/50 text-emerald-300'
       }`}
     >
-      {aborted ? 'Game aborted' : winner === 'draw' ? 'Draw' : `${cap(winner)} wins`}
-      {!aborted && <span className="ml-1 font-normal opacity-80">· {reason}</span>}
+      {aborted ? t('result.aborted') : winner === 'draw' ? t('result.draw') : t('result.wins', { player: colorName(t, winner) })}
+      {!aborted && <span className="ml-1 font-normal opacity-80">· {reasonText(t, reason)}</span>}
     </div>
   );
 }

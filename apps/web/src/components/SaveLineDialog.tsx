@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { STARTING_FEN } from '@chesser/shared';
 import { useGame } from '../store/game';
 import { useRepertoire } from '../store/repertoire';
 import { Modal } from './Modal';
 
 export function SaveLineDialog({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation('openings');
   const history = useGame((s) => s.history);
   const viewPly = useGame((s) => s.viewPly);
   const startFen = useGame((s) => s.startFen);
@@ -22,7 +24,7 @@ export function SaveLineDialog({ onClose }: { onClose: () => void }) {
   }, [sans]);
 
   const [target, setTarget] = useState<string>(user[0]?.id ?? '__new');
-  const [newRepName, setNewRepName] = useState('My repertoire');
+  const [newRepName, setNewRepName] = useState(() => t('myRepertoire'));
   const [lineName, setLineName] = useState(defaultName);
   const [side, setSide] = useState<'white' | 'black'>('white');
 
@@ -35,19 +37,19 @@ export function SaveLineDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <Modal onClose={onClose} labelledBy="save-line-title" className="w-full max-w-sm rounded-xl bg-panel p-4 shadow-2xl">
-        <h3 id="save-line-title" className="mb-2 text-sm font-semibold text-ink">Save line to repertoire</h3>
+        <h3 id="save-line-title" className="mb-2 text-sm font-semibold text-ink">{t('save.title')}</h3>
 
         {sans.length === 0 ? (
-          <p className="text-sm text-neutral-400">Make some moves on the board first, then save the line.</p>
+          <p className="text-sm text-neutral-400">{t('save.noMoves')}</p>
         ) : !fromStart ? (
-          <p className="text-sm text-amber-300">Repertoire lines must start from the initial position.</p>
+          <p className="text-sm text-amber-300">{t('save.mustStartInitial')}</p>
         ) : (
           <div className="space-y-3">
             <div className="rounded bg-panelmute p-2 font-mono text-xs text-neutral-300">{defaultName}</div>
 
             <div>
               <label htmlFor="save-line-repertoire" className="mb-1 block text-xs uppercase tracking-wide text-neutral-400">
-                Repertoire
+                {t('save.repertoire')}
               </label>
               <select
                 id="save-line-repertoire"
@@ -60,14 +62,14 @@ export function SaveLineDialog({ onClose }: { onClose: () => void }) {
                     {r.name}
                   </option>
                 ))}
-                <option value="__new">+ New repertoire…</option>
+                <option value="__new">{t('save.newRepOption')}</option>
               </select>
               {target === '__new' && (
                 <input
                   value={newRepName}
                   onChange={(e) => setNewRepName(e.target.value)}
-                  placeholder="repertoire name"
-                  aria-label="New repertoire name"
+                  placeholder={t('save.repNamePlaceholder')}
+                  aria-label={t('save.repNameAria')}
                   className="mt-1 w-full rounded bg-neutral-800 px-2 py-1.5 text-sm text-ink outline-none"
                 />
               )}
@@ -75,7 +77,7 @@ export function SaveLineDialog({ onClose }: { onClose: () => void }) {
 
             <div>
               <label htmlFor="save-line-name" className="mb-1 block text-xs uppercase tracking-wide text-neutral-400">
-                Line name
+                {t('save.lineName')}
               </label>
               <input
                 id="save-line-name"
@@ -86,7 +88,7 @@ export function SaveLineDialog({ onClose }: { onClose: () => void }) {
             </div>
 
             <div>
-              <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">You play</div>
+              <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('save.youPlay')}</div>
               <div className="flex gap-1">
                 {(['white', 'black'] as const).map((c) => (
                   <button
@@ -97,7 +99,7 @@ export function SaveLineDialog({ onClose }: { onClose: () => void }) {
                       side === c ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                     }`}
                   >
-                    {c}
+                    {t(`side.${c}`)}
                   </button>
                 ))}
               </div>
@@ -105,10 +107,10 @@ export function SaveLineDialog({ onClose }: { onClose: () => void }) {
 
             <div className="flex justify-end gap-2 pt-1">
               <button onClick={onClose} className="rounded bg-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600">
-                Cancel
+                {t('common:actions.cancel')}
               </button>
               <button onClick={save} className="rounded bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800">
-                Save line
+                {t('save.saveCta')}
               </button>
             </div>
           </div>

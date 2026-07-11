@@ -1,1 +1,150 @@
-{}
+{
+  "tabs": {
+    "practice": "Práctica",
+    "rush": "Ráfaga de problemas",
+    "storm": "Tormenta de problemas",
+    "mistakes": "Mis errores",
+    "mistakesCount": "Mis errores ({{n}})"
+  },
+  "sidebar": {
+    "title": "Táctica",
+    "blurb": "Encuentra la única jugada ganadora — cada problema está verificado por el motor.",
+    "yourRating": "Tu puntuación",
+    "source": "Fuente",
+    "difficulty": "Dificultad",
+    "theme": "Tema",
+    "allThemes": "Todos",
+    "themeCount_one": "{{count}} problema",
+    "themeCount_other": "{{count}} problemas",
+    "noThemes": "no hay temas aquí",
+    "ratedOrder": "Servir problemas cercanos a mi puntuación",
+    "reviewDue": "Repasar pendientes",
+    "dailyPuzzle": "Problema del día"
+  },
+  "difficulty": {
+    "all": "todas",
+    "easy": "fácil",
+    "medium": "media",
+    "hard": "difícil"
+  },
+  "source": {
+    "builtin": "Seleccionados",
+    "mine": "Mis partidas",
+    "mineCount": "Mis partidas ({{n}})",
+    "all": "Todos"
+  },
+  "practice": {
+    "toPlayWin": {
+      "white": "Juegan blancas y ganan.",
+      "black": "Juegan negras y ganan."
+    },
+    "toMove": {
+      "white": "Mueven blancas",
+      "black": "Mueven negras"
+    },
+    "yourMove": "· tu jugada",
+    "rated": "puntuación {{rating}}",
+    "feedback": {
+      "checkmate": "✓ {{san}} — ¡jaque mate!",
+      "solvedTheme": "✓ {{san}} — ¡{{theme}}!",
+      "wrong": "No es la jugada ganadora. Inténtalo de nuevo o revela la solución.",
+      "tryAgain": "Inténtalo de nuevo.",
+      "solution": "Solución: {{san}}",
+      "noReviews": "No hay repasos pendientes ahora mismo — ¡prueba problemas nuevos!",
+      "removed": "Eliminado de tus problemas."
+    },
+    "override": {
+      "rated": "Selección por puntuación",
+      "review": "Repaso"
+    },
+    "counter": "Problema {{current}}/{{total}}",
+    "solvedSession_one": "{{count}} resuelto en esta sesión",
+    "solvedSession_other": "{{count}} resueltos en esta sesión",
+    "ratingDelta": "{{delta}} de puntuación",
+    "fromSource": "de {{source}}",
+    "seenBefore": "Ya has visto este problema — recuerda la idea.",
+    "empty": {
+      "mineTitle": "Aún no hay problemas de tus partidas",
+      "mineBody": "Abre una partida en la pestaña <b>Jugar</b> y usa <b>«Crear problemas de esta partida»</b> en el panel de revisión de la partida.",
+      "filterTitle": "Nada coincide con este filtro",
+      "filterBody": "No hay problemas para este filtro. Genera más con <code>pnpm gen:tactics</code>."
+    },
+    "buttons": {
+      "tryAgain": "Intentar de nuevo",
+      "reveal": "Revelar",
+      "nextPuzzleArrow": "Siguiente problema →",
+      "nextPuzzle": "Siguiente problema",
+      "deletePuzzle": "Eliminar este problema"
+    }
+  },
+  "sprint": {
+    "toMove": {
+      "white": "Mueven blancas — encuentra la victoria",
+      "black": "Mueven negras — encuentra la victoria"
+    },
+    "time": "Tiempo",
+    "score": "Marcador",
+    "missed": "Fallados",
+    "timesUp": "¡Se acabó el tiempo!",
+    "runOver": "Fin de la ronda",
+    "newBest": "🏆 ¡Nuevo récord!",
+    "endRun": "Terminar la ronda",
+    "playAgain": "Jugar otra vez"
+  },
+  "rush": {
+    "variants": {
+      "timed3": {
+        "label": "3 minutos",
+        "blurb": "Corre contra el reloj — 3 fallos también terminan la ronda."
+      },
+      "survival": {
+        "label": "Supervivencia",
+        "blurb": "Sin reloj. Sube hasta que tres fallos te eliminen."
+      }
+    },
+    "variantShort": {
+      "timed3": "3 min",
+      "survival": "supervivencia"
+    },
+    "inARow_one": "¡{{count}} seguido!",
+    "inARow_other": "¡{{count}} seguidos!",
+    "strike": "✗ ¡fallo!",
+    "strikes": "Fallos",
+    "streak_one": "🔥 racha de {{count}}",
+    "streak_other": "🔥 racha de {{count}}",
+    "best": "Récord ({{variant}}): {{score}}",
+    "idleIntro": "Resuelve todos los que puedas — la dificultad sube sobre la marcha.",
+    "start": "Empezar la ráfaga",
+    "struckOut": "¡Eliminado!",
+    "bestStreak": "Mejor racha"
+  },
+  "storm": {
+    "comboLost": "✗ combo perdido",
+    "combo": "Combo",
+    "multiplier": "⚡ ×{{multiplier}} puntos",
+    "best": "Récord: {{score}}",
+    "idleBlurb": "3 minutos de problemas que se adaptan a tu ritmo — resuelve rápido para subir la dificultad y encadena un combo que multiplica tus puntos. Un fallo rompe el combo, pero no cuesta nada más.",
+    "start": "Empezar la tormenta",
+    "solved": "Resueltos",
+    "accuracy": "{{accuracy}}% de acierto"
+  },
+  "mistakes": {
+    "title": "Tus errores",
+    "severity": {
+      "mistake": "error",
+      "blunder": "error grave"
+    },
+    "toMove": {
+      "white": "Mueven blancas",
+      "black": "Mueven negras"
+    },
+    "prompt": "Aquí jugaste {{san}} — encuentra una jugada más fuerte.",
+    "checkmate": "✓ {{san}} — ¡jaque mate! Mucho mejor que {{played}}.",
+    "checking": "comprobando…",
+    "holdsUp": "✓ {{san}} se sostiene — mucho mejor que {{played}}.",
+    "stillDrops": "✗ {{san}} sigue perdiendo ~{{loss}}%. Prueba otra jugada.",
+    "empty": "Aún no hay errores guardados. En el tablero de <b>Jugar</b>, revisa una partida y usa «Guardar errores para entrenar».",
+    "gotIt": "Entendido ✓",
+    "skip": "Saltar →"
+  }
+}

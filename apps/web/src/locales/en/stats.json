@@ -1,1 +1,231 @@
-{}
+{
+  "percent": "{{value}}%",
+  "empty": {
+    "title": "Your story starts here",
+    "body": "No training history yet. Solve tactics, drill openings, learn checkmate patterns or run the coordinate trainer — your accuracy and volume will show up here."
+  },
+  "cards": {
+    "level": "Level",
+    "levelHint": "{{xp}} XP",
+    "puzzleRating": "Puzzle rating",
+    "puzzleRatingHint": "peak {{peak}} · {{meter}}",
+    "reviewStreak": "Review streak",
+    "reviewStreakHint": "best {{best}}",
+    "dayStreak": "Day streak",
+    "dayStreakHint": "active days",
+    "reviews": "Reviews",
+    "reviewsHint_one": "{{count}} active days",
+    "reviewsHint_other": "{{count}} active days",
+    "accuracy": "Accuracy",
+    "accuracyHint_one": "{{count}} correct",
+    "accuracyHint_other": "{{count}} correct",
+    "today": "Today",
+    "todayHint": "reviews",
+    "dueNow": "Due now",
+    "dueNowHint": "all decks"
+  },
+  "sections": {
+    "ratings": "Ratings",
+    "ratingsAside": "{{solved}} solved · {{custom}} from your games",
+    "activity": "Activity",
+    "activityAside": "last {{weeks}} weeks",
+    "last30": "Last 30 days",
+    "last30Aside": "reviews ▮ · accuracy ▬",
+    "learning": "Learning progress",
+    "bests": "Personal bests"
+  },
+  "legend": {
+    "less": "less",
+    "more": "more"
+  },
+  "bests": {
+    "puzzleRush": "Puzzle rush",
+    "puzzleStorm": "Puzzle storm",
+    "coordWhite": "Coord. white",
+    "coordBlack": "Coord. black",
+    "squareColour": "Sq. colour",
+    "knightsTour": "Knight's tour"
+  },
+  "charts": {
+    "heatmapEmpty": "No activity yet — solved puzzles and drills will light up this calendar.",
+    "heatmapCell_one": "{{date}}: {{count}} review",
+    "heatmapCell_other": "{{date}}: {{count}} reviews",
+    "activityEmpty": "No activity yet — play a game or solve a puzzle to start the chart.",
+    "learned": "<seen>{{seen}}</seen>/{{total}} learned",
+    "due_one": "{{count}} due",
+    "due_other": "{{count}} due"
+  },
+  "archive": {
+    "result": {
+      "win": "W",
+      "draw": "D",
+      "loss": "L",
+      "unknown": "–",
+      "winTitle": "Win",
+      "drawTitle": "Draw",
+      "lossTitle": "Loss",
+      "unknownTitle": "No result from your side"
+    },
+    "youPlayed": {
+      "white": "You played white",
+      "black": "You played black"
+    },
+    "wdl": {
+      "winsShort": "{{count}}W",
+      "drawsShort": "{{count}}D",
+      "lossesShort": "{{count}}L",
+      "winRate": "{{rate}}% wins",
+      "splitAria": "{{wins}} wins, {{draws}} draws, {{losses}} losses",
+      "winsTitle_one": "{{count}} wins",
+      "winsTitle_other": "{{count}} wins",
+      "drawsTitle_one": "{{count}} draws",
+      "drawsTitle_other": "{{count}} draws",
+      "lossesTitle_one": "{{count}} losses",
+      "lossesTitle_other": "{{count}} losses",
+      "allGames": "All games",
+      "asWhite": "As White",
+      "asBlack": "As Black"
+    },
+    "trend": {
+      "chartAria": "Trend chart",
+      "pointTitle": "{{label}} — {{date}}: {{value}}"
+    },
+    "series": {
+      "bots": "Bots",
+      "blitz": "Blitz",
+      "accuracy": "Accuracy"
+    },
+    "filters": {
+      "resultLabel": "Result",
+      "resultAria": "Filter by result",
+      "colorLabel": "Color",
+      "colorAria": "Filter by color",
+      "periodLabel": "Period",
+      "periodAria": "Filter by period",
+      "all": "All",
+      "wins": "Wins",
+      "draws": "Draws",
+      "losses": "Losses",
+      "any": "Any",
+      "white": "White",
+      "black": "Black",
+      "allTime": "All time",
+      "7d": "7d",
+      "30d": "30d",
+      "90d": "90d",
+      "year": "Year",
+      "clear": "Clear filters"
+    },
+    "kind": {
+      "bot": "vs bot",
+      "analysis": "analysis board",
+      "local": "pass & play",
+      "online": "friend game"
+    },
+    "row": {
+      "youVs": "You vs {{opponent}}",
+      "whiteVsBlack": "{{white}} vs {{black}}",
+      "moves_one": "{{count}} move",
+      "moves_other": "{{count}} moves",
+      "unfinished": "unfinished",
+      "accuracyTitle": "Your accuracy in the saved review",
+      "casualNoMoves": "Casual games only log their result — the moves aren't stored, so there's nothing to review.",
+      "unreadablePgn": "This game can't be opened — its saved PGN has no readable moves.",
+      "openTitle": "Open this game on the analysis board"
+    },
+    "loadingAria": "Loading your games",
+    "tabs": {
+      "aria": "Archive sections",
+      "games": "Games",
+      "insights": "Insights"
+    },
+    "loadError": "Could not load your saved games — check your connection.",
+    "retry": "Retry",
+    "empty": {
+      "title": "No games in your archive yet",
+      "body": "Finish a game against a bot and hit “Save” on the board — it lands here with its result, opening and (after a review) accuracy.",
+      "signIn": "Sign in first so your games follow your account; pass & play results from this device also show here."
+    },
+    "noMatch": "No games match these filters.",
+    "count_one": "{{count}} game",
+    "count_other": "{{count}} games",
+    "filteredSuffix": "(filtered)",
+    "signInHint": "Sign in to save bot games to your archive",
+    "showFewer": "Show fewer",
+    "showAll": "Show all {{count}}",
+    "insightsEmpty": {
+      "noGamesTitle": "Your dashboard starts with a game",
+      "noSliceTitle": "Nothing in this slice",
+      "noGamesBody": "Play and save games — win/loss trends, openings and accuracy charts grow from your archive.",
+      "noSliceBody": "No archived games match the current filters — widen the period or clear the filters to see your trends."
+    },
+    "stats": {
+      "games": "Games",
+      "inSlice": "in this slice",
+      "allTime": "all time",
+      "record": "Record",
+      "recordHint": "W-D-L",
+      "winRate": "Win rate",
+      "noResult_one": "{{count}} without a result",
+      "noResult_other": "{{count}} without a result",
+      "withResult": "of games with a result",
+      "accuracy": "Accuracy",
+      "avgReviews_one": "avg of {{count}} review",
+      "avgReviews_other": "avg of {{count}} reviews",
+      "noReviews": "no reviews yet"
+    },
+    "sections": {
+      "wdl": "Win / draw / loss",
+      "ratingTrend": "Rating trend",
+      "ratingTrendAside": "rated bot games · {{meter}}",
+      "ratingTrendEmpty": "No rated games in this period — finish a game against a bot to start your rating history.",
+      "accuracyTrend": "Accuracy trend",
+      "accuracyTrendAside": "from your game reviews",
+      "accuracyTrendEmpty": "No reviewed games in this slice — open a game and run “Review” to chart your accuracy.",
+      "openings": "Most-played openings",
+      "openingsEmpty": "No named openings yet — openings are detected from each saved game’s moves.",
+      "sw": "Strengths & weaknesses",
+      "swAside": "from reviewed games · full detail on the Coach tab"
+    },
+    "profileEmpty": {
+      "filtered": "No reviewed games match the current filters — widen the period or clear the filters to see this breakdown.",
+      "none": "Review a finished game (Play → Review) and the coach will chart what you do well and what keeps costing you."
+    },
+    "strengths": {
+      "title": "Strengths",
+      "phase": "Strongest phase: {{phase}} ({{accuracy}}% accuracy)",
+      "color": "More accurate as {{side}} ({{better}}% vs {{other}}%)",
+      "improving": "Improving: {{label}} — fewer in your recent games",
+      "empty": "Not enough reviewed games to call out strengths yet."
+    },
+    "phaseNames": {
+      "opening": "opening",
+      "middlegame": "middlegame",
+      "endgame": "endgame"
+    },
+    "sides": {
+      "white": "White",
+      "black": "Black"
+    },
+    "weaknesses": {
+      "title": "Weaknesses",
+      "occurrences_one": "×{{times}} in {{count}} game",
+      "occurrences_other": "×{{times}} in {{count}} games",
+      "improving": " · improving",
+      "rising": " · rising",
+      "empty": "No recurring weakness found in your recent reviews — keep it up."
+    }
+  },
+  "achievements": {
+    "title": "Achievements",
+    "filter": {
+      "all": "all",
+      "earned": "earned",
+      "locked": "locked"
+    },
+    "earnedCount": "{{earned}} / {{total}} earned",
+    "earnedOn": "Earned {{date}}",
+    "earned": "Earned",
+    "xpReward": "+{{xp}} XP"
+  }
+}

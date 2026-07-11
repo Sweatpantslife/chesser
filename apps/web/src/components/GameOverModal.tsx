@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { STARTING_FEN } from '@chesser/shared';
 import { mainlineOf, useGame, type Color } from '../store/game';
 import { useAnalysisReport } from '../store/analysisReport';
 import { detectOpening, type OpeningInfo } from '../lib/openings';
 import { CLASSIFICATION_META, type Classification } from '../lib/coach';
+import { translateGameStatus } from '../lib/gameStatusText';
 import { BotAvatar } from './BotAvatar';
 import { Modal } from './Modal';
 import { fireConfetti } from './Celebration';
@@ -27,6 +29,7 @@ function AccuracyBar({ value }: { value: number | null }) {
 const CHIP_ORDER: Classification[] = ['brilliant', 'great', 'best', 'inaccuracy', 'mistake', 'blunder', 'miss'];
 
 export function GameOverModal() {
+  const { t } = useTranslation('game');
   const summary = useGame((s) => s.gameSummary);
   const dismissed = useGame((s) => s.modalDismissed);
   const gameNo = useGame((s) => s.gameNo);
@@ -96,7 +99,7 @@ export function GameOverModal() {
 
   const won = summary.outcome === 'win';
   const lost = summary.outcome === 'loss';
-  const headline = won ? 'Victory' : lost ? 'Defeat' : 'Draw';
+  const headline = won ? t('over.victory') : lost ? t('over.defeat') : t('over.draw');
   const headEmoji = won ? '🏆' : lost ? '🙁' : '🤝';
   const headTone = won ? 'text-emerald-300' : lost ? 'text-rose-300' : 'text-neutral-200';
 
@@ -120,7 +123,7 @@ export function GameOverModal() {
           )}
           <div className="pop-in text-3xl" aria-hidden="true">{headEmoji}</div>
           <h2 id="game-over-title" className={`mt-1 font-display text-3xl font-bold ${headTone}`}>{headline}</h2>
-          <p className="mt-0.5 text-sm text-neutral-400">{summary.statusText}</p>
+          <p className="mt-0.5 text-sm text-neutral-400">{translateGameStatus(summary.statusText)}</p>
         </div>
 
         {/* opponent + rating */}
@@ -128,20 +131,25 @@ export function GameOverModal() {
           <div className="flex items-center gap-2.5">
             {summary.opponent && <BotAvatar name={summary.opponent.name} accent={summary.opponent.accent} motif={summary.opponent.motif} size={40} />}
             <div className="min-w-0">
-              <div className="truncate text-sm font-semibold text-ink">{summary.opponent?.name ?? 'Opponent'}</div>
+              <div className="truncate text-sm font-semibold text-ink">{summary.opponent?.name ?? t('over.opponent')}</div>
               <div className="text-xs text-neutral-400">
-                You played <span className="capitalize text-neutral-300">{summary.playerColor}</span>
+                <Trans
+                  t={t}
+                  i18nKey="over.youPlayed"
+                  values={{ color: t(`colors.${summary.playerColor}`) }}
+                  components={{ color: <span className="capitalize text-neutral-300" /> }}
+                />
               </div>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xs uppercase tracking-wide text-neutral-400">{summary.category === 'blitz' ? 'Blitz' : 'Bots'} rating</div>
+            <div className="text-xs uppercase tracking-wide text-neutral-400">{summary.category === 'blitz' ? t('over.ratingBlitz') : t('over.ratingBots')}</div>
             <div className="flex items-baseline justify-end gap-1.5">
               <span className="text-lg font-bold text-ink">{summary.ratingAfter}</span>
               {summary.rated ? (
                 <span className={`text-sm font-semibold ${deltaTone}`}>{deltaStr}</span>
               ) : (
-                <span className="text-xs font-semibold text-neutral-400">unrated</span>
+                <span className="text-xs font-semibold text-neutral-400">{t('over.unrated')}</span>
               )}
             </div>
           </div>
@@ -150,14 +158,16 @@ export function GameOverModal() {
         {/* accuracy */}
         <div className="mb-4 space-y-2.5 rounded-xl bg-neutral-800/40 p-3">
           <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-neutral-400">
-            <span>Accuracy</span>
+            <span>{t('over.accuracy')}</span>
             {!reviewReady && (
-              <span className="text-neutral-400">{connected ? (reviewing ? `analysing ${progress}%` : 'analysing…') : 'engine offline'}</span>
+              <span className="text-neutral-400">
+                {connected ? (reviewing ? t('over.analysingPercent', { percent: progress }) : t('over.analysing')) : t('over.engineOffline')}
+              </span>
             )}
           </div>
           {(['you', 'opp'] as const).map((who) => {
             const acc = who === 'you' ? youAcc : oppAcc;
-            const label = who === 'you' ? 'You' : (summary.opponent?.name ?? 'Opponent');
+            const label = who === 'you' ? t('over.you') : (summary.opponent?.name ?? t('over.opponent'));
             return (
               <div key={who}>
                 <div className="mb-1 flex items-center justify-between text-sm">
@@ -194,11 +204,11 @@ export function GameOverModal() {
         {/* small facts */}
         <div className="mb-5 grid grid-cols-2 gap-2 text-sm">
           <div className="rounded-lg bg-neutral-800/40 px-3 py-2">
-            <div className="text-xs uppercase tracking-wide text-neutral-400">Moves</div>
+            <div className="text-xs uppercase tracking-wide text-neutral-400">{t('over.movesLabel')}</div>
             <div className="font-semibold text-neutral-200">{summary.moves}</div>
           </div>
           <div className="rounded-lg bg-neutral-800/40 px-3 py-2">
-            <div className="text-xs uppercase tracking-wide text-neutral-400">Opening</div>
+            <div className="text-xs uppercase tracking-wide text-neutral-400">{t('over.openingLabel')}</div>
             <div className="truncate font-semibold text-neutral-200" title={opening?.name}>
               {opening?.name ?? '—'}
             </div>
@@ -211,18 +221,18 @@ export function GameOverModal() {
             onClick={() => void useGame.getState().analyzeFinishedGame()}
             className="btn-press flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 py-2.5 text-sm font-bold text-white hover:bg-brand-700"
           >
-            🔍 Analyze game
-            <span className="text-xs font-normal text-white/90">· move-by-move walkthrough</span>
+            🔍 {t('actions.analyzeGame')}
+            <span className="text-xs font-normal text-white/90">· {t('over.walkthrough')}</span>
           </button>
           <div className="flex gap-2">
             <button
               onClick={() => useGame.getState().rematch()}
               className="btn-press flex-1 rounded-full bg-emerald-700 py-2.5 text-sm font-bold text-white hover:bg-emerald-800"
             >
-              ↻ Rematch
+              ↻ {t('actions.rematch')}
             </button>
             <button onClick={close} className="btn-press flex-1 rounded-full bg-neutral-700 py-2.5 text-sm font-semibold text-neutral-200 hover:bg-neutral-600">
-              Close
+              {t('common:actions.close')}
             </button>
           </div>
         </div>

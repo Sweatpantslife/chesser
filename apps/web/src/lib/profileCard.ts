@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import type { PublicProfile } from './socialApi';
 
 /**
@@ -26,11 +27,14 @@ interface Chip {
 }
 
 export async function renderProfileCard(profile: PublicProfile): Promise<Blob> {
+  // Drawn outside React, so resolve strings at draw time from the active
+  // language (same pattern as GamifyToasts).
+  const t = i18n.getFixedT(null, 'profile');
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Canvas is unavailable.');
+  if (!ctx) throw new Error(t('card.canvasError'));
 
   // Background: deep violet night with a soft brand glow.
   const bg = ctx.createLinearGradient(0, 0, W, H);
@@ -54,7 +58,7 @@ export async function renderProfileCard(profile: PublicProfile): Promise<Blob> {
   ctx.fillText('.', 64 + wordW, 88);
   ctx.fillStyle = '#a7a1cd';
   ctx.font = '24px system-ui, -apple-system, "Segoe UI", sans-serif';
-  ctx.fillText('play & train chess', 64 + wordW + 40, 86);
+  ctx.fillText(t('card.tagline'), 64 + wordW + 40, 86);
 
   // Avatar disc + display name.
   const initial = (profile.username[0] ?? '?').toUpperCase();
@@ -76,7 +80,7 @@ export async function renderProfileCard(profile: PublicProfile): Promise<Blob> {
   ctx.fillText(profile.username.slice(0, 24), 200, 216);
   ctx.fillStyle = '#a7a1cd';
   ctx.font = '26px system-ui, -apple-system, "Segoe UI", sans-serif';
-  ctx.fillText(`Chesser player since ${profile.memberSince}`, 200, 256);
+  ctx.fillText(t('since', { date: profile.memberSince }), 200, 256);
 
   // Stat chips — only what was shared.
   const chips: Chip[] = [];
@@ -84,12 +88,15 @@ export async function renderProfileCard(profile: PublicProfile): Promise<Blob> {
   const puzzles = rated(profile.ratings?.puzzles);
   const bots = rated(profile.ratings?.bots);
   const blitz = rated(profile.ratings?.blitz);
-  if (puzzles) chips.push({ label: 'Puzzles', value: String(puzzles.elo) });
-  if (bots) chips.push({ label: 'Bots', value: String(bots.elo) });
-  if (blitz) chips.push({ label: 'Blitz', value: String(blitz.elo) });
-  if (profile.rushBest !== undefined && profile.rushBest > 0) chips.push({ label: 'Rush best', value: String(profile.rushBest) });
-  if (profile.streak) chips.push({ label: 'Streak', value: `${profile.streak.current}d (best ${profile.streak.best})` });
-  if (profile.record) chips.push({ label: 'W · D · L', value: `${profile.record.wins} · ${profile.record.draws} · ${profile.record.losses}` });
+  if (puzzles) chips.push({ label: t('card.labels.puzzles'), value: String(puzzles.elo) });
+  if (bots) chips.push({ label: t('card.labels.bots'), value: String(bots.elo) });
+  if (blitz) chips.push({ label: t('card.labels.blitz'), value: String(blitz.elo) });
+  if (profile.rushBest !== undefined && profile.rushBest > 0)
+    chips.push({ label: t('card.labels.rushBest'), value: String(profile.rushBest) });
+  if (profile.streak)
+    chips.push({ label: t('card.labels.streak'), value: t('card.streakValue', { current: profile.streak.current, best: profile.streak.best }) });
+  if (profile.record)
+    chips.push({ label: t('card.labels.wdl'), value: `${profile.record.wins} · ${profile.record.draws} · ${profile.record.losses}` });
 
   const cols = 3;
   const chipW = 340;
@@ -117,7 +124,7 @@ export async function renderProfileCard(profile: PublicProfile): Promise<Blob> {
   if (chips.length === 0) {
     ctx.fillStyle = '#a7a1cd';
     ctx.font = '28px system-ui, -apple-system, "Segoe UI", sans-serif';
-    ctx.fillText('A Chesser player with more secrets than shared stats.', 64, 380);
+    ctx.fillText(t('card.noStats'), 64, 380);
   }
 
   // Footer: openings (if shared) or an invitation.
@@ -127,10 +134,10 @@ export async function renderProfileCard(profile: PublicProfile): Promise<Blob> {
     .slice(0, 2)
     .map((o) => o.name)
     .join(' · ');
-  ctx.fillText(openings ? `Favorite openings: ${openings}` : 'Play & train at your own pace — puzzles, bots, openings.', 64, H - 48);
+  ctx.fillText(openings ? t('card.openings', { openings }) : t('card.invite'), 64, H - 48);
 
   return await new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Could not render the card image.'))), 'image/png');
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error(t('card.renderError')))), 'image/png');
   });
 }
 

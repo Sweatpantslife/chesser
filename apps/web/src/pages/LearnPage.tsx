@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Chess } from 'chess.js';
 import type { DrawShape } from 'chessground/draw';
 import { Board } from '../board/Board';
@@ -36,8 +37,9 @@ function inCheckOf(fen: string): boolean {
 }
 
 function Stars({ n, size = 'text-sm' }: { n: number; size?: string }) {
+  const { t } = useTranslation('learn');
   return (
-    <span className={`${size} tracking-tight`} aria-label={`${n} of 3 stars`}>
+    <span className={`${size} tracking-tight`} aria-label={t('stars.aria', { n })}>
       {[1, 2, 3].map((i) => (
         <span key={i} className={i <= n ? 'text-gold-400' : 'text-neutral-400'}>
           ★
@@ -50,12 +52,13 @@ function Stars({ n, size = 'text-sm' }: { n: number; size?: string }) {
 // — Lesson catalogue —
 
 function LessonCard({ lesson, onOpen }: { lesson: Lesson; onOpen: () => void }) {
+  const { t } = useTranslation('learn');
   const done = useLessons((s) => !!s.completed[lesson.id]);
   const stars = useLessons((s) => s.completed[lesson.id]?.stars ?? 0);
   return (
     <button
       onClick={onOpen}
-      aria-label={`${lesson.title}${done ? ' (completed)' : ''}`}
+      aria-label={done ? t('catalogue.completedAria', { title: lesson.title }) : lesson.title}
       className={`group card-lift flex flex-col gap-1 rounded-2xl p-3 text-left shadow-soft hover:bg-neutral-800 ${
         done ? 'bg-panel ring-1 ring-emerald-500/50' : 'bg-panel'
       }`}
@@ -65,7 +68,7 @@ function LessonCard({ lesson, onOpen }: { lesson: Lesson; onOpen: () => void }) 
           {lesson.icon}
         </span>
         <span className="flex-1 text-sm font-semibold text-ink">{lesson.title}</span>
-        {done ? <Stars n={stars} /> : <span className="text-xs font-semibold text-neutral-400 group-hover:text-brand-300">Start →</span>}
+        {done ? <Stars n={stars} /> : <span className="text-xs font-semibold text-neutral-400 group-hover:text-brand-300">{t('catalogue.start')}</span>}
       </div>
       <p className="text-xs leading-snug text-neutral-400">{lesson.summary}</p>
     </button>
@@ -73,6 +76,7 @@ function LessonCard({ lesson, onOpen }: { lesson: Lesson; onOpen: () => void }) 
 }
 
 function Catalogue({ onOpen }: { onOpen: (id: string) => void }) {
+  const { t } = useTranslation('learn');
   const completed = useLessons((s) => s.completed);
   const done = ALL_LESSONS.filter((l) => !!completed[l.id]).length;
   const pct = Math.round((done / ALL_LESSONS.length) * 100);
@@ -86,19 +90,16 @@ function Catalogue({ onOpen }: { onOpen: (id: string) => void }) {
         />
         <div className="relative bg-gradient-to-r from-page/95 via-page/80 to-page/30 p-5 sm:p-6">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="font-display text-2xl font-bold text-ink">Learn chess, the fun way</h2>
+            <h2 className="font-display text-2xl font-bold text-ink">{t('catalogue.heroTitle')}</h2>
             <span className="rounded-full bg-neutral-900/80 px-2.5 py-1 text-xs font-semibold text-neutral-200">
-              {done}/{ALL_LESSONS.length} lessons complete
+              {t('catalogue.progress', { done, total: ALL_LESSONS.length })}
             </span>
           </div>
-          <p className="mt-1 max-w-xl text-sm text-neutral-200">
-            Short, hands-on lessons — every idea is something you play out on the board. New to chess? Start at the top and
-            you’ll know all the rules in minutes.
-          </p>
+          <p className="mt-1 max-w-xl text-sm text-neutral-200">{t('catalogue.heroBody')}</p>
           <div
             className="mt-4 h-2.5 max-w-xl overflow-hidden rounded-full bg-neutral-900/80"
             role="progressbar"
-            aria-label="Lessons completed"
+            aria-label={t('catalogue.progressAria')}
             aria-valuenow={pct}
             aria-valuemin={0}
             aria-valuemax={100}
@@ -135,6 +136,7 @@ interface Feedback {
 }
 
 function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () => void; onOpen: (id: string) => void }) {
+  const { t } = useTranslation('learn');
   const [stepIdx, setStepIdx] = useState(0);
   const [phase, setPhase] = useState<Phase>('info');
   const [exState, setExState] = useState<ExerciseState | null>(null);
@@ -217,7 +219,12 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
       setLastMove([from, to]);
       setPhase('wrong');
       setWrongCount((n) => n + 1);
-      setFeedback({ kind: 'bad', text: res.message });
+      // A step-provided hint is lesson CONTENT (stays English); the engine's
+      // built-in fallback sentences are chrome, translated here by goal type.
+      setFeedback({
+        kind: 'bad',
+        text: step.hint ?? t(`player.wrongDefault.${step.goal.type}`, { defaultValue: res.message }),
+      });
       return;
     }
     // correct
@@ -225,11 +232,11 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
     setDisplayFen(res.fenAfterPlayer);
     setLastMove([from, to]);
     setExState(res.state);
-    const success = step.success ?? 'Nice!';
+    const success = step.success ?? t('player.feedback.nice');
     if (res.reply) {
       const reply = res.reply;
       const finalFen = res.state.fen;
-      setFeedback({ kind: 'ok', text: `✓ ${res.san}` });
+      setFeedback({ kind: 'ok', text: t('player.feedback.correct', { san: res.san }) });
       setReplyPending(true);
       replyTimer.current = setTimeout(() => {
         replyTimer.current = null; // unlock input — the board now matches the engine state
@@ -241,7 +248,7 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
           setPhase('stepDone');
           setFeedback({ kind: 'ok', text: `✓ ${success}` });
         } else {
-          setFeedback({ kind: 'ok', text: `✓ ${res.san} — keep going!` });
+          setFeedback({ kind: 'ok', text: t('player.feedback.correctKeepGoing', { san: res.san }) });
         }
       }, 550);
       if (res.done) setPhase('stepDone'); // buttons appear; board updates after the reply animates
@@ -294,13 +301,13 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
           <button
             onClick={onExit}
             className="btn-press rounded-full bg-neutral-800 px-3 py-1 text-xs font-semibold text-neutral-300 hover:bg-neutral-700"
-            aria-label="Back to all lessons"
+            aria-label={t('player.backAria')}
           >
-            ← Lessons
+            {t('player.backLabel')}
           </button>
           <span aria-hidden>{lesson.icon}</span>
           <span className="font-semibold text-ink">{lesson.title}</span>
-          <span className="ml-auto flex items-center gap-1" aria-label={`Step ${stepIdx + 1} of ${lesson.steps.length}`}>
+          <span className="ml-auto flex items-center gap-1" aria-label={t('player.stepAria', { step: stepIdx + 1, total: lesson.steps.length })}>
             {lesson.steps.map((_, i) => (
               <span
                 key={i}
@@ -326,12 +333,8 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
         </div>
         {phase === 'solving' && !replyPending && (
           <div className="flex h-5 items-center gap-2 text-xs text-neutral-400">
-            <span className="animate-pulse-soft text-emerald-400">● your move</span>
-            {lineProgress && lineProgress.n > 1 && (
-              <span>
-                move {lineProgress.i} of {lineProgress.n}
-              </span>
-            )}
+            <span className="animate-pulse-soft text-emerald-400">{t('player.yourMove')}</span>
+            {lineProgress && lineProgress.n > 1 && <span>{t('player.moveProgress', { i: lineProgress.i, n: lineProgress.n })}</span>}
           </div>
         )}
       </div>
@@ -342,17 +345,13 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
             <div className="pop-in text-4xl" aria-hidden>
               🎉
             </div>
-            <h3 className="mt-1 font-display text-lg font-bold text-ink">Lesson complete!</h3>
+            <h3 className="mt-1 font-display text-lg font-bold text-ink">{t('player.done.title')}</h3>
             <div className="mt-1">
               <Stars n={earnedStars} size="text-xl" />
             </div>
             <p className="mt-2 text-xs text-neutral-400">
-              {earnedStars === 3
-                ? 'Flawless — not a single wrong move.'
-                : earnedStars === 2
-                  ? 'Solid! Replay it any time to earn 3 stars.'
-                  : 'Done! Replay it any time to sharpen it up.'}
-              {wasFirstTime ? ' XP earned.' : ''}
+              {earnedStars === 3 ? t('player.done.flawless') : earnedStars === 2 ? t('player.done.solid') : t('player.done.ok')}
+              {wasFirstTime ? ` ${t('player.done.xpEarned')}` : ''}
             </p>
             <div className="mt-3 flex flex-col gap-2">
               {nextLessonId(lesson.id) && (
@@ -361,14 +360,14 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
                   onClick={() => onOpen(nextLessonId(lesson.id)!)}
                   className="btn-press w-full rounded-full bg-brand-600 py-2 text-sm font-bold text-white hover:bg-brand-700"
                 >
-                  Next lesson →
+                  {t('player.done.next')}
                 </button>
               )}
               <button
                 onClick={onExit}
                 className="btn-press w-full rounded-full bg-neutral-700 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-600"
               >
-                Back to lessons
+                {t('player.done.back')}
               </button>
             </div>
           </div>
@@ -383,14 +382,14 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
                   onClick={advance}
                   className="btn-press mt-4 w-full rounded-full bg-brand-600 py-2 text-sm font-bold text-white hover:bg-brand-700"
                 >
-                  Got it →
+                  {t('player.gotIt')}
                 </button>
               </>
             ) : (
               <>
                 {exerciseNo && (
                   <div className="mb-1 text-[11px] uppercase tracking-wide text-neutral-400">
-                    Exercise {exerciseNo.i} of {exerciseNo.n}
+                    {t('player.exercise', { i: exerciseNo.i, n: exerciseNo.n })}
                   </div>
                 )}
                 <p className="text-sm leading-relaxed text-neutral-300">{step.prompt}</p>
@@ -412,7 +411,7 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
                       onClick={retry}
                       className="btn-press w-full rounded-full bg-brand-600 py-2 text-sm font-bold text-white hover:bg-brand-700"
                     >
-                      Try again
+                      {t('player.tryAgain')}
                     </button>
                   )}
                   {phase === 'stepDone' && (
@@ -421,7 +420,7 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
                       onClick={advance}
                       className="btn-press w-full rounded-full bg-emerald-700 py-2 text-sm font-bold text-white hover:bg-emerald-600"
                     >
-                      Continue →
+                      {t('player.continue')}
                     </button>
                   )}
                   {(phase === 'solving' || phase === 'wrong') && wrongCount >= 2 && (
@@ -429,7 +428,7 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
                       onClick={reveal}
                       className="btn-press w-full rounded-full bg-neutral-700 py-1.5 text-sm font-semibold text-neutral-200 hover:bg-neutral-600"
                     >
-                      Show me
+                      {t('player.showMe')}
                     </button>
                   )}
                 </div>
@@ -437,9 +436,7 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
             )}
           </div>
         )}
-        <div className="rounded-2xl bg-panelmute p-3 text-xs leading-snug text-neutral-400">
-          Make a mistake? No stress — you can retry every exercise, and replay any lesson from the Learn page.
-        </div>
+        <div className="rounded-2xl bg-panelmute p-3 text-xs leading-snug text-neutral-400">{t('player.tip')}</div>
       </div>
     </div>
   );

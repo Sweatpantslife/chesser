@@ -1,1 +1,31 @@
-{}
+{
+  "labels": {
+    "brilliant": "Brillante",
+    "great": "Gran jugada",
+    "best": "La mejor jugada",
+    "good": "Buena",
+    "book": "Teoría",
+    "inaccuracy": "Imprecisión",
+    "mistake": "Error",
+    "blunder": "Error grave",
+    "miss": "Victoria perdida"
+  },
+  "tablebase": {
+    "winMate": "Base de finales: victoria, mate en {{n}}",
+    "win": "Base de finales: posición ganadora",
+    "lossMate": "Base de finales: derrota, mate en {{n}}",
+    "loss": "Base de finales: posición perdedora",
+    "draw": "Base de finales: tablas",
+    "cursedWin": "Base de finales: victoria (la regla de los 50 movimientos acecha)",
+    "blessedLoss": "Base de finales: derrota (salvada por la regla de los 50 movimientos)",
+    "unknown": "Base de finales: desconocido",
+    "feedback": {
+      "throwsWin": "¡Eso tira la victoria!",
+      "winning": "Jugada ganadora.",
+      "optimal": "Óptima — la victoria más rápida.",
+      "slowWin": "Sigue ganando, pero no es lo más rápido.",
+      "losesDraw": "Eso pierde — las tablas se esfumaron.",
+      "holdsDraw": "Mantiene las tablas."
+    }
+  }
+}

@@ -1,1 +1,72 @@
-{}
+{
+  "myRepertoire": "My repertoire",
+  "side": {
+    "white": "white",
+    "black": "black",
+    "asWhite": "As white",
+    "asBlack": "As black"
+  },
+  "drill": {
+    "lineComplete": "Line complete — saved to your review schedule!",
+    "correct": "✓ {{san}}",
+    "continuingAs": "✓ {{san}} — continuing as {{name}}",
+    "notInRepertoire": "Not in your repertoire — try again, or reveal.",
+    "answer": "Answer: {{san}}"
+  },
+  "repertoire": {
+    "title": "Repertoire",
+    "browse": "Browse openings",
+    "newPlaceholder": "new repertoire",
+    "create": "Create",
+    "new": "+ New",
+    "rename": "Rename",
+    "renamePrompt": "Rename repertoire",
+    "delete": "Delete",
+    "deleteConfirm": "Delete \"{{name}}\"?",
+    "reviewDue": "Review due lines",
+    "emptyMine": "Your repertoire is empty. Pick openings to learn as White and as Black from the curated catalog.",
+    "emptyOther": "No lines yet. Build one on the <playTab>Play</playTab> board, then “★ Save line”.",
+    "removeLine": "Remove line"
+  },
+  "board": {
+    "pickLine": "Pick a line",
+    "youPlay": "you play <sideTag>{{side}}</sideTag>",
+    "yourMove": "· your move",
+    "startDrill": "Start drill",
+    "repeatLine": "Repeat line",
+    "revealMove": "Reveal move"
+  },
+  "info": {
+    "moveNo": "Move {{n}}",
+    "moves": "Moves"
+  },
+  "catalog": {
+    "title": "Build your repertoire",
+    "done_one": "Done · {{count}} line",
+    "done_other": "Done · {{count}} lines",
+    "sideAria": "Side",
+    "addAll": "Add all",
+    "removeAll": "Remove all"
+  },
+  "name": {
+    "title": "Opening",
+    "lookUp": "Look up",
+    "noneYet": "No named opening yet — play a few moves.",
+    "fromStartOnly": "Opening names are shown from the standard start position.",
+    "searchPlaceholder": "Search openings (e.g. Najdorf, C50)…",
+    "noMatches": "No matches.",
+    "searchHint": "Find any opening by name or ECO code, then load it onto the board."
+  },
+  "save": {
+    "title": "Save line to repertoire",
+    "noMoves": "Make some moves on the board first, then save the line.",
+    "mustStartInitial": "Repertoire lines must start from the initial position.",
+    "repertoire": "Repertoire",
+    "newRepOption": "+ New repertoire…",
+    "repNamePlaceholder": "repertoire name",
+    "repNameAria": "New repertoire name",
+    "lineName": "Line name",
+    "youPlay": "You play",
+    "saveCta": "Save line"
+  }
+}

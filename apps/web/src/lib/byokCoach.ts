@@ -26,6 +26,7 @@ import {
   type CoachSkillLevel,
   type CoachWeeklyReportFacts,
 } from '@chesser/shared';
+import i18n from '../i18n';
 import { DEFAULT_BYOK_MODEL, type ByokConfig } from '../store/byok';
 
 const ANTHROPIC_MESSAGES_URL = 'https://api.anthropic.com/v1/messages';
@@ -195,13 +196,16 @@ export type KeyTestResult =
   | { ok: true; via: 'direct' | 'server'; model: string }
   | { ok: false; error: string };
 
-/** Human wording for a provider HTTP failure. NEVER includes the key. */
+/** Human wording for a provider HTTP failure. NEVER includes the key.
+ *  Resolved through the `errors` namespace at call time (English fallback
+ *  keeps the wording byte-identical for the tests and the e2e suite). */
 function describeStatus(status: number | null): string {
-  if (status === 401 || status === 403) return 'The provider rejected the key. Check that it was pasted completely.';
-  if (status === 404) return 'The provider could not find that model (or base URL). Check the model name.';
-  if (status === 429) return 'The provider rate-limited the request. The key works — try again in a minute.';
-  if (status !== null && status >= 500) return 'The provider had a server error. Try again shortly.';
-  return 'The provider call failed.';
+  const t = i18n.getFixedT(null, 'errors');
+  if (status === 401 || status === 403) return t('byok.keyRejected');
+  if (status === 404) return t('byok.modelNotFound');
+  if (status === 429) return t('byok.rateLimited');
+  if (status !== null && status >= 500) return t('byok.providerServerError');
+  return t('byok.callFailed');
 }
 
 /**
@@ -224,9 +228,9 @@ export async function testUserKey(cfg: ByokConfig): Promise<KeyTestResult> {
   } catch (e) {
     const status = e instanceof ByokCallError ? e.status : null;
     if (e instanceof ByokCallError && e.network) {
-      return { ok: false, error: 'Could not reach the provider or the app server. Check your connection.' };
+      return { ok: false, error: i18n.t('errors:byok.unreachable') };
     }
-    if (status === 502) return { ok: false, error: describeStatus(null) + ' (relayed via the app server — check key and model).' };
+    if (status === 502) return { ok: false, error: describeStatus(null) + i18n.t('errors:byok.relayedSuffix') };
     return { ok: false, error: describeStatus(status) };
   }
 }

@@ -1,1 +1,81 @@
-{}
+{
+  "percent": "{{value}}%",
+  "phase": {
+    "opening": "Opening",
+    "middlegame": "Middlegame",
+    "endgame": "Endgame"
+  },
+  "side": {
+    "white": "White",
+    "black": "Black"
+  },
+  "trend": {
+    "improving": "improving ↓",
+    "rising": "on the rise ↑",
+    "steady": "steady"
+  },
+  "empty": {
+    "title": "Your coach is ready when you are",
+    "body": "Play a game against a bot on the <b>Play</b> tab and run a game review — the coach studies your reviewed games, spots recurring patterns, and builds a training plan around them."
+  },
+  "cards": {
+    "gamesStudied": "Games studied",
+    "gamesStudiedHint": "reviewed vs bots",
+    "accuracy": "Your accuracy",
+    "accuracyHint": "across those games",
+    "weakestPhase": "Weakest phase",
+    "weakestPhaseHint": "{{accuracy}}% accuracy",
+    "weakestPhaseEmpty": "not enough moves yet",
+    "focusAreas": "Focus areas",
+    "focusAreasHint": "recurring patterns"
+  },
+  "noneRecurring": {
+    "title": "Nothing recurring yet — great sign!",
+    "body": "No pattern has shown up twice across your reviewed games. Keep playing and reviewing; the coach re-measures after every review."
+  },
+  "weakness": {
+    "occurrences_one": "{{times}}× in {{count}} game",
+    "occurrences_other": "{{times}}× in {{count}} games",
+    "openAnalysis": "Open in analysis →",
+    "openAnalysisTitle": "Load this position on the analysis board",
+    "also": "Also: {{example}}",
+    "trained_one": "Trained {{attempts}}× · {{count}} solved",
+    "trained_other": "Trained {{attempts}}× · {{count}} solved",
+    "lastTen": "last 10: {{pct}}%",
+    "improved": "up from {{pct}}%, nice!",
+    "trainingNow": "Training now",
+    "train": "Train this weakness"
+  },
+  "trainer": {
+    "title": "Training: {{label}}",
+    "session": "{{solved}}/{{attempts}} this session · themes: {{themes}}",
+    "empty": "No matching puzzles are loaded right now — check your connection and try again in a moment.",
+    "toMove": "{{side}} to move — find the {{theme}} idea.",
+    "solvedMate": "✓ {{san}} — checkmate!",
+    "solvedExact": "✓ {{san}} — exactly the pattern.",
+    "wrong": "Not it — the pattern is still on the board. Try again or reveal.",
+    "fresh": "Fresh look — take your time.",
+    "solution": "Solution: {{san}}. Watch how it plays out.",
+    "rated": "rated {{rating}} · you {{yours}}",
+    "yourMove": "your move",
+    "tryAgain": "Try again",
+    "reveal": "Reveal",
+    "next": "Next puzzle →",
+    "done": "Done training"
+  },
+  "phaseAccuracy": {
+    "title": "Phase accuracy",
+    "aside": "your moves only",
+    "row": "{{accuracy}}% · {{moves}} mv",
+    "noMoves": "no moves"
+  },
+  "tendencies": {
+    "title": "Tendencies",
+    "asWhite": "As white",
+    "asBlack": "As black",
+    "record": "{{wins}}W {{losses}}L {{draws}}D · {{accuracy}}% accuracy",
+    "noGames": "no games yet",
+    "openingStats_one": "{{count}} games · {{accuracy}}%",
+    "openingStats_other": "{{count}} games · {{accuracy}}%"
+  }
+}

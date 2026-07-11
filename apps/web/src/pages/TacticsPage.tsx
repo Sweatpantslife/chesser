@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { Chess } from 'chess.js';
 import { Board } from '../board/Board';
 import { EmptyPuzzleArt } from '../components/icons';
@@ -18,6 +19,7 @@ import {
   getNextPuzzle,
   puzzleHasTheme,
   recordResult,
+  themeDisplayLabel,
 } from '../lib/puzzleService';
 import { playMoveSound } from '../lib/sound';
 import { todayStr } from '../lib/clock';
@@ -55,13 +57,14 @@ export function TacticsPage({
   /** Deep link from the Today page: land straight on a sprint mode. */
   openMode?: TacticsMode | null;
 }) {
+  const { t } = useTranslation('tactics');
   const [mode, setMode] = useState<TacticsMode>(openMode ?? 'practice');
   const mistakeCount = useMistakes((s) => s.cards.length);
   const labels = {
-    practice: 'Practice',
-    rush: 'Puzzle rush',
-    storm: 'Puzzle storm',
-    mistakes: `My mistakes${mistakeCount ? ` (${mistakeCount})` : ''}`,
+    practice: t('tabs.practice'),
+    rush: t('tabs.rush'),
+    storm: t('tabs.storm'),
+    mistakes: mistakeCount ? t('tabs.mistakesCount', { n: mistakeCount }) : t('tabs.mistakes'),
   };
   return (
     <div className="space-y-4">
@@ -92,6 +95,7 @@ export function TacticsPage({
 }
 
 function PracticeTactics({ openDaily = false, onDailyOpened }: { openDaily?: boolean; onDailyOpened?: () => void }) {
+  const { t } = useTranslation('tactics');
   const game = useRef(new Chess());
   const attempt = useRef({ failed: false, revealed: false, rated: false });
   const sessionSeen = useRef(new Set<string>());
@@ -134,10 +138,10 @@ function PracticeTactics({ openDaily = false, onDailyOpened }: { openDaily?: boo
   );
   const themeCounts = useMemo(() => {
     const c = new Map<string, number>();
-    for (const t of FILTER_THEMES) {
+    for (const th of FILTER_THEMES) {
       let n = 0;
-      for (const p of byDifficulty) if (puzzleHasTheme(p, t.tag)) n++;
-      if (n > 0) c.set(t.tag, n);
+      for (const p of byDifficulty) if (puzzleHasTheme(p, th.tag)) n++;
+      if (n > 0) c.set(th.tag, n);
     }
     return c;
   }, [byDifficulty]);
@@ -156,7 +160,7 @@ function PracticeTactics({ openDaily = false, onDailyOpened }: { openDaily?: boo
     attempt.current = { failed: false, revealed: false, rated: false };
     setPhase('solving');
     setDelta(null);
-    setFeedback({ kind: 'info', text: `${p.turn === 'white' ? 'White' : 'Black'} to play and win.` });
+    setFeedback({ kind: 'info', text: t(`practice.toPlayWin.${p.turn}`) });
     setFen(game.current.fen());
     setLastMove(undefined);
   };
@@ -242,7 +246,12 @@ function PracticeTactics({ openDaily = false, onDailyOpened }: { openDaily?: boo
       sync();
       setPhase('solved');
       setSessionSolved((n) => n + 1);
-      setFeedback({ kind: 'ok', text: check.altMate ? `✓ ${mv.san} — checkmate!` : `✓ ${mv.san} — ${puzzle.theme}!` });
+      setFeedback({
+        kind: 'ok',
+        text: check.altMate
+          ? t('practice.feedback.checkmate', { san: mv.san })
+          : t('practice.feedback.solvedTheme', { san: mv.san, theme: themeDisplayLabel(puzzle.theme) }),
+      });
       grade('tactics', puzzle.id, attempt.current.failed ? 'hard' : 'good');
       rateOnce(!attempt.current.failed && !attempt.current.revealed);
       if (!check.altMate) demoRest(1);
@@ -250,7 +259,7 @@ function PracticeTactics({ openDaily = false, onDailyOpened }: { openDaily?: boo
       attempt.current.failed = true;
       rateOnce(false);
       setPhase('failed');
-      setFeedback({ kind: 'bad', text: 'Not the winning move. Try again, or reveal.' });
+      setFeedback({ kind: 'bad', text: t('practice.feedback.wrong') });
       sync();
     }
   };
@@ -259,7 +268,7 @@ function PracticeTactics({ openDaily = false, onDailyOpened }: { openDaily?: boo
     if (!puzzle) return;
     game.current = new Chess(puzzle.fen);
     setPhase('solving');
-    setFeedback({ kind: 'info', text: 'Try again.' });
+    setFeedback({ kind: 'info', text: t('practice.feedback.tryAgain') });
     setFen(game.current.fen());
     setLastMove(undefined);
   };
@@ -272,7 +281,7 @@ function PracticeTactics({ openDaily = false, onDailyOpened }: { openDaily?: boo
     game.current = new Chess(puzzle.fen);
     const mv = game.current.move({ from: key.slice(0, 2), to: key.slice(2, 4), promotion: key[4] });
     setPhase('solved');
-    setFeedback({ kind: 'info', text: `Solution: ${mv.san}` });
+    setFeedback({ kind: 'info', text: t('practice.feedback.solution', { san: mv.san }) });
     grade('tactics', puzzle.id, 'again');
     sync();
     demoRest(1);
@@ -289,7 +298,7 @@ function PracticeTactics({ openDaily = false, onDailyOpened }: { openDaily?: boo
         difficulty: diffFilter === 'all' ? undefined : diffFilter,
       });
       if (p) {
-        loadDirect(p, 'Rated pick');
+        loadDirect(p, t('practice.override.rated'));
         return;
       }
     }
@@ -337,16 +346,16 @@ function PracticeTactics({ openDaily = false, onDailyOpened }: { openDaily?: boo
       const dueLoaded = dueIds('tactics', loaded.map((p) => p.id));
       const p = dueLoaded.length ? loaded.find((x) => x.id === dueLoaded[0]) : undefined;
       if (p) {
-        loadDirect(p, 'Review');
+        loadDirect(p, t('practice.override.review'));
         return;
       }
     }
-    setFeedback({ kind: 'info', text: 'No reviews due right now — try new puzzles!' });
+    setFeedback({ kind: 'info', text: t('practice.feedback.noReviews') });
   };
 
   // Same puzzle for everyone on a given date, and it works offline.
   const daily = () => {
-    loadDirect(getDailyPuzzle(todayStr()), 'Daily puzzle');
+    loadDirect(getDailyPuzzle(todayStr()), t('sidebar.dailyPuzzle'));
   };
 
   // Deep link from the Today page: land straight on the daily puzzle.
@@ -363,9 +372,9 @@ function PracticeTactics({ openDaily = false, onDailyOpened }: { openDaily?: boo
   }, []);
 
   const SOURCES: { id: Source; label: string }[] = [
-    { id: 'builtin', label: 'Curated' },
-    { id: 'mine', label: `My games${mine.length ? ` (${mine.length})` : ''}` },
-    { id: 'all', label: 'All' },
+    { id: 'builtin', label: t('source.builtin') },
+    { id: 'mine', label: mine.length ? t('source.mineCount', { n: mine.length }) : t('source.mine') },
+    { id: 'all', label: t('source.all') },
   ];
 
   const sidebar = (
@@ -395,13 +404,13 @@ function PracticeTactics({ openDaily = false, onDailyOpened }: { openDaily?: boo
           <EmptyPuzzleArt width={150} height={112} />
           {source === 'mine' ? (
             <div>
-              <div className="mb-1 font-display text-base font-semibold text-ink">No puzzles from your games yet</div>
-              Open a game on the <b>Play</b> tab, then use <b>“Make puzzles from this game”</b> in the Game-review panel.
+              <div className="mb-1 font-display text-base font-semibold text-ink">{t('practice.empty.mineTitle')}</div>
+              <Trans t={t} i18nKey="practice.empty.mineBody" components={{ b: <b /> }} />
             </div>
           ) : (
             <div>
-              <div className="mb-1 font-display text-base font-semibold text-ink">Nothing matches this filter</div>
-              No puzzles for this filter. Generate more with <code className="text-neutral-200">pnpm gen:tactics</code>.
+              <div className="mb-1 font-display text-base font-semibold text-ink">{t('practice.empty.filterTitle')}</div>
+              <Trans t={t} i18nKey="practice.empty.filterBody" components={{ code: <code className="text-neutral-200" /> }} />
             </div>
           )}
         </div>
@@ -420,11 +429,11 @@ function PracticeTactics({ openDaily = false, onDailyOpened }: { openDaily?: boo
 
       <div className="order-1 space-y-3 lg:order-2">
         <div className="flex min-h-7 flex-wrap items-center gap-2 text-sm">
-          <span className="rounded bg-neutral-700 px-2 py-0.5 text-xs text-neutral-200">{puzzle.theme}</span>
-          <span className={`text-xs capitalize ${DIFF_COLOR[puzzle.difficulty]}`}>{puzzle.difficulty}</span>
-          <span className="text-xs text-neutral-400">rated {pr}</span>
-          <span className="text-neutral-400">{puzzle.turn === 'white' ? 'White' : 'Black'} to move</span>
-          {solverToMove && <span className="animate-pulse-soft text-emerald-400">· your move</span>}
+          <span className="rounded bg-neutral-700 px-2 py-0.5 text-xs text-neutral-200">{themeDisplayLabel(puzzle.theme)}</span>
+          <span className={`text-xs capitalize ${DIFF_COLOR[puzzle.difficulty]}`}>{t(`difficulty.${puzzle.difficulty}`)}</span>
+          <span className="text-xs text-neutral-400">{t('practice.rated', { rating: pr })}</span>
+          <span className="text-neutral-400">{t(`practice.toMove.${puzzle.turn}`)}</span>
+          {solverToMove && <span className="animate-pulse-soft text-emerald-400">{t('practice.yourMove')}</span>}
         </div>
         <div className="mx-auto w-full max-w-[540px]">
           <Board
@@ -441,16 +450,16 @@ function PracticeTactics({ openDaily = false, onDailyOpened }: { openDaily?: boo
         <div className="flex flex-wrap items-center gap-2">
           {phase === 'failed' && (
             <button onClick={retry} className="rounded bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800">
-              Try again
+              {t('practice.buttons.tryAgain')}
             </button>
           )}
           {phase !== 'solved' && (
             <button onClick={reveal} className="rounded bg-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600">
-              Reveal
+              {t('practice.buttons.reveal')}
             </button>
           )}
           <button onClick={next} className="rounded bg-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600">
-            Next puzzle →
+            {t('practice.buttons.nextPuzzleArrow')}
           </button>
         </div>
       </div>
@@ -459,9 +468,9 @@ function PracticeTactics({ openDaily = false, onDailyOpened }: { openDaily?: boo
         <div className="rounded-2xl bg-panel shadow-soft p-3">
           <div className="mb-2 flex items-center justify-between text-sm">
             <span className="text-neutral-300">
-              {override ? override.label : `Puzzle ${pos + 1}/${queue.length}`}
+              {override ? override.label : t('practice.counter', { current: pos + 1, total: queue.length })}
             </span>
-            <span className="text-xs text-neutral-400">{sessionSolved} solved this session</span>
+            <span className="text-xs text-neutral-400">{t('practice.solvedSession', { count: sessionSolved })}</span>
           </div>
           {feedback && (
             <p
@@ -475,33 +484,32 @@ function PracticeTactics({ openDaily = false, onDailyOpened }: { openDaily?: boo
           {delta !== null && (
             <p className="mt-1 text-xs">
               <span className={delta >= 0 ? 'text-emerald-400' : 'text-rose-400'}>
-                {delta >= 0 ? '+' : ''}
-                {delta} rating
+                {t('practice.ratingDelta', { delta: `${delta >= 0 ? '+' : ''}${delta}` })}
               </span>{' '}
               <span className="text-neutral-400">→ {rating}</span>
             </p>
           )}
-          {puzzle.source && <p className="mt-2 text-xs text-neutral-400">from {puzzle.source}</p>}
+          {puzzle.source && <p className="mt-2 text-xs text-neutral-400">{t('practice.fromSource', { source: puzzle.source })}</p>}
           {solvedCard?.last && phase === 'solving' && (
-            <p className="mt-2 text-xs text-neutral-400">You’ve seen this one before — recall the idea.</p>
+            <p className="mt-2 text-xs text-neutral-400">{t('practice.seenBefore')}</p>
           )}
           {phase === 'solved' && (
             <button
               onClick={next}
               className="mt-3 w-full rounded bg-emerald-700 py-2 text-sm font-semibold text-white hover:bg-emerald-800"
             >
-              Next puzzle
+              {t('practice.buttons.nextPuzzle')}
             </button>
           )}
           {source !== 'builtin' && mine.some((m) => m.id === puzzle.id) && (
             <button
               onClick={() => {
                 removePuzzle(puzzle.id);
-                setFeedback({ kind: 'info', text: 'Removed from your puzzles.' });
+                setFeedback({ kind: 'info', text: t('practice.feedback.removed') });
               }}
               className="mt-2 w-full rounded bg-neutral-800 py-1.5 text-xs text-neutral-400 hover:bg-rose-900/50 hover:text-rose-200"
             >
-              Delete this puzzle
+              {t('practice.buttons.deletePuzzle')}
             </button>
           )}
         </div>
@@ -526,16 +534,17 @@ function Sidebar(props: {
   reviewDue: () => void;
   onDaily: () => void;
 }) {
-  const themes = FILTER_THEMES.filter((t) => (props.themeCounts.get(t.tag) ?? 0) > 0);
+  const { t } = useTranslation('tactics');
+  const themes = FILTER_THEMES.filter((th) => (props.themeCounts.get(th.tag) ?? 0) > 0);
   return (
     <div className="order-2 space-y-3 lg:order-1">
       <div className="rounded-2xl bg-panel shadow-soft p-3">
-        <h3 className="mb-1 font-display text-sm font-semibold text-ink">Tactics</h3>
-        <p className="mb-2 text-xs text-neutral-400">Find the one winning move — every puzzle is engine-verified.</p>
+        <h3 className="mb-1 font-display text-sm font-semibold text-ink">{t('sidebar.title')}</h3>
+        <p className="mb-2 text-xs text-neutral-400">{t('sidebar.blurb')}</p>
 
         <div className="mb-3 flex items-center justify-between rounded bg-panelmute px-2.5 py-1.5">
           <span className="text-xs uppercase tracking-wide text-neutral-400">
-            Your rating <span className="text-neutral-400">· {props.meter === 'glicko' ? 'Glicko' : 'Elo'}</span>
+            {t('sidebar.yourRating')} <span className="text-neutral-400">· {props.meter === 'glicko' ? 'Glicko' : 'Elo'}</span>
           </span>
           <span className="font-mono text-lg font-bold text-emerald-300">{props.rating}</span>
         </div>
@@ -543,7 +552,7 @@ function Sidebar(props: {
         <ReviewStats deck="tactics" ids={ALL_IDS} />
 
         <div className="mt-3">
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Source</div>
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('sidebar.source')}</div>
           <div className="flex gap-1">
             {props.sources.map((s) => (
               <button
@@ -560,7 +569,7 @@ function Sidebar(props: {
         </div>
 
         <div className="mt-3">
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Difficulty</div>
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('sidebar.difficulty')}</div>
           <div className="flex gap-1">
             {(['all', 'easy', 'medium', 'hard'] as const).map((f) => (
               <button
@@ -570,14 +579,14 @@ function Sidebar(props: {
                   props.diffFilter === f ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                 }`}
               >
-                {f}
+                {t(`difficulty.${f}`)}
               </button>
             ))}
           </div>
         </div>
 
         <div className="mt-3">
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Theme</div>
+          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('sidebar.theme')}</div>
           <div className="flex flex-wrap gap-1">
             <button
               onClick={() => props.setThemeFilter('all')}
@@ -585,41 +594,41 @@ function Sidebar(props: {
                 props.themeFilter === 'all' ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
               }`}
             >
-              All
+              {t('sidebar.allThemes')}
             </button>
-            {themes.map((t) => (
+            {themes.map((th) => (
               <button
-                key={t.tag}
-                onClick={() => props.setThemeFilter(t.tag)}
-                title={`${props.themeCounts.get(t.tag)} puzzles`}
+                key={th.tag}
+                onClick={() => props.setThemeFilter(th.tag)}
+                title={t('sidebar.themeCount', { count: props.themeCounts.get(th.tag) })}
                 className={`rounded px-2 py-1 text-xs ${
-                  props.themeFilter === t.tag ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                  props.themeFilter === th.tag ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
                 }`}
               >
-                {t.label}
+                {th.label}
               </button>
             ))}
-            {themes.length === 0 && <span className="px-1 py-1 text-xs text-neutral-400">no themes here</span>}
+            {themes.length === 0 && <span className="px-1 py-1 text-xs text-neutral-400">{t('sidebar.noThemes')}</span>}
           </div>
         </div>
 
         <label className="mt-3 flex cursor-pointer items-center gap-2 text-xs text-neutral-300">
           <input type="checkbox" checked={props.ratedOrder} onChange={(e) => props.setRatedOrder(e.target.checked)} />
-          Serve puzzles near my rating
+          {t('sidebar.ratedOrder')}
         </label>
 
         <button
           onClick={props.reviewDue}
           className="mt-3 w-full rounded bg-emerald-700 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800"
         >
-          Review due
+          {t('sidebar.reviewDue')}
         </button>
 
         <button
           onClick={props.onDaily}
           className="mt-2 w-full rounded bg-neutral-700 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600"
         >
-          Daily puzzle
+          {t('sidebar.dailyPuzzle')}
         </button>
       </div>
     </div>

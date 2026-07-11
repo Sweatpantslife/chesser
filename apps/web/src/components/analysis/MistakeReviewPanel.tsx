@@ -12,6 +12,7 @@
  */
 import { useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { CLASSIFICATION_META } from '../../lib/coach';
 import { CLASSIFICATION_GLYPH } from '../../lib/analytics/types';
 import type { Classification, MoveDetail, Side } from '../../lib/analytics/types';
@@ -129,6 +130,7 @@ export function MistakeReviewPanel({
   activeClasses,
   onActiveClassesChange,
 }: MistakeReviewPanelProps): JSX.Element {
+  const { t } = useTranslation('analysis');
   const [ownActive, setOwnActive] = useState<ReadonlySet<Classification>>(MISTAKE_SET);
   const active = activeClasses ?? ownActive;
   const setActive = onActiveClassesChange ?? setOwnActive;
@@ -161,23 +163,23 @@ export function MistakeReviewPanel({
     <div className="rounded-2xl bg-panel p-3 shadow-soft">
       <div className="flex items-center justify-between">
         <h3 className="font-display text-sm font-semibold text-ink">
-          Mistakes
+          {t('mistakes.title')}
           {total > 0 && <span className="ml-1.5 text-xs font-normal text-neutral-400">{total}</span>}
         </h3>
         {total > 1 && (
           <button
             data-sort
             onClick={() => setOrder((o) => (o === 'severity' ? 'ply' : 'severity'))}
-            title="Toggle list order"
+            title={t('mistakes.sortTitle')}
             className="btn-press rounded-lg px-1.5 py-0.5 text-xs text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
           >
-            {order === 'severity' ? 'Worst first' : 'Game order'}
+            {order === 'severity' ? t('mistakes.worstFirst') : t('mistakes.gameOrder')}
           </button>
         )}
       </div>
 
       {total === 0 ? (
-        <p className="mt-2 text-xs text-neutral-400">No mistakes — clean game!</p>
+        <p className="mt-2 text-xs text-neutral-400">{t('mistakes.clean')}</p>
       ) : (
         <>
           <div className="mt-2 flex flex-wrap items-center gap-1">
@@ -191,7 +193,7 @@ export function MistakeReviewPanel({
                   aria-pressed={on}
                   disabled={counts[cls] === 0}
                   onClick={() => toggleClass(cls)}
-                  title={`${meta.label} — click to ${on ? 'hide' : 'show'}`}
+                  title={on ? t('mistakes.chipHide', { label: meta.label }) : t('mistakes.chipShow', { label: meta.label })}
                   className={`btn-press rounded-full px-2 py-0.5 text-xs font-semibold ring-1 disabled:opacity-40 ${
                     on ? `${meta.bg} ${meta.text} ${meta.ring}` : 'bg-neutral-800 text-neutral-400 ring-neutral-700 hover:text-neutral-300'
                   }`}
@@ -209,16 +211,16 @@ export function MistakeReviewPanel({
                   onClick={() => setSide(s)}
                   className={`px-1.5 py-0.5 text-[11px] capitalize ${side === s ? 'bg-neutral-700 text-ink' : 'text-neutral-400 hover:text-neutral-300'}`}
                 >
-                  {s}
+                  {t(`side.${s}`)}
                 </button>
               ))}
             </div>
           </div>
 
           {rows.length === 0 ? (
-            <p className="mt-2 text-xs text-neutral-400">No moves match the current filters.</p>
+            <p className="mt-2 text-xs text-neutral-400">{t('mistakes.noMatch')}</p>
           ) : (
-            <ul ref={listRef} onKeyDown={onListKeyDown} aria-label="Mistakes in this game" className="mt-2 space-y-1">
+            <ul ref={listRef} onKeyDown={onListKeyDown} aria-label={t('mistakes.listAria')} className="mt-2 space-y-1">
               {rows.map((m) => {
                 const meta = CLASSIFICATION_META[m.classification];
                 const current = m.ply === viewPly;
@@ -236,7 +238,7 @@ export function MistakeReviewPanel({
                       <button
                         data-jump={m.ply}
                         onClick={() => onSelectPly(m.ply)}
-                        title="Jump to position"
+                        title={t('mistakes.jumpTitle')}
                         className="flex min-w-0 flex-1 items-baseline gap-1.5 rounded text-left"
                       >
                         <span className={`w-6 shrink-0 text-center text-xs font-bold ${meta.text}`}>
@@ -245,26 +247,40 @@ export function MistakeReviewPanel({
                         <span className="whitespace-nowrap font-mono text-sm text-neutral-200">
                           {moveLabel(m.ply)} {m.san}
                         </span>
-                        {lost > 0 && <span className="text-[11px] font-semibold text-rose-300">−{lost}%</span>}
+                        {lost > 0 && (
+                          <span className="text-[11px] font-semibold text-rose-300">{t('mistakes.winLost', { lost })}</span>
+                        )}
                       </button>
                       <button
                         data-practice={m.ply}
                         onClick={() => onPractice(m.ply)}
-                        title="Practice vs engine from this position"
+                        title={t('mistakes.practiceTitle')}
                         className="btn-press shrink-0 rounded-lg bg-neutral-700 px-1.5 py-0.5 text-[11px] font-semibold text-neutral-100 hover:bg-neutral-600"
                       >
-                        Practice
+                        {t('mistakes.practice')}
                       </button>
                     </div>
                     {cause && <p className="mt-0.5 truncate pl-8 text-[11px] leading-tight text-neutral-400">{cause}</p>}
                     {m.bestMoveSan && (
                       <p className="mt-0.5 truncate pl-8 text-[11px] leading-tight text-neutral-400">
-                        Best <span className="font-mono text-emerald-300">{line || m.bestMoveSan}</span>
-                        {m.bestReplySan && (
+                        {m.bestReplySan ? (
                           // The reply refutes the PLAYED move, not the best line — name the move.
-                          <>
-                            {' '}· {m.san} is punished by <span className="font-mono text-rose-300">{m.bestReplySan}</span>
-                          </>
+                          <Trans
+                            t={t}
+                            i18nKey="mistakes.bestPunished"
+                            values={{ line: line || m.bestMoveSan, san: m.san, reply: m.bestReplySan }}
+                            components={{
+                              line: <span className="font-mono text-emerald-300" />,
+                              reply: <span className="font-mono text-rose-300" />,
+                            }}
+                          />
+                        ) : (
+                          <Trans
+                            t={t}
+                            i18nKey="mistakes.best"
+                            values={{ line: line || m.bestMoveSan }}
+                            components={{ line: <span className="font-mono text-emerald-300" /> }}
+                          />
                         )}
                       </p>
                     )}
