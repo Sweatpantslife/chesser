@@ -17,6 +17,7 @@ import { registerAccountRoutes } from './accounts/routes.js';
 import { registerCoachRoutes } from './coach/routes.js';
 import { registerSocialRoutes } from './social/routes.js';
 import { registerFriendRoutes } from './social/friends-routes.js';
+import { registerTrustRoutes } from './trust/routes.js';
 import { socialStore } from './social/store.js';
 import type { ExplorerDb } from '@chesser/shared';
 
@@ -65,6 +66,7 @@ registerAccountRoutes(app);
 registerCoachRoutes(app);
 registerSocialRoutes(app);
 registerFriendRoutes(app, friendRooms);
+registerTrustRoutes(app);
 
 // Serve the built web client (single-origin deployment). Real asset paths are
 // served as files; anything else falls through to the SPA's index.html. The
