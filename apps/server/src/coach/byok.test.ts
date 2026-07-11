@@ -24,9 +24,12 @@ import {
   scrubSecret,
   type CoachRouteOptions,
 } from './routes.js';
-import { validateByokBaseUrl, type CoachCompletionInput, type CoachProvider } from './provider.js';
+import { validateByokBaseUrl, type CoachCompletionInput, type CoachProvider, type DnsLookupFn } from './provider.js';
 
 const USER_KEY = 'sk-test-users-own-key-000000000000';
+
+/** DNS stub resolving every name to a public address (no live lookups in tests). */
+const publicDns: DnsLookupFn = async () => [{ address: '93.184.216.34', family: 4 }];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -166,7 +169,7 @@ test('anthropic pass-through forwards the key upstream once and answers with the
 });
 
 test('openai pass-through targets the user base URL with a bearer key and custom model', async (t) => {
-  const app = await makeApp({ provider: null });
+  const app = await makeApp({ provider: null, dnsLookup: publicDns });
   t.after(() => app.close());
   const upstream = stubUpstream(t, okOpenAi);
 

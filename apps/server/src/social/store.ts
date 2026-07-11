@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { REPO_ROOT } from '../config.js';
+import { logger } from '../logging.js';
 import { DEFAULT_PREFS, type BoardEntry, type BoardId, type FavoriteOpening, type SocialPrefs } from './validation.js';
 import { freshGraph, type FriendGraph } from './friends.js';
 
@@ -59,7 +60,7 @@ class SocialStore {
         this.db = { users: parsed.users ?? {}, graph: { ...freshGraph(), ...(parsed.graph ?? {}) } };
       }
     } catch (e) {
-      console.error('[social] failed to load db, starting fresh:', e);
+      logger.error({ err: e }, '[social] failed to load db, starting fresh');
     }
   }
 
@@ -89,7 +90,7 @@ class SocialStore {
         try {
           await writeSnapshot(snapshot);
         } catch (e) {
-          console.error('[social] failed to persist db:', e);
+          logger.error({ err: e }, '[social] failed to persist db');
         }
       }
     } finally {

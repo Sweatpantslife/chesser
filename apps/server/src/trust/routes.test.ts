@@ -19,7 +19,13 @@ const { setClock } = await import('../social/clock.js');
 const Fastify = (await import('fastify')).default;
 
 const app = Fastify();
-registerAccountRoutes(app);
+// This suite creates many accounts from a single (test) client IP to exercise
+// the trust/privacy flows. Opt out of the per-IP register/login rate caps so a
+// 429 doesn't mask the behaviour under test — the caps themselves are covered
+// by the accounts hardening tests. Production defaults are unchanged.
+registerAccountRoutes(app, {
+  guard: { registerIpCapacity: 10_000, registerIpRefillPerMinute: 10_000, loginIpCapacity: 10_000 },
+});
 registerSocialRoutes(app);
 registerTrustRoutes(app);
 await app.ready();

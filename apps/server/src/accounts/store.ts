@@ -1,13 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { REPO_ROOT } from '../config.js';
+import { logger } from '../logging.js';
 
 /**
  * A tiny dependency-free JSON-file store for accounts and synced progress.
  * Single-process, atomic writes (temp + rename). Point CHESSER_DATA_DIR at a
  * persistent volume in production.
  */
-const DATA_DIR = process.env.CHESSER_DATA_DIR ?? path.join(REPO_ROOT, 'data');
+export const DATA_DIR = process.env.CHESSER_DATA_DIR ?? path.join(REPO_ROOT, 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
 
 export interface DbUser {
@@ -20,6 +21,12 @@ export interface DbUser {
 export interface DbSession {
   userId: string;
   createdAt: number;
+  /**
+   * Epoch ms after which the token is dead. Sessions written before this
+   * field existed are backfilled to load-time + TTL, so tokens already in
+   * users' localStorage keep working (and finally age out).
+   */
+  expiresAt: number;
 }
 interface DbProgress {
   data: unknown;
@@ -44,15 +51,43 @@ interface DbShape {
 const EMPTY: DbShape = { users: {}, sessions: {}, progress: {}, games: {} };
 const MAX_GAMES = 300;
 
+/**
+ * Session lifetime. Sliding: each authenticated use pushes expiry back out to
+ * now + TTL (persisted at most once per RENEW_MIN_INTERVAL_MS per token, so
+ * routine requests don't rewrite db.json). CHESSER_SESSION_TTL_DAYS overrides.
+ */
+const SESSION_TTL_MS = Math.max(1, Number(process.env.CHESSER_SESSION_TTL_DAYS) || 30) * 24 * 60 * 60_000;
+const RENEW_MIN_INTERVAL_MS = 24 * 60 * 60_000;
+
 class Store {
   private db: DbShape = EMPTY;
+  private now: () => number = Date.now;
 
   constructor() {
     try {
       if (fs.existsSync(DB_FILE)) this.db = { ...EMPTY, ...JSON.parse(fs.readFileSync(DB_FILE, 'utf8')) };
     } catch (e) {
-      console.error('[accounts] failed to load db, starting fresh:', e);
+      logger.error({ err: e }, '[accounts] failed to load db, starting fresh');
     }
+    // Backfill legacy sessions (pre-expiry) so existing logins survive the
+    // upgrade, and drop anything already expired. Persist only on change.
+    const t = this.now();
+    let changed = false;
+    for (const [token, s] of Object.entries(this.db.sessions)) {
+      if (typeof s.expiresAt !== 'number' || !Number.isFinite(s.expiresAt)) {
+        s.expiresAt = t + SESSION_TTL_MS;
+        changed = true;
+      } else if (s.expiresAt <= t) {
+        delete this.db.sessions[token];
+        changed = true;
+      }
+    }
+    if (changed) this.persist();
+  }
+
+  /** Test hook: inject a fake clock (expiry/renewal logic only). */
+  _setClock(now: () => number): void {
+    this.now = now;
   }
 
   private persist(): void {
@@ -62,7 +97,7 @@ class Store {
       fs.writeFileSync(tmp, JSON.stringify(this.db));
       fs.renameSync(tmp, DB_FILE);
     } catch (e) {
-      console.error('[accounts] failed to persist db:', e);
+      logger.error({ err: e }, '[accounts] failed to persist db');
     }
   }
 
@@ -81,12 +116,42 @@ class Store {
   }
 
   createSession(token: string, userId: string): void {
-    this.db.sessions[token] = { userId, createdAt: Date.now() };
+    const t = this.now();
+    // Every login is a natural moment to shed dead sessions — keeps db.json
+    // bounded without a timer (expired tokens are also dropped lazily on use).
+    this.pruneExpiredSessions(t);
+    this.db.sessions[token] = { userId, createdAt: t, expiresAt: t + SESSION_TTL_MS };
     this.persist();
   }
 
   sessionUserId(token: string): string | undefined {
-    return this.db.sessions[token]?.userId;
+    const s = this.db.sessions[token];
+    if (!s) return undefined;
+    const t = this.now();
+    if (s.expiresAt <= t) {
+      delete this.db.sessions[token];
+      this.persist();
+      return undefined;
+    }
+    // Sliding renewal: push expiry back out to now + TTL, but persist at most
+    // once per RENEW_MIN_INTERVAL_MS per token so reads stay write-free.
+    if (s.expiresAt < t + SESSION_TTL_MS - RENEW_MIN_INTERVAL_MS) {
+      s.expiresAt = t + SESSION_TTL_MS;
+      this.persist();
+    }
+    return s.userId;
+  }
+
+  /** Drop expired sessions; returns how many were removed. Persists via the caller's flow. */
+  pruneExpiredSessions(t: number = this.now()): number {
+    let removed = 0;
+    for (const [token, s] of Object.entries(this.db.sessions)) {
+      if (s.expiresAt <= t) {
+        delete this.db.sessions[token];
+        removed += 1;
+      }
+    }
+    return removed;
   }
 
   deleteSession(token: string): void {

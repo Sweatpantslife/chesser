@@ -3,6 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import type { EngineAvailability } from '@chesser/shared';
+import { logger } from './logging.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 // src or dist both sit at apps/server/<x>, so repo root is three levels up.
@@ -25,7 +26,11 @@ function defaultWebDir(): string | null {
 }
 export const WEB_DIR: string | null = process.env.CHESSER_WEB_DIR ?? defaultWebDir();
 
-/** Structured request logging (pino). On by default in production. */
+/**
+ * Per-request logging (pino). On by default in production. Gates only the
+ * request/response lines — the process logger itself (logging.ts) always
+ * exists, with its level set via CHESSER_LOG_LEVEL.
+ */
 export const LOG_ENABLED = process.env.CHESSER_LOG
   ? /^(1|true|yes|on)$/i.test(process.env.CHESSER_LOG)
   : process.env.NODE_ENV === 'production';
@@ -125,7 +130,7 @@ function resolveSyzygy(): SyzygyInfo | null {
       .filter(Boolean);
     const maxPieces = dirs.reduce((m, d) => Math.max(m, syzygyMaxPiecesIn(d)), 0);
     if (maxPieces > 0) return { path: dirs.join(SYZYGY_PATH_SEP), maxPieces };
-    console.warn(`[config] CHESSER_SYZYGY_PATH is set but no .rtbw/.rtbz files were found in "${fromEnv}".`);
+    logger.warn(`[config] CHESSER_SYZYGY_PATH is set but no .rtbw/.rtbz files were found in "${fromEnv}".`);
     return null;
   }
   const def = path.join(ENGINES_DIR, 'syzygy');
@@ -162,14 +167,14 @@ const EMPTY: EngineManifest = { stockfishBin: null, lc0Bin: null, maiaNetworks: 
 export function loadManifest(): EngineManifest {
   const file = path.join(ENGINES_DIR, 'manifest.json');
   if (!fs.existsSync(file)) {
-    console.warn(`[config] No engines/manifest.json found at ${file}. Run "pnpm setup:engines".`);
+    logger.warn(`[config] No engines/manifest.json found at ${file}. Run "pnpm setup:engines".`);
     return EMPTY;
   }
   let raw: RawManifest;
   try {
     raw = JSON.parse(fs.readFileSync(file, 'utf8'));
   } catch (e) {
-    console.error('[config] Failed to parse manifest.json:', e);
+    logger.error({ err: e }, '[config] Failed to parse manifest.json');
     return EMPTY;
   }
 

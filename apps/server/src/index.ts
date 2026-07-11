@@ -13,6 +13,19 @@ import { probeTablebase } from './tablebase.js';
 import { shutdownLocalTablebase } from './tablebase-local.js';
 import { probeExplorer } from './explorer.js';
 import { importGames } from './import.js';
+import {
+  DEFAULT_CONNECT_ORIGINS,
+  parseAllowedOrigins,
+  parseConnectOrigins,
+  registerSecurityHeaders,
+} from './security-headers.js';
+import { registerProxyGuards } from './proxy-guard.js';
+import { genReqId, logger, registerRequestIdHeader } from './logging.js';
+import { registerHealth } from './health.js';
+import { registerMetrics } from './metrics.js';
+import { registerErrorHandling, registerProcessErrorHandlers } from './error-tracking.js';
+import { engineProcessCount } from './engine/uci.js';
+import { clientIpFromUpgrade, WS_MAX_PAYLOAD_BYTES, WsSessionGuard } from './ws-hardening.js';
 import { registerAccountRoutes } from './accounts/routes.js';
 import { registerCoachRoutes } from './coach/routes.js';
 import { registerSocialRoutes } from './social/routes.js';
@@ -27,8 +40,38 @@ import type { ExplorerDb } from '@chesser/shared';
 // bodyLimit: an explicit cap on request bodies (matches Fastify's default of
 // 1 MiB rather than relying on it) — the largest legitimate payloads are the
 // synced progress blob and saved PGNs, both far under it.
-const app = Fastify({ logger: LOG_ENABLED, trustProxy: TRUST_PROXY, bodyLimit: 1_048_576 });
-await app.register(cors, { origin: true });
+// loggerInstance: the shared pino logger (JSON in prod, redaction always —
+// see logging.ts); CHESSER_LOG keeps its old meaning and now gates only the
+// per-request log lines. genReqId threads/mints an x-request-id per request.
+const app = Fastify({
+  loggerInstance: logger,
+  disableRequestLogging: !LOG_ENABLED,
+  genReqId,
+  trustProxy: TRUST_PROXY,
+  bodyLimit: 1_048_576,
+});
+// 5xx: log + report (CHESSER_SENTRY_DSN, no-op when unset) + generic body.
+registerErrorHandling(app);
+// Every response echoes its request id for client-side correlation.
+registerRequestIdHeader(app);
+// Same-origin by default (no CORS headers at all — the SPA and API share an
+// origin); extra browser origins only via the CHESSER_ALLOWED_ORIGINS env.
+await app.register(cors, { origin: parseAllowedOrigins(process.env.CHESSER_ALLOWED_ORIGINS) });
+// Security headers (CSP, nosniff, frame denial, HSTS-behind-TLS, …) on every
+// response — API JSON and the served SPA alike. See security-headers.ts.
+// connectOrigins: the BYOK direct-call defaults (Anthropic/OpenAI) plus any
+// operator-whitelisted endpoints (CHESSER_COACH_CONNECT_ORIGINS) — required for
+// the browser to reach a self-hosted / LAN OpenAI-compatible endpoint directly.
+registerSecurityHeaders(app, {
+  webDir: WEB_DIR,
+  connectOrigins: [...DEFAULT_CONNECT_ORIGINS, ...parseConnectOrigins(process.env.CHESSER_COACH_CONNECT_ORIGINS)],
+});
+// Per-IP budgets for the unauthenticated Lichess/chess.com proxy endpoints.
+registerProxyGuards(app);
+// Liveness/readiness probes (quiet, unmetered) + Prometheus /metrics with its
+// counting hook — registered before the routes so they are all counted.
+registerHealth(app);
+const metrics = registerMetrics(app);
 
 app.get('/api/health', async () => ({ ok: true, syzygy: !!engines.availability().syzygy }));
 app.get('/api/engines', async () => ({ engines: engines.availability(), styles: engines.styles() }));
@@ -83,24 +126,49 @@ if (WEB_DIR && fs.existsSync(path.join(WEB_DIR, 'index.html'))) {
     }
     return reply.sendFile('index.html');
   });
-  console.log(`[server] serving web client from ${WEB_DIR}`);
+  app.log.info(`serving web client from ${WEB_DIR}`);
 } else if (process.env.CHESSER_WEB_DIR) {
-  console.warn(`[server] CHESSER_WEB_DIR is set but no index.html found at ${process.env.CHESSER_WEB_DIR}`);
+  app.log.warn(`CHESSER_WEB_DIR is set but no index.html found at ${process.env.CHESSER_WEB_DIR}`);
 }
 
 // Two WebSocket endpoints share the HTTP server, so upgrades are routed by
 // path here (two path-bound WebSocketServer instances would each try to answer
 // every upgrade): /ws is the engine session, /ws/friend the friend-game rooms.
-const wss = new WebSocketServer({ noServer: true });
-wss.on('connection', (ws) => {
+// maxPayload: ws's default is 100 MiB per message — cap it (protocol messages
+// are tiny). Engine sessions are additionally bounded per IP and globally,
+// because each one may spawn up to two Stockfish child processes.
+const wsGuard = new WsSessionGuard();
+const wss = new WebSocketServer({ noServer: true, maxPayload: WS_MAX_PAYLOAD_BYTES });
+wss.on('connection', (ws, req) => {
+  const release = wsGuard.acquire(clientIpFromUpgrade(req));
+  if (!release) {
+    // No Session is constructed for a refused socket, so nothing else will
+    // attach an error handler — and an unhandled 'error' event kills the
+    // process (e.g. a client blasting data while the close frame is in flight).
+    ws.on('error', () => {});
+    ws.close(1013, 'Server is busy — try again shortly.');
+    return;
+  }
+  ws.once('close', release);
   new Session(ws);
 });
-const friendWss = new WebSocketServer({ noServer: true });
+const friendWss = new WebSocketServer({ noServer: true, maxPayload: WS_MAX_PAYLOAD_BYTES });
 friendWss.on('connection', (ws) => {
   new FriendSession(ws, friendRooms);
 });
 const friendSweep = setInterval(() => friendRooms.sweep(), 60_000);
 friendSweep.unref();
+// Gauges are sampled at scrape time — no bookkeeping on connection paths.
+metrics.gauge(
+  'ws_connections_current',
+  'Open WebSocket connections (engine sessions + friend rooms).',
+  () => wss.clients.size + friendWss.clients.size,
+);
+metrics.gauge(
+  'engine_processes_current',
+  'Live UCI engine child processes (Stockfish and Lc0/Maia).',
+  engineProcessCount,
+);
 app.server.on('upgrade', (req, socket, head) => {
   const pathname = (req.url ?? '').split('?', 1)[0];
   const target = pathname === '/ws' ? wss : pathname === '/ws/friend' ? friendWss : null;
@@ -126,15 +194,17 @@ async function shutdown(): Promise<void> {
 }
 process.on('SIGINT', () => void shutdown());
 process.on('SIGTERM', () => void shutdown());
+// Crashes: log + report to the error tracker, then exit(1) — never swallowed.
+registerProcessErrorHandlers(app.log);
 
 await app.listen({ host: HOST, port: PORT });
 
 const av = engines.availability();
 const syzygyStatus = av.syzygy ? `${av.syzygyMaxPieces}-man` : 'off';
-console.log(`[server] listening on http://${HOST}:${PORT}  (ws: /ws)`);
-console.log(
-  `[server] engines — stockfish:${av.stockfish}  lc0/maia:${av.lc0}  maia:[${av.maiaNetworks
+app.log.info(`listening on http://${HOST}:${PORT}  (ws: /ws)`);
+app.log.info(
+  `engines — stockfish:${av.stockfish}  lc0/maia:${av.lc0}  maia:[${av.maiaNetworks
     .map((n) => n.rating)
     .join(', ')}]  syzygy:${syzygyStatus}`,
 );
-if (!av.stockfish) console.warn('[server] Stockfish missing — run "pnpm setup:engines".');
+if (!av.stockfish) app.log.warn('Stockfish missing — run "pnpm setup:engines".');

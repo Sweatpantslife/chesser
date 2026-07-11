@@ -35,6 +35,14 @@ services:
       - NODE_ENV=production
       - HOST=0.0.0.0
       - PORT=8787
+      # One reverse proxy (Coolify's Traefik) in front: trust exactly one
+      # X-Forwarded-* hop so per-IP rate limits key on real client addresses
+      # and HSTS is emitted (the proxy terminates TLS). Remove this line if
+      # you publish the container port directly with no proxy.
+      - TRUST_PROXY=1
+      # Extra browser origins allowed to call the API cross-origin
+      # (comma-separated). Unset = same-origin only, the normal deployment.
+      # - CHESSER_ALLOWED_ORIGINS=
       # Engine resource budget per Stockfish process — tune to your host.
       - CHESSER_THREADS=2
       - CHESSER_HASH_MB=128
@@ -44,6 +52,28 @@ services:
       # - CHESSER_EXPLORER_LICHESS_URL=https://explorer.lichess.ovh/lichess
       # Local Syzygy tablebases (see the volume mount below).
       # - CHESSER_SYZYGY_PATH=/syzygy
+      # Observability (see .env.example): bearer token for GET /metrics —
+      # RECOMMENDED on a public domain, the endpoint is open without it — and
+      # an optional Sentry-compatible DSN for error reports.
+      # - CHESSER_METRICS_TOKEN=
+      # - CHESSER_SENTRY_DSN=
+      # - CHESSER_LOG_LEVEL=info
+      # Bearer-session lifetime in days (sliding renewal). Default 30.
+      # - CHESSER_SESSION_TTL_DAYS=30
+      # Concurrent /ws engine-session caps (each session may spawn up to two
+      # Stockfish processes). Defaults: 32 global / 8 per client IP.
+      # - CHESSER_WS_MAX_SESSIONS=32
+      # - CHESSER_WS_MAX_SESSIONS_PER_IP=8
+      # SECRET: Lichess API token for the opening explorer (explorer.lichess.ovh
+      # requires auth). Without it the explorer reports itself unavailable.
+      # - CHESSER_LICHESS_TOKEN=
+      # SECRETS: server-side AI-coach LLM key (Anthropic wins when both are
+      # set) + optional model / OpenAI-compatible base-URL overrides. Unset =
+      # clients fall back to rule-based explanations (or bring their own key).
+      # - ANTHROPIC_API_KEY=
+      # - OPENAI_API_KEY=
+      # - COACH_LLM_MODEL=
+      # - COACH_LLM_BASE_URL=
     expose:
       - "8787"
     # ports:
@@ -57,7 +87,7 @@ services:
         - CMD
         - node
         - -e
-        - "fetch('http://127.0.0.1:'+(process.env.PORT||8787)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        - "fetch('http://127.0.0.1:'+(process.env.PORT||8787)+'/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
       interval: 30s
       timeout: 5s
       retries: 3

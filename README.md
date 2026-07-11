@@ -276,6 +276,10 @@ origin/port. That makes it trivial to put behind a single reverse proxy —
 including [Coolify](https://coolify.io/)'s built-in Traefik — with automatic TLS
 and WebSocket upgrades (the client talks `wss://` over the same host).
 
+See **[DEPLOYMENT.md](DEPLOYMENT.md)** for the full production guide: every
+environment variable (with defaults and security notes), bare-Node deployment,
+health/readiness/metrics endpoints, backups, and the threat model.
+
 > Target platform is **linux/amd64** — the bundled Stockfish/Lc0 binaries are
 > x86-64. Build/run on an amd64 host (Coolify defaults to this).
 
@@ -288,8 +292,8 @@ docker compose up --build -d         # build the image and run it
 
 The image bakes in **Stockfish** by default (analysis, eval bar, leveled +
 styled bots, and every trainer). Accounts and synced progress persist to the
-`chesser-data` volume mounted at `/data`. A `/api/health` endpoint backs the
-container health check.
+`chesser-data` volume mounted at `/data`. A `/healthz` endpoint backs the
+container health check (`/readyz` offers a stricter readiness probe).
 
 ### Deploy on Coolify (Traefik)
 

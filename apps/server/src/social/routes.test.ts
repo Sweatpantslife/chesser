@@ -17,7 +17,9 @@ const { isoWeekKey } = await import('./week.js');
 const Fastify = (await import('fastify')).default;
 
 const app = Fastify();
-registerAccountRoutes(app);
+// Generous auth-guard limits: these suites register/login many accounts from one
+// inject IP; brute-force protection has its own suite (accounts/auth-hardening).
+registerAccountRoutes(app, { guard: { registerIpCapacity: 10_000, loginIpCapacity: 10_000 } });
 registerSocialRoutes(app);
 await app.ready();
 

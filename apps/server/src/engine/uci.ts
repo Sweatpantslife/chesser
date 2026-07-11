@@ -1,5 +1,12 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { createInterface, type Interface } from 'node:readline';
+import { logger } from '../logging.js';
+
+/** Live engine child processes — feeds the engine_processes_current gauge. */
+let liveEngineProcesses = 0;
+export function engineProcessCount(): number {
+  return liveEngineProcesses;
+}
 
 /** A single parsed `info` line from a UCI engine. Scores are side-to-move POV. */
 export interface UciInfo {
@@ -66,11 +73,13 @@ export class UciEngine {
   async start(): Promise<void> {
     const proc = spawn(this.bin, this.args, { stdio: ['pipe', 'pipe', 'pipe'] });
     this.proc = proc;
+    liveEngineProcesses += 1;
     proc.stderr.on('data', (d) => {
       const s = String(d).trim();
-      if (s) console.error(`[${this.label}] ${s}`);
+      if (s) logger.warn({ engine: this.label }, s);
     });
     proc.on('exit', (code) => {
+      liveEngineProcesses -= 1;
       this.dead = true;
       const err = new Error(`${this.label} exited (code ${code})`);
       if (this.active) {
