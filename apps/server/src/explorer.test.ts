@@ -237,6 +237,20 @@ test('games count is clamped to 0-8 and sent as topGames (+recentGames on liches
   }
 });
 
+test('a non-numeric games count falls back to the default instead of forwarding NaN', async () => {
+  const fen = uniqueFen();
+  const m = mockFetch(() => json({ white: 1, draws: 0, black: 0, moves: [] }));
+  try {
+    // The route parses `?games=abc` with Number(), which yields NaN.
+    await probeExplorer(fen, 'lichess', { games: Number('abc') });
+    const u = new URL(m.calls[0]!.url);
+    assert.equal(u.searchParams.get('topGames'), '0');
+    assert.equal(u.searchParams.get('recentGames'), '0');
+  } finally {
+    m.restore();
+  }
+});
+
 test('normalizes topGames/recentGames and per-move averageRating', async () => {
   const fen = uniqueFen();
   const m = mockFetch(() =>

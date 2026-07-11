@@ -115,7 +115,10 @@ function normalize(data: any): ExplorerResult {
 export async function probeExplorer(fen: string, db: ExplorerDb, opts: ExplorerOpts = {}): Promise<ExplorerResult> {
   const speeds = db === 'lichess' ? (sanitizeSpeeds(opts.speeds) ?? 'blitz,rapid,classical') : undefined;
   const ratings = db === 'lichess' ? sanitizeRatings(opts.ratings) : undefined;
-  const games = Math.min(Math.max(Math.trunc(opts.games ?? 0), 0), 8);
+  // Non-finite values (e.g. `?games=abc` parsed to NaN) fall back to the
+  // default instead of forwarding `topGames=NaN` upstream (Lichess 400s).
+  const rawGames = opts.games ?? 0;
+  const games = Number.isFinite(rawGames) ? Math.min(Math.max(Math.trunc(rawGames), 0), 8) : 0;
 
   const key = `${db}:${fen}:${speeds ?? ''}:${ratings ?? ''}:${games}`;
   const cached = cache.get(key);
