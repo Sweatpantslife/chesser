@@ -18,7 +18,7 @@ export const DECK_META: Record<Deck, { label: string; accent: string; target: De
   tactics: { label: 'Tactics', accent: 'text-emerald-300', target: { view: 'tactics' } },
   mates: { label: 'Checkmates', accent: 'text-rose-300', target: { view: 'train', trainTab: 'mates' } },
   blunders: { label: 'Anti-blunder', accent: 'text-amber-300', target: { view: 'train', trainTab: 'blunders' } },
-  endgames: { label: 'Endgames', accent: 'text-purple-300', target: { view: 'endgame-drills' } },
+  endgames: { label: 'Endgames', accent: 'text-brand-300', target: { view: 'endgame-drills' } },
 };
 
 export interface DeckReview {

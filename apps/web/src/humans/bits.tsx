@@ -209,7 +209,7 @@ export function CopyPgnButton({ pgn }: { pgn: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <button
-      className={`${btn} w-full bg-neutral-800 text-neutral-400 hover:bg-neutral-700`}
+      className={`${btn} w-full bg-neutral-800 text-neutral-400 hover:bg-neutral-700 hover:text-neutral-300`}
       data-testid="copy-pgn"
       onClick={() => {
         void navigator.clipboard

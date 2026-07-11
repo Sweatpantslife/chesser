@@ -80,7 +80,7 @@ export function ByokSettings(): JSX.Element {
           placeholder={provider === 'anthropic' ? 'sk-ant-…' : 'sk-…'}
           autoComplete="off"
           data-testid="byok-key-input"
-          className="w-full rounded-lg bg-neutral-800 px-2 py-1.5 text-sm text-ink placeholder:text-neutral-500"
+          className="w-full rounded-lg bg-neutral-800 px-2 py-1.5 text-sm text-ink placeholder:text-neutral-400"
         />
       </label>
 
@@ -95,7 +95,7 @@ export function ByokSettings(): JSX.Element {
           placeholder={DEFAULT_BYOK_MODEL[provider]}
           list={modelListId}
           autoComplete="off"
-          className="w-full rounded-lg bg-neutral-800 px-2 py-1.5 text-sm text-ink placeholder:text-neutral-500"
+          className="w-full rounded-lg bg-neutral-800 px-2 py-1.5 text-sm text-ink placeholder:text-neutral-400"
         />
         <datalist id={modelListId}>
           {suggestions.map((m) => (
@@ -115,7 +115,7 @@ export function ByokSettings(): JSX.Element {
             onChange={(e) => setBaseUrl(e.target.value)}
             placeholder="https://api.openai.com/v1"
             autoComplete="off"
-            className="w-full rounded-lg bg-neutral-800 px-2 py-1.5 text-sm text-ink placeholder:text-neutral-500"
+            className="w-full rounded-lg bg-neutral-800 px-2 py-1.5 text-sm text-ink placeholder:text-neutral-400"
           />
         </label>
       )}
@@ -156,7 +156,7 @@ export function ByokSettings(): JSX.Element {
       )}
 
       {apiKey && test.phase !== 'done' && (
-        <p className="mt-1.5 text-xs text-neutral-500">AI coaching is active with your key.</p>
+        <p className="mt-1.5 text-xs text-neutral-400">AI coaching is active with your key.</p>
       )}
     </div>
   );

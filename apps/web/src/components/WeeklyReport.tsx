@@ -149,7 +149,7 @@ export function WeeklyReportCard(): JSX.Element {
       <p data-testid="weekly-narrative" className="text-sm leading-relaxed text-neutral-200">
         {aiText ?? fallback}
       </p>
-      {aiText && <p className="mt-1 text-[10px] text-neutral-500">AI-generated from your verified weekly stats</p>}
+      {aiText && <p className="mt-1 text-[10px] text-neutral-400">AI-generated from your verified weekly stats</p>}
       {available === false && (
         <p data-testid="weekly-ai-hint" className="mt-1.5 text-xs text-neutral-400">
           Add your own AI key in Settings to unlock a personalised AI recap — this summary works without one.

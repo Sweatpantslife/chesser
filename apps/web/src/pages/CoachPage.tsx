@@ -377,7 +377,7 @@ function WeaknessTrainer({ entry, onClose }: { entry: WeaknessEntry; onClose: ()
               <button onClick={serveNext} className="btn-press rounded bg-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600">
                 Next puzzle →
               </button>
-              <button onClick={stop} className="btn-press rounded bg-neutral-800 px-3 py-1.5 text-sm text-neutral-400 hover:bg-neutral-700">
+              <button onClick={stop} className="btn-press rounded bg-neutral-800 px-3 py-1.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-300">
                 Done training
               </button>
             </div>

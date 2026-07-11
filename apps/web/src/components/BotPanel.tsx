@@ -310,7 +310,7 @@ export function BotPanel() {
                   }`}
                 >
                   <span className="truncate">{o.name}</span>
-                  <span className="shrink-0 font-mono opacity-60">{o.eco}</span>
+                  <span className="shrink-0 font-mono opacity-90">{o.eco}</span>
                 </button>
               ))}
               {filteredOpenings.length === 0 && <p className="px-2 py-1 text-xs text-neutral-400">No openings match.</p>}

@@ -347,7 +347,7 @@ export function EndgameDrillsPage() {
                 <span className="truncate">{d.name}</span>
                 <span className="flex shrink-0 items-center gap-1.5">
                   <span className={`text-xs uppercase ${active ? 'text-emerald-100' : 'text-neutral-300'}`}>{d.goal}</span>
-                  <span className={`text-xs ${cd === 'due' ? (active ? 'text-amber-100' : 'text-amber-300') : active ? 'text-emerald-100' : 'text-neutral-400'}`}>
+                  <span className={`text-xs ${cd === 'due' ? (active ? 'text-amber-100' : 'text-gold-300') : active ? 'text-emerald-100' : 'text-neutral-300'}`}>
                     {cd}
                   </span>
                 </span>

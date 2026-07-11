@@ -286,7 +286,7 @@ export function LeaderboardsPage({ onViewProfile }: { onViewProfile: (username: 
         )}
       </div>
 
-      <p className="text-center text-xs text-neutral-500">
+      <p className="text-center text-xs text-neutral-400">
         Scores are checked server-side against your synced progress — see your Profile tab to manage what you share.
       </p>
     </div>

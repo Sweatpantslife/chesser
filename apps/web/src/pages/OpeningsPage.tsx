@@ -348,7 +348,7 @@ export function OpeningsPage() {
                                 cd === 'due'
                                   ? selected
                                     ? 'text-amber-100'
-                                    : 'text-amber-300'
+                                    : 'text-gold-300'
                                   : selected
                                     ? 'text-emerald-100'
                                     : 'text-neutral-300'

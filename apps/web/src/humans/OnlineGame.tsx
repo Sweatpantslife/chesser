@@ -354,7 +354,7 @@ export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: (
             })}
           />
         )}
-        <button className={`${btn} w-full bg-neutral-800 text-neutral-400 hover:bg-neutral-700`} onClick={leave}>
+        <button className={`${btn} w-full bg-neutral-800 text-neutral-400 hover:bg-neutral-700 hover:text-neutral-300`} onClick={leave}>
           ← Leave game
         </button>
       </div>

@@ -294,7 +294,7 @@ export function LocalGame({ config, onExit }: { config: LocalGameConfig; onExit:
             pgn={buildPgn({ sans, white: config.white, black: config.black, result: result?.winner ?? null, event: 'Casual pass & play' })}
           />
         )}
-        <button className={`${btn} w-full bg-neutral-800 text-neutral-400 hover:bg-neutral-700`} onClick={onExit}>
+        <button className={`${btn} w-full bg-neutral-800 text-neutral-400 hover:bg-neutral-700 hover:text-neutral-300`} onClick={onExit}>
           ← Leave game
         </button>
       </div>

@@ -39,7 +39,7 @@ function Stars({ n, size = 'text-sm' }: { n: number; size?: string }) {
   return (
     <span className={`${size} tracking-tight`} aria-label={`${n} of 3 stars`}>
       {[1, 2, 3].map((i) => (
-        <span key={i} className={i <= n ? 'text-gold-400' : 'text-neutral-600'}>
+        <span key={i} className={i <= n ? 'text-gold-400' : 'text-neutral-400'}>
           ★
         </span>
       ))}
