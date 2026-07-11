@@ -9,6 +9,7 @@ import { now } from '../lib/clock';
 import { ALL_LESSONS } from '../learn';
 import { DailyQuests } from '../components/DailyQuests';
 import { DailyGoal } from '../components/DailyGoal';
+import { WeeklyReportCard } from '../components/WeeklyReport';
 import { StreakFlame, IconArrowRight } from '../components/icons';
 import mascotUrl from '../assets/img/mascot.svg';
 
@@ -190,6 +191,8 @@ export function HomePage({
           />
         </div>
       </div>
+
+      <WeeklyReportCard />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {nextLesson ? (

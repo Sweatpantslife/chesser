@@ -1,16 +1,20 @@
 /**
- * Client for POST /api/coach/explain — the "engine-truth + LLM-words" layer.
+ * Client for the AI coach's "engine-truth + LLM-words" layer.
  *
  * Everything here is READ-ONLY over the existing analytics outputs: the
  * builders compress an {@link AnalysisReport} row / summary / weakness entry
  * into the compact facts payloads defined in @chesser/shared, and
- * {@link explainWithCoach} posts them. The helper memoizes per payload (and
- * dedupes in-flight calls) so navigating back to a move never re-asks, and it
- * NEVER throws:
+ * {@link explainWithCoach} sends them for wording. The helper memoizes per
+ * payload (and dedupes in-flight calls) so navigating back to a move never
+ * re-asks, and it NEVER throws:
  *
- *   • server says { configured: false } → resolves null and short-circuits
- *     every later call this session (the server has no key — stop asking);
- *   • network/HTTP/provider errors      → resolves null (and is retryable).
+ *   • BYOK key configured (store/byok) → the user's own provider is called
+ *     directly from the browser, falling back to the server's stateless
+ *     pass-through when CORS blocks the direct call (lib/byokCoach);
+ *   • otherwise → POST /api/coach/explain using the operator's env key
+ *     (self-hosters). A { configured: false } reply short-circuits every
+ *     later env-key call this session (the server has no key — stop asking);
+ *   • network/HTTP/provider errors → resolves null (and is retryable).
  *
  * A null result means "use the existing rule-based text" — the calling UI
  * must degrade silently, no error states.
@@ -27,6 +31,8 @@ import type {
 import { formatScore } from './format';
 import type { AnalysisReport, EvalPoint, MoveDetail, Side } from './analytics/types';
 import { describeExample, type WeaknessEntry, type WeaknessProfile } from './weakness';
+import { explainWithUserKey } from './byokCoach';
+import { byokConfig } from '../store/byok';
 
 // ---------------------------------------------------------------------------
 // Fetch helper with memoization
@@ -36,41 +42,78 @@ const MEMO_MAX = 100;
 const memo = new Map<string, Promise<string | null>>();
 /** Once the server reports no key, skip the network for the rest of the session. */
 let unconfigured = false;
+/** Memoized /api/coach/status probe (env-key availability). */
+let statusProbe: Promise<boolean> | null = null;
 
-/** Test hook — clears the memo and the "server has no key" latch. */
+/** Test hook — clears the memo, the "server has no key" latch and the status probe. */
 export function _resetCoachApiForTests(): void {
   memo.clear();
   unconfigured = false;
+  statusProbe = null;
 }
 
 /**
- * Ask the server's LLM coach to word the given facts. Resolves the prose, or
- * null when the caller should fall back to its rule-based text.
+ * Does the SERVER have an operator-configured LLM key (self-hoster env key)?
+ * Memoized on success; failures resolve false but stay retryable. Never throws.
+ */
+export function serverCoachConfigured(): Promise<boolean> {
+  if (unconfigured) return Promise.resolve(false);
+  if (statusProbe) return statusProbe;
+  const probe = (async () => {
+    try {
+      const res = await fetch('/api/coach/status');
+      if (!res.ok) return false;
+      const data = (await res.json()) as { configured?: boolean };
+      if (data.configured !== true) {
+        unconfigured = true;
+        return false;
+      }
+      return true;
+    } catch {
+      statusProbe = null; // transient — allow a later retry
+      return false;
+    }
+  })();
+  statusProbe = probe;
+  return probe;
+}
+
+/**
+ * Ask the AI coach to word the given facts. Resolves the prose, or null when
+ * the caller should fall back to its rule-based text. Uses the user's own key
+ * (BYOK) when one is configured, else the server's env-key path.
  */
 export function explainWithCoach(facts: CoachExplainFacts, level?: CoachSkillLevel): Promise<string | null> {
-  if (unconfigured) return Promise.resolve(null);
-  const key = JSON.stringify([facts, level ?? null]);
+  const byok = byokConfig();
+  if (!byok && unconfigured) return Promise.resolve(null);
+
+  // Fingerprint the route so switching provider/model/key re-asks. The memo is
+  // an in-memory session cache — the key never leaves this module.
+  const source = byok ? ['byok', byok.provider, byok.model, byok.baseUrl, byok.apiKey] : ['server'];
+  const key = JSON.stringify([facts, level ?? null, source]);
   const hit = memo.get(key);
   if (hit) return hit;
 
-  const promise = (async (): Promise<string | null> => {
-    try {
-      const res = await fetch('/api/coach/explain', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ facts, level }),
-      });
-      if (!res.ok) return null; // 4xx/5xx (incl. rate limit / provider failure) → fall back
-      const data = (await res.json()) as CoachExplainResponse;
-      if (!data.configured) {
-        unconfigured = true;
-        return null;
-      }
-      return data.explanation;
-    } catch {
-      return null;
-    }
-  })();
+  const promise = byok
+    ? explainWithUserKey(byok, facts, level)
+    : (async (): Promise<string | null> => {
+        try {
+          const res = await fetch('/api/coach/explain', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ facts, level }),
+          });
+          if (!res.ok) return null; // 4xx/5xx (incl. rate limit / provider failure) → fall back
+          const data = (await res.json()) as CoachExplainResponse;
+          if (!data.configured) {
+            unconfigured = true;
+            return null;
+          }
+          return data.explanation;
+        } catch {
+          return null;
+        }
+      })();
 
   memo.set(key, promise);
   if (memo.size > MEMO_MAX) {

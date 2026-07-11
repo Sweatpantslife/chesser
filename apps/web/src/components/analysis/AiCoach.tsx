@@ -16,11 +16,37 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import type { CoachExplainFacts, CoachGameSummaryFacts, CoachMoveFacts } from '@chesser/shared';
-import { explainWithCoach, skillLevelFromRating } from '../../lib/coachApi';
+import { explainWithCoach, serverCoachConfigured, skillLevelFromRating } from '../../lib/coachApi';
 import { useRatings } from '../../store/ratings';
+import { useByok } from '../../store/byok';
 import { ThinkingDots } from '../icons';
 
 const DISCLAIMER = 'AI-generated from engine analysis';
+
+/** One-line nudge shown in place of AI actions when no key is available. */
+export const NO_KEY_HINT = 'Add an AI key in Settings to unlock richer coaching.';
+
+/**
+ * Is an LLM reachable for the coach? true when the user configured their own
+ * key (BYOK — instant, purely local knowledge), otherwise the answer of a
+ * one-shot /api/coach/status probe (self-hoster env key). `null` while the
+ * probe is still in flight — callers should render nothing extra yet.
+ */
+export function useCoachAvailable(): boolean | null {
+  const hasUserKey = useByok((s) => s.apiKey !== '');
+  const [serverKey, setServerKey] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (hasUserKey) return;
+    let live = true;
+    void serverCoachConfigured().then((ok) => {
+      if (live) setServerKey(ok);
+    });
+    return () => {
+      live = false;
+    };
+  }, [hasUserKey]);
+  return hasUserKey ? true : serverKey;
+}
 
 export function AiCoachBadge(): JSX.Element {
   return (
@@ -46,6 +72,7 @@ type FetchPhase = 'idle' | 'loading' | 'done' | 'unavailable';
 
 export function AiMoveExplanation({ facts, fallback }: { facts: CoachMoveFacts | null; fallback: string }): JSX.Element {
   const level = useSkillLevel();
+  const available = useCoachAvailable();
   const [phase, setPhase] = useState<FetchPhase>('idle');
   const [text, setText] = useState<string | null>(null);
   const factsKey = facts ? `${facts.fen}:${facts.san}:${facts.classification}` : null;
@@ -86,7 +113,7 @@ export function AiMoveExplanation({ facts, fallback }: { facts: CoachMoveFacts |
         )}
       </p>
       {text && <p className="mt-0.5 text-[10px] text-neutral-500">{DISCLAIMER}</p>}
-      {facts && phase === 'idle' && (
+      {facts && phase === 'idle' && available === true && (
         <button
           onClick={explain}
           data-testid="explain-this"
@@ -96,6 +123,7 @@ export function AiMoveExplanation({ facts, fallback }: { facts: CoachMoveFacts |
           Explain this
         </button>
       )}
+      {facts && available === false && <p className="mt-1 text-[10px] text-neutral-500">{NO_KEY_HINT}</p>}
       {phase === 'loading' && (
         <span className="mt-1.5 flex items-center gap-1.5 text-xs text-brand-300">
           Coach is thinking

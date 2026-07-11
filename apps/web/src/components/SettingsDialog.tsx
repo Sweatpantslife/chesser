@@ -3,6 +3,7 @@ import { useSettings, PIECE_SETS, type BoardTheme, type PieceSet, type ThemePref
 import { loadAllPieceSets } from '../styles/pieceSets';
 import { playSound } from '../lib/sound';
 import { Modal } from './Modal';
+import { ByokSettings } from './ByokSettings';
 
 const THEMES: { id: BoardTheme; swatch: string }[] = [
   { id: 'brown', swatch: '#b58863' },
@@ -96,6 +97,8 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
           Natural-language coaching worded by an AI from the engine&apos;s analysis. Falls back to built-in
           explanations when unavailable.
         </p>
+
+        <ByokSettings />
 
         <div className="mt-3">
           <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">Headline rating</div>
