@@ -9,6 +9,7 @@ import { now } from '../lib/clock';
 import { ALL_LESSONS } from '../learn';
 import { DailyQuests } from '../components/DailyQuests';
 import { DailyGoal } from '../components/DailyGoal';
+import { PlanCard } from '../components/PlanCard';
 import { WeeklyReportCard } from '../components/WeeklyReport';
 import { StreakFlame, IconArrowRight } from '../components/icons';
 import mascotUrl from '../assets/img/mascot.svg';
@@ -20,7 +21,7 @@ import mascotUrl from '../assets/img/mascot.svg';
  * lesson, and a game.
  */
 
-export type HomeTarget = 'play' | 'learn' | 'tactics' | 'profile' | 'openings';
+export type HomeTarget = 'play' | 'learn' | 'tactics' | 'profile' | 'openings' | 'plan';
 
 function greeting(): string {
   const h = new Date(now()).getHours();
@@ -161,6 +162,7 @@ export function HomePage({
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <DailyQuests />
         <div className="space-y-4">
+          <PlanCard onOpen={() => go('plan')} />
           <DailyGoal />
           <ActionCard
             icon="🧩"

@@ -8,6 +8,7 @@ import { PlayPage } from './pages/PlayPage';
 import { HomePage } from './pages/HomePage';
 import { HumansPage } from './humans/HumansPage';
 import { LearnPage } from './pages/LearnPage';
+import { MastersPage } from './pages/MastersPage';
 import { OpeningsPage } from './pages/OpeningsPage';
 import { ExplorerPage } from './pages/ExplorerPage';
 import { TacticsPage } from './pages/TacticsPage';
@@ -18,6 +19,7 @@ import { StatsPage } from './pages/StatsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { TrainPage, type TrainTab } from './pages/TrainPage';
 import { CoachPage } from './pages/CoachPage';
+import { StudyPlanPage } from './pages/StudyPlanPage';
 import { ArchivePage } from './pages/ArchivePage';
 import { LeaderboardsPage } from './pages/LeaderboardsPage';
 import { PublicProfilePage } from './pages/PublicProfilePage';
@@ -38,6 +40,7 @@ import {
   IconBolt,
   IconCoach,
   IconCoords,
+  IconCrown,
   IconEndgame,
   IconExplorer,
   IconFriends,
@@ -46,6 +49,7 @@ import {
   IconOpenings,
   IconPlay,
   IconProfile,
+  IconSparkles,
   IconStats,
   IconTactics,
   IconToday,
@@ -59,6 +63,7 @@ type View =
   | 'home'
   | 'play'
   | 'learn'
+  | 'masters'
   | 'friends'
   | 'openings'
   | 'explorer'
@@ -67,6 +72,7 @@ type View =
   | 'endgame-drills'
   | 'train'
   | 'coach'
+  | 'plan'
   | 'coordinates'
   | 'archive'
   | 'stats'
@@ -82,6 +88,7 @@ const TABS: { id: View; label: string; hint: string; icon: ComponentType<SVGProp
   { id: 'home', label: 'Today', hint: 'streak · daily quests · goals', icon: IconToday },
   { id: 'play', label: 'Play', hint: 'vs bots & analysis', icon: IconPlay },
   { id: 'learn', label: 'Learn', hint: 'rules & guided lessons', icon: IconLearn },
+  { id: 'masters', label: 'Masters', hint: 'annotated master games', icon: IconCrown },
   { id: 'friends', label: 'Friends', hint: 'pass & play · online friend games', icon: IconFriends },
   { id: 'openings', label: 'Openings', hint: 'repertoire drills', icon: IconOpenings },
   { id: 'explorer', label: 'Explorer', hint: 'opening explorer · master & online games', icon: IconExplorer },
@@ -90,6 +97,7 @@ const TABS: { id: View; label: string; hint: string; icon: ComponentType<SVGProp
   { id: 'endgame-drills', label: 'Drills', hint: 'endgame drills · tablebase-checked', icon: IconBolt },
   { id: 'train', label: 'Train', hint: 'vision · mates · anti-blunder', icon: IconTrain },
   { id: 'coach', label: 'Coach', hint: 'your weaknesses · targeted training', icon: IconCoach },
+  { id: 'plan', label: 'Plan', hint: 'your weekly study plan', icon: IconSparkles },
   { id: 'coordinates', label: 'Coords', hint: 'board-vision trainer', icon: IconCoords },
   { id: 'archive', label: 'Archive', hint: 'your games · results & trends', icon: IconArchive },
   { id: 'stats', label: 'Stats', hint: 'progress dashboard', icon: IconStats },
@@ -298,6 +306,7 @@ export default function App() {
         )}
         {view === 'play' && <PlayPage />}
         {view === 'learn' && <LearnPage />}
+        {view === 'masters' && <MastersPage goPlay={() => setView('play')} />}
         {/* Kept mounted so a live human-vs-human game survives tab switches.
             `active` lets the friends panel poll (and auto-join accepted
             challenges) only while the tab is actually visible. */}
@@ -313,6 +322,7 @@ export default function App() {
         {view === 'endgame-drills' && <EndgameDrillsPage />}
         {view === 'train' && <TrainPage tab={trainTab} setTab={setTrainTab} />}
         {view === 'coach' && <CoachPage goPlay={() => setView('play')} />}
+        {view === 'plan' && <StudyPlanPage go={nav} />}
         {view === 'coordinates' && <CoordinatePage />}
         {view === 'archive' && <ArchivePage goPlay={() => setView('play')} />}
         {view === 'stats' && <StatsPage goto={goto} />}
