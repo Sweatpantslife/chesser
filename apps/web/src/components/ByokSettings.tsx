@@ -9,6 +9,7 @@
  * call. Calls are billed to the user's key at their provider's rates.
  */
 import { useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import {
   ANTHROPIC_MODEL_SUGGESTIONS,
   DEFAULT_BYOK_MODEL,
@@ -19,14 +20,13 @@ import {
 import { testUserKey, type KeyTestResult } from '../lib/byokCoach';
 import { playSound } from '../lib/sound';
 
-const PROVIDERS: { id: ByokProviderId; label: string }[] = [
-  { id: 'anthropic', label: 'Anthropic' },
-  { id: 'openai', label: 'OpenAI-compatible' },
-];
+// Labels live in the `settings` namespace under `byok.providers.<id>`.
+const PROVIDERS: ByokProviderId[] = ['anthropic', 'openai'];
 
 type TestState = { phase: 'idle' } | { phase: 'testing' } | { phase: 'done'; result: KeyTestResult };
 
 export function ByokSettings(): JSX.Element {
+  const { t } = useTranslation('settings');
   const { provider, apiKey, model, baseUrl, setProvider, setApiKey, setModel, setBaseUrl, clearKey } = useByok();
   const [test, setTest] = useState<TestState>({ phase: 'idle' });
 
@@ -41,35 +41,32 @@ export function ByokSettings(): JSX.Element {
 
   return (
     <div className="mt-3" data-testid="byok-settings">
-      <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">AI Coach — your own key</div>
+      <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('byok.title')}</div>
       <p className="mb-2 text-xs text-neutral-400">
-        Bring your own AI key to unlock richer coaching and the AI weekly recap. The key stays on this device
-        (never sent to or stored on our server) and calls go straight to your chosen provider —{' '}
-        <span className="text-neutral-300">billed to your key at your provider&apos;s rates</span>. The coach keeps
-        replies short, so typical costs are a fraction of a cent per explanation.
+        <Trans t={t} i18nKey="byok.intro" components={{ rates: <span className="text-neutral-300" /> }} />
       </p>
 
-      <div className="mb-2 flex gap-1" role="group" aria-label="AI provider">
-        {PROVIDERS.map((p) => (
+      <div className="mb-2 flex gap-1" role="group" aria-label={t('byok.providerAria')}>
+        {PROVIDERS.map((id) => (
           <button
-            key={p.id}
+            key={id}
             onClick={() => {
               playSound('uiClick');
-              setProvider(p.id);
+              setProvider(id);
               setTest({ phase: 'idle' });
             }}
-            aria-pressed={provider === p.id}
+            aria-pressed={provider === id}
             className={`btn-press flex-1 rounded-full px-2 py-1 text-xs font-semibold ${
-              provider === p.id ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+              provider === id ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
             }`}
           >
-            {p.label}
+            {t(`byok.providers.${id}`)}
           </button>
         ))}
       </div>
 
       <label className="mb-2 block">
-        <span className="mb-0.5 block text-xs text-neutral-400">API key</span>
+        <span className="mb-0.5 block text-xs text-neutral-400">{t('byok.apiKey')}</span>
         <input
           type="password"
           value={apiKey}
@@ -86,7 +83,7 @@ export function ByokSettings(): JSX.Element {
 
       <label className="mb-2 block">
         <span className="mb-0.5 block text-xs text-neutral-400">
-          Model (default: {DEFAULT_BYOK_MODEL[provider]})
+          {t('byok.model', { model: DEFAULT_BYOK_MODEL[provider] })}
         </span>
         <input
           type="text"
@@ -108,7 +105,7 @@ export function ByokSettings(): JSX.Element {
 
       {provider === 'openai' && (
         <label className="mb-2 block">
-          <span className="mb-0.5 block text-xs text-neutral-400">Base URL (any OpenAI-compatible endpoint)</span>
+          <span className="mb-0.5 block text-xs text-neutral-400">{t('byok.baseUrl')}</span>
           <input
             type="url"
             value={baseUrl}
@@ -127,7 +124,7 @@ export function ByokSettings(): JSX.Element {
           data-testid="byok-test-key"
           className="btn-press flex-1 rounded-full bg-brand-600 px-2 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {test.phase === 'testing' ? 'Testing…' : 'Test key'}
+          {test.phase === 'testing' ? t('byok.testing') : t('byok.testKey')}
         </button>
         <button
           onClick={() => {
@@ -139,7 +136,7 @@ export function ByokSettings(): JSX.Element {
           data-testid="byok-clear-key"
           className="btn-press flex-1 rounded-full bg-neutral-700 px-2 py-1.5 text-xs font-semibold text-neutral-200 hover:bg-neutral-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Clear key
+          {t('byok.clearKey')}
         </button>
       </div>
 
@@ -150,13 +147,15 @@ export function ByokSettings(): JSX.Element {
           role="status"
         >
           {test.result.ok
-            ? `Key works — ${test.result.model} responded${test.result.via === 'server' ? ' (relayed: your endpoint blocks browser calls, so requests go through the app server without being stored)' : ' directly from your browser'}.`
+            ? test.result.via === 'server'
+              ? t('byok.keyWorksRelay', { model: test.result.model })
+              : t('byok.keyWorksDirect', { model: test.result.model })
             : test.result.error}
         </p>
       )}
 
       {apiKey && test.phase !== 'done' && (
-        <p className="mt-1.5 text-xs text-neutral-400">AI coaching is active with your key.</p>
+        <p className="mt-1.5 text-xs text-neutral-400">{t('byok.activeNote')}</p>
       )}
     </div>
   );

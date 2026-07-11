@@ -1,21 +1,25 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Shared layout for the long-form policy pages (Privacy, Terms): a readable
  * measure, consistent heading rhythm, and theme-token colors so both pages
  * hold WCAG AA in light and dark. Content is plain JSX — no markdown pipeline.
+ * Only the shell chrome is translated; the policy body copy stays English.
  */
 
 export function LegalShell({ title, updated, children }: { title: string; updated: string; children: ReactNode }) {
+  const { t } = useTranslation('legal');
   return (
     <article className="mx-auto w-full max-w-[760px]">
       <div className="rounded-2xl bg-panel p-5 shadow-soft sm:p-8">
         <h2 className="font-display text-2xl font-bold text-ink">{title}</h2>
-        <p className="mt-1 text-xs text-neutral-400">Last updated: {updated}</p>
+        <p className="mt-1 text-xs text-neutral-400">{t('lastUpdated', { date: updated })}</p>
         <div className="mt-4 space-y-6">{children}</div>
       </div>
       <p className="mt-4 text-center text-xs text-neutral-400">
-        <LegalLink href="#/privacy">Privacy Policy</LegalLink> · <LegalLink href="#/terms">Terms of Service</LegalLink>
+        <LegalLink href="#/privacy">{t('privacyTitle')}</LegalLink> ·{' '}
+        <LegalLink href="#/terms">{t('termsTitle')}</LegalLink>
       </p>
     </article>
   );

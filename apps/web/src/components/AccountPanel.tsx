@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { useAuth } from '../store/auth';
 import type { SyncState } from '../lib/sync';
 import { apiExportAccount, downloadJson } from '../lib/trustApi';
@@ -6,14 +7,16 @@ import { Modal } from './Modal';
 import { DeleteAccountDialog } from './DeleteAccountDialog';
 import { IconDownload } from './icons';
 
-const SYNC_LABEL: Record<SyncState, { dot: string; text: string }> = {
-  off: { dot: 'bg-neutral-500', text: 'not syncing' },
-  syncing: { dot: 'bg-amber-400 animate-pulse', text: 'syncing…' },
-  synced: { dot: 'bg-emerald-400', text: 'synced' },
-  error: { dot: 'bg-rose-400', text: 'sync error' },
+// Status text lives in the `account` namespace under `sync.<state>`.
+const SYNC_DOT: Record<SyncState, string> = {
+  off: 'bg-neutral-500',
+  syncing: 'bg-amber-400 animate-pulse',
+  synced: 'bg-emerald-400',
+  error: 'bg-rose-400',
 };
 
 function AuthForm({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation('account');
   const { login, register, busy, error } = useAuth();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [username, setUsername] = useState('');
@@ -37,19 +40,19 @@ function AuthForm({ onClose }: { onClose: () => void }) {
             aria-pressed={mode === m}
             className={`flex-1 rounded px-2 py-1 capitalize ${mode === m ? 'bg-brand-600 text-white' : 'text-neutral-300'}`}
           >
-            {m === 'login' ? 'Sign in' : 'Create account'}
+            {m === 'login' ? t('signIn') : t('createAccount')}
           </button>
         ))}
       </div>
-      <p className="text-xs text-neutral-400">Sync your opening and tactics progress across devices.</p>
+      <p className="text-xs text-neutral-400">{t('syncHint')}</p>
       <div>
         <label htmlFor="auth-username" className="sr-only">
-          Username
+          {t('username')}
         </label>
         <input
           id="auth-username"
           className="w-full rounded bg-neutral-800 px-2 py-1.5 text-sm text-ink outline-none focus:ring-1 focus:ring-emerald-500"
-          placeholder="username"
+          placeholder={t('usernamePlaceholder')}
           autoComplete="username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
@@ -57,13 +60,13 @@ function AuthForm({ onClose }: { onClose: () => void }) {
       </div>
       <div>
         <label htmlFor="auth-password" className="sr-only">
-          Password
+          {t('password')}
         </label>
         <input
           id="auth-password"
           type="password"
           className="w-full rounded bg-neutral-800 px-2 py-1.5 text-sm text-ink outline-none focus:ring-1 focus:ring-emerald-500"
-          placeholder="password"
+          placeholder={t('passwordPlaceholder')}
           autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -79,7 +82,13 @@ function AuthForm({ onClose }: { onClose: () => void }) {
         disabled={busy}
         className="w-full rounded bg-emerald-700 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
       >
-        {busy ? (mode === 'login' ? 'Signing in…' : 'Creating account…') : mode === 'login' ? 'Sign in' : 'Create account'}
+        {busy
+          ? mode === 'login'
+            ? t('signingIn')
+            : t('creatingAccount')
+          : mode === 'login'
+            ? t('signIn')
+            : t('createAccount')}
       </button>
     </form>
   );
@@ -87,6 +96,7 @@ function AuthForm({ onClose }: { onClose: () => void }) {
 
 /** Export/delete — the privacy-policy promises, wired to trust/routes.ts. */
 function DataControls({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation('account');
   const { token, username } = useAuth();
   const [exporting, setExporting] = useState(false);
   const [exportMsg, setExportMsg] = useState<string | null>(null);
@@ -99,9 +109,9 @@ function DataControls({ onClose }: { onClose: () => void }) {
     try {
       const data = await apiExportAccount(token);
       downloadJson(data, `chesser-export-${username ?? 'account'}.json`);
-      setExportMsg('Export downloaded.');
+      setExportMsg(t('data.exportDone'));
     } catch (e) {
-      setExportMsg(e instanceof Error ? e.message : 'Export failed — try again.');
+      setExportMsg(e instanceof Error ? e.message : t('data.exportFailed'));
     } finally {
       setExporting(false);
     }
@@ -109,14 +119,14 @@ function DataControls({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="border-t border-neutral-800/70 pt-3">
-      <div className="mb-1.5 text-xs uppercase tracking-wide text-neutral-400">Your data</div>
+      <div className="mb-1.5 text-xs uppercase tracking-wide text-neutral-400">{t('data.title')}</div>
       <button
         onClick={() => void exportData()}
         disabled={exporting}
         className="flex w-full items-center justify-center gap-1.5 rounded bg-neutral-700 py-2 text-sm text-neutral-200 hover:bg-neutral-600 disabled:opacity-50"
       >
         <IconDownload size={14} />
-        {exporting ? 'Preparing export…' : 'Export my data'}
+        {exporting ? t('data.exporting') : t('data.export')}
       </button>
       {exportMsg && (
         <p role="status" className="mt-1.5 text-xs text-neutral-400">
@@ -127,19 +137,23 @@ function DataControls({ onClose }: { onClose: () => void }) {
         onClick={() => setConfirmOpen(true)}
         className="mt-2 w-full rounded bg-rose-900/40 py-2 text-sm font-semibold text-rose-300 hover:bg-rose-900/60"
       >
-        Delete my account…
+        {t('data.delete')}
       </button>
       <p className="mt-1.5 text-xs text-neutral-400">
-        Everything stored for this account, as JSON — or erased for good. See the{' '}
         {/* onClick closes the dialog so the policy page isn't hidden behind it */}
-        <a
-          href="#/privacy"
-          onClick={onClose}
-          className="text-brand-300 underline decoration-brand-300/50 underline-offset-2 hover:text-brand-200"
-        >
-          Privacy Policy
-        </a>
-        .
+        <Trans
+          t={t}
+          i18nKey="data.note"
+          components={{
+            policyLink: (
+              <a
+                href="#/privacy"
+                onClick={onClose}
+                className="text-brand-300 underline decoration-brand-300/50 underline-offset-2 hover:text-brand-200"
+              />
+            ),
+          }}
+        />
       </p>
       {confirmOpen && <DeleteAccountDialog onClose={() => setConfirmOpen(false)} />}
     </div>
@@ -147,17 +161,17 @@ function DataControls({ onClose }: { onClose: () => void }) {
 }
 
 function AccountInfo({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation('account');
   const { username, sync, logout } = useAuth();
-  const s = SYNC_LABEL[sync];
   return (
     <div className="space-y-3">
       <div>
-        <div className="text-xs uppercase tracking-wide text-neutral-400">Signed in as</div>
+        <div className="text-xs uppercase tracking-wide text-neutral-400">{t('signedInAs')}</div>
         <div className="text-lg font-semibold text-ink">{username}</div>
       </div>
       <div className="flex items-center gap-2 text-sm text-neutral-300">
-        <span className={`h-2 w-2 rounded-full ${s.dot}`} />
-        Progress {s.text}
+        <span className={`h-2 w-2 rounded-full ${SYNC_DOT[sync]}`} />
+        {t('sync.progress', { state: t(`sync.${sync}`) })}
       </div>
       <button
         onClick={async () => {
@@ -166,7 +180,7 @@ function AccountInfo({ onClose }: { onClose: () => void }) {
         }}
         className="w-full rounded bg-neutral-700 py-2 text-sm text-neutral-200 hover:bg-neutral-600"
       >
-        Sign out
+        {t('signOut')}
       </button>
       <DataControls onClose={onClose} />
     </div>
@@ -174,9 +188,10 @@ function AccountInfo({ onClose }: { onClose: () => void }) {
 }
 
 export function AccountButton() {
+  const { t } = useTranslation('account');
   const { username, sync } = useAuth();
   const [open, setOpen] = useState(false);
-  const dot = SYNC_LABEL[sync].dot;
+  const dot = SYNC_DOT[sync];
 
   return (
     <>
@@ -190,19 +205,19 @@ export function AccountButton() {
             {username}
           </>
         ) : (
-          'Sign in'
+          t('signIn')
         )}
       </button>
       {open && (
         <Modal
           onClose={() => setOpen(false)}
-          label={username ? 'Account' : 'Sign in'}
+          label={username ? t('accountLabel') : t('signIn')}
           className="relative w-full max-w-xs rounded-xl bg-panel p-4 shadow-2xl"
         >
           {username ? <AccountInfo onClose={() => setOpen(false)} /> : <AuthForm onClose={() => setOpen(false)} />}
           <button
             onClick={() => setOpen(false)}
-            aria-label="Close"
+            aria-label={t('close')}
             className="absolute right-1.5 top-1.5 min-h-11 min-w-11 rounded px-1.5 py-1 text-sm text-neutral-400 hover:text-neutral-200 sm:min-h-0 sm:min-w-0"
           >
             ×

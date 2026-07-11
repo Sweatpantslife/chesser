@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import i18n from '../i18n';
 import { onGamifyEvent, type GamifyEvent } from '../lib/gamify';
 
 interface Toast {
@@ -11,56 +12,69 @@ interface Toast {
 
 let nextId = 0;
 
+// Toasts are built outside React (event stream), so they use the i18n
+// instance directly; they are transient, so not re-rendering an on-screen
+// toast on a mid-flight language switch is fine.
 function toastFor(e: GamifyEvent): Toast | null {
+  const t = i18n.getFixedT(null, 'gamify');
   switch (e.kind) {
     case 'achievement-unlocked':
       return {
         id: nextId++,
         icon: e.icon,
-        title: 'Achievement unlocked',
-        body: e.xp > 0 ? `${e.name} · +${e.xp} XP` : e.name,
+        title: t('toasts.achievement.title'),
+        body: e.xp > 0 ? t('toasts.achievement.bodyXp', { name: e.name, xp: e.xp }) : e.name,
         accent: 'border-gold-400/70 shadow-glow-gold',
       };
     case 'level-up':
-      return { id: nextId++, icon: '⭐', title: 'Level up!', body: `You reached level ${e.level}`, accent: 'border-brand-400/70 shadow-glow' };
+      return {
+        id: nextId++,
+        icon: '⭐',
+        title: t('toasts.levelUp.title'),
+        body: t('toasts.levelUp.body', { level: e.level }),
+        accent: 'border-brand-400/70 shadow-glow',
+      };
     case 'streak-milestone':
       return {
         id: nextId++,
         icon: '🔥',
-        title: `${e.days}-day streak!`,
-        body: e.rewardXp > 0 ? `Milestone reached · +${e.rewardXp} XP` : 'Milestone reached',
+        title: t('toasts.streakMilestone.title', { count: e.days }),
+        body:
+          e.rewardXp > 0
+            ? t('toasts.streakMilestone.bodyXp', { xp: e.rewardXp })
+            : t('toasts.streakMilestone.body'),
         accent: 'border-gold-400/70 shadow-glow-gold',
       };
     case 'streak-freeze-used':
       return {
         id: nextId++,
         icon: '🧊',
-        title: 'Streak freeze used',
-        body: `Your ${e.streak}-day streak survived · ${e.freezesLeft} freeze${e.freezesLeft === 1 ? '' : 's'} left`,
+        title: t('toasts.freezeUsed.title'),
+        body: t('toasts.freezeUsed.body', { streak: e.streak, count: e.freezesLeft }),
         accent: 'border-brand-400/70 shadow-glow',
       };
     case 'goal':
       return {
         id: nextId++,
         icon: '🔥',
-        title: 'Daily goal complete',
-        body: e.streak > 0 ? `${e.streak}-day streak — keep it going!` : 'Nice work — come back tomorrow!',
+        title: t('toasts.goal.title'),
+        body: e.streak > 0 ? t('toasts.goal.bodyStreak', { count: e.streak }) : t('toasts.goal.body'),
         accent: 'border-accent-400/70 shadow-glow',
       };
     case 'quest-complete':
       return {
         id: nextId++,
         icon: e.icon,
-        title: 'Quest complete',
-        body: e.xp > 0 ? `${e.name} · +${e.xp} XP` : e.name,
+        title: t('toasts.quest.title'),
+        body: e.xp > 0 ? t('toasts.quest.bodyXp', { name: e.name, xp: e.xp }) : e.name,
         accent: 'border-brand-400/70 shadow-glow',
       };
     case 'quests-all-done':
       return {
         id: nextId++,
         icon: '🏅',
-        title: 'All quests done!',
-        body: `Daily slate cleared · +${e.bonusXp} XP bonus`,
+        title: t('toasts.allQuests.title'),
+        body: t('toasts.allQuests.body', { xp: e.bonusXp }),
         accent: 'border-gold-400/70 shadow-glow-gold',
       };
     default:
