@@ -1,10 +1,11 @@
 name: CI
 
-# Quality gates: install, build (which compiles + typechecks every package),
-# an explicit typecheck pass, and lint. Runs on PRs and on pushes to Main.
+# Quality gates: install, dependency audit, build (which compiles + typechecks
+# every package), an explicit typecheck pass, data validation, unit tests
+# (server + web) and lint. Runs on PRs and on pushes to main.
 on:
   push:
-    branches: [Main]
+    branches: [main]
   pull_request:
 
 # Cancel superseded runs on the same branch/PR to save minutes.
@@ -34,6 +35,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Blocking gate on known vulnerabilities of severity high or critical in
+      # the resolved dependency tree (moderate and below only warn in the log).
+      - name: Audit dependencies
+        run: pnpm audit --audit-level high
+
       # Ordered build: shared -> server -> web. Compiles @chesser/shared first so
       # the downstream typecheck/build steps can resolve its emitted declarations.
       - name: Build
@@ -50,6 +56,12 @@ jobs:
       # Replay every bundled tactics puzzle (embedded core + band files).
       - name: Validate puzzle data
         run: pnpm validate:puzzles
+
+      # Server unit tests: accounts/auth hardening, coach routes + BYOK/SSRF
+      # guards, proxy endpoints, friend rooms, HTTP/WS hardening, logging/
+      # metrics/health/error-tracking. Engine-independent (no Stockfish needed).
+      - name: Unit tests (server)
+        run: pnpm --filter @chesser/server test
 
       # Web unit tests: lesson step engine + machine-validation of the lesson
       # content (legal FENs, solvable exercises, playable scripted lines).

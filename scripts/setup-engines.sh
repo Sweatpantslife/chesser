@@ -12,6 +12,10 @@
 # The backend reads that manifest at boot and only offers engines that exist,
 # so a partial setup still yields a working app (Stockfish-only, say).
 #
+# Downloads are verified against pinned SHA-256 checksums (see known_sha256
+# below). REQUIRE_CHECKSUMS=1 turns "no checksum available" (e.g. a custom
+# SF_VERSION without SF_SHA256) into a hard failure — the Docker build sets it.
+#
 # Usage:
 #   bash scripts/setup-engines.sh            # everything
 #   SKIP_LC0=1 bash scripts/setup-engines.sh # Stockfish + Maia only (no build)
@@ -28,9 +32,21 @@ SYZYGY_DIR="$ENGINES_DIR/syzygy"
 mkdir -p "$BIN_DIR" "$NET_DIR" "$SRC_DIR"
 
 SF_VERSION="${SF_VERSION:-sf_17.1}"
+# Expected SHA-256 of the Stockfish tar when using a version/variant that is
+# not in the pinned table below (the table only covers the default release).
+SF_SHA256="${SF_SHA256:-}"
+# 1 = refuse to install anything we cannot checksum-verify (set by the Docker
+# build so images never ship unverified binaries). Default 0: warn only, so
+# local experiments with other versions still work.
+REQUIRE_CHECKSUMS="${REQUIRE_CHECKSUMS:-0}"
 # The full CSSLab set: one net per 100-point band. Ladder personas map to the
 # nearest net, so partial downloads still work (the server offers what exists).
 MAIA_RATINGS=("1100" "1200" "1300" "1400" "1500" "1600" "1700" "1800" "1900")
+# Maia weights are fetched from a pinned commit of CSSLab/maia-chess (immutable
+# content) and verified against the checksums below. Bump commit + checksums together.
+MAIA_COMMIT="${MAIA_COMMIT:-749204cf5979ce7f8b0412e804a4ee7c83c49ff8}"
+# Optional tag/branch to pin the Lc0 source build (default: master, as before).
+LC0_REF="${LC0_REF:-}"
 
 # Syzygy tablebases (opt-in; the 3-4-5 set is ~1GB). Override the mirror/set if
 # you have a faster or self-hosted source.
@@ -50,6 +66,51 @@ STOCKFISH_OK=0
 LC0_OK=0
 SYZYGY_OK=0
 MAIA_NETS=()
+
+# ---------------------------------------------------------------------------
+# Download integrity — pinned SHA-256 checksums for everything we fetch.
+#
+# Stockfish sf_17.1: hashes of the official release tars, computed 2026-07-11
+# from the project's SourceForge mirror (sourceforge.net/projects/stockfish.mirror)
+# and cross-checked against the md5 metadata SourceForge recorded at release
+# time (2025-03-30); the shipped binary answers the UCI handshake as
+# "Stockfish 17.1". They can be re-verified against the sha256 `digest` GitHub
+# shows for each asset on the release page.
+# Maia: computed from CSSLab/maia-chess @ 749204c (see MAIA_COMMIT above).
+# ---------------------------------------------------------------------------
+known_sha256() { # $1 = <release-tag>/<filename> or maia/<filename>; echoes hash or ""
+  case "$1" in
+    sf_17.1/stockfish-ubuntu-x86-64-avx512.tar)       echo "bf7c4758da532aee059fd2c2339c1c5e89a3c463471775018201fe14b6c62cc6" ;;
+    sf_17.1/stockfish-ubuntu-x86-64-bmi2.tar)         echo "90143ce99bac92fcb834b18339d0990ae178428affa101ab7f00210fe6706335" ;;
+    sf_17.1/stockfish-ubuntu-x86-64-avx2.tar)         echo "09e953222dbe80aaea5c33dab265413b295cb8376418445c877708c61e31987d" ;;
+    sf_17.1/stockfish-ubuntu-x86-64-sse41-popcnt.tar) echo "bbbbcfed2b398ebda8139b37d5a7373d0d724aa9237814cb74a21643c4b63e9e" ;;
+    sf_17.1/stockfish-ubuntu-x86-64.tar)              echo "4dafdd04f71e70755a327b5be258937b281e60ba87bc0a5801399908240d4a73" ;;
+    maia/maia-1100.pb.gz) echo "e1cf1cd0c96b8a4fa6a275f4b9fd54ed1ffebf9fe44641b9fceded310e9619c4" ;;
+    maia/maia-1200.pb.gz) echo "ead4ba953f233ae732999ebc1e2b675378148527ebcfad2f0acbc5e4c224d98e" ;;
+    maia/maia-1300.pb.gz) echo "36195f87bf4761834baa0bf87472b18509a7261a9d7d6f1a8443261369a733f2" ;;
+    maia/maia-1400.pb.gz) echo "d5353ea6766356dad2d28920c6692f37a5f30963767f1a3105d33b4d0af011e8" ;;
+    maia/maia-1500.pb.gz) echo "35ab6f20421d59e1df3b17c5a5016947af4c6761368ef84044a9a9c7619a9a00" ;;
+    maia/maia-1600.pb.gz) echo "d2c9e5948581acf4b9fc0b1e720c5dc0fe64ce80cfc4a239d3f8a42e1176c876" ;;
+    maia/maia-1700.pb.gz) echo "d277eacd792d340a30abb464dc65127254e65cac57abca17facc469889b96478" ;;
+    maia/maia-1800.pb.gz) echo "0031ad7c4256b1fd09fbebd28418d644d68b26cd2a45df4967ccf5c7ec9c4965" ;;
+    maia/maia-1900.pb.gz) echo "e2f565f42d7cd9f122557e6dc4eb84e5bbaedceda1d404dc485d3611c7c97a12" ;;
+    *) echo "" ;;
+  esac
+}
+
+verify_sha256() { # $1 = file, $2 = expected hash, $3 = label. Removes $1 on mismatch.
+  local actual
+  actual="$(sha256sum "$1" | awk '{print $1}')"
+  if [[ "$actual" == "$2" ]]; then
+    ok "checksum verified: $3"
+    return 0
+  fi
+  err "checksum MISMATCH for $3 — refusing to install it"
+  err "  expected: $2"
+  err "  actual:   $actual"
+  rm -f "$1"
+  return 1
+}
 
 # ---------------------------------------------------------------------------
 # Stockfish — pick the fastest binary the CPU supports.
@@ -74,12 +135,36 @@ setup_stockfish() {
     else variant="x86-64"; fi
   fi
 
-  local url="https://github.com/official-stockfish/Stockfish/releases/download/${SF_VERSION}/stockfish-ubuntu-${variant}.tar"
+  # Resolve the expected checksum before downloading: an explicit SF_SHA256
+  # wins (needed for versions/variants outside the pinned table), else the
+  # table. No checksum available → warn, or fail under REQUIRE_CHECKSUMS=1.
+  local archive="stockfish-ubuntu-${variant}.tar"
+  local expected="${SF_SHA256:-$(known_sha256 "$SF_VERSION/$archive")}"
+  if [[ -z "$expected" ]]; then
+    if [[ "$REQUIRE_CHECKSUMS" == "1" ]]; then
+      err "no pinned SHA-256 for $SF_VERSION/$archive — set SF_SHA256 (REQUIRE_CHECKSUMS=1)"
+      return 1
+    fi
+    warn "no pinned SHA-256 for $SF_VERSION/$archive — set SF_SHA256 to verify the download"
+  fi
+
+  local url="https://github.com/official-stockfish/Stockfish/releases/download/${SF_VERSION}/${archive}"
   log "Downloading Stockfish ${SF_VERSION} (${variant})"
   if ! curl -fSL --retry 4 --retry-delay 2 -o "$ENGINES_DIR/sf.tar" "$url"; then
     warn "variant ${variant} unavailable, falling back to x86-64-avx2"
-    url="https://github.com/official-stockfish/Stockfish/releases/download/${SF_VERSION}/stockfish-ubuntu-x86-64-avx2.tar"
+    archive="stockfish-ubuntu-x86-64-avx2.tar"
+    # SF_SHA256 pins the *requested* file; the fallback is a different file,
+    # so only the table can vouch for it.
+    expected="$(known_sha256 "$SF_VERSION/$archive")"
+    if [[ -z "$expected" && "$REQUIRE_CHECKSUMS" == "1" ]]; then
+      err "no pinned SHA-256 for fallback $SF_VERSION/$archive (REQUIRE_CHECKSUMS=1)"
+      return 1
+    fi
+    url="https://github.com/official-stockfish/Stockfish/releases/download/${SF_VERSION}/${archive}"
     curl -fSL --retry 4 --retry-delay 2 -o "$ENGINES_DIR/sf.tar" "$url" || { err "Stockfish download failed"; return 1; }
+  fi
+  if [[ -n "$expected" ]]; then
+    verify_sha256 "$ENGINES_DIR/sf.tar" "$expected" "$archive" || return 1
   fi
   tar -xf "$ENGINES_DIR/sf.tar" -C "$ENGINES_DIR"
   local found
@@ -100,16 +185,27 @@ setup_maia() {
   want maia || want lc0 || return 0
   for r in "${MAIA_RATINGS[@]}"; do
     local out="$NET_DIR/maia-${r}.pb.gz"
-    if [[ -s "$out" ]]; then ok "Maia ${r} already present"; MAIA_NETS+=("$r"); continue; fi
-    # raw.githubusercontent.com is the redirect target of github.com/<repo>/raw/
-    # and also works behind proxies that block github.com file paths.
-    local url="https://raw.githubusercontent.com/CSSLab/maia-chess/master/maia_weights/maia-${r}.pb.gz"
-    log "Downloading Maia ${r}"
-    if curl -fSL --retry 4 --retry-delay 2 -o "$out" "$url"; then
-      ok "Maia ${r} ready"; MAIA_NETS+=("$r")
-    else
-      warn "Maia ${r} download failed"; rm -f "$out"
+    local expected
+    expected="$(known_sha256 "maia/maia-${r}.pb.gz")"
+    if [[ -s "$out" ]]; then
+      # Re-verify cached nets; a corrupt/tampered file is deleted and re-fetched.
+      if verify_sha256 "$out" "$expected" "maia-${r}.pb.gz (cached)"; then
+        ok "Maia ${r} already present"; MAIA_NETS+=("$r"); continue
+      fi
+      warn "cached Maia ${r} failed verification — re-downloading"
     fi
+    # raw.githubusercontent.com is the redirect target of github.com/<repo>/raw/
+    # and also works behind proxies that block github.com file paths. The commit
+    # pin makes the content immutable; the checksum makes it verified.
+    local url="https://raw.githubusercontent.com/CSSLab/maia-chess/${MAIA_COMMIT}/maia_weights/maia-${r}.pb.gz"
+    log "Downloading Maia ${r}"
+    if ! curl -fSL --retry 4 --retry-delay 2 -o "$out" "$url"; then
+      warn "Maia ${r} download failed"; rm -f "$out"; continue
+    fi
+    if ! verify_sha256 "$out" "$expected" "maia-${r}.pb.gz"; then
+      warn "Maia ${r} rejected"; continue
+    fi
+    ok "Maia ${r} ready"; MAIA_NETS+=("$r")
   done
 }
 
@@ -146,8 +242,9 @@ setup_lc0() {
 
   local lc0_src="$SRC_DIR/lc0"
   if [[ ! -d "$lc0_src/.git" ]]; then
-    log "Cloning Lc0"
-    git clone --depth 1 --recurse-submodules --shallow-submodules \
+    log "Cloning Lc0${LC0_REF:+ (${LC0_REF})}"
+    # LC0_REF pins a tag/branch for reproducible builds; default stays master.
+    git clone --depth 1 ${LC0_REF:+--branch "$LC0_REF"} --recurse-submodules --shallow-submodules \
       https://github.com/LeelaChessZero/lc0.git "$lc0_src" || { err "Lc0 clone failed"; return 1; }
   fi
   log "Building Lc0 (CPU/Eigen backend — this takes several minutes)"

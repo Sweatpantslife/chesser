@@ -52,6 +52,12 @@ RUN pnpm --filter @chesser/shared build \
 # so no extra packages are needed). Set ENGINE_SETUP= and ENGINE_TOOLCHAIN=1 to
 # also build Lc0 + fetch the Maia nets; SF_VARIANT pins the Stockfish binary so
 # the build host's CPU need not match the deploy host's.
+#
+# REQUIRE_CHECKSUMS=1 makes the image build fail rather than ship an engine
+# binary the script cannot verify against its pinned SHA-256 table. When
+# overriding SF_VERSION to a release outside that table, pass its checksum
+# through ENGINE_SETUP, e.g.:
+#   --build-arg ENGINE_SETUP="ONLY=stockfish SF_VERSION=sf_18 SF_SHA256=<sha256 of the tar>"
 # ---------------------------------------------------------------------------
 FROM ${ENGINE_BASE_IMAGE} AS engines
 ARG ENGINE_SETUP="ONLY=stockfish"
@@ -64,7 +70,8 @@ RUN if [ "$ENGINE_TOOLCHAIN" = "1" ]; then \
    && rm -rf /var/lib/apt/lists/*; \
     fi
 COPY scripts/setup-engines.sh scripts/setup-engines.sh
-RUN env ${ENGINE_SETUP} SF_VARIANT="${SF_VARIANT}" bash scripts/setup-engines.sh
+# REQUIRE_CHECKSUMS first so ENGINE_SETUP can still opt out explicitly.
+RUN env REQUIRE_CHECKSUMS=1 ${ENGINE_SETUP} SF_VARIANT="${SF_VARIANT}" bash scripts/setup-engines.sh
 
 # ---------------------------------------------------------------------------
 # Runtime — slim, non-root. Run under an init (compose `init: true`, or
@@ -89,12 +96,19 @@ COPY --from=engines /app/engines ./engines
 # The app only ever writes to the data volume; /app stays root-owned and
 # world-readable (the copied files keep their read/exec perms), which avoids a
 # costly chown -R copy-up of the engine binaries and follows least privilege.
+#
+# /data (CHESSER_DATA_DIR) holds ALL persistent state — accounts/sessions/
+# progress (db.json) and the social layer (social.json). Always mount a volume
+# here in production and include it in backups; see DEPLOYMENT.md.
 RUN mkdir -p /data && chown node:node /data
 USER node
 VOLUME ["/data"]
 EXPOSE 8787
 
+# Liveness probe. /healthz is the dedicated always-200 endpoint (kept out of
+# request logs and metrics); /readyz additionally checks the data dir is
+# writable + web assets are present, if you want a stricter gate.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||8787)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||8787)+'/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 CMD ["node", "dist/index.js"]

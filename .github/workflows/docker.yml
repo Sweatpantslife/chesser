@@ -1,11 +1,11 @@
 name: Docker
 
 # CD: build the production image (Dockerfile, Stockfish-only by default) and push
-# it to GitHub Container Registry on pushes to Main and on version tags. Pull
+# it to GitHub Container Registry on pushes to main and on version tags. Pull
 # requests build the image only (no push) to validate the Dockerfile.
 on:
   push:
-    branches: [Main]
+    branches: [main]
     tags: ["v*"]
   pull_request:
 
