@@ -87,7 +87,47 @@ export interface CoachWeaknessFacts {
   worstPhase: CoachGamePhase | null;
 }
 
-export type CoachExplainFacts = CoachMoveFacts | CoachGameSummaryFacts | CoachWeaknessFacts;
+/**
+ * One week of the player's training, compacted to verified headline stats
+ * (lib/weeklyReport on the web side). Everything is aggregated client-side
+ * from the local stores; the LLM only words it.
+ */
+export interface CoachWeeklyReportFacts {
+  kind: 'weekly_report';
+  /** Human label for the week, e.g. "Jul 6 – Jul 12". */
+  weekLabel: string;
+  /** Days (0-7) with at least one training activity this week. */
+  activeDays: number;
+  /** XP earned across the week. */
+  xpEarned: number;
+  /** Current daily activity streak (days). */
+  streak: number;
+  /** Reviewed games this week (wins/losses/draws from the player's POV). */
+  gamesPlayed: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  /** Best single-game accuracy among this week's reviewed games (0-100). */
+  bestAccuracy: number | null;
+  /** Lessons finished this week and stars earned in them. */
+  lessonsCompleted: number;
+  lessonStars: number;
+  /** Puzzle-rating change across the week (end minus start), when known. */
+  puzzleRatingDelta: number | null;
+  /** New personal bests set this week in the sprint modes, if any. */
+  newRushBest: number | null;
+  newStormBest: number | null;
+  /** Weakness-coach training this week. */
+  trainingAttempts: number;
+  trainingSolved: number;
+  /** Most frequent weakness among this week's reviewed games, if any. */
+  topWeakness: string | null;
+  topWeaknessCount: number;
+  /** The app's own template recap — grounding the model must not contradict. */
+  ruleBasedText: string | null;
+}
+
+export type CoachExplainFacts = CoachMoveFacts | CoachGameSummaryFacts | CoachWeaknessFacts | CoachWeeklyReportFacts;
 
 export interface CoachExplainRequest {
   facts: CoachExplainFacts;

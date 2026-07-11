@@ -16,14 +16,31 @@
  * Responses are cached in a small in-memory LRU keyed on a stable hash of
  * (facts + level + provider model), 1h TTL — repeated "explain this" clicks
  * on the same move never re-bill.
+ *
+ * BYOK pass-through: when the request carries the user's own provider key in
+ * the x-coach-key header (plus x-coach-provider / x-coach-model /
+ * x-coach-base-url), the route makes ONE upstream call with that key and
+ * returns the prose. The pass-through is strictly STATELESS:
+ *   • the key headers are removed from the request object before anything
+ *     else runs, so no logger / serializer can ever see them;
+ *   • the response is never written to the shared cache (and never read from
+ *     it) — nothing derived from the user's key persists server-side;
+ *   • provider errors are scrubbed of the key before logging.
+ * It exists only as a fallback for OpenAI-compatible endpoints whose CORS
+ * policy blocks the browser's direct call — the client always tries the
+ * provider directly first.
  */
 import crypto from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { CoachExplainFacts, CoachSkillLevel } from '@chesser/shared';
-import { providerFromEnv, type CoachProvider } from './provider.js';
+import { buildSystemPrompt, buildUserPrompt, COACH_MAX_OUTPUT_TOKENS } from '@chesser/shared';
+import { byokProvider, providerFromEnv, validateByokBaseUrl, type ByokConfig, type CoachProvider } from './provider.js';
+
+// Re-exported so callers/tests keep one import site for the coach pieces.
+export { buildSystemPrompt, buildUserPrompt };
 
 /** Hard cap on generated tokens — keeps answers short and bills bounded. */
-const MAX_OUTPUT_TOKENS = 300;
+const MAX_OUTPUT_TOKENS = COACH_MAX_OUTPUT_TOKENS;
 /** Serialized facts larger than this are rejected (prompt cost bound). */
 const MAX_FACTS_BYTES = 6_000;
 
@@ -34,7 +51,7 @@ const MAX_FACTS_BYTES = 6_000;
 // smuggled into the LLM prompt.
 // ---------------------------------------------------------------------------
 
-const KINDS = new Set(['move', 'game_summary', 'weakness']);
+const KINDS = new Set(['move', 'game_summary', 'weakness', 'weekly_report']);
 const LEVELS = new Set<string>(['beginner', 'intermediate', 'advanced']);
 const PHASES = new Set(['opening', 'middlegame', 'endgame']);
 const SIDES = new Set(['white', 'black']);
@@ -65,6 +82,12 @@ const ALLOWED_KEYS: Record<string, ReadonlySet<string>> = {
   weakness: new Set([
     'kind', 'label', 'summary', 'advice', 'count', 'games', 'totalGames', 'trend', 'examples',
     'accuracy', 'worstPhase',
+  ]),
+  weekly_report: new Set([
+    'kind', 'weekLabel', 'activeDays', 'xpEarned', 'streak', 'gamesPlayed', 'wins', 'losses',
+    'draws', 'bestAccuracy', 'lessonsCompleted', 'lessonStars', 'puzzleRatingDelta',
+    'newRushBest', 'newStormBest', 'trainingAttempts', 'trainingSolved', 'topWeakness',
+    'topWeaknessCount', 'ruleBasedText',
   ]),
 };
 
@@ -137,6 +160,28 @@ function validateWeaknessFacts(f: Record<string, unknown>): string | null {
   return null;
 }
 
+function validateWeeklyReportFacts(f: Record<string, unknown>): string | null {
+  if (!isStr(f.weekLabel, 40, 1)) return 'weekly_report facts need a weekLabel.';
+  if (!isNum(f.activeDays, 0, 7)) return 'weekly_report activeDays must be 0-7.';
+  if (!isNum(f.xpEarned, 0, 1_000_000) || !isNum(f.streak, 0, 100_000)) return 'weekly_report xp/streak out of range.';
+  if (
+    !isNum(f.gamesPlayed, 0, 10_000) || !isNum(f.wins, 0, 10_000) ||
+    !isNum(f.losses, 0, 10_000) || !isNum(f.draws, 0, 10_000)
+  ) {
+    return 'weekly_report game counts out of range.';
+  }
+  if (f.bestAccuracy !== null && !isNum(f.bestAccuracy, 0, 100)) return 'weekly_report bestAccuracy must be 0-100 or null.';
+  if (!isNum(f.lessonsCompleted, 0, 10_000) || !isNum(f.lessonStars, 0, 30_000)) return 'weekly_report lesson counts out of range.';
+  if (f.puzzleRatingDelta !== null && !isNum(f.puzzleRatingDelta, -4_000, 4_000)) return 'weekly_report puzzleRatingDelta out of range.';
+  if (f.newRushBest !== null && !isNum(f.newRushBest, 0, 10_000)) return 'weekly_report newRushBest out of range.';
+  if (f.newStormBest !== null && !isNum(f.newStormBest, 0, 1_000_000)) return 'weekly_report newStormBest out of range.';
+  if (!isNum(f.trainingAttempts, 0, 100_000) || !isNum(f.trainingSolved, 0, 100_000)) return 'weekly_report training counts out of range.';
+  if (!isNullableStr(f.topWeakness, 60)) return 'weekly_report topWeakness must be a short string or null.';
+  if (!isNum(f.topWeaknessCount, 0, 10_000)) return 'weekly_report topWeaknessCount out of range.';
+  if (!isNullableStr(f.ruleBasedText, 600)) return 'weekly_report ruleBasedText must be a short string or null.';
+  return null;
+}
+
 /** Error string, or null when the body is a valid explain request. */
 export function validateExplainBody(body: unknown): string | null {
   if (typeof body !== 'object' || body === null) return 'Body must be a JSON object.';
@@ -164,50 +209,16 @@ export function validateExplainBody(body: unknown): string | null {
       return validateGameSummaryFacts(f);
     case 'weakness':
       return validateWeaknessFacts(f);
+    case 'weekly_report':
+      return validateWeeklyReportFacts(f);
     default:
       return 'Invalid facts.kind.';
   }
 }
 
 // ---------------------------------------------------------------------------
-// Prompting
-// ---------------------------------------------------------------------------
-
-const LEVEL_VOICE: Record<CoachSkillLevel, string> = {
-  beginner:
-    'The player is a beginner: avoid jargon, explain any chess term you use in a few plain words, and keep ideas very simple.',
-  intermediate:
-    'The player is an intermediate club player: common chess terms (fork, pin, back rank, initiative) are fine without explanation.',
-  advanced:
-    'The player is advanced: be concise and precise; technical language is welcome, skip basics.',
-};
-
-export function buildSystemPrompt(level: CoachSkillLevel): string {
-  return [
-    'You are a friendly, encouraging chess coach inside a chess training app.',
-    'You receive verified facts from a chess engine\'s analysis of the player\'s own game as compact JSON.',
-    'Ground rules:',
-    '- Use ONLY the provided facts. Never invent moves, evaluations, threats, tactics, openings or statistics that are not in the facts.',
-    '- If a fact is missing, simply do not mention it. Never guess.',
-    '- If a ruleBasedText fact is present, you may rephrase it but must not contradict it.',
-    '- Speak directly to the player as "you". Be warm and constructive — name the fix, not just the fault.',
-    `- ${LEVEL_VOICE[level]}`,
-    '- Answer in 2-4 short sentences of plain prose. No headings, no bullet points, no emoji, no JSON.',
-    '- Never mention JSON, payloads, or that you were given data.',
-  ].join('\n');
-}
-
-const KIND_INSTRUCTION: Record<CoachExplainFacts['kind'], string> = {
-  move: 'Explain this reviewed move to the player: what the move did, why it got its classification, and (when the facts include a better move) what the better idea was.',
-  game_summary:
-    'Give the player a short, encouraging coach\'s summary of this finished game: how they played overall and the one most useful takeaway.',
-  weakness:
-    'Coach the player about this recurring weakness from their recent games: what keeps happening and one concrete, practical habit to fix it.',
-};
-
-export function buildUserPrompt(facts: CoachExplainFacts): string {
-  return `${KIND_INSTRUCTION[facts.kind]}\nFacts (verified engine analysis): ${JSON.stringify(facts)}`;
-}
+// (Prompting lives in @chesser/shared coachPrompts.ts — shared with the
+// browser's BYOK direct-call path so both produce identical prompts.)
 
 // ---------------------------------------------------------------------------
 // LRU cache with TTL (hand-rolled; Map preserves insertion order)
@@ -327,6 +338,54 @@ export class TokenBucketLimiter {
 }
 
 // ---------------------------------------------------------------------------
+// BYOK pass-through helpers
+// ---------------------------------------------------------------------------
+
+/** Request headers carrying the user's own key + provider choice. */
+export const BYOK_KEY_HEADER = 'x-coach-key';
+export const BYOK_PROVIDER_HEADER = 'x-coach-provider';
+export const BYOK_MODEL_HEADER = 'x-coach-model';
+export const BYOK_BASE_URL_HEADER = 'x-coach-base-url';
+
+/**
+ * Read a header once and DELETE it from the request object, so nothing later
+ * in the request lifecycle (error serializers, hooks, loggers) can see it.
+ */
+function takeHeader(req: FastifyRequest, name: string): string | null {
+  const raw = req.headers[name];
+  delete req.headers[name];
+  if (typeof raw !== 'string' || raw.length === 0) return null;
+  return raw;
+}
+
+/** Replace every occurrence of `secret` in a message — logging defense in depth. */
+export function scrubSecret(message: string, secret: string): string {
+  if (!secret) return message;
+  return message.split(secret).join('[redacted]');
+}
+
+/** Parsed BYOK headers: a rejection, or a config (null = no key sent). */
+function byokConfigFromHeaders(req: FastifyRequest): { ok: false; error: string } | { ok: true; config: ByokConfig | null } {
+  const apiKey = takeHeader(req, BYOK_KEY_HEADER);
+  const provider = takeHeader(req, BYOK_PROVIDER_HEADER);
+  const model = takeHeader(req, BYOK_MODEL_HEADER);
+  const baseUrl = takeHeader(req, BYOK_BASE_URL_HEADER);
+  if (apiKey === null) return { ok: true, config: null };
+  if (apiKey.length < 8 || apiKey.length > 512 || !/^[\x21-\x7e]+$/.test(apiKey)) {
+    return { ok: false, error: 'Invalid user API key format.' };
+  }
+  const prov = provider ?? 'anthropic';
+  if (prov !== 'anthropic' && prov !== 'openai') return { ok: false, error: 'Unknown BYOK provider.' };
+  if (model !== null && model.length > 120) return { ok: false, error: 'Model name too long.' };
+  if (baseUrl !== null) {
+    if (prov !== 'openai') return { ok: false, error: 'Base URL is only supported for OpenAI-compatible providers.' };
+    const urlErr = validateByokBaseUrl(baseUrl);
+    if (urlErr) return { ok: false, error: urlErr };
+  }
+  return { ok: true, config: { provider: prov, apiKey, model: model ?? '', baseUrl: baseUrl ?? '' } };
+}
+
+// ---------------------------------------------------------------------------
 // Route registration
 // ---------------------------------------------------------------------------
 
@@ -349,20 +408,51 @@ export function registerCoachRoutes(app: FastifyInstance, opts: CoachRouteOption
   const cache = new LruCache(opts.cacheMax ?? 500, opts.cacheTtlMs ?? 60 * 60 * 1000, now);
   const limiter = new TokenBucketLimiter(opts.rateCapacity ?? 20, opts.rateRefillPerMinute ?? 20, now);
 
+  // Cheap probe for the client's "do AI features light up?" logic: true when
+  // the OPERATOR configured an env key (self-hosters). BYOK availability is
+  // purely client-side knowledge and never reaches this endpoint.
+  app.get('/api/coach/status', async () => ({ configured: provider !== null }));
+
   app.post('/api/coach/explain', async (req: FastifyRequest, reply) => {
+    // Strip the user-key headers off the request FIRST — before rate-limit
+    // rejections, validation errors or anything else that might serialize the
+    // request — so the key cannot leak into logs on any path.
+    const byok = byokConfigFromHeaders(req);
+
     if (!limiter.take(req.ip || 'unknown')) {
       return reply.code(429).send({ error: 'Too many coach requests — try again in a minute.' });
     }
 
     const err = validateExplainBody(req.body);
     if (err) return reply.code(400).send({ error: err });
-
-    if (!provider) return { configured: false, reason: 'no-key' };
+    if (!byok.ok) return reply.code(400).send({ error: byok.error });
 
     const { facts, level = 'intermediate' } = req.body as {
       facts: CoachExplainFacts;
       level?: CoachSkillLevel;
     };
+
+    // ---- BYOK pass-through: one upstream call, no cache, key never stored.
+    if (byok.config) {
+      const userProvider = byokProvider(byok.config);
+      try {
+        const explanation = await userProvider.complete({
+          system: buildSystemPrompt(level),
+          user: buildUserPrompt(facts),
+          maxTokens: MAX_OUTPUT_TOKENS,
+        });
+        return { configured: true, explanation, model: userProvider.model, cached: false };
+      } catch (e) {
+        // Log a scrubbed plain message only — never the error object, whose
+        // properties could carry request internals alongside the message.
+        const message = scrubSecret(e instanceof Error ? e.message : String(e), byok.config.apiKey);
+        req.log?.warn?.({ provider: byok.config.provider, message }, 'coach byok pass-through failed');
+        return reply.code(502).send({ error: 'provider-failed' });
+      }
+    }
+
+    // ---- Operator env-key path (self-hosters), unchanged behavior.
+    if (!provider) return { configured: false, reason: 'no-key' };
 
     const key = cacheKey(facts, level, provider.model);
     const hit = cache.get(key);
