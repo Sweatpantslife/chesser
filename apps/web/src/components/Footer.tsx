@@ -1,3 +1,5 @@
+import { SlikkCredit } from './SlikkCredit';
+
 /**
  * App footer: quiet, single-line, and deliberately minimal so it composes
  * cleanly with whatever the header/nav does. The legal pages are hash-routed
@@ -20,14 +22,9 @@ export function Footer() {
           Terms
         </a>
         <span aria-hidden="true">·</span>
-        <a
-          href="https://slikk.dev/"
-          target="_blank"
-          rel="nofollow noopener noreferrer"
-          className="underline decoration-neutral-600 underline-offset-2 hover:text-neutral-300"
-        >
-          Built by Slikk.Dev<span className="sr-only"> (opens in a new tab)</span>
-        </a>
+        {/* Slikk.Dev attribution — the kit badge (see .references/attribution-kit/).
+            inline-flex, so it sits in the line like any other footer item. */}
+        <SlikkCredit />
       </p>
     </footer>
   );
