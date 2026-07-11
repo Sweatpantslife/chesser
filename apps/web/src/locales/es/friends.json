@@ -124,6 +124,8 @@
   "recent": {
     "title": "Partidas casuales recientes",
     "vs": "{{white}} vs {{black}}",
+    "whiteFallback": "Blancas",
+    "blackFallback": "Negras",
     "modeLocal": "pasar y jugar",
     "modeOnline": "enlace de amigo"
   },

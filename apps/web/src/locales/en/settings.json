@@ -46,6 +46,13 @@
     },
     "apiKey": "API key",
     "model": "Model (default: {{model}})",
+    "modelHints": {
+      "claude-haiku-4-5": "fastest & cheapest — the default",
+      "claude-sonnet-4-6": "stronger prose, mid price",
+      "claude-opus-4-8": "most capable, highest price",
+      "gpt-4o-mini": "cheap default",
+      "gpt-4o": "stronger, pricier"
+    },
     "baseUrl": "Base URL (any OpenAI-compatible endpoint)",
     "testKey": "Test key",
     "testing": "Testing…",

@@ -25,7 +25,7 @@ import {
   reasonText,
   useReplay,
 } from './bits';
-import { recordCasualGame } from './casualHistory';
+import { FALLBACK_BLACK_NAME, FALLBACK_WHITE_NAME, recordCasualGame } from './casualHistory';
 import { FriendClient, type FriendIntent, type Seat } from './friendClient';
 
 export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: () => void }) {
@@ -100,8 +100,8 @@ export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: (
       winner: state.result.winner,
       reason: state.result.reason,
       moves: Math.ceil(state.sans.length / 2),
-      white: state.players.white?.name ?? 'White',
-      black: state.players.black?.name ?? 'Black',
+      white: state.players.white?.name ?? FALLBACK_WHITE_NAME,
+      black: state.players.black?.name ?? FALLBACK_BLACK_NAME,
       key: state.code,
     });
   }, [state]);

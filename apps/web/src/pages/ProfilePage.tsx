@@ -74,7 +74,7 @@ function suggestOpponent(glicko: number, defeated: Record<string, number>): Rost
 }
 
 function SuggestedOpponent({ goPlay }: { goPlay: () => void }) {
-  const { t } = useTranslation('profile');
+  const { t } = useTranslation(['profile', 'bots']);
   const glicko = useRatings((s) => Math.round(s.categories.bots.glicko.rating));
   const defeated = useLadder((s) => s.defeated);
   const bot = suggestOpponent(glicko, defeated);
@@ -92,7 +92,7 @@ function SuggestedOpponent({ goPlay }: { goPlay: () => void }) {
           <div className="truncate text-sm font-semibold text-ink">
             {bot.name} <span className="font-normal text-neutral-400">· {bot.rating}</span>
           </div>
-          <div className="truncate text-xs text-neutral-400">{bot.title}</div>
+          <div className="truncate text-xs text-neutral-400">{t(`bots:roster.${bot.id}.title`, { defaultValue: bot.title })}</div>
         </div>
         <button
           onClick={goPlay}

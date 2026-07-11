@@ -97,7 +97,7 @@ export function ByokSettings(): JSX.Element {
         <datalist id={modelListId}>
           {suggestions.map((m) => (
             <option key={m.id} value={m.id}>
-              {m.hint}
+              {t(`byok.modelHints.${m.id}`, { defaultValue: m.hint })}
             </option>
           ))}
         </datalist>

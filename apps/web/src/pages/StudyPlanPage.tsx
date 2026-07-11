@@ -168,7 +168,7 @@ export function StudyPlanPage({ go }: { go: (v: PlanTarget) => void }) {
               {plan.focus.map((k, i) => (
                 <span key={k} className="font-semibold text-ink">
                   {i > 0 && ' · '}
-                  {WEAKNESS_META[k].icon} {WEAKNESS_META[k].label}
+                  {WEAKNESS_META[k].icon} {t(`insights:weaknesses.${k}.label`, { defaultValue: WEAKNESS_META[k].label })}
                 </span>
               ))}
               {t('page.personalizedOutro')}

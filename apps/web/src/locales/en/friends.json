@@ -124,6 +124,8 @@
   "recent": {
     "title": "Recent casual games",
     "vs": "{{white}} vs {{black}}",
+    "whiteFallback": "White",
+    "blackFallback": "Black",
     "modeLocal": "pass & play",
     "modeOnline": "friend link"
   },

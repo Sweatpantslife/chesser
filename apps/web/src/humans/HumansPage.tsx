@@ -11,7 +11,7 @@ import type { TimeControl } from '../store/game';
 import { LocalGame, type LocalGameConfig } from './LocalGame';
 import { OnlineGame } from './OnlineGame';
 import type { FriendIntent } from './friendClient';
-import { listCasualGames } from './casualHistory';
+import { FALLBACK_BLACK_NAME, FALLBACK_WHITE_NAME, listCasualGames } from './casualHistory';
 import { FriendsPanel } from './FriendsPanel';
 import { neutralBtn, primaryBtn, reasonText, TimeControlPicker } from './bits';
 
@@ -249,7 +249,14 @@ function Menu({ start, active }: { start: (s: Screen) => void; active: boolean }
             {recent.map((g, i) => (
               <li key={`${g.at}-${i}`} className="flex flex-wrap items-center gap-x-2">
                 <span className="text-neutral-400">{fmt.date(g.at)}</span>
-                <span className="text-neutral-300">{t('recent.vs', { white: g.white, black: g.black })}</span>
+                <span className="text-neutral-300">
+                  {t('recent.vs', {
+                    // Persisted records store the canonical English stand-in
+                    // for a nameless seat — swap it for the UI language here.
+                    white: g.white === FALLBACK_WHITE_NAME ? t('recent.whiteFallback') : g.white,
+                    black: g.black === FALLBACK_BLACK_NAME ? t('recent.blackFallback') : g.black,
+                  })}
+                </span>
                 <span>{g.winner === 'draw' ? '½–½' : g.winner === 'white' ? '1–0' : '0–1'}</span>
                 <span className="text-neutral-400">
                   · {reasonText(t, g.reason)} · {g.mode === 'local' ? t('recent.modeLocal') : t('recent.modeOnline')}

@@ -46,6 +46,13 @@
     },
     "apiKey": "Clé API",
     "model": "Modèle (par défaut : {{model}})",
+    "modelHints": {
+      "claude-haiku-4-5": "le plus rapide et le moins cher — le choix par défaut",
+      "claude-sonnet-4-6": "prose plus soignée, prix intermédiaire",
+      "claude-opus-4-8": "le plus performant, le plus cher",
+      "gpt-4o-mini": "l'option économique par défaut",
+      "gpt-4o": "plus performant, plus cher"
+    },
     "baseUrl": "URL de base (tout point d'accès compatible OpenAI)",
     "testKey": "Tester la clé",
     "testing": "Test…",
