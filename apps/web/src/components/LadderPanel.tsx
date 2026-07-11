@@ -131,7 +131,7 @@ export function LadderPanel() {
                     {bot.title}
                     {isHuman && availability && (
                       // Honest backend label: what actually answers this persona's moves.
-                      <span className="ml-1 text-neutral-500">
+                      <span className="ml-1">
                         ·{' '}
                         {backend === 'maia'
                           ? 'Maia neural net'
