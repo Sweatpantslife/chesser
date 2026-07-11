@@ -23,7 +23,7 @@ type SlikkCreditProps = {
 };
 
 export function SlikkCredit({
-  text = 'Built by',
+  text = 'Every piece developed by',
   href = 'https://slikk.dev/',
   className = '',
 }: SlikkCreditProps) {
