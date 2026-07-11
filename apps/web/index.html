@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Chesser — play & train</title>
+    <meta name="description" content="A complete chess game and trainer powered by Stockfish and Lc0/Maia." />
+    <!-- The manifest link is injected by vite-plugin-pwa at build time. -->
+    <meta name="theme-color" content="#141126" />
+    <script>
+      // Apply the persisted theme before first paint (no flash). Mirrors
+      // src/lib/theme.ts, which takes over once the app boots.
+      (function () {
+        var theme = 'dark';
+        try {
+          var raw = localStorage.getItem('chesser-settings');
+          var pref = raw && JSON.parse(raw).state.theme;
+          if (pref === 'light' || pref === 'dark') theme = pref;
+          else if (pref === 'system' && matchMedia('(prefers-color-scheme: light)').matches) theme = 'light';
+        } catch (e) {
+          /* default to dark */
+        }
+        document.documentElement.dataset.theme = theme;
+        if (theme === 'light') {
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', '#f1eefa');
+        }
+      })();
+    </script>
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Chesser" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

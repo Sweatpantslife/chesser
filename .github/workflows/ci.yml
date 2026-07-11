@@ -1,0 +1,74 @@
+name: CI
+
+# Quality gates: install, dependency audit, build (which compiles + typechecks
+# every package), an explicit typecheck pass, data validation, unit tests
+# (server + web) and lint. Runs on PRs and on pushes to main.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel superseded runs on the same branch/PR to save minutes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Typecheck, build & lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # pnpm must be set up before setup-node so its cache backend exists.
+      # Version is read from the "packageManager" field in package.json.
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Blocking gate on known vulnerabilities of severity high or critical in
+      # the resolved dependency tree (moderate and below only warn in the log).
+      - name: Audit dependencies
+        run: pnpm audit --audit-level high
+
+      # Ordered build: shared -> server -> web. Compiles @chesser/shared first so
+      # the downstream typecheck/build steps can resolve its emitted declarations.
+      - name: Build
+        run: pnpm build
+
+      - name: Typecheck
+        run: pnpm -r typecheck
+
+      # Verify the hand-authored trainer datasets (mate patterns, anti-blunder
+      # positions, calculation puzzles) are legal and sound with chess.js.
+      - name: Validate trainer data
+        run: pnpm validate:trainers
+
+      # Replay every bundled tactics puzzle (embedded core + band files).
+      - name: Validate puzzle data
+        run: pnpm validate:puzzles
+
+      # Server unit tests: accounts/auth hardening, coach routes + BYOK/SSRF
+      # guards, proxy endpoints, friend rooms, HTTP/WS hardening, logging/
+      # metrics/health/error-tracking. Engine-independent (no Stockfish needed).
+      - name: Unit tests (server)
+        run: pnpm --filter @chesser/server test
+
+      # Web unit tests: lesson step engine + machine-validation of the lesson
+      # content (legal FENs, solvable exercises, playable scripted lines).
+      - name: Unit tests (web)
+        run: pnpm --filter @chesser/web test
+
+      # No package defines "lint" yet; pnpm exits 0 in that case, so this is a
+      # future-proof no-op that activates automatically once ESLint is added.
+      - name: Lint
+        run: pnpm -r lint

@@ -1,0 +1,49 @@
+# Keep the build context small & reproducible — everything below is either
+# regenerated in the image or irrelevant to the build.
+
+# VCS / CI
+.git
+.github
+.gitignore
+
+# Dependencies & build output (reinstalled / rebuilt in the image)
+node_modules
+**/node_modules
+dist
+**/dist
+build
+**/build
+*.tsbuildinfo
+
+# Engine binaries / nets / tablebases — fetched in the engines build stage
+engines/bin
+engines/networks
+engines/src
+engines/syzygy
+engines/manifest.json
+engines/*.tar
+engines/*.zip
+engines/*.gz
+
+# Local runtime data (accounts/progress) — lives on a volume, never in the image
+/data
+
+# Docker / compose / env (not needed inside the image)
+Dockerfile
+.dockerignore
+docker-compose*.yml
+.env
+.env.*
+!.env.example
+
+# Editor / OS noise
+.DS_Store
+.idea
+.vscode
+*.swp
+*.log
+
+# Docs that don't affect the build
+*.md
+**/*.md
+!engines/README.md

@@ -1,0 +1,40 @@
+{
+  "name": "chesser",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A complete chess game and trainer powered by Stockfish and Lc0/Maia — play vs bots at many levels and styles, plus opening, middlegame and endgame trainers.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "setup:engines": "bash scripts/setup-engines.sh",
+    "setup:syzygy": "ONLY=syzygy bash scripts/setup-engines.sh",
+    "gen:tactics": "node scripts/gen-tactics.mjs",
+    "gen:openings": "node scripts/gen-openings.mjs",
+    "gen:pieces": "node scripts/gen-piece-sets.mjs",
+    "gen:pwa-icons": "node scripts/gen-pwa-icons.mjs",
+    "validate:trainers": "pnpm --filter @chesser/server exec tsx ../../scripts/validate-trainers.mts",
+    "validate:puzzles": "pnpm --filter @chesser/server exec tsx ../../scripts/validate-puzzles.mts",
+    "test:coach": "pnpm --filter @chesser/server exec node --import tsx --test ../../scripts/coach.test.mts",
+    "test:threats": "pnpm --filter @chesser/server exec node --import tsx --test ../../scripts/threats.test.mts",
+    "dev": "pnpm --filter @chesser/shared build && pnpm -r --parallel --stream dev",
+    "dev:server": "pnpm --filter @chesser/server dev",
+    "dev:web": "pnpm --filter @chesser/web dev",
+    "build": "pnpm --filter @chesser/shared build && pnpm --filter @chesser/server build && pnpm --filter @chesser/web build",
+    "test": "pnpm --filter @chesser/shared build && pnpm --filter @chesser/server test && pnpm --filter @chesser/web test && pnpm validate:trainers && pnpm validate:puzzles && pnpm test:coach && pnpm test:threats",
+    "test:e2e": "playwright test",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "typescript": "^5.6.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "esbuild": "^0.28.1"
+    }
+  }
+}
