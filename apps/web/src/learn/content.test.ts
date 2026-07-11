@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { Chess } from 'chess.js';
 import { ALL_LESSONS, LESSONS_BY_ID, LESSON_TRACKS, nextLessonId } from './index';
 import { solutionMove, startExercise, tryStep } from './engine';
+import { LESSON_COUNT, LESSON_META } from './meta';
 import type { ExerciseStep } from './types';
 
 const SQUARE = /^[a-h][1-8]$/;
@@ -39,6 +40,16 @@ describe('lesson catalogue', () => {
       seen.add(id);
     }
     expect(seen.size).toBe(ALL_LESSONS.length);
+  });
+
+  it('meta.ts mirrors the catalogue exactly (bundle-split copy must not drift)', () => {
+    // learn/meta.ts is a hand-checked lightweight copy (id/icon/title/summary)
+    // used by initial-bundle surfaces so they don't pull the full lesson
+    // content. Any catalogue change must be mirrored there.
+    expect(LESSON_COUNT).toBe(ALL_LESSONS.length);
+    expect(LESSON_META).toEqual(
+      ALL_LESSONS.map(({ id, icon, title, summary }) => ({ id, icon, title, summary })),
+    );
   });
 });
 

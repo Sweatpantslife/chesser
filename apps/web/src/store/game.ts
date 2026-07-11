@@ -5,7 +5,7 @@ import { STARTING_FEN } from '@chesser/shared';
 import { engine } from '../lib/engine';
 import { whiteWinPercent } from '../lib/format';
 import { playMoveSound, playSound } from '../lib/sound';
-import { buildMoveReviews, checkmateWinner, cpOf, type MoveReview, type PositionEval } from '../lib/coach';
+import type { MoveReview, PositionEval } from '../lib/coach';
 import { detectOpening } from '../lib/openings';
 import { countRepetitions } from '../lib/repetition';
 import { agreedDrawIsRated, botAcceptsDraw, MIN_DRAW_ACCEPT_PLIES } from '../lib/drawPolicy';
@@ -13,8 +13,11 @@ import { botThinkTimeMs, plyOfFen } from '../lib/thinkTime';
 import { recordGameResult } from '../lib/gamify';
 import { useLadder } from './ladder';
 import { useRatings, type GameOutcome } from './ratings';
-import { useAnalysisReport } from './analysisReport';
-import { REVIEW_ENGINE_SETTINGS } from '../lib/analytics/report';
+// NOTE: lib/coach's grading code, lib/analytics/report and store/analysisReport
+// are imported DYNAMICALLY inside reviewGame() — they are only needed when a
+// game review actually runs, and keeping them out of this module's static
+// graph keeps the whole analytics suite out of the initial bundle (this store
+// is loaded eagerly by the app shell).
 
 export type Color = 'white' | 'black';
 export type Mode = 'play' | 'analysis';
@@ -1000,6 +1003,13 @@ export const useGame = create<GameStore>((set, get) => ({
     const myGameNo = s0.gameNo;
     engine.stopAnalysis();
     set({ reviewing: true, reviewProgress: 0, annotations: {}, evalGraph: [], reviewStats: null, moveReviews: {}, reviewGameNo: 0 });
+
+    // Lazy-loaded review machinery (see the import note at the top of the
+    // file). Loaded in parallel before the eval loop; the per-position
+    // `gameId !== myGame` guard below covers anything changing during the
+    // await exactly as it does during engine calls.
+    const [{ buildMoveReviews, checkmateWinner, cpOf }, { REVIEW_ENGINE_SETTINGS }, { useAnalysisReport }] =
+      await Promise.all([import('../lib/coach'), import('../lib/analytics/report'), import('./analysisReport')]);
 
     // Evaluate every position with 2 lines, so we get the best move (and the
     // runner-up, for "only move" detection) at each step — not just the score.
