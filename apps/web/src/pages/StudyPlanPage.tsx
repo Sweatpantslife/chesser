@@ -139,6 +139,7 @@ export function StudyPlanPage() {
   const progress = usePlan((s) => s.progress);
   const [coachOpen, setCoachOpen] = useState(false);
   const coachTrigger = useRef<HTMLButtonElement>(null);
+  const coachPanel = useRef<HTMLDivElement>(null);
   const openCoach = () => {
     setCoachOpen(true);
     coachTrigger.current?.focus();
@@ -201,7 +202,11 @@ export function StudyPlanPage() {
       <section
         className="rounded-2xl bg-panel p-4 shadow-soft"
         onKeyDown={(e) => {
-          if (e.key === 'Escape' && coachOpen) {
+          // Escape closes the disclosure only from its own chrome (the toggle
+          // button / header) — never when it bubbles up from inside the
+          // embedded coach trainer, where Escape means deselect/cancel on the
+          // board and closing here would throw away the user's session.
+          if (e.key === 'Escape' && coachOpen && !coachPanel.current?.contains(e.target as Node)) {
             e.stopPropagation();
             setCoachOpen(false);
             coachTrigger.current?.focus();
@@ -228,7 +233,7 @@ export function StudyPlanPage() {
             <span aria-hidden="true">{coachOpen ? '▴' : '▾'}</span>
           </button>
         </div>
-        <div id="plan-coach" hidden={!coachOpen} className="mt-4">
+        <div id="plan-coach" ref={coachPanel} hidden={!coachOpen} className="mt-4">
           {coachOpen && (
             <Suspense fallback={null}>
               <CoachPage goPlay={() => navigate('/play')} />

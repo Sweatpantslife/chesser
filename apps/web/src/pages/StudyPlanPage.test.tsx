@@ -88,6 +88,29 @@ describe('StudyPlanPage / PlanCard (jsdom)', () => {
     expect(masterLink.getAttribute('href')).toBe('/learn/masters');
   });
 
+  it('Escape closes the coach disclosure from its chrome but not from inside the trainer panel', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <StudyPlanPage />
+      </MemoryRouter>,
+    );
+
+    const coachToggle = screen.getByRole('button', { name: /^Coach/ });
+    fireEvent.click(coachToggle);
+    expect(coachToggle.getAttribute('aria-expanded')).toBe('true');
+
+    // Escape bubbling out of the embedded trainer content (where it means
+    // deselect/cancel on the board) must NOT close the panel.
+    const panel = container.querySelector('#plan-coach')!;
+    fireEvent.keyDown(panel, { key: 'Escape' });
+    expect(coachToggle.getAttribute('aria-expanded')).toBe('true');
+
+    // Escape on the disclosure's own trigger closes it and keeps focus there.
+    fireEvent.keyDown(coachToggle, { key: 'Escape' });
+    expect(coachToggle.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(coachToggle);
+  });
+
   it('logs daily quota via the +1 button and shows regenerate', () => {
     render(
       <MemoryRouter>
