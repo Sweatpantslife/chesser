@@ -436,12 +436,12 @@ function AnalysisRail() {
         <PgnImportSection />
       </Disclosure>
       {/* Opening-explorer drawer slot. The panel is the Learn team's shared
-          component — do NOT fork or restyle it here. Conditional mount is the
-          contract-sanctioned interim (prefs persist in localStorage, fetches
-          come from its LRU cache); once the shared drawer-embed props land,
-          flip this to `<ExplorerPanel active={open} variant="embedded" />`. */}
+          component — do NOT fork or restyle it here. Contract form: the panel
+          stays mounted, `active` gates its fetches to while the drawer is
+          open, and `embedded` suppresses its internal heading/landmark — the
+          disclosure trigger is the drawer's one accessible name. */}
       <Disclosure title={t('analysisPage.sections.explorer')}>
-        <ExplorerPanel />
+        {(open) => <ExplorerPanel active={open} variant="embedded" />}
       </Disclosure>
     </>
   );
