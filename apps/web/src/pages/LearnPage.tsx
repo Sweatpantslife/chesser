@@ -40,7 +40,10 @@ function inCheckOf(fen: string): boolean {
 function Stars({ n, size = 'text-sm' }: { n: number; size?: string }) {
   const { t } = useTranslation('learn');
   return (
-    <span className={`${size} tracking-tight`} aria-label={t('stars.aria', { n })}>
+    // role="img": aria-label is prohibited on a role-less <span> (axe
+    // aria-prohibited-attr) — as an image the star glyphs become presentational
+    // and the label is reliably announced.
+    <span role="img" className={`${size} tracking-tight`} aria-label={t('stars.aria', { n })}>
       {[1, 2, 3].map((i) => (
         <span key={i} className={i <= n ? 'text-gold-400' : 'text-neutral-400'}>
           ★
@@ -362,7 +365,13 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
           </button>
           <span aria-hidden>{lesson.icon}</span>
           <h2 className="font-display text-base font-bold text-ink">{lesson.title}</h2>
-          <span className="ml-auto flex items-center gap-1" aria-label={t('player.stepAria', { step: stepIdx + 1, total: lesson.steps.length })}>
+          {/* role="img": aria-label is prohibited on a role-less <span> (axe
+              aria-prohibited-attr); the dots are one picture of progress. */}
+          <span
+            role="img"
+            className="ml-auto flex items-center gap-1"
+            aria-label={t('player.stepAria', { step: stepIdx + 1, total: lesson.steps.length })}
+          >
             {lesson.steps.map((_, i) => (
               <span
                 key={i}
