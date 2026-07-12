@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Chess } from 'chess.js';
 import type { DrawShape } from 'chessground/draw';
@@ -51,37 +52,51 @@ function Stars({ n, size = 'text-sm' }: { n: number; size?: string }) {
 
 // — Lesson catalogue —
 
-function LessonCard({ lesson, onOpen }: { lesson: Lesson; onOpen: () => void }) {
+/** Deep-link for a lesson on #/learn (real <a> hrefs everywhere). */
+const lessonSearch = (id: string) => `?lesson=${encodeURIComponent(id)}`;
+
+function LessonCard({ lesson }: { lesson: Lesson }) {
   const { t } = useTranslation('learn');
   const done = useLessons((s) => !!s.completed[lesson.id]);
   const stars = useLessons((s) => s.completed[lesson.id]?.stars ?? 0);
   return (
-    <button
-      onClick={onOpen}
+    <Link
+      to={{ pathname: '/learn', search: lessonSearch(lesson.id) }}
       aria-label={done ? t('catalogue.completedAria', { title: lesson.title }) : lesson.title}
-      className={`group card-lift flex flex-col gap-1 rounded-2xl p-3 text-left shadow-soft hover:bg-neutral-800 ${
-        done ? 'bg-panel ring-1 ring-emerald-500/50' : 'bg-panel'
+      className={`group card-lift flex min-h-11 flex-col gap-1 rounded-2xl bg-panelmute p-3 hover:bg-neutral-800 ${
+        done ? 'ring-1 ring-emerald-500/50' : ''
       }`}
     >
-      <div className="flex items-center gap-2">
+      <span className="flex items-center gap-2">
         <span className="text-xl" aria-hidden>
           {lesson.icon}
         </span>
         <span className="flex-1 text-sm font-semibold text-ink">{lesson.title}</span>
         {done ? <Stars n={stars} /> : <span className="text-xs font-semibold text-neutral-400 group-hover:text-brand-300">{t('catalogue.start')}</span>}
-      </div>
-      <p className="text-xs leading-snug text-neutral-400">{lesson.summary}</p>
-    </button>
+      </span>
+      <span className="text-xs leading-snug text-neutral-400">{lesson.summary}</span>
+    </Link>
   );
 }
 
-function Catalogue({ onOpen }: { onOpen: (id: string) => void }) {
+/**
+ * The catalogue: a "Continue" hero (the screen's single accent element)
+ * above the five tracks, each rendered as an APG-disclosure accordion —
+ * collapsed by default, except the track holding the next lesson.
+ */
+function Catalogue() {
   const { t } = useTranslation('learn');
   const completed = useLessons((s) => s.completed);
   const done = ALL_LESSONS.filter((l) => !!completed[l.id]).length;
   const pct = Math.round((done / ALL_LESSONS.length) * 100);
+  const next = ALL_LESSONS.find((l) => !completed[l.id]) ?? null;
+  // Progressive disclosure: only the track containing the next lesson starts open.
+  const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
+    const tr = next ? LESSON_TRACKS.find((tk) => tk.lessons.some((l) => l.id === next.id)) : undefined;
+    return tr ? { [tr.id]: true } : {};
+  });
   return (
-    <div className="mx-auto w-full max-w-[1000px] space-y-6">
+    <div className="mx-auto w-full max-w-[1000px] space-y-4">
       <div className="relative overflow-hidden rounded-2xl bg-panel shadow-soft">
         <img
           src={heroUrl}
@@ -106,22 +121,62 @@ function Catalogue({ onOpen }: { onOpen: (id: string) => void }) {
           >
             <div className="h-full rounded-full bg-gradient-to-r from-brand-400 to-accent-400 transition-all" style={{ width: `${pct}%` }} />
           </div>
+          {next ? (
+            <Link
+              to={{ pathname: '/learn', search: lessonSearch(next.id) }}
+              className="btn-press mt-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-gradient-to-br from-brand-600 to-brand-700 px-5 py-2 text-sm font-bold text-white shadow-glow hover:from-brand-500 hover:to-brand-600"
+            >
+              <span aria-hidden>{next.icon}</span>
+              <span>{t('catalogue.continueCta', { title: next.title })}</span>
+              <span aria-hidden>→</span>
+            </Link>
+          ) : (
+            <p className="mt-4 text-sm font-semibold text-neutral-200">{t('catalogue.allDone')}</p>
+          )}
         </div>
       </div>
 
-      {LESSON_TRACKS.map((track) => (
-        <section key={track.id} aria-label={track.title}>
-          <div className="mb-2 flex items-baseline gap-2">
-            <h3 className="font-display text-sm font-semibold uppercase tracking-wide text-brand-300">{track.title}</h3>
-            <span className="text-xs text-neutral-400">{track.blurb}</span>
-          </div>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {track.lessons.map((l) => (
-              <LessonCard key={l.id} lesson={l} onOpen={() => onOpen(l.id)} />
-            ))}
-          </div>
-        </section>
-      ))}
+      <div className="space-y-3">
+        {LESSON_TRACKS.map((track) => {
+          const isOpen = !!expanded[track.id];
+          const doneCount = track.lessons.filter((l) => !!completed[l.id]).length;
+          const panelId = `learn-track-panel-${track.id}`;
+          return (
+            <div key={track.id} className="rounded-2xl bg-panel shadow-soft">
+              <h3>
+                <button
+                  aria-expanded={isOpen}
+                  aria-controls={panelId}
+                  onClick={() => setExpanded((e) => ({ ...e, [track.id]: !e[track.id] }))}
+                  className="btn-press flex min-h-11 w-full items-center gap-3 rounded-2xl px-4 py-3 text-left hover:bg-panelmute"
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-display text-base font-bold text-ink">{track.title}</span>
+                    <span className="block text-xs font-normal text-neutral-400">{track.blurb}</span>
+                  </span>
+                  <span className="shrink-0 text-xs font-semibold text-neutral-400">
+                    {t('catalogue.trackProgress', { done: doneCount, total: track.lessons.length })}
+                  </span>
+                  <span aria-hidden className={`shrink-0 text-neutral-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}>
+                    ▾
+                  </span>
+                </button>
+              </h3>
+              {/* Plain div panel — no role="region" (five simultaneously
+                  openable panels would proliferate landmarks; see APG). */}
+              <div id={panelId} hidden={!isOpen} className="px-3 pb-3">
+                <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {track.lessons.map((l) => (
+                    <li key={l.id}>
+                      <LessonCard lesson={l} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -306,7 +361,7 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
             {t('player.backLabel')}
           </button>
           <span aria-hidden>{lesson.icon}</span>
-          <span className="font-semibold text-ink">{lesson.title}</span>
+          <h2 className="font-display text-base font-bold text-ink">{lesson.title}</h2>
           <span className="ml-auto flex items-center gap-1" aria-label={t('player.stepAria', { step: stepIdx + 1, total: lesson.steps.length })}>
             {lesson.steps.map((_, i) => (
               <span
@@ -443,11 +498,37 @@ function LessonPlayer({ lesson, onExit, onOpen }: { lesson: Lesson; onExit: () =
 }
 
 export function LearnPage() {
-  const [openId, setOpenId] = useState<string | null>(null);
+  // The open lesson lives in the URL (#/learn?lesson=<id>) so every lesson is
+  // deep-linkable and back/forward walk in and out of the player.
+  const [params, setParams] = useSearchParams();
+  const openId = params.get('lesson');
   const lesson = openId ? ALL_LESSONS.find((l) => l.id === openId) : undefined;
+
+  // Stale/unknown lesson ids fall back to the catalogue; consume the bad
+  // param (replace) so history doesn't keep replaying it.
+  useEffect(() => {
+    if (openId && !lesson) setParams({}, { replace: true });
+  }, [openId, lesson, setParams]);
+
+  // Opening/closing a lesson changes only the search string, so the shell's
+  // route-focus hook (keyed on pathname) doesn't fire — mirror it here.
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    window.scrollTo(0, 0);
+    const heading = document.getElementById('main')?.querySelector<HTMLElement>('h1, h2');
+    if (heading) {
+      if (!heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1');
+      heading.focus();
+    }
+  }, [lesson?.id]);
+
   return lesson ? (
-    <LessonPlayer lesson={lesson} onExit={() => setOpenId(null)} onOpen={setOpenId} />
+    <LessonPlayer lesson={lesson} onExit={() => setParams({})} onOpen={(id) => setParams({ lesson: id })} />
   ) : (
-    <Catalogue onOpen={setOpenId} />
+    <Catalogue />
   );
 }

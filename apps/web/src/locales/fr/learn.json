@@ -8,7 +8,10 @@
     "heroTitle": "Apprenez les échecs en vous amusant",
     "progress": "{{done}}/{{total}} leçons terminées",
     "heroBody": "Des leçons courtes et pratiques — chaque idée se joue directement sur l'échiquier. Vous débutez aux échecs ? Commencez en haut : vous connaîtrez toutes les règles en quelques minutes.",
-    "progressAria": "Leçons terminées"
+    "progressAria": "Leçons terminées",
+    "continueCta": "Continuer : {{title}}",
+    "allDone": "Toutes les leçons sont terminées — rejouez celle que vous voulez ci-dessous.",
+    "trackProgress": "{{done}}/{{total}} terminées"
   },
   "player": {
     "backAria": "Retour à toutes les leçons",
