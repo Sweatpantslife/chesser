@@ -51,7 +51,9 @@ export function MastersPage({ goPlay }: { goPlay: () => void }) {
 // Library
 // ---------------------------------------------------------------------------
 
-const CHIP_ON = 'bg-gradient-to-br from-brand-600 to-brand-700 text-white shadow-glow';
+// Selected filter/step chips are a *state*, not a call to action — they stay
+// neutral (inverted ink) so the screen's single accent CTA can stand alone.
+const CHIP_ON = 'bg-ink text-page';
 const CHIP_OFF = 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700 hover:text-ink';
 const chip = (on: boolean) =>
   `btn-press min-h-11 shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold sm:min-h-0 ${on ? CHIP_ON : CHIP_OFF}`;
@@ -84,7 +86,7 @@ function Library({ onOpen }: { onOpen: (id: string) => void }) {
         <p className="text-sm text-neutral-400">{t('masters.subtitle')}</p>
       </header>
 
-      <div className="space-y-2 rounded-blob bg-panel p-3 shadow-soft">
+      <div className="space-y-2 rounded-2xl bg-panel p-3 shadow-soft">
         <div className="scrollbar-none flex gap-1.5 overflow-x-auto" role="group" aria-label={t('masters.filters.themeAria')}>
           <button className={chip(theme === 'all')} aria-pressed={theme === 'all'} onClick={() => setTheme('all')}>
             {t('masters.filters.allThemes')}
@@ -129,14 +131,14 @@ function Library({ onOpen }: { onOpen: (id: string) => void }) {
       </div>
 
       {filtered.length === 0 ? (
-        <p className="rounded-blob bg-panel p-6 text-center text-sm text-neutral-400">{t('masters.noMatches')}</p>
+        <p className="rounded-2xl bg-panel p-6 text-center text-sm text-neutral-400">{t('masters.noMatches')}</p>
       ) : (
         <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((g) => (
             <li key={g.id}>
               <button
                 onClick={() => onOpen(g.id)}
-                className="btn-press flex h-full w-full flex-col gap-2 rounded-blob bg-panel p-4 text-left shadow-soft hover:bg-panelmute"
+                className="btn-press flex h-full w-full flex-col gap-2 rounded-2xl bg-panel p-4 text-left shadow-soft hover:bg-panelmute"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="font-display text-base font-bold leading-tight text-ink">
@@ -334,14 +336,19 @@ function GameViewer({ game, goPlay, onBack }: { game: MasterGame; goPlay: () => 
           >
             {t('masters.viewer.flip')}
           </button>
-          <button className={btn} onClick={analyzeFromHere} title={t('masters.viewer.analyzeTitle')}>
+          {/* The viewer's primary action (analysis handoff) — the screen's one accent element. */}
+          <button
+            className="btn-press min-h-11 rounded-full bg-gradient-to-br from-brand-600 to-brand-700 px-4 py-1.5 text-sm font-bold text-white hover:from-brand-500 hover:to-brand-600 sm:min-h-0"
+            onClick={analyzeFromHere}
+            title={t('masters.viewer.analyzeTitle')}
+          >
             {t('masters.viewer.analyze')}
           </button>
         </div>
       </div>
 
       <div className="space-y-3">
-        <section className="rounded-blob bg-panel p-3 shadow-soft" aria-label={t('masters.viewer.commentary')}>
+        <section className="rounded-2xl bg-panel p-3 shadow-soft" aria-label={t('masters.viewer.commentary')}>
           <h3 className="mb-1 text-sm font-semibold text-ink">
             {ply === 0 ? t('masters.viewer.about') : `${plyLabel(ply)} ${steps[ply - 1]!.san}${note?.glyph ?? ''}`}
           </h3>
@@ -350,7 +357,7 @@ function GameViewer({ game, goPlay, onBack }: { game: MasterGame; goPlay: () => 
           </p>
         </section>
 
-        <section className="rounded-blob bg-panel p-3 shadow-soft" aria-label={t('masters.viewer.keyMoments')}>
+        <section className="rounded-2xl bg-panel p-3 shadow-soft" aria-label={t('masters.viewer.keyMoments')}>
           <h3 className="mb-1.5 text-sm font-semibold text-ink">{t('masters.viewer.keyMoments')}</h3>
           <div className="flex flex-wrap gap-1.5">
             {game.keyMoments.map((k) => (
@@ -372,7 +379,7 @@ function GameViewer({ game, goPlay, onBack }: { game: MasterGame; goPlay: () => 
           </div>
         </section>
 
-        <section className="rounded-blob bg-panel p-3 shadow-soft" aria-label={t('masters.viewer.moves')}>
+        <section className="rounded-2xl bg-panel p-3 shadow-soft" aria-label={t('masters.viewer.moves')}>
           <h3 className="mb-1.5 text-sm font-semibold text-ink">{t('masters.viewer.moves')}</h3>
           <ol className="flex flex-wrap items-center gap-x-1 gap-y-1 text-sm" aria-label={t('masters.viewer.movesAria')}>
             <li>
