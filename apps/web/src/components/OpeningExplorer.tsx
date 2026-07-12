@@ -255,7 +255,7 @@ export function OpeningExplorer({
           <button
             onClick={onAnalyzeHere}
             title={t('analyzeHereTitle')}
-            className="btn-press ml-auto min-h-7 rounded-full bg-neutral-800 px-2.5 py-0.5 text-xs font-semibold text-neutral-300 hover:bg-neutral-700 hover:text-ink"
+            className="btn-press ml-auto min-h-11 min-w-11 rounded-full bg-neutral-800 px-3 py-0.5 text-xs font-semibold text-neutral-300 hover:bg-neutral-700 hover:text-ink"
           >
             {t('analyzeHere')}
           </button>
@@ -350,7 +350,7 @@ export function OpeningExplorer({
           </div>
           <ul className="space-y-0.5">
             {moves.map((m) => (
-              <li key={m.uci} className="flex items-center gap-1">
+              <li key={m.uci} className={`flex items-center ${onSaveToRepertoire ? 'gap-2' : 'gap-1'}`}>
                 <button
                   disabled={!onPlayMove}
                   onClick={() => onPlayMove?.(m)}
@@ -369,15 +369,19 @@ export function OpeningExplorer({
                   </span>
                 </button>
                 {onSaveToRepertoire && (
+                  /* ≥44×44 target with an always-visible text label (shared
+                     a11y contract) — not the icon-only 24px chip Play's dense
+                     panel historically used. */
                   <button
                     onClick={() => saveRow(m)}
                     title={t('save.saveTitle')}
                     aria-label={t('save.saveAria', { san: m.san })}
-                    className={`shrink-0 rounded px-1.5 py-1 text-xs ${
+                    className={`btn-press min-h-11 min-w-11 shrink-0 rounded-full px-2 text-xs font-semibold ${
                       savedUci === m.uci ? 'text-emerald-400' : 'text-neutral-400 hover:bg-neutral-700 hover:text-emerald-300'
                     }`}
                   >
-                    {savedUci === m.uci ? '✓' : '＋'}
+                    <span aria-hidden>{savedUci === m.uci ? '✓' : '＋'}</span>{' '}
+                    {savedUci === m.uci ? t('save.savedLabel') : t('save.saveLabel')}
                   </button>
                 )}
                 {moveAction?.(m)}
