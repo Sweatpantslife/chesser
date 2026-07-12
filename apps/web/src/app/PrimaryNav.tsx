@@ -30,7 +30,14 @@ export const HUBS: { id: 'home' | 'play' | 'train' | 'learn' | 'profile'; path: 
   { id: 'profile', path: '/profile', end: false, icon: IconProfile },
 ];
 
-export function StatusDot({ withLabel = true }: { withLabel?: boolean }) {
+export function StatusDot({
+  withLabel = true,
+  labelClassName = '',
+}: {
+  withLabel?: boolean;
+  /** Extra classes for the text label, e.g. `sr-only sm:not-sr-only` to keep it out of tight headers. */
+  labelClassName?: string;
+}) {
   const { t } = useTranslation('nav');
   const connected = useGame((s) => s.connected);
   return (
@@ -39,8 +46,8 @@ export function StatusDot({ withLabel = true }: { withLabel?: boolean }) {
       title={connected ? t('status.connectedTooltip') : t('status.connectingTooltip')}
       className={`flex items-center gap-1.5 text-xs font-semibold ${connected ? 'text-emerald-400' : 'text-rose-400'}`}
     >
-      <span className={`h-2 w-2 rounded-full ${connected ? 'bg-emerald-400' : 'animate-pulse-soft bg-rose-400'}`} />
-      {withLabel && (connected ? t('status.online') : t('status.connecting'))}
+      <span className={`h-2 w-2 shrink-0 rounded-full ${connected ? 'bg-emerald-400' : 'animate-pulse-soft bg-rose-400'}`} />
+      {withLabel && <span className={labelClassName}>{connected ? t('status.online') : t('status.connecting')}</span>}
     </span>
   );
 }

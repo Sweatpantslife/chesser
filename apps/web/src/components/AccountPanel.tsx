@@ -197,12 +197,16 @@ export function AccountButton() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex min-h-11 items-center gap-1.5 rounded bg-neutral-800 px-2.5 py-1 text-xs text-neutral-200 hover:bg-neutral-700 sm:min-h-0"
+        title={username ?? undefined}
+        className="flex min-h-11 min-w-0 items-center gap-1.5 rounded bg-neutral-800 px-2.5 py-1 text-xs text-neutral-200 hover:bg-neutral-700 sm:min-h-0"
       >
         {username ? (
           <>
-            <span className={`h-2 w-2 rounded-full ${dot}`} />
-            {username}
+            <span className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />
+            {/* min-w-0 + truncate: long usernames ellipsize instead of pushing
+                the header past narrow viewports (the full name is in the panel
+                and in the button's tooltip). */}
+            <span className="min-w-0 max-w-40 truncate">{username}</span>
           </>
         ) : (
           t('signIn')
