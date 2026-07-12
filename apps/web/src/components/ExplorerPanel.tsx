@@ -6,12 +6,24 @@ import { OpeningExplorer } from './OpeningExplorer';
 import { useGame } from '../store/game';
 import { useRepertoire } from '../store/repertoire';
 
+export interface ExplorerPanelProps {
+  /** Fetch gate for the collapsible drawer. Default true.
+   *  false = render (or stay mounted) without ANY network activity;
+   *  flipping to true fetches the CURRENT store position immediately. */
+  active?: boolean;
+  /** Chrome density. Default 'full' (today's render, verbatim).
+   *  'embedded': suppress the internal <section aria-label> + h3 title and
+   *  the bg-panel/padding wrapper — the drawer supplies the heading and
+   *  surface. Stats, filters, save UI unchanged. */
+  variant?: 'full' | 'embedded';
+}
+
 /**
  * The opening explorer wired to the analysis board (Play page): rows play
  * moves onto the board via the game store, and — in analysis mode, from the
  * standard start — each row can also be saved into a repertoire.
  */
-export function ExplorerPanel() {
+export function ExplorerPanel({ active = true, variant = 'full' }: ExplorerPanelProps = {}) {
   const { t } = useTranslation('explorer');
   const fen = useGame((s) => s.fen);
   const mode = useGame((s) => s.mode);
@@ -52,6 +64,8 @@ export function ExplorerPanel() {
     <OpeningExplorer
       fen={fen}
       pathSan={fromStart ? pathSan : null}
+      active={active}
+      variant={variant}
       onPlayMove={mode === 'analysis' ? (m) => exploreMove(m.uci) : undefined}
       moveAction={
         canSave

@@ -148,13 +148,40 @@ export interface OpeningExplorerProps {
   moveAction?: (m: ExplorerMove) => ReactNode;
   /** Optional content shown under the toolbar (e.g. a repertoire-save target). */
   children?: ReactNode;
+  /**
+   * Fetch gate. Default true. While false the panel performs no network
+   * activity at all (safe to keep mounted in a collapsed drawer); flipping
+   * back to true fetches stats for the current `fen` immediately.
+   */
+  active?: boolean;
+  /**
+   * Chrome density. Default 'full' renders today's panel verbatim (own
+   * <section aria-label>, heading, bg-panel surface). 'embedded' suppresses
+   * that chrome — the host supplies the heading and surface — while stats,
+   * filters and actions render unchanged.
+   */
+  variant?: 'full' | 'embedded';
+  /** Renders a built-in ＋ save action on each move row when provided. */
+  onSaveToRepertoire?: (m: ExplorerMove) => void;
+  /** Renders an "Analyse" action when provided (omit on the analysis board itself). */
+  onAnalyzeHere?: () => void;
 }
 
-export function OpeningExplorer({ fen, pathSan, onPlayMove, moveAction, children }: OpeningExplorerProps) {
+export function OpeningExplorer({
+  fen,
+  pathSan,
+  onPlayMove,
+  moveAction,
+  children,
+  active = true,
+  variant = 'full',
+  onSaveToRepertoire,
+  onAnalyzeHere,
+}: OpeningExplorerProps) {
   const { t } = useTranslation('explorer');
   const [prefs, setPrefs] = useState<ExplorerPrefs>(loadPrefs);
   const { db, filters } = prefs;
-  const { result, loading } = useExplorer(fen, db, filters);
+  const { result, loading } = useExplorer(fen, db, filters, active);
 
   useEffect(() => {
     try {
@@ -165,6 +192,8 @@ export function OpeningExplorer({ fen, pathSan, onPlayMove, moveAction, children
   }, [prefs]);
 
   // Offline / out-of-book fallback: name the opening from the bundled ECO data.
+  // Gated on `active` too: the ECO db is a lazy chunk, and an inactive panel
+  // must cause zero network activity.
   const pathKey = pathSan?.join(' ') ?? '';
   const [fallback, setFallback] = useState<OpeningInfo | null>(null);
   useEffect(() => {
@@ -172,13 +201,22 @@ export function OpeningExplorer({ fen, pathSan, onPlayMove, moveAction, children
       setFallback(null);
       return;
     }
+    if (!active) return;
     let cancelled = false;
     detectOpening(pathSan).then((r) => !cancelled && setFallback(r));
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathKey]);
+  }, [pathKey, active]);
+
+  // Built-in save action feedback (a brief ✓ flash on the saved row).
+  const [savedUci, setSavedUci] = useState<string | null>(null);
+  const saveRow = (m: ExplorerMove) => {
+    onSaveToRepertoire?.(m);
+    setSavedUci(m.uci);
+    window.setTimeout(() => setSavedUci((u) => (u === m.uci ? null : u)), 1200);
+  };
 
   const setDb = (next: ExplorerDb) => setPrefs((p) => ({ ...p, db: next }));
   const toggleSpeed = (s: ExplorerSpeed) =>
@@ -209,10 +247,19 @@ export function OpeningExplorer({ fen, pathSan, onPlayMove, moveAction, children
     return { label: top.length > 0 ? t('games.top') : t('games.recent'), list };
   }, [available, result, t]);
 
-  return (
-    <section aria-label={t('title')} className="rounded-lg bg-panel p-3">
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-ink">{t('title')}</h3>
+  const body = (
+    <>
+      <div className={`mb-2 flex flex-wrap items-center gap-2 ${variant === 'full' ? 'justify-between' : 'justify-end'}`}>
+        {variant === 'full' && <h3 className="text-sm font-semibold text-ink">{t('title')}</h3>}
+        {onAnalyzeHere && (
+          <button
+            onClick={onAnalyzeHere}
+            title={t('analyzeHereTitle')}
+            className="btn-press ml-auto min-h-7 rounded-full bg-neutral-800 px-2.5 py-0.5 text-xs font-semibold text-neutral-300 hover:bg-neutral-700 hover:text-ink"
+          >
+            {t('analyzeHere')}
+          </button>
+        )}
         <div role="group" aria-label={t('db.aria')} className="flex gap-1 text-xs">
           {(['masters', 'lichess'] as const).map((d) => (
             <button
@@ -321,6 +368,18 @@ export function OpeningExplorer({ fen, pathSan, onPlayMove, moveAction, children
                     <WdlBar white={m.white} draws={m.draws} black={m.black} total={m.total} />
                   </span>
                 </button>
+                {onSaveToRepertoire && (
+                  <button
+                    onClick={() => saveRow(m)}
+                    title={t('save.saveTitle')}
+                    aria-label={t('save.saveAria', { san: m.san })}
+                    className={`shrink-0 rounded px-1.5 py-1 text-xs ${
+                      savedUci === m.uci ? 'text-emerald-400' : 'text-neutral-400 hover:bg-neutral-700 hover:text-emerald-300'
+                    }`}
+                  >
+                    {savedUci === m.uci ? '✓' : '＋'}
+                  </button>
+                )}
                 {moveAction?.(m)}
               </li>
             ))}
@@ -353,6 +412,15 @@ export function OpeningExplorer({ fen, pathSan, onPlayMove, moveAction, children
           )}
         </div>
       )}
+    </>
+  );
+
+  // 'embedded' emits content only — no landmark, heading or panel surface —
+  // so a host drawer can supply its own disclosure chrome around it.
+  if (variant === 'embedded') return <div>{body}</div>;
+  return (
+    <section aria-label={t('title')} className="rounded-lg bg-panel p-3">
+      {body}
     </section>
   );
 }

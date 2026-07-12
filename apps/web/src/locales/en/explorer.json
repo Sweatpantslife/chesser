@@ -1,6 +1,8 @@
 {
   "title": "Opening explorer",
   "gamesCount": "{{games}} games",
+  "analyzeHere": "Analyse",
+  "analyzeHereTitle": "Open this position on the analysis board",
   "db": {
     "aria": "Database",
     "masters": "Masters",

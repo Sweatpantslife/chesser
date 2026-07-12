@@ -1,6 +1,8 @@
 {
   "title": "Explorateur d'ouvertures",
   "gamesCount": "{{games}} parties",
+  "analyzeHere": "Analyser",
+  "analyzeHereTitle": "Ouvrir cette position sur l'échiquier d'analyse",
   "db": {
     "aria": "Base de données",
     "masters": "Maîtres",
