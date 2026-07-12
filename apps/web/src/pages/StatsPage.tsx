@@ -11,7 +11,7 @@ import { useSprints } from '../store/sprints';
 import { useSettings } from '../store/settings';
 import { ReviewSummary } from '../components/ReviewSummary';
 import { RatingMeter } from '../components/RatingMeter';
-import { DECK_META, useReviewSummary, type DeckTarget } from '../lib/decks';
+import { DECK_META, useReviewSummary } from '../lib/decks';
 import { ActivityChart, HEAT_COLORS, Heatmap, ProgressBar, StatCard, type DayPoint } from '../components/Charts';
 import { EmptyStatsArt } from '../components/icons';
 
@@ -55,7 +55,7 @@ function Section({ title, children, aside }: { title: string; children: ReactNod
   );
 }
 
-export function StatsPage({ goto }: { goto: (target: DeckTarget) => void }) {
+export function StatsPage() {
   const { t } = useTranslation('stats');
   const history = useProgress((s) => s.history);
   const streak = useProgress((s) => s.streak);
@@ -124,7 +124,7 @@ export function StatsPage({ goto }: { goto: (target: DeckTarget) => void }) {
         </div>
       )}
 
-      <ReviewSummary goto={goto} />
+      <ReviewSummary />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-4">
         <StatCard label={t('cards.level')} value={<span>⭐ {level}</span>} hint={t('cards.levelHint', { xp: xp.toLocaleString() })} />

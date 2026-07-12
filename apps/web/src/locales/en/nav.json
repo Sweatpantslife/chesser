@@ -49,6 +49,8 @@
     "suggests": "Coach suggests: {{focus}}",
     "continue": "Continue",
     "viewPlan": "View plan",
+    "mistakes_one": "Drill your mistakes ({{count}})",
+    "mistakes_other": "Drill your mistakes ({{count}})",
     "empty": "No coach tips yet — review a game or start your weekly plan."
   },
   "cards": {

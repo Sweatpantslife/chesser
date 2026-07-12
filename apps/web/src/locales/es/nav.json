@@ -49,6 +49,8 @@
     "suggests": "El entrenador sugiere: {{focus}}",
     "continue": "Continuar",
     "viewPlan": "Ver plan",
+    "mistakes_one": "Entrena tus errores ({{count}})",
+    "mistakes_other": "Entrena tus errores ({{count}})",
     "empty": "Aún no hay consejos del entrenador — analiza una partida o empieza tu plan semanal."
   },
   "cards": {

@@ -29,6 +29,30 @@ export const DECK_FOR_CARD: Record<TrainerCardId, Deck | null> = {
   coordinates: null,
 };
 
+/**
+ * Due review counts per deck, straight from the stored SRS cards — no id
+ * catalogues needed: a card only exists once its item has been trained, which
+ * is exactly the population `useReviewSummary` counts "due" from. This keeps
+ * the eagerly-loaded Train hub from importing lib/decks, whose puzzle/drill
+ * catalogues must stay out of the app-shell chunk (see the route-splitting
+ * contract in App.tsx).
+ */
+export function useDueByDeck(): Partial<Record<Deck, number>> {
+  const cards = useProgress((s) => s.cards);
+  return useMemo(() => {
+    const now = Date.now();
+    const due: Partial<Record<Deck, number>> = {};
+    for (const [key, card] of Object.entries(cards)) {
+      if (!card.last || card.due > now) continue; // unseen or not due yet
+      const sep = key.indexOf(':'); // card keys are `${deck}:${id}`
+      if (sep <= 0) continue;
+      const deck = key.slice(0, sep) as Deck;
+      due[deck] = (due[deck] ?? 0) + 1;
+    }
+    return due;
+  }, [cards]);
+}
+
 /** Local-midnight epoch ms for a YYYY-MM-DD day key (null when malformed). */
 function dayStartTs(day: string): number | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);

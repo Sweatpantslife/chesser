@@ -49,6 +49,8 @@
     "suggests": "Le coach suggère : {{focus}}",
     "continue": "Continuer",
     "viewPlan": "Voir le plan",
+    "mistakes_one": "Travaillez vos erreurs ({{count}})",
+    "mistakes_other": "Travaillez vos erreurs ({{count}})",
     "empty": "Pas encore de conseils du coach — analysez une partie ou commencez votre plan hebdomadaire."
   },
   "cards": {

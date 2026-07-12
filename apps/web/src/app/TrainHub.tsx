@@ -18,8 +18,10 @@ import {
   IconCrown,
 } from '../components/icons';
 import { playSound } from '../lib/sound';
-import { useReviewSummary } from '../lib/decks';
-import { DECK_FOR_CARD, useTrainerLastActivity, type TrainerCardId } from '../lib/trainActivity';
+// NOTE: never import lib/decks here — TrainHub is eager (statically imported
+// by App.tsx) and lib/decks pulls the full puzzle/drill id catalogues into
+// whatever chunk imports it. Due badges come from the store-only hook below.
+import { DECK_FOR_CARD, useDueByDeck, useTrainerLastActivity, type TrainerCardId } from '../lib/trainActivity';
 
 // Lazy: the strip reads the plan store, whose lesson/master-game catalogues
 // must stay out of the app-shell chunk (TrainHub itself is eager).
@@ -37,12 +39,8 @@ const CARDS: { id: TrainerCardId; to: string; icon: typeof IconTactics }[] = [
 
 export function TrainHub() {
   const { t, i18n } = useTranslation('nav');
-  const review = useReviewSummary();
   const lastActivity = useTrainerLastActivity();
-  const dueByDeck = useMemo(
-    () => Object.fromEntries(review.decks.map((d) => [d.deck, d.due])) as Partial<Record<string, number>>,
-    [review],
-  );
+  const dueByDeck = useDueByDeck();
   const rtf = useMemo(
     () => new Intl.RelativeTimeFormat(i18n.language || 'en', { numeric: 'auto' }),
     [i18n.language],

@@ -8,7 +8,10 @@
  * statically imports the lesson/master-game/opening catalogues, which must
  * stay out of the app-shell chunk. The full weakness→drills coach view lives
  * on `#/train/plan` (see StudyPlanPage); this strip only surfaces the
- * suggestion from the stores.
+ * suggestion from the stores. When game review has saved mistake cards the
+ * coach also surfaces the Mistakes drill (`#/train/tactics/mistakes`) as a
+ * quiet neutral link — spec: "Mistakes is also surfaced by Coach when
+ * relevant".
  *
  * Empty state (no plan started AND no coach suggestion): one quiet neutral
  * row — no hero styling, no accent, never a big empty panel.
@@ -21,6 +24,7 @@ import { isoWeekIdOf, planProgress, remainingToday, type PlanItem } from '../lib
 import { planItemPath } from '../lib/decks';
 import { usePlan } from '../store/plan';
 import { useCoach } from '../store/coach';
+import { useMistakes } from '../store/mistakes';
 import { now, todayStr } from '../lib/clock';
 import { playSound } from '../lib/sound';
 import { IconSparkles } from '../components/icons';
@@ -31,6 +35,9 @@ export default function CoachPlanStrip() {
   const progress = usePlan((s) => s.progress);
   const daily = usePlan((s) => s.daily);
   const games = useCoach((s) => s.games);
+  // "Mistakes is also surfaced by Coach when relevant": once game review has
+  // saved mistake cards, the coach offers the Mistakes drill as a quiet link.
+  const mistakeCount = useMistakes((s) => s.cards.length);
 
   // Roll a stale (previous-week) plan over, but never create a FIRST plan
   // here — the quiet empty row below stays honest until the user starts one.
@@ -69,6 +76,16 @@ export default function CoachPlanStrip() {
         >
           {t('coachStrip.viewPlan')}
         </Link>
+        {mistakeCount > 0 && (
+          <Link
+            to="/train/tactics/mistakes"
+            onClick={() => playSound('uiClick')}
+            data-testid="coach-plan-mistakes"
+            className="font-semibold text-neutral-300 underline decoration-neutral-600 underline-offset-4 hover:text-ink"
+          >
+            {t('coachStrip.mistakes', { count: mistakeCount })}
+          </Link>
+        )}
       </section>
     );
   }
@@ -102,6 +119,16 @@ export default function CoachPlanStrip() {
           >
             {t('coachStrip.viewPlan')}
           </Link>
+          {mistakeCount > 0 && (
+            <Link
+              to="/train/tactics/mistakes"
+              onClick={() => playSound('uiClick')}
+              data-testid="coach-plan-mistakes"
+              className="btn-press flex min-h-11 items-center rounded-full px-3 py-1.5 text-sm font-semibold text-neutral-300 hover:bg-neutral-800 hover:text-ink sm:min-h-9"
+            >
+              {t('coachStrip.mistakes', { count: mistakeCount })}
+            </Link>
+          )}
         </div>
       </div>
     </section>
