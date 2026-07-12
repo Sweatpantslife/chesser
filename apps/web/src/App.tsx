@@ -1,47 +1,40 @@
-import { lazy, Suspense, useEffect, useState, type ComponentType, type ReactNode, type SVGProps } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import {
+  HashRouter,
+  Link,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useMatch,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useGame } from './store/game';
 import { useAuth } from './store/auth';
 import { AccountButton } from './components/AccountPanel';
-import { InstallButton } from './components/InstallButton';
 import { HomePage } from './pages/HomePage';
-import type { TrainTab } from './pages/TrainPage';
+import type { TacticsMode } from './pages/TacticsPage';
 import { Footer } from './components/Footer';
 import { ConsentNotice } from './components/ConsentNotice';
 import { LevelBadge } from './components/LevelBadge';
 import { GamifyToasts } from './components/GamifyToasts';
 import { Celebration } from './components/Celebration';
 import { initGamify } from './lib/gamify';
-import { parseHashRoute, profileHashUser } from './lib/hashRoute';
 import { initSocial } from './store/social';
 import { playSound } from './lib/sound';
-import type { DeckTarget } from './lib/decks';
-import {
-  IconArchive,
-  IconBolt,
-  IconCoach,
-  IconCoords,
-  IconCrown,
-  IconEndgame,
-  IconExplorer,
-  IconFriends,
-  IconGear,
-  IconLearn,
-  IconOpenings,
-  IconPlay,
-  IconProfile,
-  IconSparkles,
-  IconStats,
-  IconTactics,
-  IconToday,
-  IconTrain,
-  IconTrophy,
-  LogoMark,
-  Wordmark,
-} from './components/icons';
+import { deckPath, legacyRedirect, profileAliasRedirect, viewPath } from './app/paths';
+import { Sidebar, BottomBar, StatusDot } from './app/PrimaryNav';
+import { HubTabs, HubSideLink, type HubTab } from './app/HubNav';
+import { TrainHub } from './app/TrainHub';
+import { AboutPage } from './app/AboutPage';
+import { WhatMovedTour } from './app/WhatMovedTour';
+import { IconGear, LogoMark, Wordmark } from './components/icons';
 
-// Route-level code splitting: only the app shell + Today (home) page ship in
-// the initial chunk. Every other view — and the settings dialog — is a lazy
+// Route-level code splitting: only the app shell + Home page ship in the
+// initial chunk. Every other view — and the settings dialog — is a lazy
 // chunk fetched on first navigation (then cached; the service worker also
 // precaches them in the background, so offline still covers every view).
 const SettingsDialog = lazy(() => import('./components/SettingsDialog').then((m) => ({ default: m.SettingsDialog })));
@@ -54,11 +47,12 @@ const ExplorerPage = lazy(() => import('./pages/ExplorerPage').then((m) => ({ de
 const TacticsPage = lazy(() => import('./pages/TacticsPage').then((m) => ({ default: m.TacticsPage })));
 const EndgamePage = lazy(() => import('./pages/EndgamePage').then((m) => ({ default: m.EndgamePage })));
 const EndgameDrillsPage = lazy(() => import('./pages/EndgameDrillsPage').then((m) => ({ default: m.EndgameDrillsPage })));
+const VisionPage = lazy(() => import('./pages/VisionPage').then((m) => ({ default: m.VisionPage })));
+const MatesPage = lazy(() => import('./pages/MatesPage').then((m) => ({ default: m.MatesPage })));
+const AntiBlunderPage = lazy(() => import('./pages/AntiBlunderPage').then((m) => ({ default: m.AntiBlunderPage })));
 const CoordinatePage = lazy(() => import('./pages/CoordinatePage').then((m) => ({ default: m.CoordinatePage })));
 const StatsPage = lazy(() => import('./pages/StatsPage').then((m) => ({ default: m.StatsPage })));
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
-const TrainPage = lazy(() => import('./pages/TrainPage').then((m) => ({ default: m.TrainPage })));
-const CoachPage = lazy(() => import('./pages/CoachPage').then((m) => ({ default: m.CoachPage })));
 const StudyPlanPage = lazy(() => import('./pages/StudyPlanPage').then((m) => ({ default: m.StudyPlanPage })));
 const ArchivePage = lazy(() => import('./pages/ArchivePage').then((m) => ({ default: m.ArchivePage })));
 const LeaderboardsPage = lazy(() => import('./pages/LeaderboardsPage').then((m) => ({ default: m.LeaderboardsPage })));
@@ -66,126 +60,25 @@ const PublicProfilePage = lazy(() => import('./pages/PublicProfilePage').then((m
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage').then((m) => ({ default: m.PrivacyPage })));
 const TermsPage = lazy(() => import('./pages/TermsPage').then((m) => ({ default: m.TermsPage })));
 
-type View =
-  | 'home'
-  | 'play'
-  | 'learn'
-  | 'masters'
-  | 'friends'
-  | 'openings'
-  | 'explorer'
-  | 'tactics'
-  | 'endgame'
-  | 'endgame-drills'
-  | 'train'
-  | 'coach'
-  | 'plan'
-  | 'coordinates'
-  | 'archive'
-  | 'stats'
-  | 'leaders'
-  | 'profile'
-  | 'shared-profile'
-  // Hash-only views (#/privacy, #/terms) — linked from the footer/settings,
-  // never in the tab bar.
-  | 'privacy'
-  | 'terms';
-
-// Labels/hints live in the `nav` namespace under `tabs.<id>.{label,hint}`.
-const TABS: { id: View; icon: ComponentType<SVGProps<SVGSVGElement> & { size?: number }> }[] = [
-  { id: 'home', icon: IconToday },
-  { id: 'play', icon: IconPlay },
-  { id: 'learn', icon: IconLearn },
-  { id: 'masters', icon: IconCrown },
-  { id: 'friends', icon: IconFriends },
-  { id: 'openings', icon: IconOpenings },
-  { id: 'explorer', icon: IconExplorer },
-  { id: 'tactics', icon: IconTactics },
-  { id: 'endgame', icon: IconEndgame },
-  { id: 'endgame-drills', icon: IconBolt },
-  { id: 'train', icon: IconTrain },
-  { id: 'coach', icon: IconCoach },
-  { id: 'plan', icon: IconSparkles },
-  { id: 'coordinates', icon: IconCoords },
-  { id: 'archive', icon: IconArchive },
-  { id: 'stats', icon: IconStats },
-  { id: 'leaders', icon: IconTrophy },
-  { id: 'profile', icon: IconProfile },
-];
-
-function Badge({ ok, children }: { ok: boolean; children: ReactNode }) {
-  return (
-    <span className={`rounded-full px-2 py-0.5 ${ok ? 'bg-emerald-900/60 text-emerald-300' : 'bg-neutral-800 text-neutral-400'}`}>
-      {children}
-    </span>
-  );
-}
-
-function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
+/** Top bar: logo (mobile — the sidebar carries it on desktop) + account cluster. */
+function Header() {
   const { t } = useTranslation('nav');
-  const connected = useGame((s) => s.connected);
-  const availability = useGame((s) => s.availability);
+  const navigate = useNavigate();
   const [settingsOpen, setSettingsOpen] = useState(false);
   return (
     <header className="sticky top-0 z-20 border-b border-neutral-800/80 bg-page/85 backdrop-blur">
-      <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-3 px-4 py-2.5">
-        <h1 className="flex items-center gap-2">
+      <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-3 px-4 py-2.5">
+        <h1 className="flex items-center gap-2 lg:sr-only">
           <LogoMark size={30} />
           <Wordmark className="text-ink" />
           <span className="sr-only">{t('srTagline')}</span>
         </h1>
-        {/* On small screens the tabs scroll horizontally in one row (scrollbar hidden)
-            instead of wrapping into cramped lines; from sm up they wrap as before. */}
-        <nav
-          aria-label={t('primaryNav')}
-          className="scrollbar-none order-3 flex w-full gap-1 overflow-x-auto sm:order-2 sm:w-auto sm:flex-wrap sm:overflow-x-visible"
-        >
-          {TABS.map((tab) => {
-            const Icon = tab.icon;
-            const active = view === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  playSound('uiClick');
-                  setView(tab.id);
-                }}
-                title={t(`tabs.${tab.id}.hint`)}
-                aria-current={active ? 'page' : undefined}
-                className={`btn-press flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold sm:min-h-0 ${
-                  active
-                    ? 'bg-gradient-to-br from-brand-600 to-brand-700 text-white shadow-glow'
-                    : 'text-neutral-300 hover:bg-neutral-800 hover:text-ink'
-                }`}
-              >
-                {/* white/85, not brand-300: the active pill's gradient stays dark in
-                    both themes, while brand-300 flips dark in light mode. */}
-                <Icon size={16} className={active ? 'text-white/85' : 'text-neutral-400'} />
-                {t(`tabs.${tab.id}.label`)}
-              </button>
-            );
-          })}
-        </nav>
-        <div className="order-2 flex items-center gap-2.5 text-xs sm:order-3">
-          {availability && (
-            <span className="hidden gap-2 text-neutral-400 md:flex">
-              <Badge ok={availability.stockfish}>Stockfish</Badge>
-              <Badge ok={availability.lc0}>Maia</Badge>
-              {availability.syzygy && (
-                <Badge ok>Syzygy{availability.syzygyMaxPieces ? ` ≤${availability.syzygyMaxPieces}` : ''}</Badge>
-              )}
-            </span>
-          )}
-          <span
-            role="status"
-            title={connected ? t('status.connectedTooltip') : t('status.connectingTooltip')}
-            className={`flex items-center gap-1.5 font-semibold ${connected ? 'text-emerald-400' : 'text-rose-400'}`}
-          >
-            <span className={`h-2 w-2 rounded-full ${connected ? 'bg-emerald-400' : 'animate-pulse-soft bg-rose-400'}`} />
-            {connected ? t('status.online') : t('status.connecting')}
+        <div className="ml-auto flex items-center gap-2.5 text-xs">
+          {/* Connection status lives in the sidebar footer on desktop. */}
+          <span className="lg:hidden">
+            <StatusDot />
           </span>
-          <LevelBadge onClick={() => setView('profile')} />
-          <InstallButton />
+          <LevelBadge onClick={() => navigate('/profile')} />
           <button
             onClick={() => setSettingsOpen(true)}
             title={t('settings')}
@@ -206,89 +99,287 @@ function Header({ view, setView }: { view: View; setView: (v: View) => void }) {
   );
 }
 
-export default function App() {
+/* ------------------------------- hubs ---------------------------------- */
+
+/**
+ * Suspense sits INSIDE each hub, so the hub's own tab strip stays visible
+ * while a lazy sub-page chunk is in flight (no whole-page blink).
+ */
+function PlayHub({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation('nav');
+  const tabs: HubTab[] = [
+    { id: 'bots', to: '/play', end: true },
+    { id: 'friends', to: '/play/friends' },
+  ];
+  return (
+    <div>
+      <HubTabs
+        label={t('hubSections', { hub: t('hubs.play.label') })}
+        tabs={tabs}
+        trailing={
+          <>
+            <HubSideLink to="/play/analysis">{t('sections.analysis.label')}</HubSideLink>
+            {/* Owner decision: the game archive lives under Profile; Play links to it. */}
+            <HubSideLink to="/profile/archive">{t('sections.gameHistory')} →</HubSideLink>
+          </>
+        }
+      />
+      <Suspense fallback={null}>{children}</Suspense>
+    </div>
+  );
+}
+
+function LearnHub({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation('nav');
+  const tabs: HubTab[] = [
+    { id: 'lessons', to: '/learn', end: true },
+    { id: 'openings', to: '/learn/openings' },
+    { id: 'masters', to: '/learn/masters' },
+  ];
+  return (
+    <div>
+      <HubTabs label={t('hubSections', { hub: t('hubs.learn.label') })} tabs={tabs} />
+      <Suspense fallback={null}>{children}</Suspense>
+    </div>
+  );
+}
+
+function ProfileHub({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation('nav');
+  const tabs: HubTab[] = [
+    { id: 'overview', to: '/profile', end: true },
+    { id: 'progress', to: '/profile/progress' },
+    { id: 'archive', to: '/profile/archive' },
+    { id: 'leaderboards', to: '/profile/leaderboards' },
+    { id: 'about', to: '/profile/about' },
+  ];
+  return (
+    <div>
+      <HubTabs label={t('hubSections', { hub: t('hubs.profile.label') })} tabs={tabs} />
+      <Suspense fallback={null}>{children}</Suspense>
+    </div>
+  );
+}
+
+/** Slim chrome for Train sub-pages: a way back to the hub's card grid. */
+function TrainSection({ tabs, children }: { tabs?: HubTab[]; children: React.ReactNode }) {
+  const { t } = useTranslation('nav');
+  return (
+    <div>
+      <nav aria-label={t('hubSections', { hub: t('hubs.train.label') })} className="mx-auto mb-4 flex w-full max-w-[1200px] items-center gap-1">
+        <Link
+          to="/train"
+          onClick={() => playSound('uiClick')}
+          className="btn-press flex min-h-11 items-center whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-semibold text-neutral-300 hover:bg-neutral-800 hover:text-ink sm:min-h-9"
+        >
+          ← {t('hubs.train.label')}
+        </Link>
+      </nav>
+      {tabs && <HubTabs label={t('hubSections', { hub: t('hubs.train.label') })} tabs={tabs} />}
+      <Suspense fallback={null}>{children}</Suspense>
+    </div>
+  );
+}
+
+/* --------------------------- route wrappers ----------------------------- */
+
+function HomeRoute() {
+  const navigate = useNavigate();
+  return (
+    <HomePage
+      go={(v) => navigate(viewPath(v))}
+      onDailyPuzzle={() => navigate('/train/tactics?daily=1')}
+      onSprint={(m) => navigate(`/train/tactics/${m}`)}
+    />
+  );
+}
+
+const TACTICS_MODES: TacticsMode[] = ['practice', 'rush', 'storm', 'mistakes'];
+
+function TacticsRoute() {
+  const { mode } = useParams();
+  const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  // Canonical practice URL is /train/tactics (no segment); unknown modes land there too.
+  if (mode !== undefined && (mode === 'practice' || !TACTICS_MODES.includes(mode as TacticsMode))) {
+    return <Navigate to="/train/tactics" replace />;
+  }
+  return (
+    <TacticsPage
+      mode={(mode as TacticsMode | undefined) ?? 'practice'}
+      onModeChange={(m) => navigate(m === 'practice' ? '/train/tactics' : `/train/tactics/${m}`)}
+      openDaily={params.get('daily') === '1'}
+      onDailyOpened={() => setParams({}, { replace: true })}
+    />
+  );
+}
+
+function EndgamesRoute({ tab }: { tab: 'study' | 'drill' }) {
+  const tabs: HubTab[] = [
+    { id: 'study', to: '/train/endgames', end: true },
+    { id: 'drill', to: '/train/endgames/drill' },
+  ];
+  return (
+    <TrainSection tabs={tabs}>
+      {tab === 'study' ? <EndgamePage /> : <EndgameDrillsPage />}
+    </TrainSection>
+  );
+}
+
+function OpeningsRoute({ view }: { view: 'repertoire' | 'explore' }) {
+  const navigate = useNavigate();
+  const tabs: HubTab[] = [
+    { id: 'repertoire', to: '/learn/openings', end: true },
+    { id: 'explore', to: '/learn/openings/explore' },
+  ];
+  const { t } = useTranslation('nav');
+  return (
+    <div>
+      <HubTabs label={t('hubSections', { hub: t('sections.openings.label') })} tabs={tabs} />
+      {view === 'repertoire' ? <OpeningsPage /> : <ExplorerPage goAnalyze={() => navigate('/play/analysis')} />}
+    </div>
+  );
+}
+
+function PublicProfileRoute() {
+  const { username = '' } = useParams();
+  // Reserved hub segments are never usernames (see app/paths.ts).
+  const alias = profileAliasRedirect(username);
+  if (alias) return <Navigate to={alias} replace />;
+  return <PublicProfilePage username={username} />;
+}
+
+/**
+ * Catch-all: every pre-IA URL (old share links, emails, bookmarks — e.g.
+ * #/friend/CODE, #/privacy, #/tactics) redirects to its new home; anything
+ * truly unknown lands on Home rather than a dead end.
+ */
+function LegacyRedirectRoute() {
+  const { pathname, search } = useLocation();
+  const to = legacyRedirect(pathname);
+  return <Navigate to={to ? { pathname: to, search } : '/'} replace />;
+}
+
+function AppRoutes() {
+  const navigate = useNavigate();
+  const goAnalysis = () => navigate('/play/analysis');
+  return (
+    <Routes>
+      <Route path="/" element={<HomeRoute />} />
+
+      {/* Play — Bots · Friends (+ Analysis sub-page, Game-history link) */}
+      <Route path="/play" element={<PlayHub><PlayPage /></PlayHub>} />
+      <Route path="/play/analysis" element={<PlayHub><PlayPage /></PlayHub>} />
+      {/* Friends renders through the keep-mounted slot in AppShell so a live
+          human-vs-human game survives navigation; the route only draws chrome. */}
+      <Route path="/play/friends" element={<PlayHub>{null}</PlayHub>} />
+      <Route path="/play/friends/:code" element={<PlayHub>{null}</PlayHub>} />
+
+      {/* Train — hub cards + Coach & Plan strip; each trainer is a sub-page */}
+      <Route path="/train" element={<TrainHub />} />
+      <Route path="/train/tactics" element={<TrainSection><TacticsRoute /></TrainSection>} />
+      <Route path="/train/tactics/:mode" element={<TrainSection><TacticsRoute /></TrainSection>} />
+      <Route path="/train/endgames" element={<EndgamesRoute tab="study" />} />
+      <Route path="/train/endgames/drill" element={<EndgamesRoute tab="drill" />} />
+      <Route path="/train/vision" element={<TrainSection><VisionPage /></TrainSection>} />
+      <Route path="/train/checkmates" element={<TrainSection><MatesPage /></TrainSection>} />
+      <Route path="/train/anti-blunder" element={<TrainSection><AntiBlunderPage /></TrainSection>} />
+      <Route path="/train/coordinates" element={<TrainSection><CoordinatePage /></TrainSection>} />
+      <Route
+        path="/train/plan"
+        element={<TrainSection><StudyPlanPage go={(v) => navigate(viewPath(v))} /></TrainSection>}
+      />
+
+      {/* Learn — Lessons · Openings (Repertoire/Explore) · Masters */}
+      <Route path="/learn" element={<LearnHub><LearnPage /></LearnHub>} />
+      <Route path="/learn/openings" element={<LearnHub><OpeningsRoute view="repertoire" /></LearnHub>} />
+      <Route path="/learn/openings/explore" element={<LearnHub><OpeningsRoute view="explore" /></LearnHub>} />
+      <Route path="/learn/masters" element={<LearnHub><MastersPage goPlay={goAnalysis} /></LearnHub>} />
+
+      {/* Profile — Overview · Progress · Archive · Leaderboards · About */}
+      <Route
+        path="/profile"
+        element={
+          <ProfileHub>
+            <ProfilePage goPlay={() => navigate('/play')} onViewPublicProfile={(u) => navigate(`/profile/${encodeURIComponent(u)}`)} />
+          </ProfileHub>
+        }
+      />
+      <Route path="/profile/progress" element={<ProfileHub><StatsPage goto={(t) => navigate(deckPath(t))} /></ProfileHub>} />
+      <Route path="/profile/archive" element={<ProfileHub><ArchivePage goPlay={goAnalysis} /></ProfileHub>} />
+      <Route
+        path="/profile/leaderboards"
+        element={<ProfileHub><LeaderboardsPage onViewProfile={(u) => navigate(`/profile/${encodeURIComponent(u)}`)} /></ProfileHub>}
+      />
+      <Route path="/profile/about" element={<ProfileHub><AboutPage /></ProfileHub>} />
+      <Route path="/profile/about/privacy" element={<ProfileHub><PrivacyPage /></ProfileHub>} />
+      <Route path="/profile/about/terms" element={<ProfileHub><TermsPage /></ProfileHub>} />
+      {/* Shared public profiles: #/profile/NAME URLs are preserved as-is.
+          Static hub tabs above outrank the param route; reserved words are
+          additionally guarded inside. */}
+      <Route path="/profile/:username" element={<PublicProfileRoute />} />
+
+      {/* Legacy URLs (redirect table) + unknown → Home */}
+      <Route path="*" element={<LegacyRedirectRoute />} />
+    </Routes>
+  );
+}
+
+/* ------------------------------- shell ---------------------------------- */
+
+/** Move focus to the new page's first heading on route change (a11y). */
+function useRouteFocus() {
+  const { pathname } = useLocation();
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    window.scrollTo(0, 0);
+    const main = document.getElementById('main');
+    if (!main) return;
+    // Ground focus in the content region immediately…
+    if (!main.hasAttribute('tabindex')) main.setAttribute('tabindex', '-1');
+    main.focus();
+    // …then hand it to the page's first heading once the (possibly lazy)
+    // page has rendered. Retries stop if the user moved focus themselves.
+    let cancelled = false;
+    const tryHeading = (attempt: number) => {
+      if (cancelled) return;
+      const active = document.activeElement;
+      if (active !== main && active !== document.body) return; // user took over
+      const heading = main.querySelector<HTMLElement>('h1, h2');
+      if (heading) {
+        if (!heading.hasAttribute('tabindex')) heading.setAttribute('tabindex', '-1');
+        heading.focus();
+      } else if (attempt < 6) {
+        window.setTimeout(() => tryHeading(attempt + 1), 50);
+      }
+    };
+    tryHeading(0);
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
+}
+
+function AppShell() {
   const { t } = useTranslation('nav');
   const init = useGame((s) => s.init);
   const authInit = useAuth((s) => s.init);
-  // A shared friend-game link (#/friend/CODE) lands straight on the Friends
-  // view and a shared profile link (#/profile/NAME) on that public profile;
-  // everyone else starts the day on the Today page.
-  const [view, setView] = useState<View>(() => {
-    const route = parseHashRoute(window.location.hash);
-    if (route.kind === 'legal') return route.page;
-    return route.kind === 'friend' ? 'friends' : route.kind === 'profile' ? 'shared-profile' : 'home';
-  });
-  const [profileUser, setProfileUser] = useState<string | null>(() => profileHashUser(window.location.hash));
-  const [trainTab, setTrainTab] = useState<TrainTab>('mates');
-  // Set when the Today page's "Daily puzzle" entry is used, so the Tactics
-  // page opens straight onto today's puzzle (cleared on any manual nav).
-  const [tacticsDaily, setTacticsDaily] = useState(false);
-  // Set by the Today page's sprint entries (Puzzle Rush / Storm), so the
-  // Tactics page opens straight on that mode (cleared on any manual nav).
-  const [tacticsMode, setTacticsMode] = useState<'rush' | 'storm' | null>(null);
+  const location = useLocation();
+  useRouteFocus();
+
   // HumansPage stays mounted once visited (a live human-vs-human game must
-  // survive tab switches), but with code splitting we don't mount — or fetch —
-  // it at all until the Friends tab is first opened. Flipped in an effect
+  // survive navigation), but with code splitting we don't mount — or fetch —
+  // it at all until Play → Friends is first opened. Flipped in an effect
   // (not during render) so a discarded/suspended render can't half-commit it.
-  const [friendsVisited, setFriendsVisited] = useState(view === 'friends');
+  const friendsMatch = useMatch('/play/friends/*');
+  const [friendsVisited, setFriendsVisited] = useState(!!friendsMatch);
   useEffect(() => {
-    if (view === 'friends') setFriendsVisited(true);
-  }, [view]);
-
-  useEffect(() => {
-    const onHash = () => {
-      const route = parseHashRoute(window.location.hash);
-      if (route.kind === 'friend') {
-        setView('friends');
-      } else if (route.kind === 'profile') {
-        setProfileUser(route.user);
-        setView('shared-profile');
-      } else if (route.kind === 'legal') {
-        setView(route.page);
-      } else if (route.kind === 'exit-overlay') {
-        // The hash was cleared (Back out of a profile/legal link). Normal
-        // tabs don't live in the hash, but these views exist ONLY via their
-        // hash — so leaving the hash leaves the view too.
-        setView((v) => (v === 'shared-profile' || v === 'privacy' || v === 'terms' ? 'home' : v));
-      }
-      // 'ignore' (in-page anchors like the #main skip link, foreign hashes):
-      // never navigate — the skip link must move focus, not views.
-    };
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
-
-  // Open a player's public profile (leaderboard rows, own share preview).
-  // pushState (not location.hash) avoids double-handling via hashchange while
-  // still making Back return to the previous view via the listener above.
-  const openProfile = (username: string) => {
-    window.history.pushState(null, '', `#/profile/${encodeURIComponent(username)}`);
-    setProfileUser(username);
-    setView('shared-profile');
-  };
-
-  // Jump to a deck's trainer (used by the unified review summary on Stats).
-  const goto = (target: DeckTarget) => {
-    if (target.trainTab) setTrainTab(target.trainTab);
-    setView(target.view);
-  };
-
-  // All navigation funnels through here so one-shot flags don't go stale.
-  const nav = (v: View) => {
-    setTacticsDaily(false);
-    setTacticsMode(null);
-    // Leaving a hash-driven view (shared profile, privacy, terms): drop its
-    // hash so the URL matches the new view.
-    const hash = window.location.hash;
-    const onHashView =
-      (v !== 'shared-profile' && hash.startsWith('#/profile/')) ||
-      (v !== 'privacy' && hash === '#/privacy') ||
-      (v !== 'terms' && hash === '#/terms');
-    if (onHashView) {
-      window.history.replaceState(null, '', window.location.pathname + window.location.search);
-    }
-    setView(v);
-  };
+    if (friendsMatch) setFriendsVisited(true);
+  }, [friendsMatch]);
 
   useEffect(() => {
     init();
@@ -298,68 +389,62 @@ export default function App() {
   }, [init, authInit]);
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen">
       <a
         href="#main"
+        onClick={(e) => {
+          // Hash routing owns location.hash — move focus without navigating.
+          e.preventDefault();
+          const main = document.getElementById('main');
+          if (main) {
+            main.setAttribute('tabindex', '-1');
+            main.focus();
+          }
+        }}
         className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded-full focus:bg-brand-600 focus:px-3 focus:py-1.5 focus:text-sm focus:text-white"
       >
         {t('skipToContent')}
       </a>
-      <Header view={view} setView={nav} />
-      {/* key={view} remounts the content on tab switch so .page-fade replays
-          its fade (disabled under prefers-reduced-motion in index.css). */}
-      <main key={view} id="main" className="page-fade flex-1 p-4">
-        {/* Lazy route chunks resolve in a few ms from cache/SW; while one is
-            in flight the content area is simply empty (no spinner flash). */}
-        <Suspense fallback={null}>
-        {view === 'home' && (
-          <HomePage
-            go={nav}
-            onDailyPuzzle={() => {
-              setTacticsDaily(true);
-              setView('tactics');
-            }}
-            onSprint={(m) => {
-              setTacticsMode(m);
-              setView('tactics');
-            }}
-          />
-        )}
-        {view === 'play' && <PlayPage />}
-        {view === 'learn' && <LearnPage />}
-        {view === 'masters' && <MastersPage goPlay={() => setView('play')} />}
-        {/* Kept mounted so a live human-vs-human game survives tab switches.
-            `active` lets the friends panel poll (and auto-join accepted
-            challenges) only while the tab is actually visible. */}
-        {friendsVisited && (
-        <div className={view === 'friends' ? undefined : 'hidden'}>
-          <HumansPage active={view === 'friends'} />
-        </div>
-        )}
-        {view === 'openings' && <OpeningsPage />}
-        {view === 'explorer' && <ExplorerPage goAnalyze={() => setView('play')} />}
-        {view === 'tactics' && (
-          <TacticsPage openDaily={tacticsDaily} onDailyOpened={() => setTacticsDaily(false)} openMode={tacticsMode} />
-        )}
-        {view === 'endgame' && <EndgamePage />}
-        {view === 'endgame-drills' && <EndgameDrillsPage />}
-        {view === 'train' && <TrainPage tab={trainTab} setTab={setTrainTab} />}
-        {view === 'coach' && <CoachPage goPlay={() => setView('play')} />}
-        {view === 'plan' && <StudyPlanPage go={nav} />}
-        {view === 'coordinates' && <CoordinatePage />}
-        {view === 'archive' && <ArchivePage goPlay={() => setView('play')} />}
-        {view === 'stats' && <StatsPage goto={goto} />}
-        {view === 'leaders' && <LeaderboardsPage onViewProfile={openProfile} />}
-        {view === 'profile' && <ProfilePage goPlay={() => setView('play')} onViewPublicProfile={openProfile} />}
-        {view === 'shared-profile' && profileUser && <PublicProfilePage username={profileUser} />}
-        {view === 'privacy' && <PrivacyPage />}
-        {view === 'terms' && <TermsPage />}
-        </Suspense>
-      </main>
-      <Footer />
+      <Sidebar />
+      {/* pb clears the fixed bottom bar on small screens. */}
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col pb-16 lg:pb-0">
+        <Header />
+        <main id="main" className="flex-1 p-4">
+          {/* key replays .page-fade on navigation (disabled under
+              prefers-reduced-motion in index.css). Lazy route chunks resolve
+              in a few ms from cache/SW; while one is in flight the content
+              area is simply empty (no spinner flash). */}
+          <div key={location.pathname} className="page-fade">
+            <Suspense fallback={null}>
+              <AppRoutes />
+            </Suspense>
+          </div>
+          {/* Keep-mounted Friends slot (outside the keyed fade wrapper, so a
+              live game never remounts). `active` lets the friends panel poll
+              only while the section is actually visible. */}
+          {friendsVisited && (
+            <div className={friendsMatch ? undefined : 'hidden'}>
+              <Suspense fallback={null}>
+                <HumansPage active={!!friendsMatch} />
+              </Suspense>
+            </div>
+          )}
+        </main>
+        <Footer />
+      </div>
+      <BottomBar />
       <GamifyToasts />
       <Celebration />
       <ConsentNotice />
+      <WhatMovedTour />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <HashRouter>
+      <AppShell />
+    </HashRouter>
   );
 }

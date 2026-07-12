@@ -196,7 +196,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
             covering the page it just navigated to. */}
         <p className="mt-3 text-center text-xs text-neutral-400">
           <a
-            href="#/privacy"
+            href="#/profile/about/privacy"
             onClick={onClose}
             className="underline decoration-neutral-600 underline-offset-2 hover:text-neutral-200"
           >
@@ -204,7 +204,7 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
           </a>
           <span aria-hidden="true"> · </span>
           <a
-            href="#/terms"
+            href="#/profile/about/terms"
             onClick={onClose}
             className="underline decoration-neutral-600 underline-offset-2 hover:text-neutral-200"
           >

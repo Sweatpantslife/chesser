@@ -33,7 +33,7 @@ export function TermsPage() {
             </>,
             <>
               You can export your data or delete your account at any time from the account panel — see the{' '}
-              <LegalLink href="#/privacy">Privacy Policy</LegalLink>. Deletion is immediate and permanent.
+              <LegalLink href="#/profile/about/privacy">Privacy Policy</LegalLink>. Deletion is immediate and permanent.
             </>,
           ]}
         />
@@ -61,7 +61,7 @@ export function TermsPage() {
         <p>
           The AI coach runs on your own provider API key, under your provider&apos;s terms and pricing. You are
           responsible for that account and its costs. Chesser never stores your key server-side (see the{' '}
-          <LegalLink href="#/privacy">Privacy Policy</LegalLink>) and is not responsible for provider output, outages
+          <LegalLink href="#/profile/about/privacy">Privacy Policy</LegalLink>) and is not responsible for provider output, outages
           or charges.
         </p>
       </LegalSection>

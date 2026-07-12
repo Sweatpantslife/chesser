@@ -50,15 +50,17 @@ export type TacticsMode = 'practice' | 'rush' | 'storm' | 'mistakes';
 export function TacticsPage({
   openDaily = false,
   onDailyOpened,
-  openMode,
+  mode = 'practice',
+  onModeChange,
 }: {
   openDaily?: boolean;
   onDailyOpened?: () => void;
-  /** Deep link from the Today page: land straight on a sprint mode. */
-  openMode?: TacticsMode | null;
+  /** Active mode — routed (#/train/tactics[/:mode]), so refresh/share keep it. */
+  mode?: TacticsMode;
+  /** Mode tab clicks navigate (the router owns the mode). */
+  onModeChange?: (m: TacticsMode) => void;
 }) {
   const { t } = useTranslation('tactics');
-  const [mode, setMode] = useState<TacticsMode>(openMode ?? 'practice');
   const mistakeCount = useMistakes((s) => s.cards.length);
   const labels = {
     practice: t('tabs.practice'),
@@ -72,7 +74,8 @@ export function TacticsPage({
         {(['practice', 'rush', 'storm', 'mistakes'] as const).map((m) => (
           <button
             key={m}
-            onClick={() => setMode(m)}
+            onClick={() => onModeChange?.(m)}
+            aria-pressed={mode === m}
             className={`rounded px-3 py-1.5 text-sm ${
               mode === m ? 'bg-brand-600 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
             }`}

@@ -116,7 +116,7 @@ export function PrivacyPage() {
       <LegalSection title="Retention & changes">
         <p>
           Account data is kept until you delete it. If this policy changes, the date above changes with it and the
-          updated policy applies from then on. See also the <LegalLink href="#/terms">Terms of Service</LegalLink>.
+          updated policy applies from then on. See also the <LegalLink href="#/profile/about/terms">Terms of Service</LegalLink>.
         </p>
       </LegalSection>
     </LegalShell>

@@ -53,7 +53,7 @@ export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: (
         setSeat(s);
         // Make the URL shareable/refreshable: refresh rejoins this game.
         // replaceState avoids firing hashchange, which would remount us.
-        history.replaceState(null, '', `#/friend/${s.code}`);
+        history.replaceState(null, '', `#/play/friends/${s.code}`);
       },
       onState: (st) => {
         receivedAtRef.current = performance.now();
@@ -138,13 +138,16 @@ export function OnlineGame({ intent, onExit }: { intent: FriendIntent; onExit: (
   };
 
   const leave = () => {
-    if (window.location.hash.startsWith('#/friend/')) {
-      history.replaceState(null, '', window.location.pathname + window.location.search);
+    // Drop the game code from the URL (both the canonical and legacy forms),
+    // staying on the Friends section.
+    const h = window.location.hash;
+    if (/^#\/(play\/friends|friend)\//.test(h)) {
+      history.replaceState(null, '', `${window.location.pathname}${window.location.search}#/play/friends`);
     }
     onExit();
   };
 
-  const shareLink = seat ? `${location.origin}${location.pathname}#/friend/${seat.code}` : '';
+  const shareLink = seat ? `${location.origin}${location.pathname}#/play/friends/${seat.code}` : '';
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(shareLink);

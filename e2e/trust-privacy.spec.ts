@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type APIRequestContext } from '@playwright/test';
 
 /**
  * Trust & privacy layer, end to end against the built app: the policy pages,
@@ -9,6 +9,20 @@ import { test, expect, type Page } from '@playwright/test';
 
 const PASSWORD = 'hunter22';
 const uniq = Math.random().toString(36).slice(2, 8);
+
+/**
+ * POST /api/auth/register, waiting out the per-IP registration token bucket
+ * (capacity 10, +5/min — accounts/guard.ts): a full-suite run registers more
+ * accounts than one bucket holds, so a raw post can 429 late in the run.
+ */
+async function apiRegister(request: APIRequestContext, username: string) {
+  for (let attempt = 0; ; attempt++) {
+    const res = await request.post('/api/auth/register', { data: { username, password: PASSWORD } });
+    if (res.status() !== 429 || attempt >= 6) return res;
+    await new Promise((r) => setTimeout(r, 13_000));
+  }
+}
+
 
 /** Dismissing the notice up front keeps it out of unrelated assertions. */
 async function dismissNotice(page: Page): Promise<void> {
@@ -21,7 +35,19 @@ async function registerViaUi(page: Page, username: string): Promise<void> {
   await page.getByRole('button', { name: 'Create account' }).first().click();
   await page.getByPlaceholder('username').fill(username);
   await page.getByPlaceholder('password').fill(PASSWORD);
-  await page.getByRole('button', { name: 'Create account' }).last().click();
+  // The per-IP registration token bucket (accounts/guard.ts) can throttle a
+  // full-suite run; wait out a 429 and resubmit rather than flaking.
+  for (let attempt = 0; ; attempt++) {
+    await page.getByRole('button', { name: 'Create account' }).last().click();
+    const throttle = page.getByRole('alert').filter({ hasText: /too many registrations/i });
+    try {
+      await throttle.waitFor({ state: 'visible', timeout: 4000 });
+    } catch {
+      return; // no throttle alert → registered (or a rejection the test itself asserts)
+    }
+    if (attempt >= 4) return;
+    await page.waitForTimeout(13_000);
+  }
 }
 
 test.describe('policy pages', () => {
@@ -52,14 +78,14 @@ test.describe('first-run storage notice', () => {
     await page.goto('/');
     const notice = page.getByRole('region', { name: 'Data storage notice' });
     await expect(notice).toBeVisible();
-    await expect(notice.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '#/privacy');
+    await expect(notice.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '#/profile/about/privacy');
 
     await notice.getByRole('button', { name: 'Got it' }).click();
     await expect(notice).toBeHidden();
 
     await page.reload();
     // The Today page is up and the notice is not.
-    await expect(page.getByRole('navigation', { name: 'Primary' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Main' }).first()).toBeVisible();
     await expect(page.getByRole('region', { name: 'Data storage notice' })).toHaveCount(0);
   });
 });
@@ -147,7 +173,7 @@ test.describe('abuse reports', () => {
   test('a signed-in visitor can report a public profile; repeats dedupe', async ({ page, request }) => {
     // Target: an account with a public profile, set up via the API.
     const target = `report-target-${uniq}`;
-    const reg = await request.post('/api/auth/register', { data: { username: target, password: PASSWORD } });
+    const reg = await apiRegister(request, target);
     expect(reg.ok()).toBeTruthy();
     const { token } = (await reg.json()) as { token: string };
     const prefs = await request.put('/api/social/prefs', {
@@ -182,7 +208,7 @@ test.describe('abuse reports', () => {
 
   test('signed-out visitors are asked to sign in instead of a form', async ({ page, request }) => {
     const target = `report-anon-${uniq}`;
-    const reg = await request.post('/api/auth/register', { data: { username: target, password: PASSWORD } });
+    const reg = await apiRegister(request, target);
     const { token } = (await reg.json()) as { token: string };
     await request.put('/api/social/prefs', {
       headers: { Authorization: `Bearer ${token}` },

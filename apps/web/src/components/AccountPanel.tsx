@@ -147,7 +147,7 @@ function DataControls({ onClose }: { onClose: () => void }) {
           components={{
             policyLink: (
               <a
-                href="#/privacy"
+                href="#/profile/about/privacy"
                 onClick={onClose}
                 className="text-brand-300 underline decoration-brand-300/50 underline-offset-2 hover:text-brand-200"
               />

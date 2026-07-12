@@ -28,7 +28,7 @@ describe('i18n runtime (jsdom)', () => {
     expect(screen.getByRole('button', { name: 'Got it' })).toBeTruthy();
     // The <policyLink> tag becomes a real anchor around the link text only.
     const link = screen.getByRole('link', { name: 'Privacy Policy' });
-    expect(link.getAttribute('href')).toBe('#/privacy');
+    expect(link.getAttribute('href')).toBe('#/profile/about/privacy');
   });
 
   it('lazy-loads a locale on switch, persists the choice and updates <html lang>', async () => {

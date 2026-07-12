@@ -57,7 +57,7 @@ function Badge({ a, earnedAt, ctx }: { a: Achievement; earnedAt: number | undefi
           </div>
           <div className="mt-1 text-right text-xs text-neutral-400">
             {Math.min(value, target)} / {target}
-            {a.xp > 0 && <span className="ml-2 text-gold-400/90">{t('achievements.xpReward', { xp: a.xp })}</span>}
+            {a.xp > 0 && <span className="ml-2 text-gold-400">{t('achievements.xpReward', { xp: a.xp })}</span>}
           </div>
         </div>
       )}
@@ -66,7 +66,7 @@ function Badge({ a, earnedAt, ctx }: { a: Achievement; earnedAt: number | undefi
           <span className="text-neutral-400">
             {earnedAt > 0 ? t('achievements.earnedOn', { date: dateFmt.format(earnedAt) }) : t('achievements.earned')}
           </span>
-          {done && a.xp > 0 && <span className="text-gold-400/90">{t('achievements.xpReward', { xp: a.xp })}</span>}
+          {done && a.xp > 0 && <span className="text-gold-400">{t('achievements.xpReward', { xp: a.xp })}</span>}
         </div>
       )}
     </div>

@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page, type APIRequestContext } from '@playwright/test';
 
 /**
  * Leaderboards + shareable profile, end to end against the built app:
@@ -10,6 +10,20 @@ import { test, expect, type Page } from '@playwright/test';
 const PASSWORD = 'hunter22';
 const uniq = Math.random().toString(36).slice(2, 8);
 const USER = `elo-hero-${uniq}`;
+
+/**
+ * POST /api/auth/register, waiting out the per-IP registration token bucket
+ * (capacity 10, +5/min — accounts/guard.ts): a full-suite run registers more
+ * accounts than one bucket holds, so a raw post can 429 late in the run.
+ */
+async function apiRegister(request: APIRequestContext, username: string) {
+  for (let attempt = 0; ; attempt++) {
+    const res = await request.post('/api/auth/register', { data: { username, password: PASSWORD } });
+    if (res.status() !== 429 || attempt >= 6) return res;
+    await new Promise((r) => setTimeout(r, 13_000));
+  }
+}
+
 
 const today = new Date().toISOString().slice(0, 10);
 
@@ -68,6 +82,9 @@ async function seedLocalStorage(page: Page, token: string): Promise<void> {
   await page.addInitScript(
     ({ token, user, now }: { token: string; user: string; now: number }) => {
       localStorage.setItem('chesser-auth', JSON.stringify({ state: { token, username: user }, version: 0 }));
+      // Seeded storage marks this browser as an "existing user", which would
+      // pop the one-time "what moved" IA note over the UI — pre-dismiss it.
+      localStorage.setItem('chesser-ia-tour', 'dismissed');
       // Puzzle Rush bests in the sprints store's persisted shape (PR #30 seam):
       // the leaderboard adapter must pick the best rush mode (19), not storm.
       localStorage.setItem(
@@ -91,7 +108,7 @@ async function seedLocalStorage(page: Page, token: string): Promise<void> {
 test.describe('leaderboards + shareable profile', () => {
   test('join, get ranked, share the profile, open it signed-out', async ({ page, context, request, browser }) => {
     // -- setup: a registered account with server-validated progress ---------
-    const reg = await request.post('/api/auth/register', { data: { username: USER, password: PASSWORD } });
+    const reg = await apiRegister(request, USER);
     expect(reg.ok()).toBeTruthy();
     const { token } = (await reg.json()) as { token: string };
     const put = await request.put('/api/progress', {
@@ -109,7 +126,8 @@ test.describe('leaderboards + shareable profile', () => {
     await firstPush;
 
     // -- leaderboards: opt in, submit, see the ranking -----------------------
-    await page.getByRole('button', { name: 'Ranks' }).click();
+    await page.getByRole('navigation', { name: 'Main' }).first().getByRole('link', { name: 'Profile' }).click();
+    await page.getByRole('link', { name: 'Leaderboards' }).click();
     await expect(page.getByRole('heading', { name: 'Leaderboards', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Join & share my scores' }).click();
 
@@ -135,7 +153,7 @@ test.describe('leaderboards + shareable profile', () => {
     await expect(page.getByRole('row').filter({ hasText: USER })).toContainText('1480');
 
     // -- share affordance on the own profile ---------------------------------
-    await page.getByRole('button', { name: 'Profile', exact: true }).click();
+    await page.getByRole('link', { name: 'Overview' }).click();
     await expect(page.getByRole('heading', { name: 'Share your profile' })).toBeVisible();
 
     await page.getByRole('checkbox', { name: /Public profile page/ }).check();
@@ -169,19 +187,18 @@ test.describe('leaderboards + shareable profile', () => {
       fullPage: true,
     });
 
-    // REGRESSION: the accessibility skip link (<a href="#main">) is an
-    // in-page anchor — activating it on a shared profile must move focus,
-    // not bounce the view back to the Today page.
-    await visitor.evaluate(() => {
-      window.location.hash = '#main';
-    });
+    // REGRESSION: activating the accessibility skip link (the first tab
+    // stop) on a shared profile must move focus to the content — it must
+    // never route away from the profile (hash routing owns location.hash).
+    await visitor.keyboard.press('Tab');
+    await visitor.keyboard.press('Enter');
     await expect(visitor.getByRole('heading', { name: USER })).toBeVisible();
     await visitorCtx.close();
   });
 
   test('a profile that was never shared stays private', async ({ page, request }) => {
     const name = `private-${uniq}`;
-    const reg = await request.post('/api/auth/register', { data: { username: name, password: PASSWORD } });
+    const reg = await apiRegister(request, name);
     expect(reg.ok()).toBeTruthy();
     await page.goto(`/#/profile/${name}`);
     await expect(page.getByRole('heading', { name: /private or doesn't exist/ })).toBeVisible();

@@ -75,8 +75,7 @@ async function mockExplorer(page: Page): Promise<{ requests: string[] }> {
 test.describe('opening explorer', () => {
   test('standalone page: continuations load, clicking a move drills deeper', async ({ page }) => {
     const { requests } = await mockExplorer(page);
-    await page.goto('/');
-    await page.getByRole('button', { name: 'Explorer' }).click();
+    await page.goto('/#/learn/openings/explore');
 
     const panel = page.getByRole('region', { name: 'Opening explorer' });
     await expect(panel).toBeVisible();
@@ -110,8 +109,7 @@ test.describe('opening explorer', () => {
 
   test('standalone page: moving a piece on the board also drills', async ({ page }) => {
     await mockExplorer(page);
-    await page.goto('/');
-    await page.getByRole('button', { name: 'Explorer' }).click();
+    await page.goto('/#/learn/openings/explore');
     const panel = page.getByRole('region', { name: 'Opening explorer' });
     await expect(panel.getByRole('button', { name: /Play e4/ })).toBeVisible();
 
@@ -122,8 +120,7 @@ test.describe('opening explorer', () => {
 
   test('lichess database exposes speed and rating filters that reach the API', async ({ page }) => {
     const { requests } = await mockExplorer(page);
-    await page.goto('/');
-    await page.getByRole('button', { name: 'Explorer' }).click();
+    await page.goto('/#/learn/openings/explore');
 
     const panel = page.getByRole('region', { name: 'Opening explorer' });
     await panel.getByRole('button', { name: 'Lichess' }).click();
@@ -143,8 +140,7 @@ test.describe('opening explorer', () => {
 
   test('degrades gracefully offline: bundled opening name, no crash', async ({ page }) => {
     await page.route('**/api/explorer*', (route) => route.fulfill({ json: { available: false, reason: 'unreachable' } }));
-    await page.goto('/');
-    await page.getByRole('button', { name: 'Explorer' }).click();
+    await page.goto('/#/learn/openings/explore');
 
     const panel = page.getByRole('region', { name: 'Opening explorer' });
     await expect(panel).toContainText('Live stats unavailable');
@@ -158,7 +154,7 @@ test.describe('opening explorer', () => {
   test('analysis board: explorer panel drives the game store', async ({ page }) => {
     await mockExplorer(page);
     await page.goto('/');
-    await page.getByRole('navigation', { name: 'Primary' }).getByRole('button', { name: 'Play' }).click();
+    await page.getByRole('navigation', { name: 'Main' }).first().getByRole('link', { name: 'Play' }).click();
 
     const panel = page.getByRole('region', { name: 'Opening explorer' });
     await expect(panel).toBeVisible();

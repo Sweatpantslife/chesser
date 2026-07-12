@@ -17,7 +17,13 @@ const BEN = `ben-${uniq}`;
 const SYNC = { timeout: 20_000 };
 
 async function registerUser(request: APIRequestContext, username: string): Promise<string> {
-  const res = await request.post('/api/auth/register', { data: { username, password: PASSWORD } });
+  // Waits out the per-IP registration token bucket (accounts/guard.ts):
+  // a full-suite run registers more accounts than one bucket holds.
+  let res = await request.post('/api/auth/register', { data: { username, password: PASSWORD } });
+  for (let attempt = 0; res.status() === 429 && attempt < 6; attempt++) {
+    await new Promise((r) => setTimeout(r, 13_000));
+    res = await request.post('/api/auth/register', { data: { username, password: PASSWORD } });
+  }
   expect(res.ok()).toBeTruthy();
   return ((await res.json()) as { token: string }).token;
 }
@@ -27,6 +33,9 @@ async function seedAuth(page: Page, token: string, user: string): Promise<void> 
   await page.addInitScript(
     ({ token, user }: { token: string; user: string }) => {
       localStorage.setItem('chesser-auth', JSON.stringify({ state: { token, username: user }, version: 0 }));
+      // Seeded storage marks this browser as an "existing user", which would
+      // pop the one-time "what moved" IA note over the UI — pre-dismiss it.
+      localStorage.setItem('chesser-ia-tour', 'dismissed');
     },
     { token, user },
   );
@@ -45,14 +54,12 @@ test.describe('friends & challenges', () => {
     await seedAuth(ben, benToken, BEN);
 
     // --- both open the Friends tab -----------------------------------------
-    await ann.goto('/');
-    await ann.getByRole('button', { name: 'Friends' }).click();
+    await ann.goto('/#/play/friends');
     await expect(ann.getByTestId('friends-empty')).toBeVisible();
     const code = (await ann.getByTestId('friend-code').textContent())!.trim();
     expect(code).toMatch(/^[A-Z2-9]{8}$/);
 
-    await ben.goto('/');
-    await ben.getByRole('button', { name: 'Friends' }).click();
+    await ben.goto('/#/play/friends');
 
     // --- Ben adds Ann via her friend code (no public profile needed) --------
     await ben.getByTestId('add-friend-input').fill(code);
@@ -122,11 +129,9 @@ test.describe('friends & challenges', () => {
     await seedAuth(danaPage, danaToken, dana);
 
     // Friend up via code.
-    await carlPage.goto('/');
-    await carlPage.getByRole('button', { name: 'Friends' }).click();
+    await carlPage.goto('/#/play/friends');
     const code = (await carlPage.getByTestId('friend-code').textContent())!.trim();
-    await danaPage.goto('/');
-    await danaPage.getByRole('button', { name: 'Friends' }).click();
+    await danaPage.goto('/#/play/friends');
     await danaPage.getByTestId('add-friend-input').fill(code);
     await danaPage.getByTestId('add-friend-submit').click();
     await expect(carlPage.getByTestId('incoming-requests')).toContainText(dana, SYNC);
@@ -146,8 +151,7 @@ test.describe('friends & challenges', () => {
     // A signed-out visitor sees the sign-in nudge, not a broken panel.
     const anonCtx = await browser.newContext();
     const anon = await anonCtx.newPage();
-    await anon.goto('/');
-    await anon.getByRole('button', { name: 'Friends' }).click();
+    await anon.goto('/#/play/friends');
     await expect(anon.getByTestId('friends-signin-cta')).toBeVisible();
 
     await anonCtx.close();

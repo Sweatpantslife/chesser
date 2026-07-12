@@ -1,7 +1,67 @@
 {
   "skipToContent": "Aller au contenu",
   "primaryNav": "Principale",
+  "mainNav": "Principale",
+  "hubSections": "Sections {{hub}}",
   "srTagline": "— jouez et entraînez-vous aux échecs",
+  "hubs": {
+    "home": { "label": "Accueil", "hint": "votre journée en un coup d'œil" },
+    "play": { "label": "Jouer", "hint": "bots · amis · analyse" },
+    "train": { "label": "Entraînement", "hint": "tactique · finales · coach" },
+    "learn": { "label": "Apprendre", "hint": "leçons · ouvertures · maîtres" },
+    "profile": { "label": "Profil", "hint": "progression · archives · paramètres" }
+  },
+  "sections": {
+    "bots": { "label": "Bots", "hint": "jouez contre des bots de tous niveaux" },
+    "friends": { "label": "Amis", "hint": "passe-et-joue · parties en ligne entre amis" },
+    "analysis": { "label": "Analyse", "hint": "échiquier d'analyse libre" },
+    "gameHistory": "Historique des parties",
+    "lessons": { "label": "Leçons", "hint": "règles et leçons guidées" },
+    "openings": { "label": "Ouvertures", "hint": "répertoire et explorateur" },
+    "repertoire": { "label": "Répertoire", "hint": "vos exercices de répertoire" },
+    "explore": { "label": "Explorer", "hint": "parties de maîtres et en ligne" },
+    "masters": { "label": "Maîtres", "hint": "parties de maîtres commentées" },
+    "tactics": { "label": "Tactique", "hint": "problèmes · rush · storm · vos erreurs" },
+    "endgames": { "label": "Finales", "hint": "théorie · technique · exercices" },
+    "study": { "label": "Étude", "hint": "théorie et technique" },
+    "drill": { "label": "Exercices", "hint": "exercices vérifiés par table de finales" },
+    "vision": { "label": "Vision", "hint": "calcul et jeu à l'aveugle" },
+    "checkmates": { "label": "Mats", "hint": "bibliothèque de motifs et exercices" },
+    "antiBlunder": { "label": "Anti-gaffe", "hint": "entraîneur « êtes-vous sûr ? »" },
+    "coordinates": { "label": "Coordonnées", "hint": "entraîneur de vision de l'échiquier" },
+    "plan": { "label": "Plan", "hint": "votre plan d'étude hebdomadaire" },
+    "overview": { "label": "Aperçu", "hint": "niveau · classements · badges" },
+    "progress": { "label": "Progression", "hint": "tableau de bord de progression" },
+    "archive": { "label": "Archives", "hint": "vos parties · résultats et tendances" },
+    "leaderboards": { "label": "Classements", "hint": "classements · course hebdomadaire" },
+    "about": { "label": "À propos", "hint": "paramètres · installation · mentions légales" }
+  },
+  "coachStrip": {
+    "title": "Coach & plan",
+    "hint": "vos faiblesses et votre plan d'étude hebdomadaire",
+    "coachToggle": "Coach",
+    "planLink": "Plan d'étude"
+  },
+  "about": {
+    "settingsHint": "Thème, son, échiquier, langue et données du compte",
+    "openSettings": "Ouvrir les paramètres",
+    "install": "Installer l'application",
+    "installHint": "Ajoutez Chesser à votre écran d'accueil — fonctionne hors ligne",
+    "engines": "Moteurs et connexion",
+    "enginesHint": "Ce que le serveur de moteurs propose en ce moment",
+    "legal": "Mentions légales",
+    "credits": "Crédits"
+  },
+  "tour": {
+    "title": "L'application a été réorganisée",
+    "intro": "Chesser compte désormais cinq destinations. Tout est toujours là :",
+    "train": "Tactique, finales, exercices, coach et plan → Entraînement",
+    "learn": "Ouvertures, explorateur et parties de maîtres → Apprendre",
+    "profile": "Stats, archives, classements et paramètres → Profil",
+    "play": "Bots, amis et analyse → Jouer",
+    "dismiss": "Continuer",
+    "close": "Fermer"
+  },
   "tabs": {
     "home": { "label": "Aujourd'hui", "hint": "série · missions quotidiennes · objectifs" },
     "play": { "label": "Jouer", "hint": "contre les bots · analyse" },

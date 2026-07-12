@@ -23,7 +23,7 @@ export function ConsentNotice() {
     <div
       role="region"
       aria-label={t('consent.aria')}
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-neutral-700/60 bg-panel/95 p-3 shadow-soft backdrop-blur"
+      className="fixed inset-x-0 bottom-16 z-30 border-t border-neutral-700/60 bg-panel/95 p-3 shadow-soft backdrop-blur lg:bottom-0"
     >
       <div className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:flex-nowrap sm:justify-between">
         <p className="text-xs leading-relaxed text-neutral-300 sm:text-sm">
@@ -33,7 +33,7 @@ export function ConsentNotice() {
             components={{
               policyLink: (
                 <a
-                  href="#/privacy"
+                  href="#/profile/about/privacy"
                   className="font-semibold text-brand-300 underline decoration-brand-300/50 underline-offset-2 hover:text-brand-200"
                 />
               ),

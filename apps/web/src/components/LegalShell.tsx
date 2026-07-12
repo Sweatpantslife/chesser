@@ -18,8 +18,8 @@ export function LegalShell({ title, updated, children }: { title: string; update
         <div className="mt-4 space-y-6">{children}</div>
       </div>
       <p className="mt-4 text-center text-xs text-neutral-400">
-        <LegalLink href="#/privacy">{t('privacyTitle')}</LegalLink> ·{' '}
-        <LegalLink href="#/terms">{t('termsTitle')}</LegalLink>
+        <LegalLink href="#/profile/about/privacy">{t('privacyTitle')}</LegalLink> ·{' '}
+        <LegalLink href="#/profile/about/terms">{t('termsTitle')}</LegalLink>
       </p>
     </article>
   );

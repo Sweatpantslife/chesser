@@ -17,11 +17,11 @@ export function Footer() {
       <p className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center text-xs text-neutral-400">
         <span>{t('footer.tagline')}</span>
         <span aria-hidden="true">·</span>
-        <a href="#/privacy" className="underline decoration-neutral-600 underline-offset-2 hover:text-neutral-300">
+        <a href="#/profile/about/privacy" className="underline decoration-neutral-600 underline-offset-2 hover:text-neutral-300">
           {t('footer.privacy')}
         </a>
         <span aria-hidden="true">·</span>
-        <a href="#/terms" className="underline decoration-neutral-600 underline-offset-2 hover:text-neutral-300">
+        <a href="#/profile/about/terms" className="underline decoration-neutral-600 underline-offset-2 hover:text-neutral-300">
           {t('footer.terms')}
         </a>
         <span aria-hidden="true">·</span>

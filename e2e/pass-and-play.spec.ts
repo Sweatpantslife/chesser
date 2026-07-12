@@ -3,8 +3,7 @@ import { playMove } from './helpers';
 
 test.describe('pass and play', () => {
   test('two players share one board through to checkmate, then rematch', async ({ page }) => {
-    await page.goto('/');
-    await page.getByRole('button', { name: 'Friends' }).click();
+    await page.goto('/#/play/friends');
 
     // Configure and start a local game (untimed, no auto-flip).
     await expect(page.getByTestId('card-local')).toBeVisible();
@@ -33,8 +32,7 @@ test.describe('pass and play', () => {
   });
 
   test('auto-flip turns the board toward the player to move', async ({ page }) => {
-    await page.goto('/');
-    await page.getByRole('button', { name: 'Friends' }).click();
+    await page.goto('/#/play/friends');
     await page.getByLabel(/Auto-flip/).check();
     await page.getByTestId('start-local').click();
 
@@ -47,8 +45,7 @@ test.describe('pass and play', () => {
   });
 
   test('resignation ends the game for the side to move', async ({ page }) => {
-    await page.goto('/');
-    await page.getByRole('button', { name: 'Friends' }).click();
+    await page.goto('/#/play/friends');
     await page.getByTestId('start-local').click();
 
     await playMove(page, 'e2', 'e4');
