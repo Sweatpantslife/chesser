@@ -12,6 +12,20 @@ const TIME_CONTROLS: (TimeControl | null)[] = [
   { label: '10+5', initialMs: 600_000, incrementMs: 5_000 },
 ];
 
+/** A rung is open when it's the first, its predecessor fell, or it was already
+ *  beaten — so beaten rungs stay replayable even if a new rung is ever
+ *  inserted before them in a roster update. */
+export function isRungUnlocked(defeated: Record<string, unknown>, i: number): boolean {
+  const prev = BOT_ROSTER[i - 1];
+  return i === 0 || (prev ? prev.id in defeated : true) || BOT_ROSTER[i]!.id in defeated;
+}
+
+/** Index of the current ladder rung (first unlocked, not yet beaten), or -1
+ *  when every rung is cleared. Shared with the Play hub's hero CTA. */
+export function nextLadderIndex(defeated: Record<string, unknown>): number {
+  return BOT_ROSTER.findIndex((b, i) => isRungUnlocked(defeated, i) && !(b.id in defeated));
+}
+
 export function LadderPanel() {
   const { t } = useTranslation(['play', 'bots']);
   const availability = useGame((s) => s.availability);
@@ -29,14 +43,8 @@ export function LadderPanel() {
 
   const cleared = Object.keys(defeated).length;
   const isDefeated = (id: string) => id in defeated;
-  // A rung is open when it's the first, its predecessor fell, or it was already
-  // beaten — so beaten rungs stay replayable even if a new rung is ever
-  // inserted before them in a roster update.
-  const isUnlocked = (i: number) => {
-    const prev = BOT_ROSTER[i - 1];
-    return i === 0 || (prev ? isDefeated(prev.id) : true) || isDefeated(BOT_ROSTER[i]!.id);
-  };
-  const nextIndex = BOT_ROSTER.findIndex((b, i) => isUnlocked(i) && !isDefeated(b.id));
+  const isUnlocked = (i: number) => isRungUnlocked(defeated, i);
+  const nextIndex = nextLadderIndex(defeated);
 
   const start = (bot: RosterBot) => {
     const playerColor: Color = color === 'random' ? (Math.random() < 0.5 ? 'white' : 'black') : color;
@@ -157,7 +165,8 @@ export function LadderPanel() {
                     onClick={() => start(bot)}
                     className={`btn-press rounded-full px-3 py-1 text-xs font-bold ${
                       isNext && !botCleared
-                        ? 'bg-brand-600 text-white shadow-glow hover:bg-brand-700'
+                        ? // glow is reserved for the hub's single hero CTA ("Play now")
+                          'bg-brand-600 text-white hover:bg-brand-700'
                         : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600'
                     }`}
                   >

@@ -89,5 +89,30 @@
   "status": {
     "thinking": "· réflexion",
     "analysisBoard": "· échiquier d'analyse"
+  },
+  "hero": {
+    "title": "Jouer contre des bots",
+    "nextRung": "Prochain échelon : {{name}} · {{rating}}",
+    "ladderComplete": "Échelle terminée — rejouez n'importe quel échelon, avec l'une ou l'autre couleur.",
+    "cleared": "{{cleared}}/{{total}} échelons franchis",
+    "playNow": "Jouer maintenant"
+  },
+  "history": {
+    "title": "Historique des parties",
+    "hint": "Parties passées, résultats et relectures — dans votre profil"
+  },
+  "analysisPage": {
+    "title": "Analyse",
+    "sections": {
+      "engine": "Analyse du moteur",
+      "review": "Bilan de la partie",
+      "pgn": "Import PGN et bibliothèque",
+      "explorer": "Explorateur d'ouvertures"
+    },
+    "pgnHint": "Collez un PGN pour le charger sur l'échiquier d'analyse, ou ouvrez votre bibliothèque de parties enregistrées et importées.",
+    "pasteAria": "Coller un PGN",
+    "load": "Charger le PGN",
+    "invalid": "Ce PGN n'a pas pu être lu.",
+    "openLibrary": "Ouvrir la bibliothèque de parties"
   }
 }

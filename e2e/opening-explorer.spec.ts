@@ -155,6 +155,11 @@ test.describe('opening explorer', () => {
     await mockExplorer(page);
     await page.goto('/');
     await page.getByRole('navigation', { name: 'Main' }).first().getByRole('link', { name: 'Play' }).click();
+    // The explorer lives on the Analysis sub-page, behind a closed drawer.
+    await page.getByRole('navigation', { name: 'Play sections' }).getByRole('link', { name: 'Analysis' }).click();
+    const drawer = page.getByRole('button', { name: 'Opening explorer' });
+    await expect(drawer).toHaveAttribute('aria-expanded', 'false');
+    await drawer.click();
 
     const panel = page.getByRole('region', { name: 'Opening explorer' });
     await expect(panel).toBeVisible();

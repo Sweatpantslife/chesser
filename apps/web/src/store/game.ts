@@ -328,6 +328,10 @@ export interface GameStore {
   reopenSummary(): void;
   /** Switch the just-finished game to the analysis board and start the walkthrough. */
   analyzeFinishedGame(): Promise<void>;
+  /** Adopt the current finished game onto the analysis board (no walkthrough) —
+   *  used when the analysis page is opened by navigation. Never disturbs a
+   *  live game and no-ops when already analysing. */
+  enterAnalysis(): void;
   startCoach(): void;
   stopCoach(): void;
   setCoachPlaying(playing: boolean): void;
@@ -1175,6 +1179,13 @@ export const useGame = create<GameStore>((set, get) => ({
     }
     if (get().gameNo !== targetGameNo) return; // a new game started meanwhile
     get().startCoach();
+  },
+
+  enterAnalysis() {
+    const s = get();
+    if (s.mode === 'analysis' || !s.isGameOver) return;
+    set({ mode: 'analysis', analysisOn: true, modalDismissed: true });
+    get()._refreshAnalysis();
   },
 
   startCoach() {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Trans, useTranslation } from 'react-i18next';
 import { useGame } from '../store/game';
 import { translateEndReason } from '../lib/gameStatusText';
@@ -14,6 +15,7 @@ const neutralBtn = `${btn} bg-neutral-700 text-neutral-200 hover:bg-neutral-600`
  */
 export function GameActions() {
   const { t } = useTranslation('game');
+  const navigate = useNavigate();
   const mode = useGame((s) => s.mode);
   const opponent = useGame((s) => s.opponent);
   const playerColor = useGame((s) => s.playerColor);
@@ -122,7 +124,14 @@ export function GameActions() {
           )}
           <div className="flex flex-wrap gap-1.5">
             {hasSummary && (
-              <button className={`${btn} bg-brand-600 text-white hover:bg-brand-700`} onClick={() => void analyzeFinishedGame()}>
+              <button
+                className={`${btn} bg-brand-600 text-white hover:bg-brand-700`}
+                onClick={() => {
+                  // Reviews live on the analysis sub-page — hand the game off there.
+                  void analyzeFinishedGame();
+                  navigate('/play/analysis');
+                }}
+              >
                 🔍 {t('actions.analyzeGame')}
               </button>
             )}

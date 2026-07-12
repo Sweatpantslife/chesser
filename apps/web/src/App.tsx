@@ -13,6 +13,7 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Chess } from 'chess.js';
 import { useGame } from './store/game';
 import { useAuth } from './store/auth';
 import { AccountButton } from './components/AccountPanel';
@@ -235,6 +236,51 @@ function TacticsRoute() {
   );
 }
 
+/**
+ * /play/analysis with one-shot cross-hub handoff params (the analyze-handoff
+ * contract; internal handoffs keep using game-store calls):
+ *   ?moves=e2e4,c7c5,…  — comma-separated lowercase UCI from the standard
+ *                         start (promotions like e7e8q), loaded as a game
+ *                         with the final position shown
+ *   ?fen=<6-field FEN>  — fallback when the move list is unknown
+ * `moves` wins when both are present. Malformed/illegal input is ignored
+ * entirely (never a dead end). Params are consumed once — same pattern as
+ * TacticsRoute's ?daily=1.
+ */
+function PlayAnalysisRoute() {
+  const [params, setParams] = useSearchParams();
+  useEffect(() => {
+    const moves = params.get('moves');
+    const fen = params.get('fen');
+    if (moves === null && fen === null) return;
+    if (moves !== null) {
+      const probe = new Chess();
+      let ok = moves.length > 0;
+      for (const uci of ok ? moves.split(',') : []) {
+        if (!/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(uci)) {
+          ok = false;
+          break;
+        }
+        try {
+          probe.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] });
+        } catch {
+          ok = false;
+          break;
+        }
+      }
+      // Replayed to SAN via chess.js; loadPgn re-validates and rebuilds the tree.
+      if (ok && useGame.getState().loadPgn(probe.pgn())) {
+        const st = useGame.getState();
+        st.goToPly(st.history.length);
+      }
+    } else if (fen) {
+      useGame.getState().loadFen(fen); // validates internally; bad FENs are ignored
+    }
+    setParams({}, { replace: true });
+  }, [params, setParams]);
+  return <PlayPage section="analysis" />;
+}
+
 function EndgamesRoute({ tab }: { tab: 'study' | 'drill' }) {
   const tabs: TrainTab[] = [
     { id: 'study', to: '/train/endgames', end: true },
@@ -316,8 +362,8 @@ function AppRoutes() {
       <Route path="/" element={<HomeRoute />} />
 
       {/* Play — Bots · Friends (+ Analysis sub-page, Game-history link) */}
-      <Route path="/play" element={<PlayHub><PlayPage /></PlayHub>} />
-      <Route path="/play/analysis" element={<PlayHub><PlayPage /></PlayHub>} />
+      <Route path="/play" element={<PlayHub><PlayPage section="bots" /></PlayHub>} />
+      <Route path="/play/analysis" element={<PlayHub><PlayAnalysisRoute /></PlayHub>} />
       {/* Friends renders through the keep-mounted slot in AppShell so a live
           human-vs-human game survives navigation; the route only draws chrome. */}
       <Route path="/play/friends" element={<PlayHub>{null}</PlayHub>} />

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Trans, useTranslation } from 'react-i18next';
 import { STARTING_FEN } from '@chesser/shared';
 import { mainlineOf, useGame, type Color } from '../store/game';
@@ -30,6 +31,7 @@ const CHIP_ORDER: Classification[] = ['brilliant', 'great', 'best', 'inaccuracy'
 
 export function GameOverModal() {
   const { t } = useTranslation('game');
+  const navigate = useNavigate();
   const summary = useGame((s) => s.gameSummary);
   const dismissed = useGame((s) => s.modalDismissed);
   const gameNo = useGame((s) => s.gameNo);
@@ -218,7 +220,11 @@ export function GameOverModal() {
         {/* actions */}
         <div className="space-y-2">
           <button
-            onClick={() => void useGame.getState().analyzeFinishedGame()}
+            onClick={() => {
+              // The walkthrough lives on the analysis sub-page — go there with it.
+              void useGame.getState().analyzeFinishedGame();
+              navigate('/play/analysis');
+            }}
             className="btn-press flex w-full items-center justify-center gap-2 rounded-full bg-brand-600 py-2.5 text-sm font-bold text-white hover:bg-brand-700"
           >
             🔍 {t('actions.analyzeGame')}
