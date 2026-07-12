@@ -27,7 +27,7 @@ import { Celebration } from './components/Celebration';
 import { initGamify } from './lib/gamify';
 import { initSocial } from './store/social';
 import { playSound } from './lib/sound';
-import { legacyRedirect, profileAliasRedirect, viewPath } from './app/paths';
+import { legacyRedirect, profileAliasRedirect } from './app/paths';
 import { Sidebar, BottomBar, StatusDot } from './app/PrimaryNav';
 import { HubTabs, HubSideLink, type HubTab } from './app/HubNav';
 import { TrainTabs, type TrainTab } from './app/TrainTabs';
