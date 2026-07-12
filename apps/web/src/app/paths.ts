@@ -19,6 +19,13 @@ const LEGACY_VIEW_PATHS: Record<string, string> = {
   endgame: '/train/endgames',
   'endgame-drills': '/train/endgames/drill',
   train: '/train', // the old umbrella "Train" tab dissolved into hub cards
+  // The old Train tab's sub-tabs (`trainTab` state) — never URLs back then,
+  // but cheap to honour forever for guessed/bookmarked hashes.
+  vision: '/train/vision',
+  mates: '/train/checkmates',
+  checkmates: '/train/checkmates',
+  blunders: '/train/anti-blunder',
+  'anti-blunder': '/train/anti-blunder',
   coords: '/train/coordinates',
   coordinates: '/train/coordinates',
   coach: '/train', // coach lives in the Train hub's "Coach & Plan" strip

@@ -20,7 +20,8 @@
     "noThemes": "aucun thème ici",
     "ratedOrder": "Proposer des problèmes proches de mon classement",
     "reviewDue": "À réviser",
-    "dailyPuzzle": "Problème du jour"
+    "dailyPuzzle": "Problème du jour",
+    "filters": "Filtres"
   },
   "difficulty": {
     "all": "toutes",

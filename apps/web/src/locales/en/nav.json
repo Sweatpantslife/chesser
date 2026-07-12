@@ -22,6 +22,10 @@
     "explore": { "label": "Explore", "hint": "master & online games" },
     "masters": { "label": "Masters", "hint": "annotated master games" },
     "tactics": { "label": "Tactics", "hint": "puzzles · rush · storm · your mistakes" },
+    "practice": { "label": "Practice", "hint": "engine-verified puzzles" },
+    "rush": { "label": "Rush", "hint": "5-minute survival sprint" },
+    "storm": { "label": "Storm", "hint": "timed combo sprint" },
+    "mistakes": { "label": "Mistakes", "hint": "drill your own blunders" },
     "endgames": { "label": "Endgames", "hint": "theory · technique · drills" },
     "study": { "label": "Study", "hint": "theory & technique" },
     "drill": { "label": "Drill", "hint": "tablebase-checked drills" },
@@ -40,7 +44,17 @@
     "title": "Coach & Plan",
     "hint": "your weaknesses & your weekly study plan",
     "coachToggle": "Coach",
-    "planLink": "Study plan"
+    "planLink": "Study plan",
+    "progress": "This week: {{done}}/{{total}} plan items",
+    "suggests": "Coach suggests: {{focus}}",
+    "continue": "Continue",
+    "viewPlan": "View plan",
+    "empty": "No coach tips yet — review a game or start your weekly plan."
+  },
+  "cards": {
+    "reviewsDue_one": "{{count}} review due",
+    "reviewsDue_other": "{{count}} reviews due",
+    "lastActivity": "Last: {{when}}"
   },
   "about": {
     "settingsHint": "Theme, sound, board, language & account data",

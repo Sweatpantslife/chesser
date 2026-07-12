@@ -54,5 +54,10 @@
     "logOneAria": "Registrar un problema resuelto para «{{title}}»",
     "markDone": "Marcar como hecho",
     "markDoneAria": "Marcar «{{title}}» como completado"
+  },
+  "coach": {
+    "title": "Entrenador",
+    "hint": "tus debilidades · entrenamiento dirigido",
+    "toggle": "Entrenador"
   }
 }

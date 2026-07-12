@@ -19,7 +19,8 @@
     "noThemes": "no themes here",
     "ratedOrder": "Serve puzzles near my rating",
     "reviewDue": "Review due",
-    "dailyPuzzle": "Daily puzzle"
+    "dailyPuzzle": "Daily puzzle",
+    "filters": "Filters"
   },
   "difficulty": {
     "all": "all",

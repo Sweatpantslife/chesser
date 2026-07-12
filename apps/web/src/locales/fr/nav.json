@@ -22,6 +22,10 @@
     "explore": { "label": "Explorer", "hint": "parties de maîtres et en ligne" },
     "masters": { "label": "Maîtres", "hint": "parties de maîtres commentées" },
     "tactics": { "label": "Tactique", "hint": "problèmes · rush · storm · vos erreurs" },
+    "practice": { "label": "Pratique", "hint": "problèmes vérifiés par le moteur" },
+    "rush": { "label": "Rush", "hint": "sprint de survie de 5 minutes" },
+    "storm": { "label": "Storm", "hint": "sprint chronométré à combos" },
+    "mistakes": { "label": "Erreurs", "hint": "travaillez vos propres gaffes" },
     "endgames": { "label": "Finales", "hint": "théorie · technique · exercices" },
     "study": { "label": "Étude", "hint": "théorie et technique" },
     "drill": { "label": "Exercices", "hint": "exercices vérifiés par table de finales" },
@@ -40,7 +44,17 @@
     "title": "Coach & plan",
     "hint": "vos faiblesses et votre plan d'étude hebdomadaire",
     "coachToggle": "Coach",
-    "planLink": "Plan d'étude"
+    "planLink": "Plan d'étude",
+    "progress": "Cette semaine : {{done}}/{{total}} éléments du plan",
+    "suggests": "Le coach suggère : {{focus}}",
+    "continue": "Continuer",
+    "viewPlan": "Voir le plan",
+    "empty": "Pas encore de conseils du coach — analysez une partie ou commencez votre plan hebdomadaire."
+  },
+  "cards": {
+    "reviewsDue_one": "{{count}} révision à faire",
+    "reviewsDue_other": "{{count}} révisions à faire",
+    "lastActivity": "Dernier : {{when}}"
   },
   "about": {
     "settingsHint": "Thème, son, échiquier, langue et données du compte",

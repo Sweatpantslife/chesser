@@ -26,6 +26,12 @@ describe('legacyRedirect (old hash URLs keep working forever)', () => {
     expect(legacyRedirect('/endgame')).toBe('/train/endgames');
     expect(legacyRedirect('/endgame-drills')).toBe('/train/endgames/drill');
     expect(legacyRedirect('/coords')).toBe('/train/coordinates');
+    // Old umbrella-Train sub-tabs (`trainTab` state) as guessed/bookmarked hashes.
+    expect(legacyRedirect('/vision')).toBe('/train/vision');
+    expect(legacyRedirect('/mates')).toBe('/train/checkmates');
+    expect(legacyRedirect('/checkmates')).toBe('/train/checkmates');
+    expect(legacyRedirect('/blunders')).toBe('/train/anti-blunder');
+    expect(legacyRedirect('/anti-blunder')).toBe('/train/anti-blunder');
     expect(legacyRedirect('/coach')).toBe('/train');
     expect(legacyRedirect('/plan')).toBe('/train/plan');
     expect(legacyRedirect('/openings')).toBe('/learn/openings');

@@ -1,40 +1,32 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { WEAKNESS_META } from '../lib/weakness';
 import { planProgress, type PlanItem, type PlanItemKind } from '../lib/studyPlan';
+import { planItemPath } from '../lib/decks';
 import { initPlanTracking, usePlan } from '../store/plan';
 import { bootstrapFromReportCache } from '../store/coach';
 import { todayStr } from '../lib/clock';
 import { playSound } from '../lib/sound';
-import { IconArrowRight, IconSparkles } from '../components/icons';
+import { IconArrowRight, IconCoach, IconSparkles } from '../components/icons';
 
 /**
- * The weekly study plan page: the generated plan grouped by kind, per-item
- * progress with WHY it was picked, jump buttons into the existing trainer
- * views, manual logging, and a regenerate control (the plan re-reads the
- * latest weakness profile/rating, so it adapts as you improve).
+ * The weekly study plan page (`#/train/plan`): the generated plan grouped by
+ * kind, per-item progress with WHY it was picked, jump links into the existing
+ * trainer views, manual logging, and a regenerate control (the plan re-reads
+ * the latest weakness profile/rating, so it adapts as you improve).
+ *
+ * The coach's full weakness→drills view lives here too, behind a disclosure —
+ * the Train hub strip only surfaces the suggestion. Coach-served puzzle items
+ * open that panel (training there is what auto-credits them).
  */
 
-export type PlanTarget = 'coach' | 'tactics' | 'learn' | 'openings' | 'masters';
+const CoachPage = lazy(() => import('./CoachPage').then((m) => ({ default: m.CoachPage })));
 
 const KIND_ORDER: PlanItemKind[] = ['puzzle', 'lesson', 'opening', 'master'];
 
 /** Icons per plan-item kind; headings/blurbs/CTAs live in the `plan` namespace (kinds.<kind>.*). */
 const KIND_ICONS: Record<PlanItemKind, string> = { puzzle: '🧩', lesson: '🎓', opening: '📖', master: '👑' };
-
-/** Where an item's Jump button lands (view-level, like the SRS deck targets). */
-function jumpTarget(item: PlanItem): PlanTarget {
-  switch (item.kind) {
-    case 'puzzle':
-      return item.viaCoach ? 'coach' : 'tactics';
-    case 'lesson':
-      return 'learn';
-    case 'opening':
-      return 'openings';
-    case 'master':
-      return 'masters';
-  }
-}
 
 function Bar({ value, max, label }: { value: number; max: number; label: string }) {
   const pct = max > 0 ? Math.round((Math.min(value, max) / max) * 100) : 0;
@@ -55,12 +47,16 @@ function Bar({ value, max, label }: { value: number; max: number; label: string 
   );
 }
 
-function ItemRow({ item, go }: { item: PlanItem; go: (v: PlanTarget) => void }) {
+function ItemRow({ item, onCoach }: { item: PlanItem; onCoach: () => void }) {
   const { t } = useTranslation('plan');
   const done = usePlan((s) => Math.min(s.progress[item.id] ?? 0, item.target));
   const doneToday = usePlan((s) => (item.kind === 'puzzle' ? s.daily[item.id]?.[todayStr()] ?? 0 : 0));
   const complete = done >= item.target;
   const quotaMetToday = item.kind === 'puzzle' && doneToday >= item.perDay;
+  const viaCoach = item.kind === 'puzzle' && item.viaCoach;
+
+  const ctaClass =
+    'btn-press flex min-h-11 items-center gap-1 rounded-full bg-brand-600 px-3.5 py-1.5 text-sm font-bold text-white hover:bg-brand-700 sm:min-h-9';
 
   return (
     <li className="rounded-2xl bg-panel p-4 shadow-soft">
@@ -92,22 +88,31 @@ function ItemRow({ item, go }: { item: PlanItem; go: (v: PlanTarget) => void }) 
           </div>
         </div>
         <div className="flex shrink-0 gap-1.5">
-          <button
-            onClick={() => {
-              playSound('uiClick');
-              go(jumpTarget(item));
-            }}
-            className="btn-press flex min-h-11 items-center gap-1 rounded-full bg-brand-600 px-3.5 py-1.5 text-sm font-bold text-white hover:bg-brand-700 sm:min-h-0"
-          >
-            {t(`kinds.${item.kind}.cta`)}
-            <IconArrowRight size={14} />
-          </button>
+          {viaCoach ? (
+            // Coach-served quota: training happens in the coach panel below
+            // (that flow is what auto-credits this item) — open it in place.
+            <button
+              onClick={() => {
+                playSound('uiClick');
+                onCoach();
+              }}
+              className={ctaClass}
+            >
+              {t(`kinds.${item.kind}.cta`)}
+              <IconArrowRight size={14} />
+            </button>
+          ) : (
+            <Link to={planItemPath(item)} onClick={() => playSound('uiClick')} className={ctaClass}>
+              {t(`kinds.${item.kind}.cta`)}
+              <IconArrowRight size={14} />
+            </Link>
+          )}
           {item.kind === 'puzzle' ? (
             <button
               onClick={() => usePlan.getState().logItem(item.id)}
               disabled={complete || quotaMetToday}
               aria-label={t('item.logOneAria', { title: item.title })}
-              className="btn-press min-h-11 rounded-full bg-neutral-800 px-3.5 py-1.5 text-sm font-semibold text-neutral-200 hover:bg-neutral-700 disabled:opacity-50 sm:min-h-0"
+              className="btn-press min-h-11 rounded-full bg-neutral-800 px-3.5 py-1.5 text-sm font-semibold text-neutral-200 hover:bg-neutral-700 disabled:opacity-50 sm:min-h-9"
             >
               {t('item.logOne')}
             </button>
@@ -116,7 +121,7 @@ function ItemRow({ item, go }: { item: PlanItem; go: (v: PlanTarget) => void }) 
               onClick={() => usePlan.getState().completeItem(item.id)}
               disabled={complete}
               aria-label={t('item.markDoneAria', { title: item.title })}
-              className="btn-press min-h-11 rounded-full bg-neutral-800 px-3.5 py-1.5 text-sm font-semibold text-neutral-200 hover:bg-neutral-700 disabled:opacity-50 sm:min-h-0"
+              className="btn-press min-h-11 rounded-full bg-neutral-800 px-3.5 py-1.5 text-sm font-semibold text-neutral-200 hover:bg-neutral-700 disabled:opacity-50 sm:min-h-9"
             >
               {t('item.markDone')}
             </button>
@@ -127,10 +132,17 @@ function ItemRow({ item, go }: { item: PlanItem; go: (v: PlanTarget) => void }) 
   );
 }
 
-export function StudyPlanPage({ go }: { go: (v: PlanTarget) => void }) {
-  const { t } = useTranslation('plan');
+export function StudyPlanPage() {
+  const { t } = useTranslation(['plan', 'insights']);
+  const navigate = useNavigate();
   const plan = usePlan((s) => s.plan);
   const progress = usePlan((s) => s.progress);
+  const [coachOpen, setCoachOpen] = useState(false);
+  const coachTrigger = useRef<HTMLButtonElement>(null);
+  const openCoach = () => {
+    setCoachOpen(true);
+    coachTrigger.current?.focus();
+  };
 
   useEffect(() => {
     // Back-fill digests from reviews cached before the coach existed, wire the
@@ -185,6 +197,46 @@ export function StudyPlanPage({ go }: { go: (v: PlanTarget) => void }) {
         </div>
       </div>
 
+      {/* Coach: the full weakness→drills view, folded behind a disclosure. */}
+      <section
+        className="rounded-2xl bg-panel p-4 shadow-soft"
+        onKeyDown={(e) => {
+          if (e.key === 'Escape' && coachOpen) {
+            e.stopPropagation();
+            setCoachOpen(false);
+            coachTrigger.current?.focus();
+          }
+        }}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h3 className="font-display text-sm font-semibold text-ink">{t('coach.title')}</h3>
+            <p className="text-xs text-neutral-400">{t('coach.hint')}</p>
+          </div>
+          <button
+            ref={coachTrigger}
+            onClick={() => {
+              playSound('uiClick');
+              setCoachOpen((o) => !o);
+            }}
+            aria-expanded={coachOpen}
+            aria-controls="plan-coach"
+            className="btn-press flex min-h-11 items-center gap-1.5 rounded-full bg-neutral-800 px-4 py-1.5 text-sm font-semibold text-neutral-300 hover:bg-neutral-700 hover:text-ink sm:min-h-9"
+          >
+            <IconCoach size={16} className="text-neutral-400" />
+            {t('coach.toggle')}
+            <span aria-hidden="true">{coachOpen ? '▴' : '▾'}</span>
+          </button>
+        </div>
+        <div id="plan-coach" hidden={!coachOpen} className="mt-4">
+          {coachOpen && (
+            <Suspense fallback={null}>
+              <CoachPage goPlay={() => navigate('/play')} />
+            </Suspense>
+          )}
+        </div>
+      </section>
+
       {KIND_ORDER.map((kind) => {
         const items = plan.items.filter((i) => i.kind === kind);
         if (items.length === 0) return null;
@@ -196,7 +248,7 @@ export function StudyPlanPage({ go }: { go: (v: PlanTarget) => void }) {
             </div>
             <ul className="space-y-3">
               {items.map((item) => (
-                <ItemRow key={item.id} item={item} go={go} />
+                <ItemRow key={item.id} item={item} onCoach={openCoach} />
               ))}
             </ul>
           </section>

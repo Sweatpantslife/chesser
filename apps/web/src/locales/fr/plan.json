@@ -56,5 +56,10 @@
     "logOneAria": "Compter un problème résolu pour « {{title}} »",
     "markDone": "Marquer comme fait",
     "markDoneAria": "Marquer « {{title}} » comme fait"
+  },
+  "coach": {
+    "title": "Coach",
+    "hint": "vos faiblesses · entraînement ciblé",
+    "toggle": "Coach"
   }
 }

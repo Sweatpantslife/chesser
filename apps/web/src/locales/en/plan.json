@@ -54,5 +54,10 @@
     "logOneAria": "Log one solved puzzle toward \"{{title}}\"",
     "markDone": "Mark done",
     "markDoneAria": "Mark \"{{title}}\" as done"
+  },
+  "coach": {
+    "title": "Coach",
+    "hint": "your weaknesses · targeted training",
+    "toggle": "Coach"
   }
 }
