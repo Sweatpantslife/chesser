@@ -34,8 +34,8 @@ async function seedAuth(page: Page, token: string, user: string): Promise<void> 
     ({ token, user }: { token: string; user: string }) => {
       localStorage.setItem('chesser-auth', JSON.stringify({ state: { token, username: user }, version: 0 }));
       // Seeded storage marks this browser as an "existing user", which would
-      // pop the one-time "what moved" IA note over the UI — pre-dismiss it.
-      localStorage.setItem('chesser-ia-tour', 'dismissed');
+      // pop the one-time "what moved" tour over the UI — pre-dismiss it.
+      localStorage.setItem('chesser-ia-tour-v2', 'dismissed');
     },
     { token, user },
   );

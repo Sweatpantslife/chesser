@@ -152,11 +152,23 @@ test.describe('opening explorer', () => {
   });
 
   test('analysis board: explorer panel drives the game store', async ({ page }) => {
-    await mockExplorer(page);
+    const { requests } = await mockExplorer(page);
     await page.goto('/');
     await page.getByRole('navigation', { name: 'Main' }).first().getByRole('link', { name: 'Play' }).click();
+    // The explorer lives on the Analysis sub-page, behind a closed drawer.
+    await page.getByRole('navigation', { name: 'Play sections' }).getByRole('link', { name: 'Analysis' }).click();
+    const drawer = page.getByRole('button', { name: 'Opening explorer' });
+    await expect(drawer).toHaveAttribute('aria-expanded', 'false');
+    // Embedded contract: the panel is mounted but inactive while the drawer
+    // is closed — zero explorer fetches until the user opens it.
+    expect(requests).toHaveLength(0);
+    await drawer.click();
 
-    const panel = page.getByRole('region', { name: 'Opening explorer' });
+    // Embedded variant suppresses the panel's own landmark + heading; the
+    // disclosure trigger is the drawer's one accessible name.
+    await expect(page.getByRole('region', { name: 'Opening explorer' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Opening explorer' })).toHaveCount(0);
+    const panel = page.locator(`[id="${await drawer.getAttribute('aria-controls')}"]`);
     await expect(panel).toBeVisible();
     const e4row = panel.getByRole('button', { name: /Play e4 — 1,400 games/ });
     await expect(e4row).toBeVisible();

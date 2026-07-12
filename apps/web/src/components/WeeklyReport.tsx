@@ -77,7 +77,11 @@ function statsOf(r: WeeklyReport, t: TFunction<'home'>): { label: string; value:
   return stats.slice(0, 6);
 }
 
-export function WeeklyReportCard(): JSX.Element {
+/**
+ * `bare` renders the panel without its own "Your week in chess" heading —
+ * for hosts that already provide the title (Home's week-recap disclosure).
+ */
+export function WeeklyReportCard({ bare = false }: { bare?: boolean } = {}): JSX.Element {
   const { t } = useTranslation('home');
   // One reference time per mount — the report is deterministic given it.
   const [atMs] = useState(() => now());
@@ -139,9 +143,13 @@ export function WeeklyReportCard(): JSX.Element {
   return (
     <section data-testid="weekly-report" className="rounded-2xl bg-panel p-4 shadow-soft">
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="font-display text-sm font-semibold text-ink">
-          {t('weekly.title')} <span className="ml-1 text-xs font-normal text-neutral-400">{report.label}</span>
-        </h2>
+        {bare ? (
+          <span className="text-xs text-neutral-400">{report.label}</span>
+        ) : (
+          <h2 className="font-display text-sm font-semibold text-ink">
+            {t('weekly.title')} <span className="ml-1 text-xs font-normal text-neutral-400">{report.label}</span>
+          </h2>
+        )}
         {aiText && <AiCoachBadge />}
       </div>
 

@@ -1,5 +1,16 @@
 {
   "percent": "{{value}}%",
+  "title": "Progress",
+  "disclosures": {
+    "stats": {
+      "title": "Stat tiles & personal bests",
+      "hint": "Level, streaks, totals, learning progress and your best runs"
+    },
+    "insights": {
+      "title": "Game insights",
+      "hint": "Results, openings, rating & accuracy trends from your games"
+    }
+  },
   "empty": {
     "title": "Your story starts here",
     "body": "No training history yet. Solve tactics, drill openings, learn checkmate patterns or run the coordinate trainer — your accuracy and volume will show up here."
@@ -25,8 +36,6 @@
     "dueNowHint": "all decks"
   },
   "sections": {
-    "ratings": "Ratings",
-    "ratingsAside": "{{solved}} solved · {{custom}} from your games",
     "activity": "Activity",
     "activityAside": "last {{weeks}} weeks",
     "last30": "Last 30 days",
@@ -134,11 +143,8 @@
       "openTitle": "Open this game on the analysis board"
     },
     "loadingAria": "Loading your games",
-    "tabs": {
-      "aria": "Archive sections",
-      "games": "Games",
-      "insights": "Insights"
-    },
+    "title": "Game archive",
+    "subtitle": "Saved and casual games — open one to replay it on the analysis board.",
     "loadError": "Could not load your saved games — check your connection.",
     "retry": "Retry",
     "empty": {

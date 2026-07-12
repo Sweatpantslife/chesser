@@ -70,13 +70,44 @@
   },
   "tour": {
     "title": "Things moved around",
-    "intro": "Chesser now has five destinations. Everything is still here:",
-    "train": "Tactics, endgames, drills, coach & plan → Train",
-    "learn": "Openings, explorer & master games → Learn",
-    "profile": "Stats, archive, leaderboards & settings → Profile",
-    "play": "Bots, friends & analysis → Play",
-    "dismiss": "Continue",
-    "close": "Dismiss"
+    "intro": "Chesser now has five destinations. Everything is still here — a quick map of where your old tabs went:",
+    "progress": "Step {{step}} of {{total}}",
+    "back": "Back",
+    "next": "Next",
+    "done": "Got it",
+    "skip": "Skip the tour",
+    "steps": {
+      "train": {
+        "label": "Training moved to Train",
+        "lines": {
+          "a": "Tactics, Endgame & Drills → Train",
+          "b": "Coords → Train › Coordinates",
+          "c": "Coach & Plan → Train (the Coach & Plan strip)"
+        }
+      },
+      "learn": {
+        "label": "Openings moved to Learn",
+        "lines": {
+          "a": "Openings → Learn › Openings",
+          "b": "Explorer → Learn › Openings › Explore"
+        }
+      },
+      "profile": {
+        "label": "Your games & stats moved to Profile",
+        "lines": {
+          "a": "Archive → Profile › Archive — yes, your games live under Profile now!",
+          "b": "Stats → Profile › Progress",
+          "c": "Ranks & Settings → Profile"
+        }
+      },
+      "play": {
+        "label": "Friends moved to Play",
+        "lines": {
+          "a": "Friends → Play › Friends",
+          "b": "Analysis → Play › Analysis"
+        }
+      }
+    }
   },
   "tabs": {
     "home": { "label": "Today", "hint": "streak · daily quests · goals" },

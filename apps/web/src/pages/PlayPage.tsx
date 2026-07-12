@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Chess } from 'chess.js';
 import type { DrawShape } from 'chessground/draw';
@@ -16,6 +17,12 @@ import { ReviewPanel } from '../components/ReviewPanel';
 import { PromotionDialog } from '../components/PromotionDialog';
 import { GameOverModal } from '../components/GameOverModal';
 import { AnalysisCoach } from '../components/AnalysisCoach';
+import { Disclosure } from '../components/Disclosure';
+import { LibraryDialog } from '../components/LibraryDialog';
+import { BotAvatar } from '../components/BotAvatar';
+import { nextLadderIndex } from '../components/LadderPanel';
+import { useLadder } from '../store/ladder';
+import { BOT_ROSTER, resolveBotConfig } from '../data/botRoster';
 import { ReviewSummary } from '../components/analysis/ReviewSummary';
 import { MistakeReviewPanel, MISTAKE_CLASSES } from '../components/analysis/MistakeReviewPanel';
 import { MoveDetailPanel } from '../components/analysis/MoveDetailPanel';
@@ -289,12 +296,172 @@ function ReportSection() {
   );
 }
 
-export function PlayPage() {
+/**
+ * The Bots hero: the current ladder rung and the screen's single accent CTA
+ * ("Play now"), shown above the fold. Hidden while a bot game is actually in
+ * progress — the board and in-game actions are the screen then, and a stray
+ * "Play now" would destroy the live game.
+ */
+function PlayHero() {
+  const { t } = useTranslation(['play', 'bots']);
+  const availability = useGame((s) => s.availability);
+  const newGame = useGame((s) => s.newGame);
+  const mode = useGame((s) => s.mode);
+  const isGameOver = useGame((s) => s.isGameOver);
+  const defeated = useLadder((s) => s.defeated);
+
+  if (mode === 'play' && !isGameOver) return null;
+
+  const cleared = Object.keys(defeated).length;
+  const nextIndex = nextLadderIndex(defeated);
+  const complete = nextIndex === -1;
+  const bot = complete ? BOT_ROSTER[BOT_ROSTER.length - 1]! : BOT_ROSTER[nextIndex]!;
+
+  const start = () => {
+    newGame({
+      mode: 'play',
+      playerColor: 'white',
+      bot: resolveBotConfig(bot, availability),
+      opponent: { id: bot.id, name: bot.name, rating: bot.rating, accent: bot.accent, motif: bot.motif },
+    });
+  };
+
+  return (
+    <section className="rounded-2xl bg-panel p-4 shadow-soft">
+      <div className="flex flex-wrap items-center gap-4">
+        <BotAvatar name={bot.name} accent={bot.accent} motif={bot.motif} size={56} />
+        <div className="min-w-0 flex-1">
+          <p className="line-clamp-2 text-base font-semibold text-ink">
+            {complete ? t('hero.ladderComplete') : t('hero.nextRung', { name: bot.name, rating: bot.rating })}
+          </p>
+          <p className="text-xs text-neutral-400">{t('hero.cleared', { cleared, total: BOT_ROSTER.length })}</p>
+        </div>
+        <button
+          onClick={start}
+          className="btn-press min-h-11 rounded-full bg-gradient-to-br from-brand-600 to-brand-700 px-6 py-2.5 text-sm font-bold text-white shadow-glow"
+        >
+          {t('hero.playNow')} ▶
+        </button>
+      </div>
+    </section>
+  );
+}
+
+/** Archive's entire presence in Play: a plain link card to the Profile hub. */
+function GameHistoryLink() {
+  const { t } = useTranslation('play');
+  return (
+    <Link
+      to="/profile/archive"
+      className="btn-press flex min-h-11 items-center justify-between gap-3 rounded-2xl bg-panel p-4 shadow-soft hover:bg-neutral-800"
+    >
+      <span className="min-w-0">
+        <span className="block text-sm font-semibold text-ink">{t('history.title')}</span>
+        <span className="block text-xs text-neutral-400">{t('history.hint')}</span>
+      </span>
+      <span aria-hidden className="shrink-0 text-neutral-400">
+        →
+      </span>
+    </Link>
+  );
+}
+
+/** PGN paste + game library (saved / lichess / chess.com imports / FEN). */
+function PgnImportSection() {
+  const { t } = useTranslation('play');
+  const loadPgn = useGame((s) => s.loadPgn);
+  const [pgn, setPgn] = useState('');
+  const [invalid, setInvalid] = useState(false);
+  const [libOpen, setLibOpen] = useState(false);
+  return (
+    <div className="rounded-2xl bg-panel p-4 shadow-soft">
+      <p className="mb-2 text-xs text-neutral-400">{t('analysisPage.pgnHint')}</p>
+      <textarea
+        value={pgn}
+        onChange={(e) => {
+          setPgn(e.target.value);
+          setInvalid(false);
+        }}
+        rows={6}
+        placeholder={'[Event "..."]\n\n1. e4 e5 2. Nf3 Nc6 ...'}
+        aria-label={t('analysisPage.pasteAria')}
+        className="w-full rounded-xl bg-neutral-900 p-2 font-mono text-xs text-ink outline-none"
+      />
+      {invalid && (
+        <p role="status" className="mt-1 text-xs text-amber-300">
+          {t('analysisPage.invalid')}
+        </p>
+      )}
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+        <button
+          onClick={() => setLibOpen(true)}
+          className="btn-press min-h-11 rounded-full bg-neutral-700 px-4 py-1.5 text-sm font-semibold text-neutral-200 hover:bg-neutral-600 sm:min-h-9"
+        >
+          {t('analysisPage.openLibrary')}
+        </button>
+        <button
+          onClick={() => {
+            if (loadPgn(pgn.trim())) {
+              setPgn('');
+              setInvalid(false);
+            } else setInvalid(true);
+          }}
+          disabled={!pgn.trim()}
+          className="btn-press min-h-11 rounded-full bg-neutral-700 px-4 py-1.5 text-sm font-semibold text-neutral-200 hover:bg-neutral-600 disabled:opacity-50 sm:min-h-9"
+        >
+          {t('analysisPage.load')}
+        </button>
+      </div>
+      {libOpen && <LibraryDialog onClose={() => setLibOpen(false)} />}
+    </div>
+  );
+}
+
+/** The analysis page's tool rail: disclosure sections per the IA brief. */
+function AnalysisRail() {
+  const { t } = useTranslation('play');
+  return (
+    <>
+      <AnalysisCoach />
+      <OpeningName />
+      <Disclosure title={t('analysisPage.sections.engine')} defaultOpen>
+        <AnalysisPanel />
+      </Disclosure>
+      <Disclosure title={t('analysisPage.sections.review')} defaultOpen>
+        <ReviewPanel />
+        <ReportSection />
+      </Disclosure>
+      <MoveList />
+      <Disclosure title={t('analysisPage.sections.pgn')}>
+        <PgnImportSection />
+      </Disclosure>
+      {/* Opening-explorer drawer slot. The panel is the Learn team's shared
+          component — do NOT fork or restyle it here. Contract form: the panel
+          stays mounted, `active` gates its fetches to while the drawer is
+          open, and `embedded` suppresses its internal heading/landmark — the
+          disclosure trigger is the drawer's one accessible name. */}
+      <Disclosure title={t('analysisPage.sections.explorer')}>
+        {(open) => <ExplorerPanel active={open} variant="embedded" />}
+      </Disclosure>
+    </>
+  );
+}
+
+export function PlayPage({ section = 'bots' }: { section?: 'bots' | 'analysis' }) {
+  const { t } = useTranslation('play');
+
   // Own the single analysis stream while this page is mounted.
   useEffect(() => {
     useGame.getState()._refreshAnalysis();
     return () => engine.stopAnalysis();
   }, []);
+
+  // Opening the analysis page adopts a finished game onto the analysis board
+  // (the "Review this game" / replay-from-archive handoff target). A live
+  // game is never disturbed — enterAnalysis no-ops on it.
+  useEffect(() => {
+    if (section === 'analysis') useGame.getState().enterAnalysis();
+  }, [section]);
 
   // NOTE: finished games are scored by the store itself (_recordFinishedGame,
   // guarded by scoredGameNo) — never from page effects, which re-ran on every
@@ -330,25 +497,46 @@ export function PlayPage() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  if (section === 'analysis') {
+    return (
+      <div className="mx-auto w-full max-w-[1200px] space-y-4">
+        <h1 className="font-display text-xl font-bold text-ink">{t('analysisPage.title')}</h1>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="space-y-3">
+            <StatusLine />
+            <BoardArea />
+            <GameActions />
+            <Controls />
+          </div>
+          <div className="space-y-3">
+            <AnalysisRail />
+          </div>
+        </div>
+        <GameOverModal />
+      </div>
+    );
+  }
+
   return (
-    <div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
-      <div className="order-2 space-y-3 lg:order-1">
-        <PlayPanel />
-      </div>
-      <div className="order-1 space-y-3 lg:order-2">
-        <StatusLine />
-        <BoardArea />
-        <GameActions />
-        <Controls />
-      </div>
-      <div className="order-3 space-y-3">
-        <AnalysisCoach />
-        <AnalysisPanel />
-        <OpeningName />
-        <ReviewPanel />
-        <ReportSection />
-        <MoveList />
-        <ExplorerPanel />
+    <div className="mx-auto w-full max-w-[1200px] space-y-4">
+      <h1 className="font-display text-xl font-bold text-ink">{t('hero.title')}</h1>
+      <PlayHero />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
+        {/* The ladder list + custom game setup scroll below the fold. */}
+        <div className="order-2 space-y-3 lg:order-1">
+          <PlayPanel />
+          <GameHistoryLink />
+        </div>
+        <div className="order-1 space-y-3 lg:order-2">
+          <StatusLine />
+          <BoardArea />
+          <GameActions />
+          <Controls />
+        </div>
+        <div className="order-3 space-y-3">
+          <OpeningName />
+          <MoveList />
+        </div>
       </div>
       <GameOverModal />
     </div>

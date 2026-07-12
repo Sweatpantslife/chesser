@@ -13,6 +13,7 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Chess } from 'chess.js';
 import { useGame } from './store/game';
 import { useAuth } from './store/auth';
 import { AccountButton } from './components/AccountPanel';
@@ -26,7 +27,7 @@ import { Celebration } from './components/Celebration';
 import { initGamify } from './lib/gamify';
 import { initSocial } from './store/social';
 import { playSound } from './lib/sound';
-import { legacyRedirect, profileAliasRedirect, viewPath } from './app/paths';
+import { legacyRedirect, profileAliasRedirect } from './app/paths';
 import { Sidebar, BottomBar, StatusDot } from './app/PrimaryNav';
 import { HubTabs, HubSideLink, type HubTab } from './app/HubNav';
 import { TrainTabs, type TrainTab } from './app/TrainTabs';
@@ -54,7 +55,7 @@ const VisionPage = lazy(() => import('./pages/VisionPage').then((m) => ({ defaul
 const MatesPage = lazy(() => import('./pages/MatesPage').then((m) => ({ default: m.MatesPage })));
 const AntiBlunderPage = lazy(() => import('./pages/AntiBlunderPage').then((m) => ({ default: m.AntiBlunderPage })));
 const CoordinatePage = lazy(() => import('./pages/CoordinatePage').then((m) => ({ default: m.CoordinatePage })));
-const StatsPage = lazy(() => import('./pages/StatsPage').then((m) => ({ default: m.StatsPage })));
+const ProgressPage = lazy(() => import('./pages/ProgressPage').then((m) => ({ default: m.ProgressPage })));
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
 const StudyPlanPage = lazy(() => import('./pages/StudyPlanPage').then((m) => ({ default: m.StudyPlanPage })));
 const ArchivePage = lazy(() => import('./pages/ArchivePage').then((m) => ({ default: m.ArchivePage })));
@@ -196,17 +197,6 @@ function TrainSection({ section, tabs, children }: { section: string; tabs?: Tra
 
 /* --------------------------- route wrappers ----------------------------- */
 
-function HomeRoute() {
-  const navigate = useNavigate();
-  return (
-    <HomePage
-      go={(v) => navigate(viewPath(v))}
-      onDailyPuzzle={() => navigate('/train/tactics?daily=1')}
-      onSprint={(m) => navigate(`/train/tactics/${m}`)}
-    />
-  );
-}
-
 const TACTICS_MODES: TacticsMode[] = ['practice', 'rush', 'storm', 'mistakes'];
 
 /** Tactics sub-page: mode tabs are routed second-level tabs (real links). */
@@ -233,6 +223,61 @@ function TacticsRoute() {
       />
     </TrainSection>
   );
+}
+
+/**
+ * /play/analysis with one-shot cross-hub handoff params (the analyze-handoff
+ * contract; internal handoffs keep using game-store calls):
+ *   ?moves=e2e4,c7c5,…  — comma-separated lowercase UCI from the standard
+ *                         start (promotions like e7e8q), loaded as a game
+ *                         with the final position shown
+ *   ?fen=<6-field FEN>  — fallback when the move list is unknown
+ * `moves` wins when both are present. Malformed/illegal input is ignored
+ * entirely (never a dead end). Params are consumed once — same pattern as
+ * TacticsRoute's ?daily=1.
+ */
+function PlayAnalysisRoute() {
+  const [params, setParams] = useSearchParams();
+  useEffect(() => {
+    const moves = params.get('moves');
+    const fen = params.get('fen');
+    if (moves === null && fen === null) return;
+    // Never destroy a live vs-bot game (same care as store.enterAnalysis and
+    // PlayHero): with a game in progress the params are consumed unused and
+    // the analysis view shows the live game instead.
+    const s = useGame.getState();
+    if (s.mode === 'play' && !s.isGameOver && s.history.length > 0) {
+      // fall through to the param cleanup below without loading
+    } else if (moves !== null) {
+      const probe = new Chess();
+      let ok = moves.length > 0;
+      for (const uci of ok ? moves.split(',') : []) {
+        if (!/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(uci)) {
+          ok = false;
+          break;
+        }
+        try {
+          probe.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] });
+        } catch {
+          ok = false;
+          break;
+        }
+      }
+      // Replayed to SAN via chess.js; loadPgn re-validates and rebuilds the tree.
+      if (ok && useGame.getState().loadPgn(probe.pgn())) {
+        const st = useGame.getState();
+        st.goToPly(st.history.length);
+      }
+    } else if (fen) {
+      useGame.getState().loadFen(fen); // validates internally; bad FENs are ignored
+    }
+    // Consume only the handoff params; unrelated search params survive.
+    const cleaned = new URLSearchParams(params);
+    cleaned.delete('moves');
+    cleaned.delete('fen');
+    setParams(cleaned, { replace: true });
+  }, [params, setParams]);
+  return <PlayPage section="analysis" />;
 }
 
 function EndgamesRoute({ tab }: { tab: 'study' | 'drill' }) {
@@ -313,11 +358,11 @@ function AppRoutes() {
   const goAnalysis = () => navigate('/play/analysis');
   return (
     <Routes>
-      <Route path="/" element={<HomeRoute />} />
+      <Route path="/" element={<HomePage />} />
 
       {/* Play — Bots · Friends (+ Analysis sub-page, Game-history link) */}
-      <Route path="/play" element={<PlayHub><PlayPage /></PlayHub>} />
-      <Route path="/play/analysis" element={<PlayHub><PlayPage /></PlayHub>} />
+      <Route path="/play" element={<PlayHub><PlayPage section="bots" /></PlayHub>} />
+      <Route path="/play/analysis" element={<PlayHub><PlayAnalysisRoute /></PlayHub>} />
       {/* Friends renders through the keep-mounted slot in AppShell so a live
           human-vs-human game survives navigation; the route only draws chrome. */}
       <Route path="/play/friends" element={<PlayHub>{null}</PlayHub>} />
@@ -341,7 +386,13 @@ function AppRoutes() {
       <Route path="/learn/openings/explore" element={<LearnHub><OpeningsRoute view="explore" /></LearnHub>} />
       <Route path="/learn/masters" element={<LearnHub><MastersPage goPlay={goAnalysis} /></LearnHub>} />
 
-      {/* Profile — Overview · Progress · Archive · Leaderboards · About */}
+      {/* Profile — Overview · Progress · Archive · Leaderboards · About.
+          RESERVED SEGMENTS under /profile/… (never usernames — keep this list
+          in sync with PROFILE_SEGMENT_ALIASES in app/paths.ts, which also
+          catches the case-variant/legacy spellings):
+            overview · progress · archive · leaderboards · about
+            (+ aliases: stats, leaders, ranks, settings, privacy, terms)
+          Everything else under /profile/:username is a shared public profile. */}
       <Route
         path="/profile"
         element={
@@ -350,7 +401,7 @@ function AppRoutes() {
           </ProfileHub>
         }
       />
-      <Route path="/profile/progress" element={<ProfileHub><StatsPage /></ProfileHub>} />
+      <Route path="/profile/progress" element={<ProfileHub><ProgressPage /></ProfileHub>} />
       <Route path="/profile/archive" element={<ProfileHub><ArchivePage goPlay={goAnalysis} /></ProfileHub>} />
       <Route
         path="/profile/leaderboards"

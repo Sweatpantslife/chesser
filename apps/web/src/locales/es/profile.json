@@ -1,6 +1,9 @@
 {
   "title": "Perfil",
   "meterLabel": "Mostrar puntuaciones como",
+  "ratings": {
+    "title": "Puntuaciones"
+  },
   "level": {
     "badge": "nivel",
     "xp": "{{xp, number}} XP",

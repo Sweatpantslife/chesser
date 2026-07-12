@@ -10,20 +10,10 @@ import { PUZZLES } from '../trainers/tactics';
 import { MATE_DRILL_IDS } from '../trainers/mates';
 import { BLUNDER_IDS } from '../trainers/blunders';
 import { ENDGAME_DRILL_IDS } from '../trainers/endgameDrills';
-import { deckPath } from '../app/paths';
 import type { PlanItem } from './studyPlan';
 
 /** Where a deck's "Review now" jumps to (a top-level view, optionally a Train sub-tab). */
 export type DeckTarget = { view: 'openings' | 'tactics' | 'train' | 'endgame-drills'; trainTab?: 'mates' | 'blunders' };
-
-/**
- * Router path (the part after `#`) for a deck target, so "Review now" /
- * "Continue" surfaces render real `<a href="#/train/...">` links instead of
- * goto() callbacks (middle-click, copy-link and a11y all work for free).
- */
-export function deckHref(target: DeckTarget): string {
-  return deckPath(target);
-}
 
 /**
  * Router path for a study-plan item's trainer — the "Continue" deep link.

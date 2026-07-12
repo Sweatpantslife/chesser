@@ -1,5 +1,16 @@
 {
   "percent": "{{value}} %",
+  "title": "Progression",
+  "disclosures": {
+    "stats": {
+      "title": "Statistiques et records personnels",
+      "hint": "Niveau, séries, totaux, progression d'apprentissage et vos meilleurs scores"
+    },
+    "insights": {
+      "title": "Tendances de jeu",
+      "hint": "Résultats, ouvertures et tendances de classement et de précision de vos parties"
+    }
+  },
   "empty": {
     "title": "Votre histoire commence ici",
     "body": "Pas encore d'historique d'entraînement. Résolvez des problèmes, travaillez vos ouvertures, apprenez des motifs de mat ou lancez l'entraîneur de coordonnées — votre précision et votre volume s'afficheront ici."
@@ -27,8 +38,6 @@
     "dueNowHint": "tous les paquets"
   },
   "sections": {
-    "ratings": "Classements",
-    "ratingsAside": "{{solved}} résolus · {{custom}} de vos parties",
     "activity": "Activité",
     "activityAside": "{{weeks}} dernières semaines",
     "last30": "30 derniers jours",
@@ -142,11 +151,8 @@
       "openTitle": "Ouvrir cette partie sur l'échiquier d'analyse"
     },
     "loadingAria": "Chargement de vos parties",
-    "tabs": {
-      "aria": "Sections des archives",
-      "games": "Parties",
-      "insights": "Bilan"
-    },
+    "title": "Archive des parties",
+    "subtitle": "Parties enregistrées et amicales — ouvrez-en une pour la revoir sur l'échiquier d'analyse.",
     "loadError": "Impossible de charger vos parties enregistrées — vérifiez votre connexion.",
     "retry": "Réessayer",
     "empty": {

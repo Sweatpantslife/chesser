@@ -88,5 +88,30 @@
   "status": {
     "thinking": "· pensando",
     "analysisBoard": "· tablero de análisis"
+  },
+  "hero": {
+    "title": "Juega contra bots",
+    "nextRung": "Siguiente peldaño: {{name}} · {{rating}}",
+    "ladderComplete": "Escalera completada — rejuega cualquier peldaño, con cualquier color.",
+    "cleared": "{{cleared}}/{{total}} peldaños superados",
+    "playNow": "Jugar ahora"
+  },
+  "history": {
+    "title": "Historial de partidas",
+    "hint": "Partidas pasadas, resultados y repeticiones — en tu perfil"
+  },
+  "analysisPage": {
+    "title": "Análisis",
+    "sections": {
+      "engine": "Análisis del motor",
+      "review": "Revisión de la partida",
+      "pgn": "Importar PGN y biblioteca",
+      "explorer": "Explorador de aperturas"
+    },
+    "pgnHint": "Pega un PGN para cargarlo en el tablero de análisis, o abre tu biblioteca de partidas guardadas e importadas.",
+    "pasteAria": "Pegar PGN",
+    "load": "Cargar PGN",
+    "invalid": "No se pudo leer ese PGN.",
+    "openLibrary": "Abrir biblioteca de partidas"
   }
 }

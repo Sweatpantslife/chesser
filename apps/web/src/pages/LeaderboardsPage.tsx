@@ -110,7 +110,7 @@ export function LeaderboardsPage({ onViewProfile }: { onViewProfile: (username: 
     <div className="mx-auto w-full max-w-[860px] space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="font-display text-base font-semibold text-ink">{t('title')}</h2>
+          <h1 className="font-display text-xl font-bold text-ink">{t('title')}</h1>
           <p className="text-xs text-neutral-400">{t('subtitle')}</p>
         </div>
         <div className="inline-flex overflow-hidden rounded-full border border-neutral-700 text-xs" role="group" aria-label={t('scopeAria')}>
@@ -119,7 +119,7 @@ export function LeaderboardsPage({ onViewProfile }: { onViewProfile: (username: 
               key={s}
               onClick={() => setScope(s)}
               aria-pressed={scope === s}
-              className={`btn-press px-3 py-1.5 font-semibold ${
+              className={`btn-press min-h-11 px-3 py-1.5 font-semibold sm:min-h-0 ${
                 scope === s ? 'bg-brand-600 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
               }`}
             >
@@ -136,9 +136,9 @@ export function LeaderboardsPage({ onViewProfile }: { onViewProfile: (username: 
             onClick={() => setBoard(tab.id)}
             title={t(`tabs.${tab.id}.hint`)}
             aria-current={board === tab.id ? 'true' : undefined}
-            className={`btn-press flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-semibold ${
+            className={`btn-press flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-semibold sm:min-h-9 ${
               board === tab.id
-                ? 'bg-gradient-to-br from-brand-600 to-brand-700 text-white shadow-glow'
+                ? 'bg-gradient-to-br from-brand-600 to-brand-700 text-white'
                 : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700 hover:text-ink'
             }`}
           >
@@ -240,10 +240,11 @@ export function LeaderboardsPage({ onViewProfile }: { onViewProfile: (username: 
                         ) : null}
                         <span className={e.rank <= 3 ? 'sr-only' : undefined}>{e.rank}</span>
                       </td>
-                      <td className="px-2 py-2">
+                      <td className="px-2 py-1">
+                        {/* ≥44px touch target — the row's whole interactive area. */}
                         <button
                           onClick={() => onViewProfile(e.username)}
-                          className="btn-press font-semibold text-brand-300 hover:text-brand-200 hover:underline"
+                          className="btn-press inline-flex min-h-11 items-center font-semibold text-brand-300 hover:text-brand-200 hover:underline"
                           title={t('viewProfile', { username: e.username })}
                         >
                           {e.username}

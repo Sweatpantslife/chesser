@@ -1,6 +1,9 @@
 {
   "title": "Profil",
   "meterLabel": "Afficher les classements en",
+  "ratings": {
+    "title": "Classements"
+  },
   "level": {
     "badge": "niveau",
     "xp": "{{xp, number}} XP",

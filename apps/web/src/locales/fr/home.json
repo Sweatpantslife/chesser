@@ -1,61 +1,44 @@
 {
-  "hero": {
+  "strip": {
     "greeting": {
       "midnight": "Encore debout à pas d'heure",
       "morning": "Bonjour",
       "afternoon": "Bon après-midi",
       "evening": "Bonsoir"
     },
-    "dayUnit_one": "jour",
-    "dayUnit_many": "jours",
-    "dayUnit_other": "jours",
-    "freezeTitle": "Un gel sauve votre série quand vous manquez un jour",
-    "freezesBanked_one": "🧊 {{count}} gel en réserve",
-    "freezesBanked_many": "🧊 {{count}} gels en réserve",
-    "freezesBanked_other": "🧊 {{count}} gels en réserve",
-    "levelXp": "Niveau {{level}} · {{xp}} XP",
-    "toNextLevel": "{{xp}} XP avant le niveau {{level}}",
-    "streakAtRisk": "Votre série est en sursis — entraînez-vous aujourd'hui pour la sauver (consomme un gel).",
-    "streakKeepAlive": "Gardez la flamme vivante — toute activité compte.",
-    "streakStart": "Faites une activité aujourd'hui — un problème, une leçon, une partie — pour allumer votre série."
+    "streak_one": "série de {{count}} jour",
+    "streak_many": "série de {{count}} jours",
+    "streak_other": "série de {{count}} jours",
+    "level": "Niveau {{level}} · {{xp}} XP",
+    "due_zero": "Rien à réviser",
+    "due_one": "{{count}} révision à faire",
+    "due_many": "{{count}} révisions à faire",
+    "due_other": "{{count}} révisions à faire",
+    "cta": "Progression"
+  },
+  "heroCard": {
+    "kicker": "À suivre"
+  },
+  "coach": {
+    "kicker": "Conseil du coach :",
+    "tip_one": "travaillez {{label}} — c'est revenu dans vos dernières parties.",
+    "tip_many": "travaillez {{label}} — c'est revenu {{count}} fois dans vos dernières parties.",
+    "tip_other": "travaillez {{label}} — c'est revenu {{count}} fois dans vos dernières parties.",
+    "cta": "S'entraîner"
   },
   "daily": {
     "title": "Problème du jour",
     "body": "Un problème choisi à la main — le même pour tout le monde, nouveau chaque jour.",
     "cta": "Résoudre"
   },
-  "sprints": {
-    "title": "Sprints de problèmes",
-    "body": "Courez contre la montre, enchaînez les combos.",
-    "bests": "Records — Rush {{rush}} · Storm {{storm}}",
-    "firstRecord": "Établissez votre premier record.",
-    "rush": "Rush",
-    "storm": "Storm"
+  "resume": {
+    "title": "Reprenez votre partie",
+    "body": "Votre partie contre {{name}} est toujours en cours.",
+    "bodyGeneric": "Votre dernière partie est toujours en cours.",
+    "cta": "Reprendre"
   },
-  "openings": {
-    "dueTitle_one": "{{count}} ligne d'ouverture à revoir aujourd'hui",
-    "dueTitle_many": "{{count}} lignes d'ouverture à revoir aujourd'hui",
-    "dueTitle_other": "{{count}} lignes d'ouverture à revoir aujourd'hui",
-    "caughtUpTitle": "Ouvertures : tout est à jour",
-    "startTitle": "Apprenez un répertoire d'ouvertures",
-    "dueBody": "La répétition espacée dit que c'est le moment — travaillez-les avant qu'elles ne s'effacent.",
-    "caughtUpBody": "Rien à revoir pour l'instant. Apprenez une nouvelle ligne pour étoffer votre répertoire.",
-    "startBody": "Choisissez des ouvertures pour les Blancs et les Noirs, travaillez-les coup par coup.",
-    "ctaReview": "Réviser",
-    "ctaTrain": "S'entraîner",
-    "ctaBuild": "Construire"
-  },
-  "lessons": {
-    "nextTitle": "Prochaine leçon : {{title}}",
-    "cta": "Apprendre",
-    "allDoneTitle": "Toutes les leçons terminées !",
-    "allDoneBody": "Rejouez n'importe quelle leçon pour vous perfectionner — les reprises rapportent aussi de l'XP.",
-    "ctaBrowse": "Parcourir"
-  },
-  "playCard": {
-    "title": "Jouer une partie",
-    "body": "Affrontez un bot de votre niveau — les victoires comptent pour les missions.",
-    "cta": "Jouer"
+  "recap": {
+    "hint": "Vos 7 derniers jours — statistiques et petit récap"
   },
   "goal": {
     "title": "Objectif du jour",
@@ -65,7 +48,7 @@
     "best": "record",
     "streakLabel": "série",
     "todayLine": "<today>{{today}}</today><rest> / {{goal}} XP aujourd'hui</rest>",
-    "met": "✓ Objectif atteint — bien joué !",
+    "met": "✓ Objectif atteint — bien joué !",
     "atRisk": "Entraînez-vous aujourd'hui pour sauver votre série (consomme un gel)",
     "toGo": "{{xp}} XP avant l'objectif du jour",
     "presetsLabel": "Objectif"
@@ -75,7 +58,7 @@
     "doneCount": "{{done}} / {{total}} faites",
     "questDone": "✓ fait",
     "xpReward": "+{{xp}} XP",
-    "allDone": "🏅 Toutes les missions terminées — bonus de +{{xp}} XP gagné. Nouvelles missions demain !",
+    "allDone": "🏅 Toutes les missions terminées — bonus de +{{xp}} XP gagné. Nouvelles missions demain !",
     "finishAll": "Terminez les {{total}} pour un bonus de +{{xp}} XP. Des missions fraîches chaque jour."
   },
   "weekly": {

@@ -15,7 +15,7 @@ export function PlayPanel() {
       key={id}
       onClick={() => setTab(id)}
       className={`btn-press flex-1 rounded-full px-3 py-1.5 text-sm font-semibold ${
-        tab === id ? 'bg-brand-600 text-white shadow-glow' : 'text-neutral-300 hover:bg-neutral-800'
+        tab === id ? 'bg-brand-600 text-white' : 'text-neutral-300 hover:bg-neutral-800'
       }`}
     >
       {label}

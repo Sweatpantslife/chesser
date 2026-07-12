@@ -88,5 +88,30 @@
   "status": {
     "thinking": "· thinking",
     "analysisBoard": "· analysis board"
+  },
+  "hero": {
+    "title": "Play bots",
+    "nextRung": "Next rung: {{name}} · {{rating}}",
+    "ladderComplete": "Ladder complete — replay any rung, with either colour.",
+    "cleared": "{{cleared}}/{{total}} rungs cleared",
+    "playNow": "Play now"
+  },
+  "history": {
+    "title": "Game history",
+    "hint": "Past games, results & replays — in your profile"
+  },
+  "analysisPage": {
+    "title": "Analysis",
+    "sections": {
+      "engine": "Engine analysis",
+      "review": "Game review",
+      "pgn": "PGN import & library",
+      "explorer": "Opening explorer"
+    },
+    "pgnHint": "Paste a PGN to load it on the analysis board, or open your library of saved & imported games.",
+    "pasteAria": "Paste PGN",
+    "load": "Load PGN",
+    "invalid": "That PGN could not be read.",
+    "openLibrary": "Open game library"
   }
 }

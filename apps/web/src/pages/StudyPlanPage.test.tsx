@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import '../i18n'; // initialize i18next so t() serves the bundled English strings
@@ -126,12 +126,14 @@ describe('StudyPlanPage / PlanCard (jsdom)', () => {
     expect(usePlan.getState().progress['puzzle:missedForks']).toBeUndefined();
   });
 
-  it("PlanCard shows today's remaining items and opens the full page", () => {
-    const onOpen = vi.fn();
-    render(<PlanCard onOpen={onOpen} />);
+  it("PlanCard shows today's remaining items and links to the full page", () => {
+    render(
+      <MemoryRouter>
+        <PlanCard />
+      </MemoryRouter>,
+    );
     expect(screen.getByText("This week's plan")).toBeTruthy();
     expect(screen.getAllByText(/left today/).length).toBeGreaterThan(0);
-    fireEvent.click(screen.getByRole('button', { name: /Open/ }));
-    expect(onOpen).toHaveBeenCalled();
+    expect(screen.getByRole('link', { name: /Open/ }).getAttribute('href')).toBe('/train/plan');
   });
 });

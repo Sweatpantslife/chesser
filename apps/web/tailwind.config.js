@@ -17,7 +17,9 @@ import twColors from 'tailwindcss/colors';
  *   - ink         #241e46 on panel → 15.6:1 (13.6:1 on page #f1eefa)
  *   - neutral-400 #4c4677 on panel → 8.6:1  (muted body text)
  *   - neutral-300 #3a3560 on neutral-800 #ddd8ee → 8.1:1 (chip text)
- *   - white       on brand-600 #7c3aed → 5.7:1 (unchanged)
+ *   - white       on brand-600 #7c3aed → 5.7:1, on brand-700 #6d28d9 → 7.1:1
+ *                 (theme-fixed; the hero/CTA gradient ends. White SMALL text
+ *                 on brand-500 (4.2:1) or accent-500 (3.5:1) fails AA.)
  *   - brand-300   #6d28d9 on panel → 7.1:1
  *   - gold-400    #854d0e on panel → 6.9:1 (6.0:1 on page)
  *   - emerald-400 #065f46 on panel → 7.7:1
@@ -50,7 +52,8 @@ export default {
         ink: v('ink'),
         // Brand violet — primary actions, active nav, focus. 200-400 are the
         // "readable accent on surface" steps and flip per theme; 500-800 are
-        // fixed colored surfaces (white text stays AA in both themes).
+        // fixed colored surfaces. White text is AA in both themes on 600+
+        // only; 500 (4.2:1 vs white) is for large text / decorative use.
         brand: {
           200: v('brand-200'),
           300: v('brand-300'),

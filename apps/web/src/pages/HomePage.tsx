@@ -1,33 +1,37 @@
+import { lazy, Suspense, useMemo, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useGamify, levelProgress } from '../store/gamify';
 import { useStreak } from '../store/streak';
-import { useLessons } from '../store/lessons';
-import { useProgress } from '../store/progress';
-import { useRepertoire } from '../store/repertoire';
-import { useSprints } from '../store/sprints';
-import { isDue } from '../lib/srs';
+import { useCoach } from '../store/coach';
+import { useGame } from '../store/game';
+import { buildWeaknessProfile } from '../lib/weakness';
 import { now } from '../lib/clock';
-import { lazy, Suspense } from 'react';
-import { useTranslation } from 'react-i18next';
-import { LESSON_META } from '../learn/meta';
+import { playSound } from '../lib/sound';
 import { DailyQuests } from '../components/DailyQuests';
-import { DailyGoal } from '../components/DailyGoal';
-// Lazy: the plan card drags in the study-plan generator and its whole
-// catalogue (annotated master games + the opening catalog). It already
-// renders null until the plan store hydrates on mount, so deferring the
-// chunk adds no extra layout shift.
-const PlanCard = lazy(() => import('../components/PlanCard').then((m) => ({ default: m.PlanCard })));
+import { Disclosure } from '../components/Disclosure';
 import { WeeklyReportCard } from '../components/WeeklyReport';
-import { StreakFlame, IconArrowRight } from '../components/icons';
-import mascotUrl from '../assets/img/mascot.svg';
+import { StreakFlame, IconArrowRight, IconCoach } from '../components/icons';
+
+// Lazy: the hero needs store/plan (the study-plan generator + its whole
+// content catalogue) and the strip's due-count needs lib/decks (every
+// trainer's item registry) — both far too heavy for the eager entry chunk.
+// They render into already-reserved slots, so the deferred chunk causes no
+// more than a text pop-in.
+const HomeHero = lazy(() => import('../components/HomeHero').then((m) => ({ default: m.HomeHero })));
+const ReviewDueCount = lazy(() => import('../components/HomeHero').then((m) => ({ default: m.ReviewDueCount })));
+// Lazy for the same store/plan reason (shares the chunk graph with HomeHero).
+const PlanCard = lazy(() => import('../components/PlanCard').then((m) => ({ default: m.PlanCard })));
 
 /**
- * The "Today" page — the daily landing spot. Pulls the whole retention loop
- * into one glance: streak + freezes, level/XP, the daily quest slate, the
- * daily goal ring, and one-tap entries into the daily puzzle, the next
- * lesson, and a game.
+ * Home (`#/`) — the slim "what should I do right now" dashboard. Exactly:
+ * summary strip (→ Profile Progress), the single accent hero CTA, the coach
+ * one-liner (hidden when the coach has nothing), daily quests, the weekly-plan
+ * preview, the daily puzzle, resume-last-game (hidden without a live game),
+ * and the week recap in a collapsed disclosure. Everything else — trainer
+ * entries, repertoire, lessons, rating meters — lives in its hub; Home is not
+ * a second nav.
  */
-
-export type HomeTarget = 'play' | 'learn' | 'tactics' | 'profile' | 'openings' | 'plan';
 
 function greetingKey(): 'midnight' | 'morning' | 'afternoon' | 'evening' {
   const h = new Date(now()).getHours();
@@ -37,194 +41,149 @@ function greetingKey(): 'midnight' | 'morning' | 'afternoon' | 'evening' {
   return 'evening';
 }
 
-function Hero({ onProfile }: { onProfile: () => void }) {
+/**
+ * Greeting + streak · level/XP · review-due count, all one link to
+ * `#/profile/progress` — the ONLY cross-app stats surface outside Profile.
+ */
+function SummaryStrip() {
   const { t } = useTranslation('home');
   const xp = useGamify((s) => s.xp);
   const streak = useStreak((s) => s.current());
-  const freezes = useStreak((s) => s.freezes);
-  const atRisk = useStreak((s) => s.atRisk());
-  const { level, toNext, pct } = levelProgress(xp);
+  const { level } = levelProgress(xp);
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-800/60 via-panel to-panel p-4 shadow-soft sm:p-5">
-      <img src={mascotUrl} alt="" className="float-soft pointer-events-none absolute bottom-1 right-2 hidden h-24 w-24 md:block" />
-      <div className="flex flex-wrap items-center gap-4 md:pr-28">
-        <div className="flex items-center gap-3">
-          <StreakFlame size={44} lit={streak > 0} animate={streak > 0} />
-          <div>
-            <div className="font-display text-2xl font-bold leading-none text-ink">
-              {streak} <span className="text-sm font-semibold text-neutral-400">{t('hero.dayUnit', { count: streak })}</span>
-            </div>
-            <div className="mt-1 text-xs text-neutral-400" title={t('hero.freezeTitle')}>
-              {t('hero.freezesBanked', { count: freezes })}
-            </div>
-          </div>
-        </div>
-        <div className="min-w-[220px] flex-1">
-          <div className="mb-1 flex items-baseline justify-between text-sm">
-            <span className="font-display font-semibold text-ink">{t(`hero.greeting.${greetingKey()}`)}!</span>
-            {/* -my keeps the baseline row compact while min-h-8 keeps the tap target ≥24px (WCAG 2.5.8). */}
-            <button
-              onClick={onProfile}
-              className="btn-press -my-1 flex min-h-8 items-center text-xs font-semibold text-brand-300 hover:text-brand-200"
-            >
-              {t('hero.levelXp', { level, xp: xp.toLocaleString() })}
-            </button>
-          </div>
-          <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-800">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-brand-400 to-accent-400 transition-[width] duration-500"
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-          <div className="mt-1 text-right text-xs text-neutral-400">
-            {t('hero.toNextLevel', { xp: toNext, level: level + 1 })}
-          </div>
-          <p className={`mt-1 text-xs ${atRisk ? 'text-gold-400' : 'text-neutral-400'}`}>
-            {atRisk ? t('hero.streakAtRisk') : streak > 0 ? t('hero.streakKeepAlive') : t('hero.streakStart')}
-          </p>
-        </div>
-      </div>
-    </div>
+    <Link
+      to="/profile/progress"
+      data-testid="home-summary"
+      onClick={() => playSound('uiClick')}
+      className="btn-press flex min-h-11 flex-wrap items-center gap-x-4 gap-y-1 rounded-2xl bg-panel px-4 py-3 shadow-soft hover:bg-panelmute"
+    >
+      <h2 className="font-display text-base font-bold text-ink">{t(`strip.greeting.${greetingKey()}`)}!</h2>
+      <span className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-neutral-300">
+        <span className="flex items-center gap-1">
+          <StreakFlame size={16} lit={streak > 0} />
+          {t('strip.streak', { count: streak })}
+        </span>
+        <span>{t('strip.level', { level, xp: xp.toLocaleString() })}</span>
+        <Suspense fallback={null}>
+          <ReviewDueCount />
+        </Suspense>
+        <span className="flex items-center gap-1 text-neutral-400">
+          {t('strip.cta')}
+          <IconArrowRight size={14} />
+        </span>
+      </span>
+    </Link>
   );
 }
 
-function ActionCard(props: { icon: string; title: string; body: string; cta: string; onClick: () => void }) {
+/**
+ * Compact coach one-liner → Train's Coach & Plan strip. Renders nothing at
+ * all when the weakness profile is empty (no reviewed games yet).
+ */
+function CoachStrip() {
+  const { t } = useTranslation(['home', 'insights']);
+  const games = useCoach((s) => s.games);
+  const top = useMemo(() => buildWeaknessProfile(Object.values(games)).weaknesses[0] ?? null, [games]);
+  if (!top) return null;
+  const label = t(`insights:weaknesses.${top.kind}.label`, { defaultValue: top.meta.label });
+
   return (
-    <div className="card-lift flex items-center gap-3 rounded-2xl bg-panel p-4 shadow-soft">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-600/20 text-2xl">{props.icon}</span>
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-semibold text-ink">{props.title}</div>
-        <div className="truncate text-xs text-neutral-400">{props.body}</div>
-      </div>
-      <button
-        onClick={props.onClick}
-        className="btn-press flex shrink-0 items-center gap-1 rounded-full bg-brand-600 px-3.5 py-1.5 text-sm font-bold text-white hover:bg-brand-700"
-      >
+    <Link
+      to="/train"
+      data-testid="home-coach"
+      onClick={() => playSound('uiClick')}
+      className="btn-press flex min-h-11 items-center gap-3 rounded-2xl bg-panel px-4 py-2.5 shadow-soft hover:bg-panelmute"
+    >
+      <IconCoach size={18} className="shrink-0 text-neutral-400" />
+      <span className="min-w-0 flex-1 truncate text-sm text-neutral-200">
+        <span className="font-semibold text-ink">{t('home:coach.kicker')}</span> {t('home:coach.tip', { label, count: top.count })}
+      </span>
+      <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-neutral-300">
+        {t('home:coach.cta')}
+        <IconArrowRight size={14} />
+      </span>
+    </Link>
+  );
+}
+
+/** Neutral navigational card — a real link, no accent (the hero owns that). */
+function ActionLinkCard(props: { to: string; icon: string; title: string; body: string; cta: string; testid?: string }) {
+  return (
+    <Link
+      to={props.to}
+      data-testid={props.testid}
+      onClick={() => playSound('uiClick')}
+      className="btn-press card-lift group flex items-center gap-3 rounded-2xl bg-panel p-4 shadow-soft"
+    >
+      <span aria-hidden className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-neutral-800 text-2xl">
+        {props.icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-semibold text-ink">{props.title}</span>
+        <span className="block truncate text-xs text-neutral-400">{props.body}</span>
+      </span>
+      <span className="flex min-h-11 shrink-0 items-center gap-1 rounded-full bg-neutral-800 px-3.5 py-1.5 text-sm font-bold text-neutral-200 group-hover:bg-neutral-700">
         {props.cta}
         <IconArrowRight size={14} />
-      </button>
-    </div>
+      </span>
+    </Link>
   );
 }
 
-/** Two-CTA entry card for the timed sprint modes, showing current bests. */
-function SprintCard({ onSprint }: { onSprint: (mode: 'rush' | 'storm') => void }) {
+/** "Resume your game" → Play; only exists while a vs-bot game is live. */
+function ResumeGameCard() {
   const { t } = useTranslation('home');
-  const rushBest = useSprints((s) => Math.max(s.puzzleRushBest.timed3.score, s.puzzleRushBest.survival.score));
-  const stormBest = useSprints((s) => s.puzzleStormBest.score);
+  const inProgress = useGame((s) => s.mode === 'play' && !s.isGameOver && s.history.length > 0);
+  const opponentName = useGame((s) => s.opponent?.name ?? null);
+  if (!inProgress) return null;
   return (
-    <div className="card-lift flex items-center gap-3 rounded-2xl bg-panel p-4 shadow-soft">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-600/20 text-2xl">⚡</span>
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-semibold text-ink">{t('sprints.title')}</div>
-        <div className="truncate text-xs text-neutral-400">
-          {t('sprints.body')}
-          {rushBest > 0 || stormBest > 0
-            ? ` ${t('sprints.bests', { rush: rushBest, storm: stormBest })}`
-            : ` ${t('sprints.firstRecord')}`}
-        </div>
-      </div>
-      <div className="flex shrink-0 gap-1.5">
-        <button
-          onClick={() => onSprint('rush')}
-          className="btn-press rounded-full bg-brand-600 px-3.5 py-1.5 text-sm font-bold text-white hover:bg-brand-700"
-        >
-          {t('sprints.rush')}
-        </button>
-        <button
-          onClick={() => onSprint('storm')}
-          className="btn-press rounded-full bg-brand-600 px-3.5 py-1.5 text-sm font-bold text-white hover:bg-brand-700"
-        >
-          {t('sprints.storm')}
-        </button>
-      </div>
-    </div>
+    <ActionLinkCard
+      to="/play"
+      icon="♟️"
+      title={t('resume.title')}
+      body={opponentName ? t('resume.body', { name: opponentName }) : t('resume.bodyGeneric')}
+      cta={t('resume.cta')}
+      testid="home-resume"
+    />
   );
 }
 
-export function HomePage({
-  go,
-  onDailyPuzzle,
-  onSprint,
-}: {
-  go: (v: HomeTarget) => void;
-  onDailyPuzzle: () => void;
-  onSprint: (mode: 'rush' | 'storm') => void;
-}) {
-  const { t } = useTranslation('home');
-  const completed = useLessons((s) => s.completed);
-  const nextLesson = LESSON_META.find((l) => !(l.id in completed));
-  // Opening lines due for spaced-repetition review today (any repertoire).
-  const openingsDue = useProgress((s) => {
-    const t = now();
-    return Object.entries(s.cards).filter(([k, c]) => k.startsWith('openings:') && c.last > 0 && isDue(c, t)).length;
-  });
-  const pickedCount = useRepertoire((s) => s.picked.length);
+/** Reserves the hero's height so the lazy chunk doesn't shift the page. */
+function HeroSlot({ children }: { children: ReactNode }) {
+  return <div className="min-h-[84px]">{children}</div>;
+}
 
+export function HomePage() {
+  const { t } = useTranslation(['home', 'nav']);
   return (
-    <div className="mx-auto w-full max-w-[1000px] space-y-4">
-      <Hero onProfile={() => go('profile')} />
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <DailyQuests />
-        <div className="space-y-4">
-          <Suspense fallback={null}>
-            <PlanCard onOpen={() => go('plan')} />
-          </Suspense>
-          <DailyGoal />
-          <ActionCard
-            icon="🧩"
-            title={t('daily.title')}
-            body={t('daily.body')}
-            cta={t('daily.cta')}
-            onClick={onDailyPuzzle}
-          />
-          <SprintCard onSprint={onSprint} />
-          <ActionCard
-            icon="📖"
-            title={
-              openingsDue > 0
-                ? t('openings.dueTitle', { count: openingsDue })
-                : pickedCount > 0
-                  ? t('openings.caughtUpTitle')
-                  : t('openings.startTitle')
-            }
-            body={
-              openingsDue > 0
-                ? t('openings.dueBody')
-                : pickedCount > 0
-                  ? t('openings.caughtUpBody')
-                  : t('openings.startBody')
-            }
-            cta={openingsDue > 0 ? t('openings.ctaReview') : pickedCount > 0 ? t('openings.ctaTrain') : t('openings.ctaBuild')}
-            onClick={() => go('openings')}
-          />
-        </div>
-      </div>
-
-      <WeeklyReportCard />
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {nextLesson ? (
-          <ActionCard
-            icon={nextLesson.icon}
-            title={t('lessons.nextTitle', { title: nextLesson.title })}
-            body={nextLesson.summary}
-            cta={t('lessons.cta')}
-            onClick={() => go('learn')}
-          />
-        ) : (
-          <ActionCard
-            icon="🎓"
-            title={t('lessons.allDoneTitle')}
-            body={t('lessons.allDoneBody')}
-            cta={t('lessons.ctaBrowse')}
-            onClick={() => go('learn')}
-          />
-        )}
-        <ActionCard icon="♟️" title={t('playCard.title')} body={t('playCard.body')} cta={t('playCard.cta')} onClick={() => go('play')} />
-      </div>
+    <div className="mx-auto w-full max-w-[720px] space-y-4">
+      {/* Visually the greeting strip is Home's title; this heading exists so
+          route-change focus lands on an h1 here like on every other page. */}
+      <h1 className="sr-only">{t('nav:hubs.home.label')}</h1>
+      <SummaryStrip />
+      <HeroSlot>
+        <Suspense fallback={null}>
+          <HomeHero />
+        </Suspense>
+      </HeroSlot>
+      <CoachStrip />
+      <DailyQuests />
+      <Suspense fallback={null}>
+        <PlanCard />
+      </Suspense>
+      <ActionLinkCard
+        to="/train/tactics?daily=1"
+        icon="🧩"
+        title={t('daily.title')}
+        body={t('daily.body')}
+        cta={t('daily.cta')}
+        testid="home-daily"
+      />
+      <ResumeGameCard />
+      <Disclosure title={t('weekly.title')} hint={t('recap.hint')}>
+        <WeeklyReportCard bare />
+      </Disclosure>
     </div>
   );
 }

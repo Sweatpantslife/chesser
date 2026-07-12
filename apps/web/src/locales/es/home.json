@@ -1,58 +1,41 @@
 {
-  "hero": {
+  "strip": {
     "greeting": {
       "midnight": "Quemándote las pestañas",
       "morning": "Buenos días",
       "afternoon": "Buenas tardes",
       "evening": "Buenas noches"
     },
-    "dayUnit_one": "día",
-    "dayUnit_other": "días",
-    "freezeTitle": "Un protector salva tu racha cuando faltas un día",
-    "freezesBanked_one": "🧊 {{count}} protector guardado",
-    "freezesBanked_other": "🧊 {{count}} protectores guardados",
-    "levelXp": "Nivel {{level}} · {{xp}} XP",
-    "toNextLevel": "{{xp}} XP para el nivel {{level}}",
-    "streakAtRisk": "Tu racha pende de un hilo — entrena hoy para salvarla (usa un protector).",
-    "streakKeepAlive": "Mantén viva la llama — cualquier actividad cuenta.",
-    "streakStart": "Haz algo hoy — un problema, una lección, una partida — para encender tu racha."
+    "streak_one": "racha de {{count}} día",
+    "streak_other": "racha de {{count}} días",
+    "level": "Nivel {{level}} · {{xp}} XP",
+    "due_zero": "Nada que repasar",
+    "due_one": "{{count}} repaso pendiente",
+    "due_other": "{{count}} repasos pendientes",
+    "cta": "Progreso"
+  },
+  "heroCard": {
+    "kicker": "Siguiente paso"
+  },
+  "coach": {
+    "kicker": "Consejo del entrenador:",
+    "tip_one": "trabaja {{label}} — apareció en tus últimas partidas.",
+    "tip_other": "trabaja {{label}} — apareció {{count}} veces en tus últimas partidas.",
+    "cta": "Entrenar"
   },
   "daily": {
     "title": "Problema del día",
     "body": "Un problema escogido a mano — el mismo para todos, nuevo cada día.",
     "cta": "Resolver"
   },
-  "sprints": {
-    "title": "Sprints de problemas",
-    "body": "Corre contra el reloj y encadena combos.",
-    "bests": "Récords — Rush {{rush}} · Storm {{storm}}",
-    "firstRecord": "Consigue tu primer récord.",
-    "rush": "Rush",
-    "storm": "Storm"
+  "resume": {
+    "title": "Reanuda tu partida",
+    "body": "Tu partida contra {{name}} sigue en marcha.",
+    "bodyGeneric": "Tu última partida sigue en marcha.",
+    "cta": "Reanudar"
   },
-  "openings": {
-    "dueTitle_one": "{{count}} línea de apertura pendiente hoy",
-    "dueTitle_other": "{{count}} líneas de apertura pendientes hoy",
-    "caughtUpTitle": "Aperturas: todo al día",
-    "startTitle": "Aprende un repertorio de aperturas",
-    "dueBody": "La repetición espaciada dice que es el momento — repásalas antes de que se olviden.",
-    "caughtUpBody": "No hay nada pendiente ahora mismo. Aprende una línea nueva para ampliar tu repertorio.",
-    "startBody": "Elige aperturas para blancas y negras y practícalas jugada a jugada.",
-    "ctaReview": "Repasar",
-    "ctaTrain": "Entrenar",
-    "ctaBuild": "Crear"
-  },
-  "lessons": {
-    "nextTitle": "Próxima lección: {{title}}",
-    "cta": "Aprender",
-    "allDoneTitle": "¡Todas las lecciones completadas!",
-    "allDoneBody": "Repite cualquier lección para afinar — las repeticiones también dan XP.",
-    "ctaBrowse": "Explorar"
-  },
-  "playCard": {
-    "title": "Juega una partida",
-    "body": "Enfréntate a un bot de tu nivel — las victorias cuentan para las misiones.",
-    "cta": "Jugar"
+  "recap": {
+    "hint": "Tus últimos 7 días — estadísticas y un breve resumen"
   },
   "goal": {
     "title": "Meta diaria",
