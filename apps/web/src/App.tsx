@@ -329,7 +329,7 @@ function OpeningsRoute({ view }: { view: 'repertoire' | 'explore' }) {
           </div>
         </nav>
       </div>
-      {view === 'repertoire' ? <OpeningsPage /> : <ExplorerPage goAnalyze={() => navigate('/play/analysis')} />}
+      {view === 'repertoire' ? <OpeningsPage /> : <ExplorerPage goAnalyze={(search) => navigate(`/play/analysis${search}`)} />}
     </div>
   );
 }
