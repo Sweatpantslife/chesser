@@ -126,12 +126,14 @@ describe('StudyPlanPage / PlanCard (jsdom)', () => {
     expect(usePlan.getState().progress['puzzle:missedForks']).toBeUndefined();
   });
 
-  it("PlanCard shows today's remaining items and opens the full page", () => {
-    const onOpen = vi.fn();
-    render(<PlanCard onOpen={onOpen} />);
+  it("PlanCard shows today's remaining items and links to the full page", () => {
+    render(
+      <MemoryRouter>
+        <PlanCard />
+      </MemoryRouter>,
+    );
     expect(screen.getByText("This week's plan")).toBeTruthy();
     expect(screen.getAllByText(/left today/).length).toBeGreaterThan(0);
-    fireEvent.click(screen.getByRole('button', { name: /Open/ }));
-    expect(onOpen).toHaveBeenCalled();
+    expect(screen.getByRole('link', { name: /Open/ }).getAttribute('href')).toBe('/train/plan');
   });
 });

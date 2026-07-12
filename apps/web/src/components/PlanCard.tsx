@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { planProgress, remainingToday } from '../lib/studyPlan';
 import { initPlanTracking, usePlan } from '../store/plan';
@@ -7,11 +8,12 @@ import { playSound } from '../lib/sound';
 import { IconArrowRight } from '../components/icons';
 
 /**
- * Compact "This week's plan" card for the Today page: today's remaining plan
+ * Compact "This week's plan" preview card for Home: today's remaining plan
  * items (daily quotas + unfinished one-shots) and the week's overall
- * progress, linking to the full Study Plan page.
+ * progress, linking to the full Study Plan page (`#/train/plan`). Neutral by
+ * design — Home's single accent CTA is the hero card.
  */
-export function PlanCard({ onOpen }: { onOpen: () => void }) {
+export function PlanCard() {
   const { t } = useTranslation('plan');
   const plan = usePlan((s) => s.plan);
   const progress = usePlan((s) => s.progress);
@@ -38,16 +40,14 @@ export function PlanCard({ onOpen }: { onOpen: () => void }) {
             {t('card.subtitle', { weekLabel: plan.weekLabel, done: summary.itemsDone, total: summary.itemsTotal })}
           </div>
         </div>
-        <button
-          onClick={() => {
-            playSound('uiClick');
-            onOpen();
-          }}
-          className="btn-press flex shrink-0 items-center gap-1 rounded-full bg-brand-600 px-3.5 py-1.5 text-sm font-bold text-white hover:bg-brand-700"
+        <Link
+          to="/train/plan"
+          onClick={() => playSound('uiClick')}
+          className="btn-press flex min-h-11 shrink-0 items-center gap-1 rounded-full bg-neutral-800 px-3.5 py-1.5 text-sm font-bold text-neutral-200 hover:bg-neutral-700"
         >
           {t('card.open')}
           <IconArrowRight size={14} />
-        </button>
+        </Link>
       </div>
       <div className="mt-3 flex items-center gap-2">
         <div

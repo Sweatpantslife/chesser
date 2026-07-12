@@ -70,13 +70,44 @@
   },
   "tour": {
     "title": "Hemos reorganizado la app",
-    "intro": "Chesser ahora tiene cinco destinos. Todo sigue aquí:",
-    "train": "Táctica, finales, ejercicios, entrenador y plan → Entrenar",
-    "learn": "Aperturas, explorador y partidas magistrales → Aprender",
-    "profile": "Datos, archivo, clasificaciones y ajustes → Perfil",
-    "play": "Bots, amigos y análisis → Jugar",
-    "dismiss": "Continuar",
-    "close": "Cerrar"
+    "intro": "Chesser ahora tiene cinco destinos. Todo sigue aquí — un mapa rápido de adónde fueron tus pestañas:",
+    "progress": "Paso {{step}} de {{total}}",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "done": "Entendido",
+    "skip": "Saltar el recorrido",
+    "steps": {
+      "train": {
+        "label": "El entrenamiento ahora está en Entrenar",
+        "lines": {
+          "a": "Táctica, Finales y Ejercicios → Entrenar",
+          "b": "Coordenadas → Entrenar › Coordenadas",
+          "c": "Entrenador y Plan → Entrenar (la franja Entrenador y plan)"
+        }
+      },
+      "learn": {
+        "label": "Las aperturas ahora están en Aprender",
+        "lines": {
+          "a": "Aperturas → Aprender › Aperturas",
+          "b": "Explorador → Aprender › Aperturas › Explorar"
+        }
+      },
+      "profile": {
+        "label": "Tus partidas y datos ahora están en Perfil",
+        "lines": {
+          "a": "Archivo → Perfil › Archivo — ¡sí, tus partidas ahora viven en Perfil!",
+          "b": "Datos → Perfil › Progreso",
+          "c": "Ranking y Ajustes → Perfil"
+        }
+      },
+      "play": {
+        "label": "Los amigos ahora están en Jugar",
+        "lines": {
+          "a": "Amigos → Jugar › Amigos",
+          "b": "Análisis → Jugar › Análisis"
+        }
+      }
+    }
   },
   "tabs": {
     "home": { "label": "Hoy", "hint": "racha · misiones diarias · metas" },

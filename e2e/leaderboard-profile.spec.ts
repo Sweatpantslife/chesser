@@ -83,8 +83,8 @@ async function seedLocalStorage(page: Page, token: string): Promise<void> {
     ({ token, user, now }: { token: string; user: string; now: number }) => {
       localStorage.setItem('chesser-auth', JSON.stringify({ state: { token, username: user }, version: 0 }));
       // Seeded storage marks this browser as an "existing user", which would
-      // pop the one-time "what moved" IA note over the UI — pre-dismiss it.
-      localStorage.setItem('chesser-ia-tour', 'dismissed');
+      // pop the one-time "what moved" tour over the UI — pre-dismiss it.
+      localStorage.setItem('chesser-ia-tour-v2', 'dismissed');
       // Puzzle Rush bests in the sprints store's persisted shape (PR #30 seam):
       // the leaderboard adapter must pick the best rush mode (19), not storm.
       localStorage.setItem(

@@ -70,13 +70,44 @@
   },
   "tour": {
     "title": "L'application a été réorganisée",
-    "intro": "Chesser compte désormais cinq destinations. Tout est toujours là :",
-    "train": "Tactique, finales, exercices, coach et plan → Entraînement",
-    "learn": "Ouvertures, explorateur et parties de maîtres → Apprendre",
-    "profile": "Stats, archives, classements et paramètres → Profil",
-    "play": "Bots, amis et analyse → Jouer",
-    "dismiss": "Continuer",
-    "close": "Fermer"
+    "intro": "Chesser compte désormais cinq destinations. Tout est toujours là — petit plan de vos anciens onglets :",
+    "progress": "Étape {{step}} sur {{total}}",
+    "back": "Retour",
+    "next": "Suivant",
+    "done": "Compris",
+    "skip": "Passer la visite",
+    "steps": {
+      "train": {
+        "label": "L'entraînement est dans Entraînement",
+        "lines": {
+          "a": "Tactique, Finales et Exercices → Entraînement",
+          "b": "Coordonnées → Entraînement › Coordonnées",
+          "c": "Coach et Plan → Entraînement (le bandeau Coach et plan)"
+        }
+      },
+      "learn": {
+        "label": "Les ouvertures sont dans Apprendre",
+        "lines": {
+          "a": "Ouvertures → Apprendre › Ouvertures",
+          "b": "Explorateur → Apprendre › Ouvertures › Explorer"
+        }
+      },
+      "profile": {
+        "label": "Vos parties et stats sont dans Profil",
+        "lines": {
+          "a": "Archives → Profil › Archives — oui, vos parties vivent désormais dans Profil !",
+          "b": "Stats → Profil › Progression",
+          "c": "Classements et Paramètres → Profil"
+        }
+      },
+      "play": {
+        "label": "Les amis sont dans Jouer",
+        "lines": {
+          "a": "Amis → Jouer › Amis",
+          "b": "Analyse → Jouer › Analyse"
+        }
+      }
+    }
   },
   "tabs": {
     "home": { "label": "Aujourd'hui", "hint": "série · missions quotidiennes · objectifs" },

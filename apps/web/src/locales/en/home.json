@@ -1,58 +1,41 @@
 {
-  "hero": {
+  "strip": {
     "greeting": {
       "midnight": "Burning the midnight oil",
       "morning": "Good morning",
       "afternoon": "Good afternoon",
       "evening": "Good evening"
     },
-    "dayUnit_one": "day",
-    "dayUnit_other": "days",
-    "freezeTitle": "A freeze saves your streak when you miss one day",
-    "freezesBanked_one": "🧊 {{count}} freeze banked",
-    "freezesBanked_other": "🧊 {{count}} freezes banked",
-    "levelXp": "Level {{level}} · {{xp}} XP",
-    "toNextLevel": "{{xp}} XP to level {{level}}",
-    "streakAtRisk": "Your streak is on ice — train today to save it (uses a freeze).",
-    "streakKeepAlive": "Keep the flame alive — any activity counts.",
-    "streakStart": "Do anything today — a puzzle, a lesson, a game — to light your streak."
+    "streak_one": "{{count}}-day streak",
+    "streak_other": "{{count}}-day streak",
+    "level": "Level {{level}} · {{xp}} XP",
+    "due_zero": "Nothing to review",
+    "due_one": "{{count}} review due",
+    "due_other": "{{count}} reviews due",
+    "cta": "Progress"
+  },
+  "heroCard": {
+    "kicker": "Up next"
+  },
+  "coach": {
+    "kicker": "Coach tip:",
+    "tip_one": "work on {{label}} — it came up in your recent games.",
+    "tip_other": "work on {{label}} — it came up {{count}} times in your recent games.",
+    "cta": "Train"
   },
   "daily": {
     "title": "Daily puzzle",
     "body": "One hand-picked puzzle — same for everyone, new every day.",
     "cta": "Solve"
   },
-  "sprints": {
-    "title": "Puzzle sprints",
-    "body": "Race the clock, build combos.",
-    "bests": "Bests — Rush {{rush}} · Storm {{storm}}",
-    "firstRecord": "Set your first record.",
-    "rush": "Rush",
-    "storm": "Storm"
+  "resume": {
+    "title": "Resume your game",
+    "body": "Your game against {{name}} is still going.",
+    "bodyGeneric": "Your last game is still going.",
+    "cta": "Resume"
   },
-  "openings": {
-    "dueTitle_one": "{{count}} opening line due today",
-    "dueTitle_other": "{{count}} opening lines due today",
-    "caughtUpTitle": "Openings: all caught up",
-    "startTitle": "Learn an opening repertoire",
-    "dueBody": "Spaced repetition says it’s time — drill them before they fade.",
-    "caughtUpBody": "Nothing due right now. Learn a new line to grow your repertoire.",
-    "startBody": "Pick openings for White and Black, drill them move by move.",
-    "ctaReview": "Review",
-    "ctaTrain": "Train",
-    "ctaBuild": "Build"
-  },
-  "lessons": {
-    "nextTitle": "Next lesson: {{title}}",
-    "cta": "Learn",
-    "allDoneTitle": "All lessons complete!",
-    "allDoneBody": "Replay any lesson to sharpen up — replays still earn XP.",
-    "ctaBrowse": "Browse"
-  },
-  "playCard": {
-    "title": "Play a game",
-    "body": "Face a bot at your level — wins count toward quests.",
-    "cta": "Play"
+  "recap": {
+    "hint": "Your last 7 days — stats and a short recap"
   },
   "goal": {
     "title": "Daily goal",

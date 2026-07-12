@@ -197,17 +197,6 @@ function TrainSection({ section, tabs, children }: { section: string; tabs?: Tra
 
 /* --------------------------- route wrappers ----------------------------- */
 
-function HomeRoute() {
-  const navigate = useNavigate();
-  return (
-    <HomePage
-      go={(v) => navigate(viewPath(v))}
-      onDailyPuzzle={() => navigate('/train/tactics?daily=1')}
-      onSprint={(m) => navigate(`/train/tactics/${m}`)}
-    />
-  );
-}
-
 const TACTICS_MODES: TacticsMode[] = ['practice', 'rush', 'storm', 'mistakes'];
 
 /** Tactics sub-page: mode tabs are routed second-level tabs (real links). */
@@ -359,7 +348,7 @@ function AppRoutes() {
   const goAnalysis = () => navigate('/play/analysis');
   return (
     <Routes>
-      <Route path="/" element={<HomeRoute />} />
+      <Route path="/" element={<HomePage />} />
 
       {/* Play — Bots · Friends (+ Analysis sub-page, Game-history link) */}
       <Route path="/play" element={<PlayHub><PlayPage section="bots" /></PlayHub>} />
