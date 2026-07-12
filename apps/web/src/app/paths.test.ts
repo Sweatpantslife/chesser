@@ -77,14 +77,23 @@ describe('deckPath (spaced-repetition review targets)', () => {
 });
 
 describe('profileAliasRedirect (reserved hub segments are never usernames)', () => {
-  it('sends hub tabs and old names to their hub pages, any case', () => {
+  it('reserves EVERY Profile tab slug — a user literally named "archive" can never shadow the tab', () => {
     expect(profileAliasRedirect('overview')).toBe('/profile');
+    expect(profileAliasRedirect('progress')).toBe('/profile/progress');
+    expect(profileAliasRedirect('archive')).toBe('/profile/archive');
+    expect(profileAliasRedirect('leaderboards')).toBe('/profile/leaderboards');
+    expect(profileAliasRedirect('about')).toBe('/profile/about');
+  });
+
+  it('sends hub tabs and old names to their hub pages, any case', () => {
     expect(profileAliasRedirect('Progress')).toBe('/profile/progress');
     expect(profileAliasRedirect('stats')).toBe('/profile/progress');
+    expect(profileAliasRedirect('leaders')).toBe('/profile/leaderboards');
     expect(profileAliasRedirect('ranks')).toBe('/profile/leaderboards');
     expect(profileAliasRedirect('ABOUT')).toBe('/profile/about');
     expect(profileAliasRedirect('settings')).toBe('/profile/about');
     expect(profileAliasRedirect('privacy')).toBe('/profile/about/privacy');
+    expect(profileAliasRedirect('terms')).toBe('/profile/about/terms');
   });
 
   it('treats ordinary names as usernames', () => {

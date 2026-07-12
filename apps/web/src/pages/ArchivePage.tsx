@@ -1,65 +1,23 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+/**
+ * Profile → Archive (`#/profile/archive`) — the past-games list: server-saved
+ * games (signed in) merged with this device's casual games, filterable by
+ * result / color / period. Opening a game replays it on `#/play/analysis`
+ * (PGN into the game store, then navigate — the `goPlay` prop).
+ *
+ * Trend/insight widgets deliberately do NOT live here anymore — they moved to
+ * Profile → Progress (components/GameInsights) in the stats consolidation.
+ */
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../store/auth';
 import { useGame } from '../store/game';
 import { useAnalysisReport } from '../store/analysisReport';
-import { useRatings } from '../store/ratings';
-import { useSettings } from '../store/settings';
-import { bootstrapFromReportCache, useCoach } from '../store/coach';
-import { apiListGames, type SavedGame } from '../lib/api';
-import { listCasualGames } from '../humans/casualHistory';
-import {
-  applyReview,
-  fromCasualGame,
-  fromSavedGame,
-  peekCachedReview,
-  selfNames,
-  storedFriendName,
-  type ArchiveGame,
-  type ArchiveResult,
-} from '../lib/archive';
-import {
-  accuracyPoints,
-  averageAccuracy,
-  bucketTrend,
-  DEFAULT_FILTER,
-  filterGames,
-  openingCounts,
-  periodStart,
-  pickBucketSize,
-  ratingSeries,
-  wdlCounts,
-  type ArchiveFilter,
-  type ColorFilter,
-  type PeriodFilter,
-  type ResultFilter,
-  type TrendPoint,
-  type WdlCounts,
-} from '../lib/archiveStats';
-import { detectOpening } from '../lib/openings';
-import { buildWeaknessProfile } from '../lib/weakness';
+import { type ArchiveGame, type ArchiveResult } from '../lib/archive';
+import { DEFAULT_FILTER, filterGames, type ArchiveFilter } from '../lib/archiveStats';
+import { useArchiveGames, useVisibleNow } from '../lib/useArchiveGames';
+import { ArchiveFilters, ArchiveLoadingRows } from '../components/ArchiveFilters';
 import { playSound } from '../lib/sound';
-import { StatCard } from '../components/Charts';
-import { EmptyBoardArt, EmptyStatsArt } from '../components/icons';
-
-/** Session-wide memo of detected openings, keyed by report-cache gameKey. */
-const detectedOpenings = new Map<string, { eco: string | null; name: string } | null>();
-
-// ---------------------------------------------------------------------------
-// Small presentational bits
-// ---------------------------------------------------------------------------
-
-function Section({ title, children, aside }: { title: string; children: ReactNode; aside?: ReactNode }) {
-  return (
-    <div className="rounded-2xl bg-panel p-4 shadow-soft">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h3 className="font-display text-sm font-semibold text-ink">{title}</h3>
-        {aside && <span className="text-right text-xs text-neutral-400">{aside}</span>}
-      </div>
-      {children}
-    </div>
-  );
-}
+import { EmptyBoardArt } from '../components/icons';
 
 const RESULT_CHIP_CLS: Record<ArchiveResult, string> = {
   win: 'bg-emerald-900/60 text-emerald-300',
@@ -89,183 +47,6 @@ function ColorDot({ color }: { color: 'white' | 'black' }) {
     />
   );
 }
-
-/** Win/draw/loss split: counts as text (never color alone) + a stacked bar. */
-function WdlBar({ counts, label }: { counts: WdlCounts; label: string }) {
-  const { t } = useTranslation('stats');
-  const decided = counts.wins + counts.draws + counts.losses;
-  return (
-    <div>
-      <div className="mb-1 flex items-center justify-between gap-2 text-xs">
-        <span className="text-neutral-300">{label}</span>
-        <span className="text-neutral-400">
-          <span className="font-semibold text-emerald-300">{t('archive.wdl.winsShort', { count: counts.wins })}</span>
-          {' · '}
-          <span className="text-neutral-300">{t('archive.wdl.drawsShort', { count: counts.draws })}</span>
-          {' · '}
-          <span className="font-semibold text-rose-300">{t('archive.wdl.lossesShort', { count: counts.losses })}</span>
-          {counts.winRate != null && <span> · {t('archive.wdl.winRate', { rate: counts.winRate })}</span>}
-        </span>
-      </div>
-      {decided > 0 ? (
-        <div
-          className="flex h-2.5 w-full gap-0.5"
-          role="img"
-          aria-label={t('archive.wdl.splitAria', { wins: counts.wins, draws: counts.draws, losses: counts.losses })}
-        >
-          {counts.wins > 0 && (
-            <div title={t('archive.wdl.winsTitle', { count: counts.wins })} className="rounded-full bg-emerald-600" style={{ flexGrow: counts.wins, flexBasis: 0 }} />
-          )}
-          {counts.draws > 0 && (
-            <div title={t('archive.wdl.drawsTitle', { count: counts.draws })} className="rounded-full bg-neutral-500" style={{ flexGrow: counts.draws, flexBasis: 0 }} />
-          )}
-          {counts.losses > 0 && (
-            <div title={t('archive.wdl.lossesTitle', { count: counts.losses })} className="rounded-full bg-rose-600" style={{ flexGrow: counts.losses, flexBasis: 0 }} />
-          )}
-        </div>
-      ) : (
-        <div className="h-2.5 w-full rounded-full bg-neutral-800" />
-      )}
-    </div>
-  );
-}
-
-interface ChartSeries {
-  label: string;
-  /** A theme-aware CSS color (var(--c-…)) — both themes keep it AA vs panel. */
-  color: string;
-  points: TrendPoint[];
-  /** Formats a value for tooltips/labels (e.g. adds '%'). */
-  format: (v: number) => string;
-}
-
-/** Chart timestamps are UTC bucket starts (see lib/archiveStats bucketStart) /
- *  UTC-midnight rating days — format them in UTC so the label matches the
- *  bucket's ISO date instead of drifting a day west of Greenwich. */
-const shortDate = (t: number) => new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
-
-/**
- * Minimal theme-token line chart (one y-axis, 1–2 series). Identity is never
- * color-alone: every series is named in the legend with its latest value, and
- * each dot carries a native tooltip.
- */
-function TrendChart({ series }: { series: ChartSeries[] }) {
-  const { t } = useTranslation('stats');
-  const drawn = series.filter((s) => s.points.length > 0);
-  const all = drawn.flatMap((s) => s.points);
-  if (all.length === 0) return null; // callers render their own empty state
-  const t0 = Math.min(...all.map((p) => p.t));
-  const t1 = Math.max(...all.map((p) => p.t));
-  let v0 = Math.min(...all.map((p) => p.value));
-  let v1 = Math.max(...all.map((p) => p.value));
-  if (v1 - v0 < 1) {
-    v0 -= 1;
-    v1 += 1;
-  }
-  const pad = (v1 - v0) * 0.1;
-  const lo = v0 - pad;
-  const hi = v1 + pad;
-  const H = 100;
-  const x = (t: number) => (t1 === t0 ? 50 : ((t - t0) / (t1 - t0)) * 100);
-  const y = (v: number) => H - ((v - lo) / (hi - lo)) * H;
-  const fmt = drawn[0]!.format;
-
-  return (
-    <div>
-      <div className="flex items-stretch gap-3">
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-32 min-w-0 flex-1" role="img" aria-label={t('archive.trend.chartAria')}>
-          <line x1={0} y1={y((v0 + v1) / 2)} x2={100} y2={y((v0 + v1) / 2)} stroke="var(--c-line)" strokeWidth={1} vectorEffect="non-scaling-stroke" />
-          {drawn.map((s) => (
-            <g key={s.label}>
-              {s.points.length > 1 && (
-                <polyline
-                  points={s.points.map((p) => `${x(p.t)},${y(p.value)}`).join(' ')}
-                  fill="none"
-                  stroke={s.color}
-                  strokeWidth={2}
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
-                  vectorEffect="non-scaling-stroke"
-                />
-              )}
-              {s.points.length <= 60 &&
-                s.points.map((p) => (
-                  <circle key={p.t} cx={x(p.t)} cy={y(p.value)} r={1.6} fill={s.color}>
-                    <title>{t('archive.trend.pointTitle', { label: s.label, date: shortDate(p.t), value: s.format(p.value) })}</title>
-                  </circle>
-                ))}
-            </g>
-          ))}
-        </svg>
-        <div className="flex shrink-0 flex-col justify-between py-0.5 text-right text-xs text-neutral-400">
-          <span>{fmt(v1)}</span>
-          <span>{fmt(v0)}</span>
-        </div>
-      </div>
-      <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-neutral-400">
-        <span>
-          {shortDate(t0)}
-          {t1 !== t0 && <> – {shortDate(t1)}</>}
-        </span>
-        <span className="flex flex-wrap items-center gap-3">
-          {drawn.map((s) => (
-            <span key={s.label} className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full" style={{ background: s.color }} />
-              {s.label}
-              <span className="font-semibold text-neutral-300">{s.format(s.points[s.points.length - 1]!.value)}</span>
-            </span>
-          ))}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function EmptyChartNote({ children }: { children: ReactNode }) {
-  return (
-    <p className="flex h-24 items-center justify-center rounded-xl border border-dashed border-neutral-700 px-3 text-center text-sm text-neutral-400">
-      {children}
-    </p>
-  );
-}
-
-function Pills<T extends string>({
-  label,
-  ariaLabel,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  ariaLabel: string;
-  value: T;
-  onChange: (v: T) => void;
-  options: { id: T; label: string }[];
-}) {
-  return (
-    <div className="flex items-center gap-1.5" role="group" aria-label={ariaLabel}>
-      <span className="text-xs text-neutral-400">{label}</span>
-      <div className="flex gap-0.5 rounded-full bg-panelmute p-0.5">
-        {options.map((o) => (
-          <button
-            key={o.id}
-            onClick={() => onChange(o.id)}
-            aria-pressed={value === o.id}
-            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-              value === o.id ? 'bg-brand-600 text-white' : 'text-neutral-300 hover:bg-neutral-700 hover:text-ink'
-            }`}
-          >
-            {o.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Game list
-// ---------------------------------------------------------------------------
 
 function GameRow({ game, onOpen }: { game: ArchiveGame; onOpen: (g: ArchiveGame) => void }) {
   const { t } = useTranslation('stats');
@@ -328,129 +109,18 @@ function GameRow({ game, onOpen }: { game: ArchiveGame; onOpen: (g: ArchiveGame)
   );
 }
 
-function LoadingRows() {
-  const { t } = useTranslation('stats');
-  return (
-    <div className="space-y-1.5" role="status" aria-label={t('archive.loadingAria')}>
-      {[0, 1, 2, 3, 4].map((i) => (
-        <div key={i} className="flex animate-pulse items-center gap-2.5 rounded-xl px-2.5 py-2">
-          <span className="h-7 w-7 rounded-full bg-neutral-800" />
-          <span className="min-w-0 flex-1 space-y-1.5">
-            <span className="block h-3 w-1/2 rounded bg-neutral-800" />
-            <span className="block h-2.5 w-2/3 rounded bg-neutral-800" />
-          </span>
-          <span className="h-3 w-16 rounded bg-neutral-800" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// The page
-// ---------------------------------------------------------------------------
-
 const LIST_PREVIEW = 30;
 
 export function ArchivePage({ goPlay }: { goPlay: () => void }) {
   const { t } = useTranslation('stats');
   const token = useAuth((s) => s.token);
-  const username = useAuth((s) => s.username);
 
-  const [tab, setTab] = useState<'games' | 'insights'>('games');
+  const { games, loading, loadError, retry } = useArchiveGames();
   const [filter, setFilter] = useState<ArchiveFilter>(DEFAULT_FILTER);
-  // Reference time for the period filters. Kept in state (not Date.now() inside
-  // the memos below) so a tab left open for days refreshes its '7d'/'30d'
-  // cutoffs when the user comes back to it.
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const refresh = () => {
-      if (document.visibilityState === 'visible') setNow(Date.now());
-    };
-    document.addEventListener('visibilitychange', refresh);
-    return () => document.removeEventListener('visibilitychange', refresh);
-  }, []);
-  const [saved, setSaved] = useState<SavedGame[] | null>(token ? null : []);
-  const [loadError, setLoadError] = useState(false);
-  const [retryNonce, setRetryNonce] = useState(0);
+  const now = useVisibleNow();
   const [showAll, setShowAll] = useState(false);
-  const [openings, setOpenings] = useState<Record<string, { eco: string | null; name: string } | null>>({});
-  const [casualGames] = useState(() => listCasualGames());
 
-  // Coach digests back-fill from the report cache (same as the Coach tab).
-  useEffect(() => {
-    bootstrapFromReportCache();
-  }, []);
-
-  useEffect(() => {
-    if (!token) {
-      setSaved([]);
-      return;
-    }
-    let cancelled = false;
-    setSaved(null);
-    setLoadError(false);
-    apiListGames(token)
-      .then((r) => {
-        if (!cancelled) setSaved(r.games);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setSaved([]);
-          setLoadError(true);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [token, retryNonce]);
-
-  const loading = token != null && saved === null;
-
-  // Normalize both sources into ArchiveGames (newest first), enriched with any
-  // cached review (accuracy / opening / player side) — read without touching
-  // the report cache's LRU order.
-  const games = useMemo(() => {
-    const self = selfNames(username, storedFriendName());
-    const fromLibrary = (saved ?? []).map((g) => {
-      const norm = fromSavedGame(g, self);
-      return norm.gameKey ? applyReview(norm, peekCachedReview(norm.gameKey)) : norm;
-    });
-    const fromCasual = casualGames.map((r, i) => fromCasualGame(r, i, self));
-    return [...fromLibrary, ...fromCasual].sort((a, b) => b.playedAt - a.playedAt);
-  }, [saved, username, casualGames]);
-
-  // Name the openings of games whose review didn't already carry one.
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      const next: Record<string, { eco: string | null; name: string } | null> = {};
-      let any = false;
-      for (const g of games) {
-        if (g.opening || !g.gameKey || g.sans.length === 0) continue;
-        let hit = detectedOpenings.get(g.gameKey);
-        if (hit === undefined) {
-          const info = await detectOpening(g.sans).catch(() => null);
-          if (cancelled) return;
-          hit = info ? { eco: info.eco, name: info.name } : null;
-          detectedOpenings.set(g.gameKey, hit);
-        }
-        next[g.gameKey] = hit;
-        any = true;
-      }
-      if (!cancelled && any) setOpenings(next);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [games]);
-
-  const resolvedGames = useMemo(
-    () => games.map((g) => (!g.opening && g.gameKey && openings[g.gameKey] ? { ...g, opening: openings[g.gameKey]! } : g)),
-    [games, openings],
-  );
-
-  const filtered = useMemo(() => filterGames(resolvedGames, filter, now), [resolvedGames, filter, now]);
+  const filtered = useMemo(() => filterGames(games, filter, now), [games, filter, now]);
   const filterActive = filter.result !== 'all' || filter.color !== 'all' || filter.period !== 'all';
 
   const openGame = (g: ArchiveGame) => {
@@ -464,326 +134,76 @@ export function ArchivePage({ goPlay }: { goPlay: () => void }) {
     }
   };
 
-  // — Insights inputs —
-  const meter = useSettings((s) => s.ratingMeter);
-  const botsHistory = useRatings((s) => s.categories.bots.history);
-  const blitzHistory = useRatings((s) => s.categories.blitz.history);
-  const coachGames = useCoach((s) => s.games);
-
-  const wdl = useMemo(() => wdlCounts(filtered), [filtered]);
-  const wdlWhite = useMemo(() => wdlCounts(filtered.filter((g) => g.userColor === 'white')), [filtered]);
-  const wdlBlack = useMemo(() => wdlCounts(filtered.filter((g) => g.userColor === 'black')), [filtered]);
-  const avgAcc = useMemo(() => averageAccuracy(filtered), [filtered]);
-  const reviewed = useMemo(() => filtered.filter((g) => g.accuracy != null).length, [filtered]);
-  const accTrend = useMemo(() => {
-    const pts = accuracyPoints(filtered);
-    return bucketTrend(pts, pickBucketSize(pts)).map((b) => ({ t: b.start, value: b.value }));
-  }, [filtered]);
-  const openingsTop = useMemo(() => openingCounts(filtered, 6), [filtered]);
-  const ratingLines = useMemo(() => {
-    const from = periodStart(filter.period, now);
-    const pct = (v: number) => `${Math.round(v)}`;
-    return [
-      { label: t('archive.series.bots'), color: 'var(--c-brand-400)', points: ratingSeries(botsHistory, meter).filter((p) => p.t >= from), format: pct },
-      { label: t('archive.series.blitz'), color: 'var(--c-gold-400)', points: ratingSeries(blitzHistory, meter).filter((p) => p.t >= from), format: pct },
-    ].filter((l) => l.points.length > 0);
-  }, [botsHistory, blitzHistory, meter, filter.period, now, t]);
-  // Coach digests carry the review's result / player colour / timestamp, so
-  // the strengths & weaknesses card can honour the same Result/Color/Period
-  // slice as every sibling Insights section (digest createdAt plays the role
-  // of playedAt — the same "when it entered the archive" semantics saved
-  // games use).
-  const digestCount = useMemo(() => Object.keys(coachGames).length, [coachGames]);
-  const profile = useMemo(() => {
-    const sliced = filterGames(
-      Object.values(coachGames).map((d) => ({ digest: d, result: d.result, userColor: d.playerColor, playedAt: d.createdAt })),
-      filter,
-      now,
-    );
-    return buildWeaknessProfile(sliced.map((s) => s.digest));
-  }, [coachGames, filter, now]);
-  const strengths = useMemo(() => {
-    const out: string[] = [];
-    const phases = profile.phases.filter((p) => p.moves > 0).sort((a, b) => b.accuracy - a.accuracy);
-    if (phases[0]) {
-      out.push(t('archive.strengths.phase', { phase: t(`archive.phaseNames.${phases[0].phase}`), accuracy: phases[0].accuracy }));
-    }
-    const w = profile.colors.white;
-    const b = profile.colors.black;
-    if (w.games > 0 && b.games > 0 && w.accuracy !== b.accuracy) {
-      const better = w.accuracy > b.accuracy ? ('white' as const) : ('black' as const);
-      const bt = better === 'white' ? w : b;
-      const ot = better === 'white' ? b : w;
-      out.push(t('archive.strengths.color', { side: t(`archive.sides.${better}`), better: bt.accuracy, other: ot.accuracy }));
-    }
-    for (const entry of profile.weaknesses) {
-      // entry.meta.label comes from lib/weakness (stores group) — passed through untranslated.
-      if (entry.trend != null && entry.trend < 0) out.push(t('archive.strengths.improving', { label: entry.meta.label.toLowerCase() }));
-    }
-    return out;
-  }, [profile, t]);
-
-  const tabBtn = (id: 'games' | 'insights', label: string) => (
-    <button
-      onClick={() => setTab(id)}
-      aria-pressed={tab === id}
-      className={`flex-1 rounded-full px-3 py-1.5 text-sm font-semibold sm:flex-none ${
-        tab === id ? 'bg-brand-600 text-white' : 'text-neutral-300 hover:bg-neutral-700 hover:text-ink'
-      }`}
-    >
-      {label}
-    </button>
-  );
-
   const visible = showAll ? filtered : filtered.slice(0, LIST_PREVIEW);
-
-  // Rating history lives in the ratings store, not the archive — the trend can
-  // (and should) render even when no archived game matches the current slice.
-  const ratingSection = (
-    <Section title={t('archive.sections.ratingTrend')} aside={t('archive.sections.ratingTrendAside', { meter })}>
-      {ratingLines.length > 0 ? (
-        <TrendChart series={ratingLines} />
-      ) : (
-        <EmptyChartNote>{t('archive.sections.ratingTrendEmpty')}</EmptyChartNote>
-      )}
-    </Section>
-  );
 
   return (
     <div className="mx-auto w-full max-w-[1000px] space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-1 rounded-full bg-panelmute p-1" role="group" aria-label={t('archive.tabs.aria')}>
-          {tabBtn('games', t('archive.tabs.games'))}
-          {tabBtn('insights', t('archive.tabs.insights'))}
+        <div>
+          <h1 className="font-display text-xl font-bold text-ink">{t('archive.title')}</h1>
+          <p className="text-xs text-neutral-400">{t('archive.subtitle')}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <Pills<ResultFilter>
-            label={t('archive.filters.resultLabel')}
-            ariaLabel={t('archive.filters.resultAria')}
-            value={filter.result}
-            onChange={(result) => setFilter((f) => ({ ...f, result }))}
-            options={[
-              { id: 'all', label: t('archive.filters.all') },
-              { id: 'win', label: t('archive.filters.wins') },
-              { id: 'draw', label: t('archive.filters.draws') },
-              { id: 'loss', label: t('archive.filters.losses') },
-            ]}
-          />
-          <Pills<ColorFilter>
-            label={t('archive.filters.colorLabel')}
-            ariaLabel={t('archive.filters.colorAria')}
-            value={filter.color}
-            onChange={(color) => setFilter((f) => ({ ...f, color }))}
-            options={[
-              { id: 'all', label: t('archive.filters.any') },
-              { id: 'white', label: t('archive.filters.white') },
-              { id: 'black', label: t('archive.filters.black') },
-            ]}
-          />
-          <Pills<PeriodFilter>
-            label={t('archive.filters.periodLabel')}
-            ariaLabel={t('archive.filters.periodAria')}
-            value={filter.period}
-            onChange={(period) => setFilter((f) => ({ ...f, period }))}
-            options={[
-              { id: 'all', label: t('archive.filters.allTime') },
-              { id: '7d', label: t('archive.filters.7d') },
-              { id: '30d', label: t('archive.filters.30d') },
-              { id: '90d', label: t('archive.filters.90d') },
-              { id: '365d', label: t('archive.filters.year') },
-            ]}
-          />
-        </div>
+        <ArchiveFilters value={filter} onChange={setFilter} />
       </div>
 
       {loadError && (
         <p role="status" className="flex items-center justify-between gap-2 rounded-xl bg-panel px-3 py-2 text-sm text-amber-300">
           {t('archive.loadError')}
-          <button onClick={() => setRetryNonce((n) => n + 1)} className="rounded-full bg-neutral-800 px-3 py-1 text-xs font-semibold text-neutral-200 hover:bg-neutral-700">
+          <button onClick={retry} className="rounded-full bg-neutral-800 px-3 py-1 text-xs font-semibold text-neutral-200 hover:bg-neutral-700">
             {t('archive.retry')}
           </button>
         </p>
       )}
 
-      {tab === 'games' && (
-        <div className="rounded-2xl bg-panel p-3 shadow-soft">
-          {loading ? (
-            <LoadingRows />
-          ) : games.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 p-4 text-center text-sm text-neutral-400 sm:flex-row sm:text-left">
-              <EmptyBoardArt width={150} height={112} className="shrink-0" />
-              <div>
-                <div className="mb-1 font-display text-base font-semibold text-ink">{t('archive.empty.title')}</div>
-                {t('archive.empty.body')}
-                {!token && <> {t('archive.empty.signIn')}</>}
-              </div>
+      <div className="rounded-2xl bg-panel p-3 shadow-soft">
+        {loading ? (
+          <ArchiveLoadingRows />
+        ) : games.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 p-4 text-center text-sm text-neutral-400 sm:flex-row sm:text-left">
+            <EmptyBoardArt width={150} height={112} className="shrink-0" />
+            <div>
+              <div className="mb-1 font-display text-base font-semibold text-ink">{t('archive.empty.title')}</div>
+              {t('archive.empty.body')}
+              {!token && <> {t('archive.empty.signIn')}</>}
             </div>
-          ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 p-6 text-center text-sm text-neutral-400">
-              {t('archive.noMatch')}
-              <button
-                onClick={() => setFilter(DEFAULT_FILTER)}
-                className="rounded-full bg-neutral-800 px-3 py-1.5 text-xs font-semibold text-neutral-200 hover:bg-neutral-700"
-              >
-                {t('archive.filters.clear')}
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="mb-2 flex items-center justify-between px-1 text-xs text-neutral-400">
-                <span>
-                  {t('archive.count', { count: filtered.length })}
-                  {filterActive ? ` ${t('archive.filteredSuffix')}` : ''}
-                </span>
-                {!token && <span>{t('archive.signInHint')}</span>}
-              </div>
-              <ul className="space-y-0.5">
-                {visible.map((g) => (
-                  <li key={g.id}>
-                    <GameRow game={g} onOpen={openGame} />
-                  </li>
-                ))}
-              </ul>
-              {filtered.length > LIST_PREVIEW && (
-                <button
-                  onClick={() => setShowAll((v) => !v)}
-                  className="mt-2 w-full rounded-full bg-neutral-800 px-3 py-1.5 text-xs font-semibold text-neutral-200 hover:bg-neutral-700"
-                >
-                  {showAll ? t('archive.showFewer') : t('archive.showAll', { count: filtered.length })}
-                </button>
-              )}
-            </>
-          )}
-        </div>
-      )}
-
-      {tab === 'insights' &&
-        (loading ? (
-          <div className="rounded-2xl bg-panel p-3 shadow-soft">
-            <LoadingRows />
           </div>
         ) : filtered.length === 0 ? (
-          <>
-            <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-neutral-700 bg-panel/60 p-6 text-center text-sm text-neutral-400 sm:flex-row sm:text-left">
-              <EmptyStatsArt width={150} height={112} className="shrink-0" />
-              <div>
-                <div className="mb-1 font-display text-base font-semibold text-ink">
-                  {games.length === 0 ? t('archive.insightsEmpty.noGamesTitle') : t('archive.insightsEmpty.noSliceTitle')}
-                </div>
-                {games.length === 0 ? t('archive.insightsEmpty.noGamesBody') : t('archive.insightsEmpty.noSliceBody')}
-              </div>
-            </div>
-            {ratingLines.length > 0 && ratingSection}
-          </>
+          <div className="flex flex-col items-center gap-2 p-6 text-center text-sm text-neutral-400">
+            {t('archive.noMatch')}
+            <button
+              onClick={() => setFilter(DEFAULT_FILTER)}
+              className="rounded-full bg-neutral-800 px-3 py-1.5 text-xs font-semibold text-neutral-200 hover:bg-neutral-700"
+            >
+              {t('archive.filters.clear')}
+            </button>
+          </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <StatCard label={t('archive.stats.games')} value={wdl.total} hint={filterActive ? t('archive.stats.inSlice') : t('archive.stats.allTime')} />
-              <StatCard label={t('archive.stats.record')} value={`${wdl.wins}-${wdl.draws}-${wdl.losses}`} hint={t('archive.stats.recordHint')} />
-              <StatCard
-                label={t('archive.stats.winRate')}
-                value={wdl.winRate != null ? t('percent', { value: wdl.winRate }) : '—'}
-                hint={wdl.unknown > 0 ? t('archive.stats.noResult', { count: wdl.unknown }) : t('archive.stats.withResult')}
-              />
-              <StatCard
-                label={t('archive.stats.accuracy')}
-                value={avgAcc != null ? t('percent', { value: avgAcc }) : '—'}
-                hint={reviewed > 0 ? t('archive.stats.avgReviews', { count: reviewed }) : t('archive.stats.noReviews')}
-              />
+            <div className="mb-2 flex items-center justify-between px-1 text-xs text-neutral-400">
+              <span>
+                {t('archive.count', { count: filtered.length })}
+                {filterActive ? ` ${t('archive.filteredSuffix')}` : ''}
+              </span>
+              {!token && <span>{t('archive.signInHint')}</span>}
             </div>
-
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <Section title={t('archive.sections.wdl')}>
-                <div className="space-y-3">
-                  <WdlBar counts={wdl} label={t('archive.wdl.allGames')} />
-                  <WdlBar counts={wdlWhite} label={t('archive.wdl.asWhite')} />
-                  <WdlBar counts={wdlBlack} label={t('archive.wdl.asBlack')} />
-                </div>
-              </Section>
-
-              {ratingSection}
-
-              <Section title={t('archive.sections.accuracyTrend')} aside={t('archive.sections.accuracyTrendAside')}>
-                {accTrend.length > 0 ? (
-                  <TrendChart series={[{ label: t('archive.series.accuracy'), color: 'var(--c-brand-400)', points: accTrend, format: (v) => `${v}%` }]} />
-                ) : (
-                  <EmptyChartNote>{t('archive.sections.accuracyTrendEmpty')}</EmptyChartNote>
-                )}
-              </Section>
-
-              <Section title={t('archive.sections.openings')}>
-                {openingsTop.length > 0 ? (
-                  <ul className="space-y-2">
-                    {openingsTop.map((o) => (
-                      <li key={o.name} className="flex items-center gap-2">
-                        {o.eco && <span className="w-9 shrink-0 rounded bg-neutral-800 px-1 py-0.5 text-center font-mono text-xs text-neutral-300">{o.eco}</span>}
-                        <span className="min-w-0 flex-1 truncate text-sm text-neutral-200" title={o.name}>
-                          {o.name}
-                        </span>
-                        <span className="shrink-0 text-xs text-neutral-400">
-                          {t('archive.count', { count: o.games })} ·{' '}
-                          <span className="font-semibold text-emerald-300">{t('archive.wdl.winsShort', { count: o.wins })}</span>{' '}
-                          <span className="text-neutral-300">{t('archive.wdl.drawsShort', { count: o.draws })}</span>{' '}
-                          <span className="font-semibold text-rose-300">{t('archive.wdl.lossesShort', { count: o.losses })}</span>
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <EmptyChartNote>{t('archive.sections.openingsEmpty')}</EmptyChartNote>
-                )}
-              </Section>
-            </div>
-
-            <Section title={t('archive.sections.sw')} aside={t('archive.sections.swAside')}>
-              {profile.games === 0 ? (
-                <EmptyChartNote>
-                  {digestCount > 0 ? t('archive.profileEmpty.filtered') : t('archive.profileEmpty.none')}
-                </EmptyChartNote>
-              ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-emerald-300">{t('archive.strengths.title')}</h4>
-                    {strengths.length > 0 ? (
-                      <ul className="space-y-1.5 text-sm text-neutral-200">
-                        {strengths.map((s) => (
-                          <li key={s} className="flex items-start gap-2">
-                            <span aria-hidden className="mt-0.5 text-emerald-400">✓</span>
-                            {s}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-sm text-neutral-400">{t('archive.strengths.empty')}</p>
-                    )}
-                  </div>
-                  <div>
-                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-rose-300">{t('archive.weaknesses.title')}</h4>
-                    {profile.weaknesses.length > 0 ? (
-                      <ul className="space-y-2">
-                        {profile.weaknesses.slice(0, 3).map((w) => (
-                          <li key={w.kind} className="text-sm text-neutral-200">
-                            <span className="mr-1.5" aria-hidden>
-                              {w.meta.icon}
-                            </span>
-                            {w.meta.label}
-                            <span className="ml-1.5 text-xs text-neutral-400">
-                              {t('archive.weaknesses.occurrences', { times: w.count, count: w.games })}
-                              {w.trend != null && (w.trend < 0 ? t('archive.weaknesses.improving') : w.trend > 0 ? t('archive.weaknesses.rising') : '')}
-                            </span>
-                            <span className="block text-xs text-neutral-400">{w.meta.summary}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-sm text-neutral-400">{t('archive.weaknesses.empty')}</p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </Section>
+            <ul className="space-y-0.5">
+              {visible.map((g) => (
+                <li key={g.id}>
+                  <GameRow game={g} onOpen={openGame} />
+                </li>
+              ))}
+            </ul>
+            {filtered.length > LIST_PREVIEW && (
+              <button
+                onClick={() => setShowAll((v) => !v)}
+                className="mt-2 min-h-11 w-full rounded-full bg-neutral-800 px-3 py-1.5 text-xs font-semibold text-neutral-200 hover:bg-neutral-700 sm:min-h-0"
+              >
+                {showAll ? t('archive.showFewer') : t('archive.showAll', { count: filtered.length })}
+              </button>
+            )}
           </>
-        ))}
+        )}
+      </div>
     </div>
   );
 }

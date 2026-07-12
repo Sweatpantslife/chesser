@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { DECK_META, deckHref, useReviewSummary } from '../lib/decks';
+import { DECK_META, useReviewSummary } from '../lib/decks';
+import { deckPath } from '../app/paths';
 
 /**
  * Unified spaced-repetition summary across every deck (openings, tactics,
- * checkmates, anti-blunder). Shows the total due and a per-deck breakdown; each
- * chip is a plain link (`deckHref`) straight to that trainer — middle-click,
- * copy-link and a11y work for free.
+ * checkmates, anti-blunder). Shows the total due and a per-deck breakdown;
+ * each chip is a plain link (DeckTarget → URL via deckPath) straight to that
+ * trainer — middle-click, copy-link and a11y work for free.
  */
 export function ReviewSummary() {
   const { t } = useTranslation('analysis');
@@ -31,8 +32,8 @@ export function ReviewSummary() {
           return (
             <Link
               key={d.deck}
-              to={deckHref(meta.target)}
-              className={`block rounded-lg border px-3 py-2 text-left transition-colors ${
+              to={deckPath(meta.target)}
+              className={`block min-h-11 rounded-lg border px-3 py-2 text-left transition-colors ${
                 hasDue
                   ? 'border-amber-500/40 bg-amber-950/30 hover:bg-amber-950/50'
                   : 'border-neutral-700 bg-neutral-800/40 hover:bg-neutral-800'

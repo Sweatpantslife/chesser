@@ -52,7 +52,9 @@ async function registerViaUi(page: Page, username: string): Promise<void> {
 
 test.describe('policy pages', () => {
   test('privacy policy and terms render and cross-link', async ({ page }) => {
+    // Legacy URL: #/privacy must forever redirect to the About sub-page.
     await page.goto('/#/privacy');
+    await expect(page).toHaveURL(/#\/profile\/about\/privacy$/);
     await expect(page.getByRole('heading', { name: 'Privacy Policy' })).toBeVisible();
     // Load-bearing claims stay on the page.
     await expect(page.getByText('never sell', { exact: false })).toBeVisible();

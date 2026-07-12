@@ -1,5 +1,16 @@
 {
   "percent": "{{value}}%",
+  "title": "Progreso",
+  "disclosures": {
+    "stats": {
+      "title": "Estadísticas y mejores marcas",
+      "hint": "Nivel, rachas, totales, progreso de aprendizaje y tus mejores series"
+    },
+    "insights": {
+      "title": "Tendencias de tus partidas",
+      "hint": "Resultados, aperturas y tendencias de puntuación y precisión de tus partidas"
+    }
+  },
   "empty": {
     "title": "Tu historia empieza aquí",
     "body": "Aún no hay historial de entrenamiento. Resuelve problemas de táctica, practica aperturas, aprende patrones de mate o usa el entrenador de coordenadas — tu precisión y tu volumen aparecerán aquí."
@@ -25,8 +36,6 @@
     "dueNowHint": "todos los mazos"
   },
   "sections": {
-    "ratings": "Puntuaciones",
-    "ratingsAside": "{{solved}} resueltos · {{custom}} de tus partidas",
     "activity": "Actividad",
     "activityAside": "últimas {{weeks}} semanas",
     "last30": "Últimos 30 días",
@@ -134,11 +143,8 @@
       "openTitle": "Abrir esta partida en el tablero de análisis"
     },
     "loadingAria": "Cargando tus partidas",
-    "tabs": {
-      "aria": "Secciones del archivo",
-      "games": "Partidas",
-      "insights": "Tendencias"
-    },
+    "title": "Archivo de partidas",
+    "subtitle": "Partidas guardadas y casuales — abre una para repasarla en el tablero de análisis.",
     "loadError": "No se pudieron cargar tus partidas guardadas — comprueba tu conexión.",
     "retry": "Reintentar",
     "empty": {

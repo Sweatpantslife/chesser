@@ -55,7 +55,7 @@ const VisionPage = lazy(() => import('./pages/VisionPage').then((m) => ({ defaul
 const MatesPage = lazy(() => import('./pages/MatesPage').then((m) => ({ default: m.MatesPage })));
 const AntiBlunderPage = lazy(() => import('./pages/AntiBlunderPage').then((m) => ({ default: m.AntiBlunderPage })));
 const CoordinatePage = lazy(() => import('./pages/CoordinatePage').then((m) => ({ default: m.CoordinatePage })));
-const StatsPage = lazy(() => import('./pages/StatsPage').then((m) => ({ default: m.StatsPage })));
+const ProgressPage = lazy(() => import('./pages/ProgressPage').then((m) => ({ default: m.ProgressPage })));
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
 const StudyPlanPage = lazy(() => import('./pages/StudyPlanPage').then((m) => ({ default: m.StudyPlanPage })));
 const ArchivePage = lazy(() => import('./pages/ArchivePage').then((m) => ({ default: m.ArchivePage })));
@@ -387,7 +387,13 @@ function AppRoutes() {
       <Route path="/learn/openings/explore" element={<LearnHub><OpeningsRoute view="explore" /></LearnHub>} />
       <Route path="/learn/masters" element={<LearnHub><MastersPage goPlay={goAnalysis} /></LearnHub>} />
 
-      {/* Profile — Overview · Progress · Archive · Leaderboards · About */}
+      {/* Profile — Overview · Progress · Archive · Leaderboards · About.
+          RESERVED SEGMENTS under /profile/… (never usernames — keep this list
+          in sync with PROFILE_SEGMENT_ALIASES in app/paths.ts, which also
+          catches the case-variant/legacy spellings):
+            overview · progress · archive · leaderboards · about
+            (+ aliases: stats, leaders, ranks, settings, privacy, terms)
+          Everything else under /profile/:username is a shared public profile. */}
       <Route
         path="/profile"
         element={
@@ -396,7 +402,7 @@ function AppRoutes() {
           </ProfileHub>
         }
       />
-      <Route path="/profile/progress" element={<ProfileHub><StatsPage /></ProfileHub>} />
+      <Route path="/profile/progress" element={<ProfileHub><ProgressPage /></ProfileHub>} />
       <Route path="/profile/archive" element={<ProfileHub><ArchivePage goPlay={goAnalysis} /></ProfileHub>} />
       <Route
         path="/profile/leaderboards"

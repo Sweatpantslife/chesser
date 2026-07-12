@@ -32,6 +32,7 @@ export function AboutPage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   return (
     <div className="mx-auto w-full max-w-[760px] space-y-3">
+      <h1 className="font-display text-xl font-bold text-ink">{t('sections.about.label')}</h1>
       <Row title={t('settings')} hint={t('about.settingsHint')}>
         <button
           onClick={() => {

@@ -1,10 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { useGamify, levelProgress } from '../store/gamify';
-import { useRatings, RATING_CATEGORIES } from '../store/ratings';
-import { useSettings } from '../store/settings';
+import { useRatings } from '../store/ratings';
 import { useLadder } from '../store/ladder';
 import { BOT_ROSTER, type RosterBot } from '../data/botRoster';
-import { RatingMeter } from '../components/RatingMeter';
+import { RatingsPanel } from '../components/RatingsPanel';
 import { DailyGoal } from '../components/DailyGoal';
 import { AchievementGrid } from '../components/AchievementGrid';
 import { ShareProfilePanel } from '../components/ShareProfilePanel';
@@ -42,24 +41,6 @@ function LevelHeader() {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function MeterToggle() {
-  const meter = useSettings((s) => s.ratingMeter);
-  const setMeter = useSettings((s) => s.setRatingMeter);
-  return (
-    <div className="inline-flex overflow-hidden rounded-full border border-neutral-700 text-xs">
-      {(['elo', 'glicko'] as const).map((m) => (
-        <button
-          key={m}
-          onClick={() => setMeter(m)}
-          className={`btn-press px-2.5 py-1 font-semibold capitalize ${meter === m ? 'bg-brand-600 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'}`}
-        >
-          {m === 'glicko' ? 'Glicko-2' : 'Elo'}
-        </button>
-      ))}
     </div>
   );
 }
@@ -110,24 +91,16 @@ export function ProfilePage({ goPlay, onViewPublicProfile }: { goPlay: () => voi
   const { t } = useTranslation('profile');
   return (
     <div className="mx-auto w-full max-w-[1000px] space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="font-display text-base font-semibold text-ink">{t('title')}</h2>
-        <div className="flex items-center gap-2 text-xs text-neutral-400">
-          <span>{t('meterLabel')}</span>
-          <MeterToggle />
-        </div>
-      </div>
+      <h1 className="font-display text-xl font-bold text-ink">{t('title')}</h1>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <LevelHeader />
         <DailyGoal />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {RATING_CATEGORIES.map((cat) => (
-          <RatingMeter key={cat} category={cat} />
-        ))}
-      </div>
+      {/* THE canonical ratings display (stats consolidation) — every other
+          surface links here instead of repeating the meters. */}
+      <RatingsPanel />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <SuggestedOpponent goPlay={goPlay} />

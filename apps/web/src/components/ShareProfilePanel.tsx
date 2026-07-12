@@ -196,11 +196,13 @@ export function ShareProfilePanel({ onPreview }: { onPreview: (username: string)
           onFocus={(e) => e.currentTarget.select()}
           className="min-w-0 flex-1 rounded-full border border-neutral-700 bg-neutral-900/60 px-3 py-1.5 text-xs text-neutral-300"
         />
+        {/* Neutral on purpose: Overview's single accent CTA is the suggested
+            opponent's "Play" (one accent primary per Profile tab). */}
         <button
           onClick={() => void copyLink()}
           disabled={!prefs.profile}
           title={prefs.profile ? t('share.copyTitle') : t('share.enableFirst')}
-          className="btn-press rounded-full bg-brand-600 px-4 py-1.5 text-sm font-bold text-white hover:bg-brand-700 disabled:opacity-50"
+          className="btn-press rounded-full bg-neutral-800 px-4 py-1.5 text-sm font-bold text-neutral-200 hover:bg-neutral-700 hover:text-ink disabled:opacity-50"
         >
           {copied ? t('copied') : t('copyLink')}
         </button>
