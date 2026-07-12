@@ -29,7 +29,7 @@ function QuestRow({ q, value, done }: { q: QuestDef; value: number; done: boolea
                   the English from lib/quests is the fallback so en output never changes. */}
               {t(`progress:quests.${q.id}.name`, { defaultValue: q.name })}
             </span>
-            <span className={`shrink-0 text-xs font-semibold ${done ? 'text-emerald-400' : 'text-gold-400/90'}`}>
+            <span className={`shrink-0 text-xs font-semibold ${done ? 'text-emerald-400' : 'text-gold-400'}`}>
               {done ? t('quests.questDone') : t('quests.xpReward', { xp: q.xp })}
             </span>
           </div>

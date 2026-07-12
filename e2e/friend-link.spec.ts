@@ -10,15 +10,14 @@ test.describe('friend-link online game', () => {
     const guest = await guestCtx.newPage();
 
     // Ann creates a game as White.
-    await host.goto('/');
-    await host.getByRole('button', { name: 'Friends' }).click();
+    await host.goto('/#/play/friends');
     await host.getByTestId('online-name').fill('Ann');
     await host.getByTestId('color-white').click();
     await host.getByTestId('create-online').click();
 
     await expect(host.getByTestId('online-status')).toHaveText(/Waiting for your friend/);
     const link = (await host.getByTestId('invite-link').textContent())!.trim();
-    expect(link).toMatch(/#\/friend\/[A-Z2-9]{6}$/);
+    expect(link).toMatch(/#\/play\/friends\/[A-Z2-9]{6}$/);
 
     // Ben opens the shared link and lands straight in the game as Black.
     await guest.goto(link);
@@ -61,8 +60,7 @@ test.describe('friend-link online game', () => {
     const host = await hostCtx.newPage();
     const guest = await guestCtx.newPage();
 
-    await host.goto('/');
-    await host.getByRole('button', { name: 'Friends' }).click();
+    await host.goto('/#/play/friends');
     await host.getByTestId('color-white').click();
     await host.getByTestId('create-online').click();
     const link = (await host.getByTestId('invite-link').textContent())!.trim();
@@ -90,8 +88,7 @@ test.describe('friend-link online game', () => {
     const host = await hostCtx.newPage();
     const guest = await guestCtx.newPage();
 
-    await host.goto('/');
-    await host.getByRole('button', { name: 'Friends' }).click();
+    await host.goto('/#/play/friends');
     await host.getByTestId('color-white').click();
     await host.getByTestId('create-online').click();
     const link = (await host.getByTestId('invite-link').textContent())!.trim();

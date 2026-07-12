@@ -1,7 +1,67 @@
 {
   "skipToContent": "Skip to content",
   "primaryNav": "Primary",
+  "mainNav": "Main",
+  "hubSections": "{{hub}} sections",
   "srTagline": "— play & train chess",
+  "hubs": {
+    "home": { "label": "Home", "hint": "your day at a glance" },
+    "play": { "label": "Play", "hint": "bots · friends · analysis" },
+    "train": { "label": "Train", "hint": "tactics · endgames · coach" },
+    "learn": { "label": "Learn", "hint": "lessons · openings · masters" },
+    "profile": { "label": "Profile", "hint": "progress · archive · settings" }
+  },
+  "sections": {
+    "bots": { "label": "Bots", "hint": "play vs bots at many levels" },
+    "friends": { "label": "Friends", "hint": "pass & play · online friend games" },
+    "analysis": { "label": "Analysis", "hint": "free analysis board" },
+    "gameHistory": "Game history",
+    "lessons": { "label": "Lessons", "hint": "rules & guided lessons" },
+    "openings": { "label": "Openings", "hint": "repertoire & explorer" },
+    "repertoire": { "label": "Repertoire", "hint": "your repertoire drills" },
+    "explore": { "label": "Explore", "hint": "master & online games" },
+    "masters": { "label": "Masters", "hint": "annotated master games" },
+    "tactics": { "label": "Tactics", "hint": "puzzles · rush · storm · your mistakes" },
+    "endgames": { "label": "Endgames", "hint": "theory · technique · drills" },
+    "study": { "label": "Study", "hint": "theory & technique" },
+    "drill": { "label": "Drill", "hint": "tablebase-checked drills" },
+    "vision": { "label": "Vision", "hint": "blindfold & calculation" },
+    "checkmates": { "label": "Checkmates", "hint": "pattern library & drills" },
+    "antiBlunder": { "label": "Anti-blunder", "hint": "“are you sure?” trainer" },
+    "coordinates": { "label": "Coordinates", "hint": "board-vision trainer" },
+    "plan": { "label": "Plan", "hint": "your weekly study plan" },
+    "overview": { "label": "Overview", "hint": "level · ratings · badges" },
+    "progress": { "label": "Progress", "hint": "progress dashboard" },
+    "archive": { "label": "Archive", "hint": "your games · results & trends" },
+    "leaderboards": { "label": "Leaderboards", "hint": "leaderboards · weekly race" },
+    "about": { "label": "About", "hint": "settings · install · legal" }
+  },
+  "coachStrip": {
+    "title": "Coach & Plan",
+    "hint": "your weaknesses & your weekly study plan",
+    "coachToggle": "Coach",
+    "planLink": "Study plan"
+  },
+  "about": {
+    "settingsHint": "Theme, sound, board, language & account data",
+    "openSettings": "Open settings",
+    "install": "Install the app",
+    "installHint": "Add Chesser to your home screen — works offline",
+    "engines": "Engines & connection",
+    "enginesHint": "What the engine server has available right now",
+    "legal": "Legal",
+    "credits": "Credits"
+  },
+  "tour": {
+    "title": "Things moved around",
+    "intro": "Chesser now has five destinations. Everything is still here:",
+    "train": "Tactics, endgames, drills, coach & plan → Train",
+    "learn": "Openings, explorer & master games → Learn",
+    "profile": "Stats, archive, leaderboards & settings → Profile",
+    "play": "Bots, friends & analysis → Play",
+    "dismiss": "Continue",
+    "close": "Dismiss"
+  },
   "tabs": {
     "home": { "label": "Today", "hint": "streak · daily quests · goals" },
     "play": { "label": "Play", "hint": "vs bots & analysis" },

@@ -93,7 +93,7 @@ export function DailyGoal() {
                   onClick={() => setGoalXp(g)}
                   aria-pressed={goalXp === g}
                   className={`btn-press flex-1 rounded-full px-1.5 py-1 text-xs font-semibold ${
-                    goalXp === g ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                    goalXp === g ? 'bg-brand-600 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
                   }`}
                 >
                   {g}

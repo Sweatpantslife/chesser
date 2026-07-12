@@ -19,9 +19,13 @@ const NAME_KEY = 'chesser.friendName';
 
 type Screen = { kind: 'menu' } | { kind: 'local'; config: LocalGameConfig } | { kind: 'online'; intent: FriendIntent };
 
-/** `#/friend/CODE` → CODE (shareable friend-game links), else null. */
+/**
+ * Shareable friend-game link → CODE, else null. Canonical links are
+ * `#/play/friends/CODE`; the pre-IA `#/friend/CODE` form is honoured forever
+ * (old invites in chats/emails must keep working).
+ */
 function codeFromHash(): string | null {
-  const m = /^#\/friend\/([A-Za-z0-9]{4,10})$/.exec(window.location.hash);
+  const m = /^#\/(?:play\/friends|friend)\/([A-Za-z0-9]{4,10})$/.exec(window.location.hash);
   return m ? m[1]!.toUpperCase() : null;
 }
 
