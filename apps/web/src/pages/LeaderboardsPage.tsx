@@ -138,7 +138,7 @@ export function LeaderboardsPage({ onViewProfile }: { onViewProfile: (username: 
             aria-current={board === tab.id ? 'true' : undefined}
             className={`btn-press flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-semibold sm:min-h-9 ${
               board === tab.id
-                ? 'bg-gradient-to-br from-brand-600 to-brand-700 text-white shadow-glow'
+                ? 'bg-gradient-to-br from-brand-600 to-brand-700 text-white'
                 : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700 hover:text-ink'
             }`}
           >

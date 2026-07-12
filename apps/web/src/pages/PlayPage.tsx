@@ -331,14 +331,14 @@ function PlayHero() {
       <div className="flex flex-wrap items-center gap-4">
         <BotAvatar name={bot.name} accent={bot.accent} motif={bot.motif} size={56} />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-base font-semibold text-ink">
+          <p className="line-clamp-2 text-base font-semibold text-ink">
             {complete ? t('hero.ladderComplete') : t('hero.nextRung', { name: bot.name, rating: bot.rating })}
           </p>
           <p className="text-xs text-neutral-400">{t('hero.cleared', { cleared, total: BOT_ROSTER.length })}</p>
         </div>
         <button
           onClick={start}
-          className="btn-press min-h-11 rounded-full bg-gradient-to-br from-brand-500 to-accent-500 px-6 py-2.5 text-sm font-bold text-white shadow-glow"
+          className="btn-press min-h-11 rounded-full bg-gradient-to-br from-brand-600 to-brand-700 px-6 py-2.5 text-sm font-bold text-white shadow-glow"
         >
           {t('hero.playNow')} ▶
         </button>

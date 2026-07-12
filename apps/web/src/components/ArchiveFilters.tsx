@@ -22,15 +22,15 @@ function Pills<T extends string>({
   options: { id: T; label: string }[];
 }) {
   return (
-    <div className="flex items-center gap-1.5" role="group" aria-label={ariaLabel}>
+    <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={ariaLabel}>
       <span className="text-xs text-neutral-400">{label}</span>
-      <div className="flex gap-0.5 rounded-full bg-panelmute p-0.5">
+      <div className="flex gap-2 rounded-full bg-panelmute p-0.5">
         {options.map((o) => (
           <button
             key={o.id}
             onClick={() => onChange(o.id)}
             aria-pressed={value === o.id}
-            className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+            className={`min-h-11 rounded-full px-3 py-1 text-xs font-semibold sm:min-h-9 ${
               value === o.id ? 'bg-brand-600 text-white' : 'text-neutral-300 hover:bg-neutral-700 hover:text-ink'
             }`}
           >

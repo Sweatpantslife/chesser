@@ -242,7 +242,13 @@ function PlayAnalysisRoute() {
     const moves = params.get('moves');
     const fen = params.get('fen');
     if (moves === null && fen === null) return;
-    if (moves !== null) {
+    // Never destroy a live vs-bot game (same care as store.enterAnalysis and
+    // PlayHero): with a game in progress the params are consumed unused and
+    // the analysis view shows the live game instead.
+    const s = useGame.getState();
+    if (s.mode === 'play' && !s.isGameOver && s.history.length > 0) {
+      // fall through to the param cleanup below without loading
+    } else if (moves !== null) {
       const probe = new Chess();
       let ok = moves.length > 0;
       for (const uci of ok ? moves.split(',') : []) {
@@ -265,7 +271,11 @@ function PlayAnalysisRoute() {
     } else if (fen) {
       useGame.getState().loadFen(fen); // validates internally; bad FENs are ignored
     }
-    setParams({}, { replace: true });
+    // Consume only the handoff params; unrelated search params survive.
+    const cleaned = new URLSearchParams(params);
+    cleaned.delete('moves');
+    cleaned.delete('fen');
+    setParams(cleaned, { replace: true });
   }, [params, setParams]);
   return <PlayPage section="analysis" />;
 }

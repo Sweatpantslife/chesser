@@ -72,9 +72,9 @@ export function HomeHero(): JSX.Element {
           {icon}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-xs font-semibold uppercase tracking-wide text-white/80">{t('home:heroCard.kicker')}</span>
-          <span className="block truncate font-display text-lg font-bold">{title}</span>
-          <span className="block truncate text-xs text-white/85">{body}</span>
+          <span className="block text-xs font-semibold uppercase tracking-wide text-white">{t('home:heroCard.kicker')}</span>
+          <span className="line-clamp-2 font-display text-lg font-bold">{title}</span>
+          <span className="block truncate text-xs text-white/90">{body}</span>
         </span>
         <span className="flex min-h-11 shrink-0 items-center gap-1 rounded-full bg-white/15 px-4 py-1.5 text-sm font-bold group-hover:bg-white/25">
           {cta}

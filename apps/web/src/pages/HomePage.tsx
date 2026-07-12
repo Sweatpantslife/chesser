@@ -155,9 +155,12 @@ function HeroSlot({ children }: { children: ReactNode }) {
 }
 
 export function HomePage() {
-  const { t } = useTranslation('home');
+  const { t } = useTranslation(['home', 'nav']);
   return (
     <div className="mx-auto w-full max-w-[720px] space-y-4">
+      {/* Visually the greeting strip is Home's title; this heading exists so
+          route-change focus lands on an h1 here like on every other page. */}
+      <h1 className="sr-only">{t('nav:hubs.home.label')}</h1>
       <SummaryStrip />
       <HeroSlot>
         <Suspense fallback={null}>
