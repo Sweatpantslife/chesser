@@ -10,7 +10,10 @@
  *   - trigger target is ≥44px tall
  *
  * Content is only mounted while open, so heavy panels (network-backed
- * drawers, charts) stay cheap until the user asks for them.
+ * drawers, charts) stay cheap until the user asks for them. Panels that
+ * gate their own work (e.g. via an `active` fetch-gate prop) can instead
+ * pass children as a function — `(open) => …` stays mounted across
+ * open/close and receives the open state.
  */
 import { useId, useRef, useState, type ReactNode } from 'react';
 
@@ -24,7 +27,7 @@ export function Disclosure({
   /** Optional one-line description under the title (always visible). */
   hint?: string;
   defaultOpen?: boolean;
-  children: ReactNode;
+  children: ReactNode | ((open: boolean) => ReactNode);
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const panelId = useId();
@@ -34,6 +37,10 @@ export function Disclosure({
     <section
       onKeyDown={(e) => {
         if (e.key !== 'Escape' || !open) return;
+        // A child that already consumed this Escape (dropdown, combobox,
+        // dialog…) wins — don't also collapse the disclosure.
+        if (e.defaultPrevented) return;
+        e.preventDefault();
         e.stopPropagation(); // this surface consumes the Escape
         setOpen(false);
         trigger.current?.focus();
@@ -56,7 +63,7 @@ export function Disclosure({
         </span>
       </button>
       <div id={panelId} hidden={!open} className="mt-2 space-y-3">
-        {open && children}
+        {typeof children === 'function' ? children(open) : open && children}
       </div>
     </section>
   );
