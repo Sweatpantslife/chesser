@@ -1,6 +1,8 @@
 {
   "title": "Explorateur d'ouvertures",
   "gamesCount": "{{games}} parties",
+  "analyzeHere": "Analyser",
+  "analyzeHereTitle": "Ouvrir cette position sur l'échiquier d'analyse",
   "db": {
     "aria": "Base de données",
     "masters": "Maîtres",
@@ -70,7 +72,9 @@
     "targetAria": "Répertoire où enregistrer les lignes",
     "newRepOption": "Mon répertoire (nouveau)",
     "saveTitle": "Enregistrer cette ligne dans votre répertoire",
-    "saveAria": "Enregistrer la ligne avec {{san}} dans votre répertoire"
+    "saveAria": "Enregistrer la ligne avec {{san}} dans votre répertoire",
+    "saveLabel": "Enregistrer",
+    "savedLabel": "Enregistrée"
   },
   "library": {
     "title": "Bibliothèque de parties",

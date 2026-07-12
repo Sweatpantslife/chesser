@@ -1,6 +1,8 @@
 {
   "title": "Opening explorer",
   "gamesCount": "{{games}} games",
+  "analyzeHere": "Analyse",
+  "analyzeHereTitle": "Open this position on the analysis board",
   "db": {
     "aria": "Database",
     "masters": "Masters",
@@ -70,7 +72,9 @@
     "targetAria": "Repertoire to save lines into",
     "newRepOption": "My repertoire (new)",
     "saveTitle": "Save this line to your repertoire",
-    "saveAria": "Save line with {{san}} to your repertoire"
+    "saveAria": "Save line with {{san}} to your repertoire",
+    "saveLabel": "Save",
+    "savedLabel": "Saved"
   },
   "library": {
     "title": "Game library",

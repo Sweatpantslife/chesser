@@ -8,7 +8,10 @@
     "heroTitle": "Aprende ajedrez de forma divertida",
     "progress": "{{done}}/{{total}} lecciones completadas",
     "heroBody": "Lecciones cortas y prácticas — cada idea la juegas tú en el tablero. ¿Nuevo en el ajedrez? Empieza por arriba y conocerás todas las reglas en minutos.",
-    "progressAria": "Lecciones completadas"
+    "progressAria": "Lecciones completadas",
+    "continueCta": "Continuar: {{title}}",
+    "allDone": "Todas las lecciones completadas — repite la que quieras abajo.",
+    "trackProgress": "{{done}}/{{total}} hechas"
   },
   "player": {
     "backAria": "Volver a todas las lecciones",

@@ -3,6 +3,7 @@ import {
   HashRouter,
   Link,
   Navigate,
+  NavLink,
   Route,
   Routes,
   useLocation,
@@ -246,16 +247,43 @@ function EndgamesRoute({ tab }: { tab: 'study' | 'drill' }) {
   );
 }
 
+const OPENINGS_SEGMENTS = [
+  { id: 'repertoire', to: '/learn/openings', end: true },
+  { id: 'explore', to: '/learn/openings/explore', end: false },
+] as const;
+
+/**
+ * One Openings surface with a segmented Repertoire/Explore toggle. The two
+ * views stay deep-linkable (`/learn/openings[/explore]`) and the segments are
+ * real links, so a view switch is a route transition (focus lands on the h2).
+ */
 function OpeningsRoute({ view }: { view: 'repertoire' | 'explore' }) {
   const navigate = useNavigate();
-  const tabs: HubTab[] = [
-    { id: 'repertoire', to: '/learn/openings', end: true },
-    { id: 'explore', to: '/learn/openings/explore' },
-  ];
   const { t } = useTranslation('nav');
+  const segBase = 'btn-press flex min-h-11 items-center whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-semibold';
+  const segActive = 'bg-gradient-to-br from-brand-600 to-brand-700 text-white';
+  const segIdle = 'text-neutral-300 hover:bg-neutral-800 hover:text-ink';
   return (
-    <div>
-      <HubTabs label={t('hubSections', { hub: t('sections.openings.label') })} tabs={tabs} />
+    <div className="mx-auto w-full max-w-[1200px]">
+      <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <h2 className="font-display text-2xl font-bold text-ink">{t('sections.openings.label')}</h2>
+        <nav aria-label={t('hubSections', { hub: t('sections.openings.label') })}>
+          <div className="inline-flex items-center gap-1 rounded-full bg-panel p-1 shadow-soft">
+            {OPENINGS_SEGMENTS.map((s) => (
+              <NavLink
+                key={s.id}
+                to={s.to}
+                end={s.end}
+                onClick={() => playSound('uiClick')}
+                title={t(`sections.${s.id}.hint`, { defaultValue: '' }) || undefined}
+                className={({ isActive }) => `${segBase} ${isActive ? segActive : segIdle}`}
+              >
+                {t(`sections.${s.id}.label`)}
+              </NavLink>
+            ))}
+          </div>
+        </nav>
+      </div>
       {view === 'repertoire' ? <OpeningsPage /> : <ExplorerPage goAnalyze={() => navigate('/play/analysis')} />}
     </div>
   );

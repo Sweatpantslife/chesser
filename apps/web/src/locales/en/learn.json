@@ -8,7 +8,10 @@
     "heroTitle": "Learn chess, the fun way",
     "progress": "{{done}}/{{total}} lessons complete",
     "heroBody": "Short, hands-on lessons — every idea is something you play out on the board. New to chess? Start at the top and you’ll know all the rules in minutes.",
-    "progressAria": "Lessons completed"
+    "progressAria": "Lessons completed",
+    "continueCta": "Continue: {{title}}",
+    "allDone": "All lessons complete — replay any of them below.",
+    "trackProgress": "{{done}}/{{total}} done"
   },
   "player": {
     "backAria": "Back to all lessons",

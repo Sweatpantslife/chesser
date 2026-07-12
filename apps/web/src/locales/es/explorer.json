@@ -1,6 +1,8 @@
 {
   "title": "Explorador de aperturas",
   "gamesCount": "{{games}} partidas",
+  "analyzeHere": "Analizar",
+  "analyzeHereTitle": "Abre esta posición en el tablero de análisis",
   "db": {
     "aria": "Base de datos",
     "masters": "Maestros",
@@ -70,7 +72,9 @@
     "targetAria": "Repertorio donde guardar las líneas",
     "newRepOption": "Mi repertorio (nuevo)",
     "saveTitle": "Guarda esta línea en tu repertorio",
-    "saveAria": "Guardar la línea con {{san}} en tu repertorio"
+    "saveAria": "Guardar la línea con {{san}} en tu repertorio",
+    "saveLabel": "Guardar",
+    "savedLabel": "Guardada"
   },
   "library": {
     "title": "Biblioteca de partidas",
