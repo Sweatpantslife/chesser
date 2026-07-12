@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import '../i18n'; // initialize i18next so t() serves the bundled English strings
 import { setClock } from '../lib/clock';
 import type { GameDigest, WeaknessKind } from '../lib/weakness';
@@ -60,9 +61,12 @@ describe('StudyPlanPage / PlanCard (jsdom)', () => {
     setClock(null);
   });
 
-  it('renders the week header, grouped items with WHY lines, and jumps via go()', () => {
-    const go = vi.fn();
-    render(<StudyPlanPage go={go} />);
+  it('renders the week header, grouped items with WHY lines, and coach-backed items open the coach panel', () => {
+    render(
+      <MemoryRouter>
+        <StudyPlanPage />
+      </MemoryRouter>,
+    );
 
     expect(screen.getByText("This week's study plan")).toBeTruthy();
     expect(screen.getByText('2026-W28')).toBeTruthy();
@@ -71,13 +75,48 @@ describe('StudyPlanPage / PlanCard (jsdom)', () => {
     // WHY line ties the quota to the user's own games.
     expect(screen.getAllByText(/reviewed games/).length).toBeGreaterThan(0);
 
-    // Profile-backed puzzle items jump into the Coach trainer.
+    // The coach's full view is folded behind a disclosure, collapsed by default.
+    const coachToggle = screen.getByRole('button', { name: /^Coach/ });
+    expect(coachToggle.getAttribute('aria-expanded')).toBe('false');
+
+    // Profile-backed puzzle items open the in-page coach trainer panel.
     fireEvent.click(screen.getAllByRole('button', { name: /^Train/ })[0]!);
-    expect(go).toHaveBeenCalledWith('coach');
+    expect(coachToggle.getAttribute('aria-expanded')).toBe('true');
+
+    // Non-coach items are real links into their trainers.
+    const masterLink = screen.getAllByRole('link', { name: /^Watch/ })[0]!;
+    expect(masterLink.getAttribute('href')).toBe('/learn/masters');
+  });
+
+  it('Escape closes the coach disclosure from its chrome but not from inside the trainer panel', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <StudyPlanPage />
+      </MemoryRouter>,
+    );
+
+    const coachToggle = screen.getByRole('button', { name: /^Coach/ });
+    fireEvent.click(coachToggle);
+    expect(coachToggle.getAttribute('aria-expanded')).toBe('true');
+
+    // Escape bubbling out of the embedded trainer content (where it means
+    // deselect/cancel on the board) must NOT close the panel.
+    const panel = container.querySelector('#plan-coach')!;
+    fireEvent.keyDown(panel, { key: 'Escape' });
+    expect(coachToggle.getAttribute('aria-expanded')).toBe('true');
+
+    // Escape on the disclosure's own trigger closes it and keeps focus there.
+    fireEvent.keyDown(coachToggle, { key: 'Escape' });
+    expect(coachToggle.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(coachToggle);
   });
 
   it('logs daily quota via the +1 button and shows regenerate', () => {
-    render(<StudyPlanPage go={() => {}} />);
+    render(
+      <MemoryRouter>
+        <StudyPlanPage />
+      </MemoryRouter>,
+    );
     const plus = screen.getAllByRole('button', { name: /Log one solved puzzle/ })[0]!;
     fireEvent.click(plus);
     expect(usePlan.getState().progress['puzzle:missedForks']).toBe(1);

@@ -21,13 +21,12 @@ import {
   recordResult,
   themeDisplayLabel,
 } from '../lib/puzzleService';
-import { playMoveSound } from '../lib/sound';
+import { playMoveSound, playSound } from '../lib/sound';
 import { todayStr } from '../lib/clock';
 import { useTimeoutRef } from '../lib/useTimeoutRef';
 import { RushMode } from './RushMode';
 import { StormMode } from './StormMode';
 import { MistakesMode } from './MistakesMode';
-import { useMistakes } from '../store/mistakes';
 import type { Color } from '../store/game';
 
 type Phase = 'solving' | 'solved' | 'failed';
@@ -47,53 +46,28 @@ const DIFF_COLOR: Record<Difficulty, string> = {
 
 export type TacticsMode = 'practice' | 'rush' | 'storm' | 'mistakes';
 
+/**
+ * Mode tabs live in the route chrome (App.tsx TrainSection — real links at
+ * `#/train/tactics[/:mode]`), so this page only renders the active mode.
+ */
 export function TacticsPage({
   openDaily = false,
   onDailyOpened,
   mode = 'practice',
-  onModeChange,
 }: {
   openDaily?: boolean;
   onDailyOpened?: () => void;
   /** Active mode — routed (#/train/tactics[/:mode]), so refresh/share keep it. */
   mode?: TacticsMode;
-  /** Mode tab clicks navigate (the router owns the mode). */
-  onModeChange?: (m: TacticsMode) => void;
 }) {
-  const { t } = useTranslation('tactics');
-  const mistakeCount = useMistakes((s) => s.cards.length);
-  const labels = {
-    practice: t('tabs.practice'),
-    rush: t('tabs.rush'),
-    storm: t('tabs.storm'),
-    mistakes: mistakeCount ? t('tabs.mistakesCount', { n: mistakeCount }) : t('tabs.mistakes'),
-  };
-  return (
-    <div className="space-y-4">
-      <div className="mx-auto flex w-full max-w-[1200px] gap-1">
-        {(['practice', 'rush', 'storm', 'mistakes'] as const).map((m) => (
-          <button
-            key={m}
-            onClick={() => onModeChange?.(m)}
-            aria-pressed={mode === m}
-            className={`rounded px-3 py-1.5 text-sm ${
-              mode === m ? 'bg-brand-600 text-white' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
-            }`}
-          >
-            {labels[m]}
-          </button>
-        ))}
-      </div>
-      {mode === 'practice' ? (
-        <PracticeTactics openDaily={openDaily} onDailyOpened={onDailyOpened} />
-      ) : mode === 'rush' ? (
-        <RushMode />
-      ) : mode === 'storm' ? (
-        <StormMode />
-      ) : (
-        <MistakesMode />
-      )}
-    </div>
+  return mode === 'practice' ? (
+    <PracticeTactics openDaily={openDaily} onDailyOpened={onDailyOpened} />
+  ) : mode === 'rush' ? (
+    <RushMode />
+  ) : mode === 'storm' ? (
+    <StormMode />
+  ) : (
+    <MistakesMode />
   );
 }
 
@@ -538,10 +512,21 @@ function Sidebar(props: {
   onDaily: () => void;
 }) {
   const { t } = useTranslation('tactics');
+  // Progressive disclosure: source/difficulty/theme fold behind one trigger,
+  // collapsed by default. Escape (from the trigger or inside the panel)
+  // closes and returns focus to the trigger.
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersTrigger = useRef<HTMLButtonElement>(null);
+  const closeFilters = () => {
+    setFiltersOpen(false);
+    filtersTrigger.current?.focus();
+  };
   const themes = FILTER_THEMES.filter((th) => (props.themeCounts.get(th.tag) ?? 0) > 0);
+  const activeFilters =
+    (props.source !== 'builtin' ? 1 : 0) + (props.diffFilter !== 'all' ? 1 : 0) + (props.themeFilter !== 'all' ? 1 : 0);
   return (
     <div className="order-2 space-y-3 lg:order-1">
-      <div className="rounded-2xl bg-panel shadow-soft p-3">
+      <div className="rounded-2xl bg-panel shadow-soft p-4">
         <h3 className="mb-1 font-display text-sm font-semibold text-ink">{t('sidebar.title')}</h3>
         <p className="mb-2 text-xs text-neutral-400">{t('sidebar.blurb')}</p>
 
@@ -554,85 +539,122 @@ function Sidebar(props: {
 
         <ReviewStats deck="tactics" ids={ALL_IDS} />
 
-        <div className="mt-3">
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('sidebar.source')}</div>
-          <div className="flex gap-1">
-            {props.sources.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => props.setSource(s.id)}
-                className={`flex-1 rounded px-1.5 py-1 text-xs ${
-                  props.source === s.id ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
-                }`}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-3">
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('sidebar.difficulty')}</div>
-          <div className="flex gap-1">
-            {(['all', 'easy', 'medium', 'hard'] as const).map((f) => (
-              <button
-                key={f}
-                onClick={() => props.setDiffFilter(f)}
-                className={`flex-1 rounded px-1.5 py-1 text-xs capitalize ${
-                  props.diffFilter === f ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
-                }`}
-              >
-                {t(`difficulty.${f}`)}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-3">
-          <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('sidebar.theme')}</div>
-          <div className="flex flex-wrap gap-1">
-            <button
-              onClick={() => props.setThemeFilter('all')}
-              className={`rounded px-2 py-1 text-xs ${
-                props.themeFilter === 'all' ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
-              }`}
-            >
-              {t('sidebar.allThemes')}
-            </button>
-            {themes.map((th) => (
-              <button
-                key={th.tag}
-                onClick={() => props.setThemeFilter(th.tag)}
-                title={t('sidebar.themeCount', { count: props.themeCounts.get(th.tag) })}
-                className={`rounded px-2 py-1 text-xs ${
-                  props.themeFilter === th.tag ? 'bg-brand-600 text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
-                }`}
-              >
-                {th.label}
-              </button>
-            ))}
-            {themes.length === 0 && <span className="px-1 py-1 text-xs text-neutral-400">{t('sidebar.noThemes')}</span>}
-          </div>
-        </div>
-
-        <label className="mt-3 flex cursor-pointer items-center gap-2 text-xs text-neutral-300">
-          <input type="checkbox" checked={props.ratedOrder} onChange={(e) => props.setRatedOrder(e.target.checked)} />
-          {t('sidebar.ratedOrder')}
-        </label>
-
         <button
           onClick={props.reviewDue}
-          className="mt-3 w-full rounded bg-emerald-700 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800"
+          className="btn-press mt-3 w-full rounded-full bg-emerald-700 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800"
         >
           {t('sidebar.reviewDue')}
         </button>
 
         <button
           onClick={props.onDaily}
-          className="mt-2 w-full rounded bg-neutral-700 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600"
+          className="btn-press mt-2 w-full rounded-full bg-neutral-800 py-1.5 text-sm font-semibold text-neutral-300 hover:bg-neutral-700 hover:text-ink"
         >
           {t('sidebar.dailyPuzzle')}
         </button>
+
+        <div
+          className="mt-3"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape' && filtersOpen) {
+              e.stopPropagation();
+              closeFilters();
+            }
+          }}
+        >
+          <button
+            ref={filtersTrigger}
+            onClick={() => {
+              playSound('uiClick');
+              setFiltersOpen((o) => !o);
+            }}
+            aria-expanded={filtersOpen}
+            aria-controls="tactics-filters"
+            className="btn-press flex min-h-11 w-full items-center justify-between rounded-full bg-neutral-800 px-4 py-1.5 text-sm font-semibold text-neutral-300 hover:bg-neutral-700 hover:text-ink sm:min-h-9"
+          >
+            <span>
+              {t('sidebar.filters')}
+              {activeFilters > 0 && (
+                <span className="ml-1.5 rounded-full bg-neutral-700 px-1.5 py-0.5 text-xs tabular-nums text-neutral-200">
+                  {activeFilters}
+                </span>
+              )}
+            </span>
+            <span aria-hidden="true">{filtersOpen ? '▴' : '▾'}</span>
+          </button>
+
+          <div id="tactics-filters" hidden={!filtersOpen} className="mt-2">
+            <div>
+              <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('sidebar.source')}</div>
+              <div className="flex gap-1">
+                {props.sources.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => props.setSource(s.id)}
+                    aria-pressed={props.source === s.id}
+                    className={`flex-1 rounded px-1.5 py-1 text-xs ${
+                      props.source === s.id ? 'bg-brand-600 font-semibold text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('sidebar.difficulty')}</div>
+              <div className="flex gap-1">
+                {(['all', 'easy', 'medium', 'hard'] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => props.setDiffFilter(f)}
+                    aria-pressed={props.diffFilter === f}
+                    className={`flex-1 rounded px-1.5 py-1 text-xs capitalize ${
+                      props.diffFilter === f ? 'bg-brand-600 font-semibold text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                    }`}
+                  >
+                    {t(`difficulty.${f}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <div className="mb-1 text-xs uppercase tracking-wide text-neutral-400">{t('sidebar.theme')}</div>
+              <div className="flex flex-wrap gap-1">
+                <button
+                  onClick={() => props.setThemeFilter('all')}
+                  aria-pressed={props.themeFilter === 'all'}
+                  className={`rounded px-2 py-1 text-xs ${
+                    props.themeFilter === 'all' ? 'bg-brand-600 font-semibold text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                  }`}
+                >
+                  {t('sidebar.allThemes')}
+                </button>
+                {themes.map((th) => (
+                  <button
+                    key={th.tag}
+                    onClick={() => props.setThemeFilter(th.tag)}
+                    aria-pressed={props.themeFilter === th.tag}
+                    title={t('sidebar.themeCount', { count: props.themeCounts.get(th.tag) })}
+                    className={`rounded px-2 py-1 text-xs ${
+                      props.themeFilter === th.tag ? 'bg-brand-600 font-semibold text-white' : 'bg-neutral-700 text-neutral-300 hover:bg-neutral-600'
+                    }`}
+                  >
+                    {th.label}
+                  </button>
+                ))}
+                {themes.length === 0 && <span className="px-1 py-1 text-xs text-neutral-400">{t('sidebar.noThemes')}</span>}
+              </div>
+            </div>
+
+            <label className="mt-3 flex cursor-pointer items-center gap-2 text-xs text-neutral-300">
+              <input type="checkbox" checked={props.ratedOrder} onChange={(e) => props.setRatedOrder(e.target.checked)} />
+              {t('sidebar.ratedOrder')}
+            </label>
+          </div>
+        </div>
       </div>
     </div>
   );

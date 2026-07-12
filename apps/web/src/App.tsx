@@ -25,10 +25,12 @@ import { Celebration } from './components/Celebration';
 import { initGamify } from './lib/gamify';
 import { initSocial } from './store/social';
 import { playSound } from './lib/sound';
-import { deckPath, legacyRedirect, profileAliasRedirect, viewPath } from './app/paths';
+import { legacyRedirect, profileAliasRedirect, viewPath } from './app/paths';
 import { Sidebar, BottomBar, StatusDot } from './app/PrimaryNav';
 import { HubTabs, HubSideLink, type HubTab } from './app/HubNav';
+import { TrainTabs, type TrainTab } from './app/TrainTabs';
 import { TrainHub } from './app/TrainHub';
+import { useMistakes } from './store/mistakes';
 import { AboutPage } from './app/AboutPage';
 import { WhatMovedTour } from './app/WhatMovedTour';
 import { IconGear, LogoMark, Wordmark } from './components/icons';
@@ -161,21 +163,31 @@ function ProfileHub({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Slim chrome for Train sub-pages: a way back to the hub's card grid. */
-function TrainSection({ tabs, children }: { tabs?: HubTab[]; children: React.ReactNode }) {
+/**
+ * Chrome for Train sub-pages: a way back to the hub's card grid, the page's
+ * `h1` (route-change focus lands here — see useRouteFocus) and, when a page
+ * has peer modes (Tactics, Endgames), the second-level segmented tabs.
+ */
+function TrainSection({ section, tabs, children }: { section: string; tabs?: TrainTab[]; children: React.ReactNode }) {
   const { t } = useTranslation('nav');
   return (
     <div>
-      <nav aria-label={t('hubSections', { hub: t('hubs.train.label') })} className="mx-auto mb-4 flex w-full max-w-[1200px] items-center gap-1">
+      <div className="mx-auto mb-4 w-full max-w-[1200px]">
         <Link
           to="/train"
           onClick={() => playSound('uiClick')}
-          className="btn-press flex min-h-11 items-center whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-semibold text-neutral-300 hover:bg-neutral-800 hover:text-ink sm:min-h-9"
+          className="btn-press inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-2 py-1.5 text-sm font-semibold text-neutral-400 hover:bg-neutral-800 hover:text-ink sm:min-h-9"
         >
           ← {t('hubs.train.label')}
         </Link>
-      </nav>
-      {tabs && <HubTabs label={t('hubSections', { hub: t('hubs.train.label') })} tabs={tabs} />}
+        <h1 className="mt-1 px-2 font-display text-xl font-bold text-ink">{t(`sections.${section}.label`)}</h1>
+        <p className="px-2 text-xs text-neutral-400">{t(`sections.${section}.hint`)}</p>
+        {tabs && (
+          <div className="mt-2">
+            <TrainTabs label={t('hubSections', { hub: t('hubs.train.label') })} tabs={tabs} />
+          </div>
+        )}
+      </div>
       <Suspense fallback={null}>{children}</Suspense>
     </div>
   );
@@ -196,31 +208,39 @@ function HomeRoute() {
 
 const TACTICS_MODES: TacticsMode[] = ['practice', 'rush', 'storm', 'mistakes'];
 
+/** Tactics sub-page: mode tabs are routed second-level tabs (real links). */
 function TacticsRoute() {
   const { mode } = useParams();
-  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
+  const mistakeCount = useMistakes((s) => s.cards.length);
   // Canonical practice URL is /train/tactics (no segment); unknown modes land there too.
   if (mode !== undefined && (mode === 'practice' || !TACTICS_MODES.includes(mode as TacticsMode))) {
     return <Navigate to="/train/tactics" replace />;
   }
+  const tabs: TrainTab[] = [
+    { id: 'practice', to: '/train/tactics', end: true },
+    { id: 'rush', to: '/train/tactics/rush' },
+    { id: 'storm', to: '/train/tactics/storm' },
+    { id: 'mistakes', to: '/train/tactics/mistakes', badge: mistakeCount },
+  ];
   return (
-    <TacticsPage
-      mode={(mode as TacticsMode | undefined) ?? 'practice'}
-      onModeChange={(m) => navigate(m === 'practice' ? '/train/tactics' : `/train/tactics/${m}`)}
-      openDaily={params.get('daily') === '1'}
-      onDailyOpened={() => setParams({}, { replace: true })}
-    />
+    <TrainSection section="tactics" tabs={tabs}>
+      <TacticsPage
+        mode={(mode as TacticsMode | undefined) ?? 'practice'}
+        openDaily={params.get('daily') === '1'}
+        onDailyOpened={() => setParams({}, { replace: true })}
+      />
+    </TrainSection>
   );
 }
 
 function EndgamesRoute({ tab }: { tab: 'study' | 'drill' }) {
-  const tabs: HubTab[] = [
+  const tabs: TrainTab[] = [
     { id: 'study', to: '/train/endgames', end: true },
     { id: 'drill', to: '/train/endgames/drill' },
   ];
   return (
-    <TrainSection tabs={tabs}>
+    <TrainSection section="endgames" tabs={tabs}>
       {tab === 'study' ? <EndgamePage /> : <EndgameDrillsPage />}
     </TrainSection>
   );
@@ -277,18 +297,15 @@ function AppRoutes() {
 
       {/* Train — hub cards + Coach & Plan strip; each trainer is a sub-page */}
       <Route path="/train" element={<TrainHub />} />
-      <Route path="/train/tactics" element={<TrainSection><TacticsRoute /></TrainSection>} />
-      <Route path="/train/tactics/:mode" element={<TrainSection><TacticsRoute /></TrainSection>} />
+      <Route path="/train/tactics" element={<TacticsRoute />} />
+      <Route path="/train/tactics/:mode" element={<TacticsRoute />} />
       <Route path="/train/endgames" element={<EndgamesRoute tab="study" />} />
       <Route path="/train/endgames/drill" element={<EndgamesRoute tab="drill" />} />
-      <Route path="/train/vision" element={<TrainSection><VisionPage /></TrainSection>} />
-      <Route path="/train/checkmates" element={<TrainSection><MatesPage /></TrainSection>} />
-      <Route path="/train/anti-blunder" element={<TrainSection><AntiBlunderPage /></TrainSection>} />
-      <Route path="/train/coordinates" element={<TrainSection><CoordinatePage /></TrainSection>} />
-      <Route
-        path="/train/plan"
-        element={<TrainSection><StudyPlanPage go={(v) => navigate(viewPath(v))} /></TrainSection>}
-      />
+      <Route path="/train/vision" element={<TrainSection section="vision"><VisionPage /></TrainSection>} />
+      <Route path="/train/checkmates" element={<TrainSection section="checkmates"><MatesPage /></TrainSection>} />
+      <Route path="/train/anti-blunder" element={<TrainSection section="antiBlunder"><AntiBlunderPage /></TrainSection>} />
+      <Route path="/train/coordinates" element={<TrainSection section="coordinates"><CoordinatePage /></TrainSection>} />
+      <Route path="/train/plan" element={<TrainSection section="plan"><StudyPlanPage /></TrainSection>} />
 
       {/* Learn — Lessons · Openings (Repertoire/Explore) · Masters */}
       <Route path="/learn" element={<LearnHub><LearnPage /></LearnHub>} />
@@ -305,7 +322,7 @@ function AppRoutes() {
           </ProfileHub>
         }
       />
-      <Route path="/profile/progress" element={<ProfileHub><StatsPage goto={(t) => navigate(deckPath(t))} /></ProfileHub>} />
+      <Route path="/profile/progress" element={<ProfileHub><StatsPage /></ProfileHub>} />
       <Route path="/profile/archive" element={<ProfileHub><ArchivePage goPlay={goAnalysis} /></ProfileHub>} />
       <Route
         path="/profile/leaderboards"

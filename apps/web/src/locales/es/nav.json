@@ -22,6 +22,10 @@
     "explore": { "label": "Explorar", "hint": "partidas magistrales y en línea" },
     "masters": { "label": "Maestros", "hint": "partidas magistrales comentadas" },
     "tactics": { "label": "Táctica", "hint": "problemas · rush · storm · tus errores" },
+    "practice": { "label": "Práctica", "hint": "problemas verificados por el motor" },
+    "rush": { "label": "Rush", "hint": "sprint de supervivencia de 5 minutos" },
+    "storm": { "label": "Storm", "hint": "sprint cronometrado con combos" },
+    "mistakes": { "label": "Errores", "hint": "entrena tus propios errores" },
     "endgames": { "label": "Finales", "hint": "teoría · técnica · ejercicios" },
     "study": { "label": "Estudio", "hint": "teoría y técnica" },
     "drill": { "label": "Ejercicios", "hint": "ejercicios verificados con tablebase" },
@@ -40,7 +44,19 @@
     "title": "Entrenador y plan",
     "hint": "tus debilidades y tu plan de estudio semanal",
     "coachToggle": "Entrenador",
-    "planLink": "Plan de estudio"
+    "planLink": "Plan de estudio",
+    "progress": "Esta semana: {{done}}/{{total}} tareas del plan",
+    "suggests": "El entrenador sugiere: {{focus}}",
+    "continue": "Continuar",
+    "viewPlan": "Ver plan",
+    "mistakes_one": "Entrena tus errores ({{count}})",
+    "mistakes_other": "Entrena tus errores ({{count}})",
+    "empty": "Aún no hay consejos del entrenador — analiza una partida o empieza tu plan semanal."
+  },
+  "cards": {
+    "reviewsDue_one": "{{count}} repaso pendiente",
+    "reviewsDue_other": "{{count}} repasos pendientes",
+    "lastActivity": "Último: {{when}}"
   },
   "about": {
     "settingsHint": "Tema, sonido, tablero, idioma y datos de la cuenta",

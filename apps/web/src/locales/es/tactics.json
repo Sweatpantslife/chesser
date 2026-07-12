@@ -19,7 +19,8 @@
     "noThemes": "no hay temas aquí",
     "ratedOrder": "Proponer problemas cercanos a mi puntuación",
     "reviewDue": "Repasar pendientes",
-    "dailyPuzzle": "Problema del día"
+    "dailyPuzzle": "Problema del día",
+    "filters": "Filtros"
   },
   "difficulty": {
     "all": "todas",

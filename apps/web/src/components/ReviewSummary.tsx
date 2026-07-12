@@ -1,12 +1,14 @@
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { DECK_META, useReviewSummary, type DeckTarget } from '../lib/decks';
+import { DECK_META, deckHref, useReviewSummary } from '../lib/decks';
 
 /**
  * Unified spaced-repetition summary across every deck (openings, tactics,
  * checkmates, anti-blunder). Shows the total due and a per-deck breakdown; each
- * chip jumps straight to that trainer.
+ * chip is a plain link (`deckHref`) straight to that trainer — middle-click,
+ * copy-link and a11y work for free.
  */
-export function ReviewSummary({ goto }: { goto: (target: DeckTarget) => void }) {
+export function ReviewSummary() {
   const { t } = useTranslation('analysis');
   const { decks, totalDue, totalSeen, totalCards } = useReviewSummary();
 
@@ -27,10 +29,10 @@ export function ReviewSummary({ goto }: { goto: (target: DeckTarget) => void }) 
           const meta = DECK_META[d.deck];
           const hasDue = d.due > 0;
           return (
-            <button
+            <Link
               key={d.deck}
-              onClick={() => goto(meta.target)}
-              className={`rounded-lg border px-3 py-2 text-left transition-colors ${
+              to={deckHref(meta.target)}
+              className={`block rounded-lg border px-3 py-2 text-left transition-colors ${
                 hasDue
                   ? 'border-amber-500/40 bg-amber-950/30 hover:bg-amber-950/50'
                   : 'border-neutral-700 bg-neutral-800/40 hover:bg-neutral-800'
@@ -42,7 +44,7 @@ export function ReviewSummary({ goto }: { goto: (target: DeckTarget) => void }) 
                 <span className="text-xs text-neutral-400">{t('queue.dueLabel', { count: d.due })}</span>
               </div>
               <div className="text-xs text-neutral-400">{t('queue.learned', { seen: d.seen, total: d.total })}</div>
-            </button>
+            </Link>
           );
         })}
       </div>

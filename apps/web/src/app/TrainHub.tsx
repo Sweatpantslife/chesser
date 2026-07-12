@@ -1,102 +1,107 @@
 /**
- * Train hub landing (`#/train`): the "Coach & Plan" strip on top (coach is a
- * disclosure — it has no route of its own; `#/coach` redirects here), then a
- * card grid of the six training surfaces. Cards are real links, so every old
- * top-level trainer tab is reachable in two taps (Train → card).
+ * Train hub landing (`#/train`): the "Coach & Plan" strip on top (one line of
+ * plan progress + coach suggestion with the page's single hero Continue CTA;
+ * the full coach view lives on `#/train/plan` — `#/coach` redirects here),
+ * then a card grid of the six training surfaces. Cards are real links with a
+ * review-due badge and a last-activity line, so every old top-level trainer
+ * tab is reachable in two taps (Train → card) and shows its state at a glance.
  */
-import { lazy, Suspense, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { lazy, Suspense, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   IconBolt,
-  IconCoach,
   IconCoords,
   IconEndgame,
-  IconSparkles,
   IconTactics,
   IconTrain,
   IconCrown,
 } from '../components/icons';
 import { playSound } from '../lib/sound';
+// NOTE: never import lib/decks here — TrainHub is eager (statically imported
+// by App.tsx) and lib/decks pulls the full puzzle/drill id catalogues into
+// whatever chunk imports it. Due badges come from the store-only hook below.
+import { DECK_FOR_CARD, useDueByDeck, useTrainerLastActivity, type TrainerCardId } from '../lib/trainActivity';
 
-const CoachPage = lazy(() => import('../pages/CoachPage').then((m) => ({ default: m.CoachPage })));
+// Lazy: the strip reads the plan store, whose lesson/master-game catalogues
+// must stay out of the app-shell chunk (TrainHub itself is eager).
+const CoachPlanStrip = lazy(() => import('./CoachPlanStrip'));
 
-/** label/hint i18n sources: nav:sections.* (new) with train:tabs.* reused where unchanged. */
-const CARDS = [
+/** label/hint i18n sources: nav:sections.* — order is the approved IA order. */
+const CARDS: { id: TrainerCardId; to: string; icon: typeof IconTactics }[] = [
   { id: 'tactics', to: '/train/tactics', icon: IconTactics },
   { id: 'endgames', to: '/train/endgames', icon: IconEndgame },
   { id: 'vision', to: '/train/vision', icon: IconTrain },
   { id: 'checkmates', to: '/train/checkmates', icon: IconCrown },
   { id: 'antiBlunder', to: '/train/anti-blunder', icon: IconBolt },
   { id: 'coordinates', to: '/train/coordinates', icon: IconCoords },
-] as const;
+];
 
 export function TrainHub() {
-  const { t } = useTranslation('nav');
-  const navigate = useNavigate();
-  const [coachOpen, setCoachOpen] = useState(false);
+  const { t, i18n } = useTranslation('nav');
+  const lastActivity = useTrainerLastActivity();
+  const dueByDeck = useDueByDeck();
+  const rtf = useMemo(
+    () => new Intl.RelativeTimeFormat(i18n.language || 'en', { numeric: 'auto' }),
+    [i18n.language],
+  );
+  const lastLabel = (ts: number) => {
+    const midnight = (v: number) => {
+      const d = new Date(v);
+      d.setHours(0, 0, 0, 0);
+      return d.getTime();
+    };
+    const days = Math.max(0, Math.round((midnight(Date.now()) - midnight(ts)) / 86_400_000));
+    return t('cards.lastActivity', { when: rtf.format(-days, 'day') });
+  };
+
   return (
     <div className="mx-auto w-full max-w-[1200px] space-y-4">
-      {/* Coach & Plan strip */}
-      <section className="rounded-2xl bg-panel p-4 shadow-soft">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="font-display text-lg font-bold text-ink">{t('coachStrip.title')}</h2>
-            <p className="text-xs text-neutral-400">{t('coachStrip.hint')}</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => {
-                playSound('uiClick');
-                setCoachOpen((o) => !o);
-              }}
-              aria-expanded={coachOpen}
-              aria-controls="train-coach"
-              className={`btn-press flex min-h-11 items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold sm:min-h-9 ${
-                coachOpen ? 'bg-gradient-to-br from-brand-600 to-brand-700 text-white shadow-glow' : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700 hover:text-ink'
-              }`}
-            >
-              <IconCoach size={16} className={coachOpen ? 'text-white/85' : 'text-neutral-400'} />
-              {t('coachStrip.coachToggle')}
-              <span aria-hidden="true">{coachOpen ? '▴' : '▾'}</span>
-            </button>
-            <Link
-              to="/train/plan"
-              onClick={() => playSound('uiClick')}
-              className="btn-press flex min-h-11 items-center gap-1.5 rounded-full bg-neutral-800 px-4 py-1.5 text-sm font-semibold text-neutral-300 hover:bg-neutral-700 hover:text-ink sm:min-h-9"
-            >
-              <IconSparkles size={16} className="text-neutral-400" />
-              {t('coachStrip.planLink')}
-            </Link>
-          </div>
-        </div>
-        <div id="train-coach" hidden={!coachOpen} className="mt-4">
-          {coachOpen && (
-            <Suspense fallback={null}>
-              <CoachPage goPlay={() => navigate('/play')} />
-            </Suspense>
-          )}
-        </div>
-      </section>
+      <header>
+        <h1 className="font-display text-xl font-bold text-ink">{t('hubs.train.label')}</h1>
+        <p className="text-xs text-neutral-400">{t('hubs.train.hint')}</p>
+      </header>
+
+      {/* Coach & Plan strip (placeholder keeps the grid from jumping while the lazy chunk lands). */}
+      <Suspense fallback={<section aria-hidden="true" className="min-h-11" />}>
+        <CoachPlanStrip />
+      </Suspense>
 
       {/* Trainer cards */}
-      <ul className="grid list-none grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <ul className="grid list-none grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {CARDS.map((card) => {
           const Icon = card.icon;
+          const deck = DECK_FOR_CARD[card.id];
+          const due = deck ? dueByDeck[deck] ?? 0 : 0;
+          const last = lastActivity[card.id];
           return (
             <li key={card.id}>
               <Link
                 to={card.to}
                 onClick={() => playSound('uiClick')}
                 data-testid={`train-card-${card.id}`}
-                className="btn-press group flex min-h-20 items-center gap-3.5 rounded-2xl bg-panel p-4 shadow-soft hover:bg-panelmute"
+                className="btn-press group flex min-h-20 items-start gap-4 rounded-2xl bg-panel p-4 shadow-soft hover:bg-panelmute"
               >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-600 to-brand-700 text-white">
+                <span
+                  aria-hidden="true"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-panelmute text-neutral-300 group-hover:text-ink"
+                >
                   <Icon size={22} />
                 </span>
-                <span>
-                  <span className="block font-display text-base font-bold text-ink">{t(`sections.${card.id}.label`)}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-2">
+                    <span className="font-display text-base font-bold text-ink">{t(`sections.${card.id}.label`)}</span>
+                    {due > 0 && (
+                      <span
+                        aria-label={t('cards.reviewsDue', { count: due })}
+                        className="ml-auto shrink-0 rounded-full bg-amber-950 px-2 py-0.5 text-xs font-semibold tabular-nums text-amber-300"
+                      >
+                        {due}
+                      </span>
+                    )}
+                  </span>
                   <span className="block text-xs text-neutral-400">{t(`sections.${card.id}.hint`)}</span>
+                  {last !== null && <span className="mt-1 block text-xs text-neutral-400">{lastLabel(last)}</span>}
                 </span>
               </Link>
             </li>
