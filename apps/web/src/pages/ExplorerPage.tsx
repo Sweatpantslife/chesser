@@ -8,6 +8,7 @@ import { OpeningExplorer } from '../components/OpeningExplorer';
 import { toPgn } from '../lib/pgn';
 import { playMoveSound } from '../lib/sound';
 import { useGame } from '../store/game';
+import { useRepertoire } from '../store/repertoire';
 import type { Color } from '../store/game';
 
 interface LineMove {
@@ -25,7 +26,7 @@ interface LineMove {
  * like the Lichess explorer.
  */
 export function ExplorerPage({ goAnalyze }: { goAnalyze?: () => void }) {
-  const { t } = useTranslation('explorer');
+  const { t } = useTranslation(['explorer', 'openings']);
   const [line, setLine] = useState<LineMove[]>([]);
   const [ply, setPly] = useState(0); // how many moves of `line` are on the board
   const [orientation, setOrientation] = useState<Color>('white');
@@ -90,6 +91,27 @@ export function ExplorerPage({ goAnalyze }: { goAnalyze?: () => void }) {
     if (pathSan.length === 0 || !goAnalyze) return;
     const ok = useGame.getState().loadPgn(toPgn(pathSan, { white: 'White', black: 'Black', result: '*' }));
     if (ok) goAnalyze();
+  };
+
+  // Save-to-repertoire: the explored line always starts from the standard
+  // start position, so any row can become a repertoire line (same mechanics
+  // as the analysis board's explorer panel).
+  const user = useRepertoire((s) => s.user);
+  const addLine = useRepertoire((s) => s.addLine);
+  const createRepertoire = useRepertoire((s) => s.createRepertoire);
+  const [target, setTarget] = useState('');
+  useEffect(() => {
+    if (!target && user[0]) setTarget(user[0].id);
+  }, [user, target]);
+
+  const saveMove = (m: ExplorerMove) => {
+    const moves = [...pathSan, m.san];
+    let repId = user.some((r) => r.id === target) ? target : '';
+    if (!repId) repId = createRepertoire(t('openings:myRepertoire'));
+    let name = '';
+    for (let i = 0; i < moves.length; i++) name += (i % 2 === 0 ? `${i / 2 + 1}.` : '') + moves[i] + ' ';
+    addLine(repId, { name: name.trim(), side: turnColor, moves });
+    setTarget(repId);
   };
 
   const btn =
@@ -158,13 +180,19 @@ export function ExplorerPage({ goAnalyze }: { goAnalyze?: () => void }) {
             {t('page.reset')}
           </button>
           {goAnalyze && (
-            <button className={btn} onClick={analyze} disabled={pathSan.length === 0} title={t('page.analyseTitle')}>
+            // The explore view's primary CTA — the screen's one accent element.
+            <button
+              className="btn-press min-h-11 rounded-full bg-gradient-to-br from-brand-600 to-brand-700 px-4 py-1.5 text-sm font-bold text-white hover:from-brand-500 hover:to-brand-600 disabled:opacity-50"
+              onClick={analyze}
+              disabled={pathSan.length === 0}
+              title={t('page.analyseTitle')}
+            >
               {t('page.analyse')}
             </button>
           )}
         </div>
 
-        <div className="rounded-lg bg-panel p-3">
+        <div className="rounded-2xl bg-panel p-3 shadow-soft">
           <h3 className="mb-1.5 text-sm font-semibold text-ink">{t('page.lineTitle')}</h3>
           {line.length === 0 ? (
             <p className="text-xs text-neutral-400">{t('page.lineEmpty')}</p>
@@ -199,7 +227,24 @@ export function ExplorerPage({ goAnalyze }: { goAnalyze?: () => void }) {
       </div>
 
       <div className="space-y-3">
-        <OpeningExplorer fen={fen} pathSan={pathSan} onPlayMove={playExplorerMove} />
+        <OpeningExplorer fen={fen} pathSan={pathSan} onPlayMove={playExplorerMove} onSaveToRepertoire={saveMove}>
+          <div className="mb-2 flex items-center gap-1 text-xs text-neutral-400">
+            <span className="shrink-0">{t('save.addTo')}</span>
+            <select
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+              aria-label={t('save.targetAria')}
+              className="min-w-0 flex-1 rounded bg-neutral-800 px-1 py-0.5 text-xs text-ink outline-none"
+            >
+              {user.length === 0 && <option value="">{t('save.newRepOption')}</option>}
+              {user.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </OpeningExplorer>
       </div>
     </div>
   );

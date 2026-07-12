@@ -240,7 +240,7 @@ export function OpeningsPage() {
             {rep.id === 'mine' && (
               <button
                 onClick={() => setBrowsing(true)}
-                className="btn-press rounded bg-brand-600 px-2 py-1 text-xs font-semibold text-white hover:bg-brand-700"
+                className="btn-press rounded-full bg-neutral-700 px-3 py-1 text-xs font-semibold text-neutral-200 hover:bg-neutral-600"
               >
                 📖 {t('repertoire.browse')}
               </button>
@@ -261,14 +261,14 @@ export function OpeningsPage() {
                     setCreating(false);
                     setRepId(id);
                   }}
-                  className="rounded bg-emerald-700 px-2 py-1 text-xs text-white"
+                  className="btn-press rounded-full bg-neutral-700 px-3 py-1 text-xs font-semibold text-neutral-200 hover:bg-neutral-600"
                 >
                   {t('repertoire.create')}
                 </button>
               </>
             ) : (
               <>
-                <button onClick={() => setCreating(true)} className="rounded bg-neutral-700 px-2 py-1 text-xs text-neutral-200 hover:bg-neutral-600">
+                <button onClick={() => setCreating(true)} className="btn-press rounded-full bg-neutral-700 px-3 py-1 text-xs text-neutral-200 hover:bg-neutral-600">
                   {t('repertoire.new')}
                 </button>
                 {editable && (
@@ -278,7 +278,7 @@ export function OpeningsPage() {
                         const n = window.prompt(t('repertoire.renamePrompt'), rep.name);
                         if (n) renameRepertoire(rep.id, n);
                       }}
-                      className="rounded bg-neutral-700 px-2 py-1 text-xs text-neutral-200 hover:bg-neutral-600"
+                      className="btn-press rounded-full bg-neutral-700 px-3 py-1 text-xs text-neutral-200 hover:bg-neutral-600"
                     >
                       {t('repertoire.rename')}
                     </button>
@@ -289,7 +289,7 @@ export function OpeningsPage() {
                           setRepId('mine');
                         }
                       }}
-                      className="rounded bg-neutral-700 px-2 py-1 text-xs text-rose-300 hover:bg-neutral-600"
+                      className="btn-press rounded-full bg-neutral-700 px-3 py-1 text-xs text-rose-300 hover:bg-neutral-600"
                     >
                       {t('repertoire.delete')}
                     </button>
@@ -302,10 +302,11 @@ export function OpeningsPage() {
           <div className="mt-3">
             <ReviewStats deck="openings" ids={lineIds} />
           </div>
+          {/* The repertoire view's primary drill CTA — the screen's one accent element. */}
           <button
             onClick={reviewNext}
             disabled={lineIds.length === 0}
-            className="mt-2 w-full rounded bg-emerald-700 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-50"
+            className="btn-press mt-2 flex min-h-11 w-full items-center justify-center rounded-full bg-gradient-to-br from-brand-600 to-brand-700 py-2 text-sm font-bold text-white hover:from-brand-500 hover:to-brand-600 disabled:opacity-50"
           >
             {t('repertoire.reviewDue')}
           </button>
@@ -318,7 +319,7 @@ export function OpeningsPage() {
                 <p>{t('repertoire.emptyMine')}</p>
                 <button
                   onClick={() => setBrowsing(true)}
-                  className="btn-press w-full rounded bg-brand-600 py-1.5 text-sm font-semibold text-white hover:bg-brand-700"
+                  className="btn-press w-full rounded-full bg-neutral-700 py-1.5 text-sm font-semibold text-neutral-200 hover:bg-neutral-600"
                 >
                   {t('repertoire.browse')}
                 </button>
@@ -420,12 +421,18 @@ export function OpeningsPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {phase !== 'playing' && line && (
-            <button onClick={() => start(line)} className="rounded bg-emerald-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-800">
+            <button
+              onClick={() => start(line)}
+              className="btn-press min-h-11 rounded-full bg-neutral-700 px-4 py-1.5 text-sm font-semibold text-ink hover:bg-neutral-600 sm:min-h-0"
+            >
               {phase === 'done' ? t('board.repeatLine') : t('board.startDrill')}
             </button>
           )}
           {phase === 'playing' && (
-            <button onClick={reveal} className="rounded bg-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600">
+            <button
+              onClick={reveal}
+              className="btn-press min-h-11 rounded-full bg-neutral-700 px-4 py-1.5 text-sm text-neutral-200 hover:bg-neutral-600 sm:min-h-0"
+            >
               {t('board.revealMove')}
             </button>
           )}
