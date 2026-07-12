@@ -72,15 +72,20 @@ function Header() {
   return (
     <header className="sticky top-0 z-20 border-b border-neutral-800/80 bg-page/85 backdrop-blur">
       <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-3 px-4 py-2.5">
-        <h1 className="flex items-center gap-2 lg:sr-only">
+        <h1 className="flex shrink-0 items-center gap-2 lg:sr-only">
           <LogoMark size={30} />
-          <Wordmark className="text-ink" />
+          {/* Below 400px the logo mark alone carries the brand — the account
+              cluster (status · level · settings · account) needs the room. */}
+          <Wordmark className="text-ink max-[399px]:hidden" />
           <span className="sr-only">{t('srTagline')}</span>
         </h1>
-        <div className="ml-auto flex items-center gap-2.5 text-xs">
-          {/* Connection status lives in the sidebar footer on desktop. */}
+        {/* min-w-0 lets the cluster shrink (the account button truncates its
+            username) instead of overflowing narrow viewports. */}
+        <div className="ml-auto flex min-w-0 items-center gap-1.5 text-xs sm:gap-2.5">
+          {/* Connection status lives in the sidebar footer on desktop; below
+              sm only the dot shows (label stays for screen readers). */}
           <span className="lg:hidden">
-            <StatusDot />
+            <StatusDot labelClassName="sr-only sm:not-sr-only" />
           </span>
           <LevelBadge onClick={() => navigate('/profile')} />
           <button
