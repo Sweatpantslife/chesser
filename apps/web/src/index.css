@@ -155,15 +155,21 @@
 }
 
 /* Visible focus ring on keyboard focus only. Uses box-shadow (not outline) so
-   the many `outline-none` utilities in the codebase can't suppress it; element
-   ring utilities (e.g. focus:ring-1) still win where they're declared. */
-@layer base {
-  :focus-visible {
-    outline: none;
-    box-shadow:
-      0 0 0 2px var(--c-page),
-      0 0 0 4px var(--c-focus);
-  }
+   the many `outline-none` utilities in the codebase can't suppress it.
+   Deliberately NOT in @layer base: base is emitted before utilities, so any
+   permanent shadow/ring utility on the element (shadow-glow on the active tab
+   and hero CTA, ring-1 on completed lesson cards, shadow-soft on Masters
+   cards) used to override the ring entirely — no focus indicator (WCAG 2.4.7).
+   As a plain rule after the Tailwind directives it wins those equal-specificity
+   ties by source order, and it composes the element's own --tw-shadow back in
+   so permanent shadows stay visible while focused. Focus-variant utilities
+   (e.g. focus:ring-1 — specificity 0-2-0) still win where they're declared. */
+:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--c-page),
+    0 0 0 4px var(--c-focus),
+    var(--tw-shadow, 0 0 #0000);
 }
 
 html,
