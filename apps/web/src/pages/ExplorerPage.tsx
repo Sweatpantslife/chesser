@@ -5,9 +5,8 @@ import type { ExplorerMove } from '@chesser/shared';
 import { STARTING_FEN } from '@chesser/shared';
 import { Board } from '../board/Board';
 import { OpeningExplorer } from '../components/OpeningExplorer';
-import { toPgn } from '../lib/pgn';
 import { playMoveSound } from '../lib/sound';
-import { useGame } from '../store/game';
+import { sanLineToUci } from '../lib/uci';
 import { useRepertoire } from '../store/repertoire';
 import type { Color } from '../store/game';
 
@@ -25,7 +24,7 @@ interface LineMove {
  * branching from an earlier position replaces what came after it, exactly
  * like the Lichess explorer.
  */
-export function ExplorerPage({ goAnalyze }: { goAnalyze?: () => void }) {
+export function ExplorerPage({ goAnalyze }: { goAnalyze?: (search: string) => void }) {
   const { t } = useTranslation(['explorer', 'openings']);
   const [line, setLine] = useState<LineMove[]>([]);
   const [ply, setPly] = useState(0); // how many moves of `line` are on the board
@@ -86,11 +85,16 @@ export function ExplorerPage({ goAnalyze }: { goAnalyze?: () => void }) {
 
   const pathSan = useMemo(() => line.slice(0, ply).map((m) => m.san), [line, ply]);
 
-  // Hand the explored line to the analysis board on the Play tab.
+  // Hand the explored line to the analysis board on the Play tab as a
+  // shareable one-shot deep link (`?moves=` per the analyze-handoff
+  // contract): the /play/analysis route parses, loads and consumes the
+  // params — no direct game-store call here. The line always starts from
+  // the standard start position, so the `moves` form always applies.
   const analyze = () => {
     if (pathSan.length === 0 || !goAnalyze) return;
-    const ok = useGame.getState().loadPgn(toPgn(pathSan, { white: 'White', black: 'Black', result: '*' }));
-    if (ok) goAnalyze();
+    const ucis = sanLineToUci(pathSan);
+    if (!ucis || ucis.length === 0) return;
+    goAnalyze(`?${new URLSearchParams({ moves: ucis.join(',') }).toString()}`);
   };
 
   // Save-to-repertoire: the explored line always starts from the standard
